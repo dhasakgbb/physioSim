@@ -1,0 +1,109 @@
+import React from 'react';
+import { compoundData } from '../data/compoundData';
+
+const CustomLegend = ({ visibleCompounds, toggleCompound, onMethodologyClick, onToggleAll, activeTab }) => {
+  // Separate compounds by type
+  const injectables = Object.entries(compoundData).filter(([_, compound]) => compound.type === 'injectable');
+  const orals = Object.entries(compoundData).filter(([_, compound]) => compound.type === 'oral');
+  
+  const renderCompoundGroup = (compounds, groupName) => {
+    return (
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-sm font-bold text-physio-text-secondary uppercase tracking-wide">{groupName}</h4>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                compounds.forEach(([key]) => {
+                  if (!visibleCompounds[key]) toggleCompound(key);
+                });
+              }}
+              className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
+            >
+              All ON
+            </button>
+            <button
+              onClick={() => {
+                compounds.forEach(([key]) => {
+                  if (visibleCompounds[key]) toggleCompound(key);
+                });
+              }}
+              className="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+            >
+              All OFF
+            </button>
+          </div>
+        </div>
+        
+        <div className="space-y-1">
+          {compounds.map(([key, compound]) => {
+            const isVisible = visibleCompounds[key];
+            
+            return (
+              <div
+                key={key}
+                className={`flex items-center p-1.5 rounded transition-all ${
+                  isVisible ? 'hover:bg-physio-bg-secondary' : 'opacity-50'
+                }`}
+              >
+                <button
+                  onClick={() => toggleCompound(key)}
+                  className="flex items-center flex-1 text-left"
+                >
+                  <div
+                    className="w-3 h-3 rounded mr-2 flex-shrink-0"
+                    style={{ backgroundColor: compound.color }}
+                  />
+                  <span className={`text-sm ${isVisible ? 'text-physio-text-primary' : 'line-through text-physio-text-tertiary'}`}>
+                    {compound.abbreviation}
+                  </span>
+                </button>
+                
+                <button
+                  onClick={() => onMethodologyClick(key)}
+                  className="ml-2 px-2 py-0.5 text-xs text-physio-accent-cyan hover:text-physio-accent-cyan hover:underline transition-colors flex-shrink-0"
+                  title="View methodology"
+                >
+                  ⓘ
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+  
+  return (
+    <div className="bg-physio-bg-core p-4 rounded-lg shadow-md">
+      <h3 className="text-lg font-bold text-physio-text-primary mb-4">
+        Legend
+      </h3>
+      
+      {/* Show only relevant compounds based on active tab */}
+      {(activeTab === 'injectables' || activeTab === 'interactions' || activeTab === 'stack') && renderCompoundGroup(injectables, "Injectables")}
+      {(activeTab === 'orals' || activeTab === 'interactions' || activeTab === 'stack') && renderCompoundGroup(orals, "Orals")}
+      
+      <div className="mt-4 pt-4 border-t text-xs text-physio-text-secondary">
+        <div className="mb-2 font-semibold">Legend:</div>
+        <div className="space-y-1">
+          <div className="flex items-center">
+            <div className="w-8 h-0.5 bg-gray-400 mr-2" />
+            <span>Solid line = Benefit</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-8 h-0.5 border-t-2 border-dashed border-gray-400 mr-2" />
+            <span>Dotted line = Risk</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-8 h-3 bg-gray-300 opacity-30 mr-2" />
+            <span>Shaded band = Uncertainty (wider = less confidence)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CustomLegend;
+

@@ -1,0 +1,154 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* physioLab Design System v1.0 */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Colors - Background */
+  --physio-bg-core: #101218;
+  --physio-bg-edge: #161925;
+  --physio-bg-secondary: #1C2430;
+  --physio-bg-tertiary: #21293F;
+  --physio-bg-border: #2D3748;
+  
+  /* Colors - Text */
+  --physio-text-primary: #F5F7FF;
+  --physio-text-secondary: #A6AECF;
+  --physio-text-tertiary: #5A6385;
+  
+  /* Colors - Accents */
+  --physio-accent-cyan: #4BBBF7;
+  --physio-accent-violet: #9B6CFF;
+  --physio-accent-mint: #45E2AB;
+  
+  /* Colors - Evidence Tiers */
+  --physio-tier-1: #45E2AB;
+  --physio-tier-2: #4BBBF7;
+  --physio-tier-3: #F59E0B;
+  --physio-tier-4: #F85149;
+  
+  /* Colors - Interactive States */
+  --physio-success: #45E2AB;
+  --physio-warning: #F59E0B;
+  --physio-error: #F85149;
+  --physio-info: #4BBBF7;
+  
+  /* Shadows */
+  --physio-shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --physio-shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --physio-shadow-elevated: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --physio-glow-cyan: 0 0 32px rgba(75, 187, 247, 0.35);
+  
+  /* Transitions */
+  --physio-transition-fast: all 0.1s ease;
+  --physio-transition-standard: all 0.2s ease-in-out;
+  --physio-transition-slow: all 0.4s ease-in-out;
+  
+  /* Typography */
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 400;
+  letter-spacing: 0;
+
+  color-scheme: dark;
+  color: var(--physio-text-primary);
+  background-color: var(--physio-bg-core);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  
+  /* Obsidian Pro Canvas */
+  background: radial-gradient(circle at 50% 45%,
+    #161925 0%,
+    #151926 55%,
+    #101218 85%) fixed;
+  box-shadow: inset 0 0 200px rgba(0,0,0,0.25),
+              inset 0 0 600px rgba(0,0,0,0.18);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Typography Classes */
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom scrollbar - Dark theme */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--physio-bg-core);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--physio-bg-border);
+  border-radius: 5px;
+  border: 2px solid var(--physio-bg-core);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--physio-text-tertiary);
+}
+
+/* Recharts custom styling */
+.recharts-tooltip-wrapper {
+  z-index: 1000;
+}
+
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: var(--physio-bg-border);
+  stroke-opacity: 0.2;
+}
+
+.recharts-cartesian-axis-line {
+  stroke: var(--physio-bg-border);
+}
+
+.recharts-cartesian-axis-tick-value {
+  fill: var(--physio-text-secondary);
+  font-size: 12px;
+}
+
+/* Focus states */
+*:focus-visible {
+  outline: 2px solid var(--physio-accent-cyan);
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.05s !important;
+    transition-duration: 0.05s !important;
+  }
+}
+
+/* Print styles for PDF export */
+@media print {
+  body {
+    background: white;
+    box-shadow: none;
+  }
+  
+  button {
+    display: none;
+  }
+}
+
