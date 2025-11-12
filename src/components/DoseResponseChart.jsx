@@ -94,7 +94,7 @@ const DoseResponseChart = ({ viewMode, visibleCompounds }) => {
           data={chartData}
           margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--physio-bg-border)" strokeOpacity={0.2} />
           
           <XAxis
             dataKey="dose"

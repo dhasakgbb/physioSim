@@ -5,14 +5,14 @@ const DisclaimerBanner = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div className="bg-yellow-50 border-2 border-yellow-600 rounded-lg p-4 mb-6">
+    <div className="bg-physio-warning/10 border-2 border-physio-warning rounded-lg p-4 mb-6">
       <div className="flex justify-between items-start">
         <div className="flex-1">
-          <h2 className="text-lg font-bold text-yellow-900 mb-2">
+          <h2 className="text-lg font-bold text-physio-warning mb-2">
             ⚠️ HARM REDUCTION MODELING, NOT MEDICAL ADVICE
           </h2>
           {!isCollapsed && (
-            <div className="text-sm text-yellow-800 whitespace-pre-line">
+            <div className="text-sm text-physio-text-primary whitespace-pre-line">
               {disclaimerText}
             </div>
           )}

@@ -72,7 +72,7 @@ const AncillaryCalculator = () => {
         <select
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value)}
-          className="w-full md:w-1/2 px-3 py-2 border border-physio-bg-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full md:w-1/2 px-3 py-2 bg-physio-bg-tertiary text-physio-text-primary border border-physio-bg-border rounded-md focus:outline-none focus:ring-2 focus:ring-physio-accent-cyan transition-standard"
         >
           <option value="all">All Categories</option>
           {categories.map(cat => (
@@ -126,7 +126,7 @@ const AncillaryCalculator = () => {
                           </p>
                         )}
                       </div>
-                      <button className="ml-4 text-2xl text-gray-400">
+                      <button className="ml-4 text-2xl text-physio-text-tertiary">
                         {isExpanded ? '−' : '+'}
                       </button>
                     </div>
@@ -174,7 +174,7 @@ const AncillaryCalculator = () => {
                         {/* Caution */}
                         {drug.caution && (
                           <div className="p-3 bg-physio-bg-tertiary border-l-4 border-physio-warning">
-                            <h5 className="font-semibold text-yellow-900 mb-1">⚠️ Caution</h5>
+                            <h5 className="font-semibold text-physio-warning mb-1">⚠️ Caution</h5>
                             <p className="text-physio-text-secondary text-sm">{drug.caution}</p>
                           </div>
                         )}
@@ -274,7 +274,7 @@ const AncillaryCalculator = () => {
       
       {/* Disclaimer */}
       <div className="bg-physio-bg-tertiary border-l-4 border-physio-warning p-4">
-        <h3 className="text-lg font-semibold text-yellow-900 mb-2">⚠️ Important Disclaimer</h3>
+        <h3 className="text-lg font-semibold text-physio-warning mb-2">⚠️ Important Disclaimer</h3>
         <p className="text-physio-text-secondary text-sm">
           This information is for educational purposes only and does not constitute medical advice.
           Ancillary medications may require prescriptions and should be used under medical supervision.

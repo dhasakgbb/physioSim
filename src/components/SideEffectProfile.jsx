@@ -35,7 +35,7 @@ const SideEffectProfile = () => {
         <select
           value={selectedCompound}
           onChange={(e) => setSelectedCompound(e.target.value)}
-          className="w-full md:w-1/2 px-3 py-2 border border-physio-bg-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full md:w-1/2 px-3 py-2 bg-physio-bg-tertiary text-physio-text-primary border border-physio-bg-border rounded-md focus:outline-none focus:ring-2 focus:ring-physio-accent-cyan transition-standard"
         >
           <optgroup label="Injectable Compounds">
             {injectables.map(key => (
@@ -172,12 +172,12 @@ const SideEffectProfile = () => {
           <div className="space-y-3">
             <div className="flex justify-between items-center py-2 border-b border-physio-bg-border">
               <span className="text-physio-text-secondary font-medium">ALT/AST Elevation:</span>
-              <span className="text-red-700 font-semibold">{sideEffects.hepatic.altAstElevation}</span>
+              <span className="text-physio-error font-semibold">{sideEffects.hepatic.altAstElevation}</span>
             </div>
             {sideEffects.hepatic.cholestasis && (
               <div className="flex justify-between items-center py-2 border-b border-physio-bg-border">
                 <span className="text-physio-text-secondary font-medium">Cholestasis Risk:</span>
-                <span className="text-red-700 font-semibold">{sideEffects.hepatic.cholestasis}</span>
+                <span className="text-physio-error font-semibold">{sideEffects.hepatic.cholestasis}</span>
               </div>
             )}
             <div className="mt-4 p-3 bg-physio-bg-tertiary rounded">
@@ -186,7 +186,7 @@ const SideEffectProfile = () => {
             </div>
             {sideEffects.hepatic.reversibility && (
               <div className="p-3 bg-physio-bg-tertiary rounded">
-                <strong className="text-yellow-900">Reversibility:</strong>
+                <strong className="text-physio-warning">Reversibility:</strong>
                 <p className="text-physio-text-secondary mt-1">{sideEffects.hepatic.reversibility}</p>
               </div>
             )}
@@ -223,7 +223,7 @@ const SideEffectProfile = () => {
             </div>
             {sideEffects.psychological.note && (
               <div className="p-3 bg-physio-bg-tertiary rounded">
-                <strong className="text-yellow-900">Note:</strong>
+                <strong className="text-physio-warning">Note:</strong>
                 <p className="text-physio-text-secondary mt-1">{sideEffects.psychological.note}</p>
               </div>
             )}

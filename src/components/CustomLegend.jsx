@@ -18,7 +18,7 @@ const CustomLegend = ({ visibleCompounds, toggleCompound, onMethodologyClick, on
                   if (!visibleCompounds[key]) toggleCompound(key);
                 });
               }}
-              className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
+              className="px-2 py-0.5 text-xs bg-physio-success/20 text-physio-success rounded hover:bg-physio-success/30 transition-standard border border-physio-success/40"
             >
               All ON
             </button>
@@ -28,7 +28,7 @@ const CustomLegend = ({ visibleCompounds, toggleCompound, onMethodologyClick, on
                   if (visibleCompounds[key]) toggleCompound(key);
                 });
               }}
-              className="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+              className="px-2 py-0.5 text-xs bg-physio-error/20 text-physio-error rounded hover:bg-physio-error/30 transition-standard border border-physio-error/40"
             >
               All OFF
             </button>
@@ -84,19 +84,19 @@ const CustomLegend = ({ visibleCompounds, toggleCompound, onMethodologyClick, on
       {(activeTab === 'injectables' || activeTab === 'interactions' || activeTab === 'stack') && renderCompoundGroup(injectables, "Injectables")}
       {(activeTab === 'orals' || activeTab === 'interactions' || activeTab === 'stack') && renderCompoundGroup(orals, "Orals")}
       
-      <div className="mt-4 pt-4 border-t text-xs text-physio-text-secondary">
+      <div className="mt-4 pt-4 border-t border-physio-bg-border text-xs text-physio-text-secondary">
         <div className="mb-2 font-semibold">Legend:</div>
         <div className="space-y-1">
           <div className="flex items-center">
-            <div className="w-8 h-0.5 bg-gray-400 mr-2" />
+            <div className="w-8 h-0.5 bg-physio-text-secondary mr-2" />
             <span>Solid line = Benefit</span>
           </div>
           <div className="flex items-center">
-            <div className="w-8 h-0.5 border-t-2 border-dashed border-gray-400 mr-2" />
+            <div className="w-8 h-0.5 border-t-2 border-dashed border-physio-text-secondary mr-2" />
             <span>Dotted line = Risk</span>
           </div>
           <div className="flex items-center">
-            <div className="w-8 h-3 bg-gray-300 opacity-30 mr-2" />
+            <div className="w-8 h-3 bg-physio-text-secondary opacity-30 mr-2" />
             <span>Shaded band = Uncertainty (wider = less confidence)</span>
           </div>
         </div>

@@ -73,14 +73,18 @@ describe('StackBuilder Component', () => {
     // Select compound
     const select = screen.getByRole('combobox');
     await user.selectOptions(select, 'testosterone');
-    expect(addButton.disabled).toBe(true);
+    await waitFor(() => {
+      expect(addButton.disabled).toBe(true);
+    });
     
     // Enter dose
     const doseInput = screen.getByPlaceholderText(/Enter dose/i);
     await user.type(doseInput, '500');
     
     // Should be enabled now
-    expect(addButton.disabled).toBe(false);
+    await waitFor(() => {
+      expect(addButton.disabled).toBe(false);
+    });
   });
 
   it('should add compound to stack when Add button is clicked', async () => {

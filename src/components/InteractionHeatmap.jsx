@@ -119,7 +119,7 @@ const InteractionDetailCard = ({ compound1, compound2, onClose }) => {
           {/* Caution */}
           {interaction.caution && (
             <div className="bg-physio-bg-tertiary border-l-4 border-physio-warning p-4">
-              <h3 className="text-lg font-semibold mb-2 text-yellow-900">⚠️ Important Cautions</h3>
+              <h3 className="text-lg font-semibold mb-2 text-physio-warning">⚠️ Important Cautions</h3>
               <p className="text-physio-text-secondary">{interaction.caution}</p>
             </div>
           )}
@@ -160,7 +160,7 @@ const InteractionHeatmap = () => {
     if (compound1 === compound2) {
       return (
         <div className="h-16 flex items-center justify-center bg-physio-bg-tertiary border border-physio-bg-border">
-          <span className="text-gray-400 text-sm">—</span>
+          <span className="text-physio-text-tertiary text-sm">—</span>
         </div>
       );
     }

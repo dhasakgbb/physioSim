@@ -274,7 +274,7 @@ const AASVisualization = () => {
 
 
         {/* Footer */}
-        <footer className="mt-8 text-center text-sm text-gray-500 pb-8">
+        <footer className="mt-8 text-center text-sm text-physio-text-tertiary pb-8">
           <p>Version 1.0 | Last Updated: {new Date().toLocaleDateString()}</p>
           <p className="mt-2">
             This tool is for educational purposes only and does not constitute medical advice.

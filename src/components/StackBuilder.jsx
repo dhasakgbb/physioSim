@@ -191,7 +191,7 @@ const StackBuilder = () => {
             <select
               value={selectedCompound}
               onChange={(e) => setSelectedCompound(e.target.value)}
-              className="w-full px-3 py-2 border border-physio-bg-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-physio-bg-tertiary text-physio-text-primary border border-physio-bg-border rounded-md focus:outline-none focus:ring-2 focus:ring-physio-accent-cyan transition-standard"
             >
               <option value="">-- Choose Compound --</option>
               <optgroup label="Injectable Compounds">
@@ -220,7 +220,7 @@ const StackBuilder = () => {
               value={dose}
               onChange={(e) => setDose(e.target.value)}
               placeholder="Enter dose"
-              className="w-full px-3 py-2 border border-physio-bg-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-physio-bg-tertiary text-physio-text-primary border border-physio-bg-border rounded-md focus:outline-none focus:ring-2 focus:ring-physio-accent-cyan transition-standard"
             />
           </div>
           
@@ -276,7 +276,7 @@ const StackBuilder = () => {
                   </div>
                   <button
                     onClick={() => handleRemoveCompound(item.compound)}
-                    className="ml-4 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm"
+                    className="ml-4 px-3 py-1 bg-physio-error text-physio-bg-core rounded hover:bg-physio-error/80 transition-standard text-sm font-medium"
                   >
                     Remove
                   </button>
@@ -343,7 +343,7 @@ const StackBuilder = () => {
           </div>
           
           {/* Interpretation */}
-          <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+          <div className="mt-4 p-4 bg-physio-warning/10 rounded-lg border border-physio-warning/40">
             <p className="text-sm text-physio-text-secondary">
               <strong>Interpretation:</strong> Higher benefit:risk ratios indicate more efficient stacks. 
               Positive benefit synergy = compounds amplify each other's benefits. 

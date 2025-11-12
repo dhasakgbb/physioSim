@@ -115,10 +115,10 @@ const MethodologyModal = ({ compound, onClose }) => {
           </CollapsibleSection>
 
           {/* Individual Variance */}
-          <CollapsibleSection id="variance" icon="👤" title="Individual Variance Factors" bgColor="bg-yellow-50">
+          <CollapsibleSection id="variance" icon="👤" title="Individual Variance Factors" bgColor="bg-physio-warning/10">
             <ul className="list-disc list-inside space-y-2">
               {data.methodology.individualVariance.map((variance, idx) => (
-                <li key={idx} className="text-yellow-800">{variance}</li>
+                <li key={idx} className="text-physio-text-primary">{variance}</li>
               ))}
             </ul>
           </CollapsibleSection>
