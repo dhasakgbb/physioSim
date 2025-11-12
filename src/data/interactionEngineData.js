@@ -101,6 +101,7 @@ export const stackOptimizerCombos = [
   {
     id: 'lean_mass_triple',
     label: 'Lean Mass / Vascularity',
+    narrative: 'Classic lean mass cruise with dryness by layering Mast onto Test+EQ.',
     compounds: ['testosterone', 'eq', 'masteron'],
     defaultDoses: { testosterone: 450, eq: 600, masteron: 350 },
     doseRanges: {
@@ -114,6 +115,7 @@ export const stackOptimizerCombos = [
   {
     id: 'recomp_tren_stack',
     label: 'Aggressive Recomp',
+    narrative: 'High-androgen recomposition: Test base with Tren aggression and Mast dryness.',
     compounds: ['testosterone', 'trenbolone', 'masteron'],
     defaultDoses: { testosterone: 400, trenbolone: 250, masteron: 400 },
     doseRanges: {
@@ -127,6 +129,7 @@ export const stackOptimizerCombos = [
   {
     id: 'joint_strength_stack',
     label: 'Joint-Friendly Strength',
+    narrative: 'Strength-focused blend where NPP cushions joints and Dbol handles neural drive.',
     compounds: ['testosterone', 'npp', 'dianabol'],
     defaultDoses: { testosterone: 500, npp: 350, dianabol: 30 },
     doseRanges: {
@@ -140,6 +143,7 @@ export const stackOptimizerCombos = [
   {
     id: 'endurance_cut_stack',
     label: 'Endurance Cut',
+    narrative: 'Long, lean cut leveraging EQ endurance plus Anavar hardness on a TRT base.',
     compounds: ['testosterone', 'eq', 'anavar'],
     defaultDoses: { testosterone: 300, eq: 600, anavar: 50 },
     doseRanges: {
@@ -633,6 +637,264 @@ export const interactionPairs = {
     narratives: {
       highlight: 'Anavar adds neural drive and hardness to EQ’s appetite/endurance platform.',
       caution: 'Despite mild branding, hepatic stress accrues when Anavar is held beyond 8 weeks.'
+    }
+  },
+  masteron_primobolan: {
+    id: 'masteron_primobolan',
+    compounds: ['masteron', 'primobolan'],
+    label: 'Masteron + Primo',
+    summary: 'Ultra-clean cosmetic stack for long cuts with minimal systemic stress.',
+    defaultDimension: 'vascularity',
+    doseRanges: {
+      masteron: [200, 600],
+      primobolan: [300, 800]
+    },
+    defaultDoses: {
+      masteron: 400,
+      primobolan: 500
+    },
+    synergy: {
+      vascularity: 0.55,
+      joint: 0.2
+    },
+    penalties: {
+      estrogenic: 0.2,
+      hepatic: 0.05
+    },
+    dimensionWeights: {
+      vascularity: { masteron: 1, primobolan: 0.6 },
+      joint: { primobolan: 0.4 },
+      estrogenic: { masteron: 0.9 },
+      hepatic: { primobolan: 0.1 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 350, d50B: 450, n: 2 }
+    },
+    evidence: {
+      clinical: 0.35,
+      anecdote: 0.65,
+      updated: '2025-02'
+    },
+    narratives: {
+      highlight: 'Primo’s slow, dry tissue plus Masteron’s anti-estrogenic hardness keeps physiques sharp for months.',
+      caution: 'Extremely low aromatase context; ensure a baseline Test/TRT dose to protect mood and joints.'
+    }
+  },
+  eq_primobolan: {
+    id: 'eq_primobolan',
+    compounds: ['eq', 'primobolan'],
+    label: 'EQ + Primo',
+    summary: 'Endurance-driven lean build with pristine lipid impact.',
+    defaultDimension: 'anabolic',
+    doseRanges: {
+      eq: [400, 900],
+      primobolan: [400, 800]
+    },
+    defaultDoses: {
+      eq: 600,
+      primobolan: 600
+    },
+    synergy: {
+      anabolic: 0.25,
+      vascularity: 0.3
+    },
+    penalties: {
+      hematocrit: 0.45,
+      bp: 0.2
+    },
+    dimensionWeights: {
+      anabolic: { eq: 1, primobolan: 0.7 },
+      vascularity: { eq: 0.8, primobolan: 0.6 },
+      hematocrit: { eq: 1 },
+      bp: { eq: 0.5 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 500, d50B: 500, n: 2.1 }
+    },
+    evidence: {
+      clinical: 0.3,
+      anecdote: 0.7,
+      updated: '2025-02'
+    },
+    narratives: {
+      highlight: 'Pairs two mild compounds for marathon recomp blocks where appetite and endurance stay high.',
+      caution: 'Hematocrit remains the limiting factor—donation cadence is mandatory past week 10.'
+    }
+  },
+  testosterone_winstrol: {
+    id: 'testosterone_winstrol',
+    compounds: ['testosterone', 'winstrol'],
+    label: 'Testosterone + Winstrol',
+    summary: 'Contest cut combo: Test maintains fullness while Winny peels water.',
+    defaultDimension: 'vascularity',
+    doseRanges: {
+      testosterone: [200, 700],
+      winstrol: [20, 70]
+    },
+    defaultDoses: {
+      testosterone: 400,
+      winstrol: 50
+    },
+    synergy: {
+      vascularity: 0.4,
+      strength: 0.25
+    },
+    penalties: {
+      joint: 0.35,
+      hepatic: 0.4
+    },
+    dimensionWeights: {
+      vascularity: { winstrol: 1, testosterone: 0.3 },
+      strength: { testosterone: 0.7, winstrol: 0.9 },
+      joint: { winstrol: 1 },
+      hepatic: { winstrol: 1 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 300, d50B: 40, n: 2.3 }
+    },
+    evidence: {
+      clinical: 0.25,
+      anecdote: 0.75,
+      updated: '2025-02'
+    },
+    narratives: {
+      highlight: 'Adds crispness and tendon-drive near showtime without flattening muscle thanks to Test support.',
+      caution: 'Expect joint dryness and hepatic strain after week 4; keep Winny short.'
+    }
+  },
+  trenbolone_winstrol: {
+    id: 'trenbolone_winstrol',
+    compounds: ['trenbolone', 'winstrol'],
+    label: 'Tren + Winstrol',
+    summary: 'Nuclear dryness stack: maximum hardness with brutal joint/neuro toll.',
+    defaultDimension: 'vascularity',
+    doseRanges: {
+      trenbolone: [0, 400],
+      winstrol: [20, 70]
+    },
+    defaultDoses: {
+      trenbolone: 250,
+      winstrol: 40
+    },
+    synergy: {
+      vascularity: 0.6,
+      strength: 0.3
+    },
+    penalties: {
+      neuro: 0.5,
+      joint: 0.45,
+      hepatic: 0.45
+    },
+    dimensionWeights: {
+      vascularity: { winstrol: 1, trenbolone: 0.5 },
+      strength: { trenbolone: 1, winstrol: 0.8 },
+      neuro: { trenbolone: 1 },
+      joint: { winstrol: 1 },
+      hepatic: { winstrol: 1 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 220, d50B: 35, n: 2.4 }
+    },
+    evidence: {
+      clinical: 0.2,
+      anecdote: 0.8,
+      updated: '2025-02'
+    },
+    narratives: {
+      highlight: 'Stage-ready dryness in 4 weeks; Winstrol amplifies Tren’s neural drive for peak strength.',
+      caution: 'Combines the worst joint + neuro + hepatic penalties—reserve for short, supervised blasts.'
+    }
+  },
+  testosterone_halotestin: {
+    id: 'testosterone_halotestin',
+    compounds: ['testosterone', 'halotestin'],
+    label: 'Testosterone + Halo',
+    summary: 'Meet-week aggression stack for lifters needing maximal CNS output.',
+    defaultDimension: 'strength',
+    doseRanges: {
+      testosterone: [300, 700],
+      halotestin: [5, 30]
+    },
+    defaultDoses: {
+      testosterone: 500,
+      halotestin: 20
+    },
+    synergy: {
+      strength: 0.65,
+      vascularity: 0.2
+    },
+    penalties: {
+      neuro: 0.55,
+      hepatic: 0.6,
+      bp: 0.35
+    },
+    dimensionWeights: {
+      strength: { halotestin: 1, testosterone: 0.6 },
+      vascularity: { halotestin: 0.6 },
+      neuro: { halotestin: 1 },
+      hepatic: { halotestin: 1 },
+      bp: { testosterone: 0.5, halotestin: 0.4 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 350, d50B: 15, n: 2.5 }
+    },
+    evidence: {
+      clinical: 0.15,
+      anecdote: 0.85,
+      updated: '2025-02'
+    },
+    narratives: {
+      highlight: 'Halotestin stacks on TRT/Test background deliver unmatched neural aggression for meet day.',
+      caution: 'Toxicity limits use to 10-14 days; monitor BP and hepatic labs closely.'
+    }
+  },
+  trenbolone_halotestin: {
+    id: 'trenbolone_halotestin',
+    compounds: ['trenbolone', 'halotestin'],
+    label: 'Tren + Halo',
+    summary: 'Only for the insane: max CNS drive with crippling neuro/hepatic risk.',
+    defaultDimension: 'strength',
+    doseRanges: {
+      trenbolone: [150, 400],
+      halotestin: [5, 30]
+    },
+    defaultDoses: {
+      trenbolone: 250,
+      halotestin: 15
+    },
+    synergy: {
+      strength: 0.7,
+      vascularity: 0.2
+    },
+    penalties: {
+      neuro: 0.65,
+      hepatic: 0.65,
+      bp: 0.4
+    },
+    dimensionWeights: {
+      strength: { trenbolone: 1, halotestin: 0.9 },
+      vascularity: { halotestin: 0.6 },
+      neuro: { trenbolone: 1 },
+      hepatic: { halotestin: 1 },
+      bp: { trenbolone: 0.5, halotestin: 0.5 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 220, d50B: 12, n: 2.4 }
+    },
+    evidence: {
+      clinical: 0.1,
+      anecdote: 0.9,
+      updated: '2025-02'
+    },
+    narratives: {
+      highlight: 'Contest peak for elite strength athletes chasing sheer aggression.',
+      caution: 'Stack is neurologically volatile and liver-toxic—should only be used briefly under supervision.'
     }
   }
 };

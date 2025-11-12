@@ -13,7 +13,7 @@ import {
   generatePrimaryCurveSeries,
   buildSurfaceData
 } from '../utils/interactionEngine';
-import { generateStackOptimizerResults } from '../utils/stackOptimizer';
+import { generateStackOptimizerResults, generateCustomStackResults } from '../utils/stackOptimizer';
 import { compoundData } from '../data/compoundData';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import PDFExport from './PDFExport';
@@ -57,7 +57,23 @@ const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
   const [sensitivities, setSensitivities] = useState(() => ({ ...defaultSensitivities }));
   const [evidenceBlend, setEvidenceBlend] = useState(0.35);
   const [goalPreset, setGoalPreset] = useState('lean_mass');
+  const [customGoal, setCustomGoal] = useState('lean_mass');
+  const [customSelection, setCustomSelection] = useState('');
+  const [customCompounds, setCustomCompounds] = useState([]);
+  const [customRanges, setCustomRanges] = useState({});
+  const [customResults, setCustomResults] = useState([]);
   const pairDetailRef = useRef(null);
+
+  const allCompoundKeys = useMemo(() => Object.keys(compoundData), []);
+
+  const pairOptions = useMemo(
+    () =>
+      Object.values(interactionPairs).map(pair => ({
+        id: pair.id,
+        label: pair.label
+      })).sort((a, b) => a.label.localeCompare(b.label)),
+    []
+  );
 
   const selectedPair = interactionPairs[selectedPairId];
   const dimensionKeys = useMemo(() => {
@@ -81,6 +97,86 @@ const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
     setSelectedDimension(nextDimension);
     setPrimaryCompound(pair.compounds[0]);
     setDoses({ ...pair.defaultDoses });
+  };
+
+  const clampValue = (value, min, max) => Math.min(Math.max(value, min), max);
+
+  const deriveDefaultRange = (compoundKey) => {
+    const compound = compoundData[compoundKey];
+    if (!compound) return { min: 0, max: 1000, base: 0 };
+    const curve = compound.benefitCurve || [];
+    const positivePoint = curve.find(point => point.dose > 0);
+    const minDose = positivePoint?.dose ?? curve[0]?.dose ?? 0;
+    const maxDose = curve[curve.length - 1]?.dose ?? (minDose + 500);
+    const baseDose = clampValue(
+      compound.type === 'oral' ? Math.min(maxDose, Math.max(minDose, 40)) : (minDose + maxDose) / 2,
+      minDose,
+      maxDose
+    );
+    return {
+      min: Math.round(minDose),
+      max: Math.round(maxDose),
+      base: Math.round(baseDose)
+    };
+  };
+
+  const handleAddCustomCompound = () => {
+    if (!customSelection || customCompounds.includes(customSelection) || customCompounds.length >= 4) return;
+    const defaults = deriveDefaultRange(customSelection);
+    setCustomCompounds(prev => [...prev, customSelection]);
+    setCustomRanges(prev => ({
+      ...prev,
+      [customSelection]: { ...defaults }
+    }));
+    setCustomSelection('');
+  };
+
+  const handleRemoveCustomCompound = (compoundKey) => {
+    setCustomCompounds(prev => prev.filter(c => c !== compoundKey));
+    setCustomRanges(prev => {
+      const next = { ...prev };
+      delete next[compoundKey];
+      return next;
+    });
+    setCustomResults([]);
+  };
+
+  const handleCustomRangeChange = (compoundKey, field, value) => {
+    setCustomRanges(prev => ({
+      ...prev,
+      [compoundKey]: {
+        ...prev[compoundKey],
+        [field]: Number(value)
+      }
+    }));
+  };
+
+  const handleRunCustomOptimizer = () => {
+    if (!customCompounds.length) return;
+    const combo = {
+      id: `custom-${Date.now()}`,
+      label: 'Custom Stack',
+      narrative: 'User-defined stack blueprint',
+      compounds: customCompounds,
+      doseRanges: customCompounds.reduce((acc, key) => {
+        const settings = customRanges[key] || deriveDefaultRange(key);
+        acc[key] = [settings.min, settings.max];
+        return acc;
+      }, {}),
+      defaultDoses: customCompounds.reduce((acc, key) => {
+        const settings = customRanges[key] || deriveDefaultRange(key);
+        acc[key] = settings.base;
+        return acc;
+      }, {}),
+      steps: 3,
+      goal: customGoal
+    };
+    const results = generateCustomStackResults({
+      combo,
+      profile: userProfile,
+      goalOverride: customGoal
+    });
+    setCustomResults(results);
   };
 
   useEffect(() => {
@@ -218,6 +314,11 @@ const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
     return [`${value.toFixed(2)}`, name];
   };
 
+  const customAvailableCompounds = useMemo(
+    () => allCompoundKeys.filter(key => !customCompounds.includes(key)),
+    [allCompoundKeys, customCompounds]
+  );
+
   const stackResults = useMemo(() => {
     return generateStackOptimizerResults({
       profile: userProfile,
@@ -337,6 +438,23 @@ const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
             </button>
             <PDFExport chartRef={pairDetailRef} filename="interaction-report.pdf" />
           </div>
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-4">
+          <label className="flex-1 text-xs text-physio-text-secondary">
+            Jump to interaction
+            <select
+              value={selectedPairId}
+              onChange={e => handlePairChange(e.target.value)}
+              className="mt-1 w-full bg-physio-bg-core border border-physio-bg-border rounded-lg px-3 py-2 text-sm text-physio-text-primary"
+            >
+              {pairOptions.map(option => (
+                <option key={option.id} value={option.id} className="bg-physio-bg-core text-physio-text-primary">
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         {/* Dimension selector */}
@@ -554,6 +672,9 @@ const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
                     Net {result.score.toFixed(2)}
                   </span>
                 </div>
+                <p className="text-xs text-physio-text-secondary">
+                  {stackOptimizerCombos.find(combo => combo.id === result.comboId)?.narrative || result.narrative}
+                </p>
                 <div className="space-y-1 text-sm text-physio-text-primary">
                   {result.compounds.map(compoundKey => (
                     <div key={compoundKey}>
@@ -587,6 +708,141 @@ const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
             ))}
           </div>
         )}
+        <div className="border-t border-physio-bg-border pt-6 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <h4 className="text-lg font-semibold text-physio-text-primary">Custom Stack Optimizer</h4>
+              <p className="text-xs text-physio-text-secondary">Pick up to four compounds, define dose windows, and let the engine hunt for sweet spots.</p>
+            </div>
+            <div className="flex gap-2 text-xs items-center">
+              <label className="text-physio-text-secondary flex items-center gap-2">
+                Goal preset
+                <select
+                  value={customGoal}
+                  onChange={e => setCustomGoal(e.target.value)}
+                  className="bg-physio-bg-core border border-physio-bg-border rounded-lg px-2 py-1 text-physio-text-primary"
+                >
+                  {Object.entries(goalPresets).map(([key, preset]) => (
+                    <option key={key} value={key}>{preset.label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-3">
+            <select
+              value={customSelection}
+              onChange={e => setCustomSelection(e.target.value)}
+              className="flex-1 bg-physio-bg-core border border-physio-bg-border rounded-lg px-3 py-2 text-sm text-physio-text-primary"
+            >
+              <option value="">Add compound…</option>
+              {customAvailableCompounds.map(key => (
+                <option key={key} value={key}>
+                  {compoundData[key]?.name || key}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleAddCustomCompound}
+              className="px-4 py-2 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan font-semibold hover:bg-physio-accent-cyan/10 disabled:opacity-40"
+              disabled={!customSelection}
+            >
+              Add
+            </button>
+            <button
+              onClick={() => {
+                setCustomCompounds([]);
+                setCustomRanges({});
+                setCustomResults([]);
+              }}
+              className="px-4 py-2 rounded-lg border border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
+            >
+              Clear
+            </button>
+          </div>
+
+          {customCompounds.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {customCompounds.map(compoundKey => {
+                const settings = customRanges[compoundKey] || deriveDefaultRange(compoundKey);
+                return (
+                  <div key={compoundKey} className="border border-physio-bg-border rounded-lg p-4 bg-physio-bg-core text-sm space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-physio-text-primary">{compoundData[compoundKey]?.name}</span>
+                      <button
+                        onClick={() => handleRemoveCustomCompound(compoundKey)}
+                        className="text-xs text-physio-error"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    {['min', 'max', 'base'].map(field => (
+                      <label key={field} className="text-xs text-physio-text-secondary flex items-center justify-between gap-2">
+                        {field === 'base' ? 'Target' : field === 'min' ? 'Min' : 'Max'} dose (mg)
+                        <input
+                          type="number"
+                          value={settings[field]}
+                          onChange={e => handleCustomRangeChange(compoundKey, field, e.target.value)}
+                          className="w-24 bg-physio-bg-tertiary border border-physio-bg-border rounded px-2 py-1 text-sm text-physio-text-primary"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <button
+            onClick={handleRunCustomOptimizer}
+            disabled={!customCompounds.length}
+            className="px-4 py-2 rounded-lg bg-physio-accent-cyan text-physio-bg-core font-semibold hover:bg-physio-accent-cyan/80 disabled:bg-physio-bg-border disabled:text-physio-text-tertiary"
+          >
+            Run custom optimizer
+          </button>
+
+          {customResults.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {customResults.map((result, idx) => (
+                <article key={`custom-${idx}-${Object.values(result.doses).join('-')}`} className="border border-physio-bg-border rounded-xl p-4 bg-physio-bg-secondary flex flex-col gap-3">
+                  <div className="flex items-center justify-between text-xs text-physio-text-tertiary">
+                    <span>User-defined Stack #{idx + 1}</span>
+                    <span className={`font-semibold ${result.score >= 0 ? 'text-physio-accent-cyan' : 'text-physio-error'}`}>
+                      Net {result.score.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="space-y-1 text-sm text-physio-text-primary">
+                    {result.compounds.map(compoundKey => (
+                      <div key={compoundKey}>
+                        {compoundData[compoundKey]?.abbreviation || compoundKey}: <strong>{result.doses[compoundKey]} mg</strong>
+                        <span className="text-xs text-physio-text-tertiary"> {compoundData[compoundKey]?.type === 'oral' ? 'per day' : 'per week'}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-4 text-xs text-physio-text-secondary">
+                    <span>Benefit {result.adjustedBenefit.toFixed(2)}</span>
+                    <span>Risk {result.adjustedRisk.toFixed(2)}</span>
+                    <span>Ratio {result.ratio.toFixed(2)}</span>
+                  </div>
+                  <button
+                    onClick={() =>
+                      onPrefillStack?.(
+                        result.compounds.map(compoundKey => ({
+                          compound: compoundKey,
+                          dose: result.doses[compoundKey]
+                        }))
+                      )
+                    }
+                    className="mt-2 px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
+                  >
+                    Load in Stack Builder
+                  </button>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
       </div>
 

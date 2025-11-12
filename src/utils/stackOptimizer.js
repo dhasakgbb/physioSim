@@ -1,5 +1,4 @@
 import { stackOptimizerCombos, goalPresets } from '../data/interactionEngineData';
-import { compoundData } from '../data/compoundData';
 import { evaluateCompoundResponse } from './interactionEngine';
 import { calculateStackSynergy } from '../data/interactionMatrix';
 
@@ -20,8 +19,8 @@ const buildDoseSamples = (min, max, steps, base) => {
   return samples;
 };
 
-const cartesianProduct = (arrays) => {
-  return arrays.reduce((acc, curr) => {
+const cartesianProduct = (arrays) =>
+  arrays.reduce((acc, curr) => {
     const res = [];
     acc.forEach(prefix => {
       curr.forEach(item => {
@@ -30,7 +29,6 @@ const cartesianProduct = (arrays) => {
     });
     return res;
   }, [[]]);
-};
 
 const computeBaseScores = (compounds, doses, profile) => {
   let benefit = 0;
@@ -62,52 +60,63 @@ const scoreStack = (benefit, risk, presetKey) => {
 
   const score = benefit * benefitWeight - risk * riskWeight;
   const ratio = risk > 0 ? benefit / risk : benefit;
-  return { score, ratio, benefitWeight, riskWeight };
+  return { score, ratio };
 };
 
-export const generateStackOptimizerResults = ({ profile, goalOverride }) => {
-  const results = [];
+const optimizeCombo = ({ combo, profile, goalOverride }) => {
+  const { compounds, doseRanges, defaultDoses = {}, steps = 3, id, label, narrative, goal } = combo;
+  if (!compounds?.length) return [];
+  const presetKey = goalOverride || goal || 'lean_mass';
 
-  stackOptimizerCombos.forEach(combo => {
-    const { compounds, doseRanges, defaultDoses, steps = 3, id, label } = combo;
-    const presetKey = goalOverride || combo.goal || 'lean_mass';
-
-    const samples = compounds.map(compoundKey => {
-      const [min, max] = doseRanges[compoundKey] || [0, 1000];
-      const base = defaultDoses[compoundKey] ?? (min + max) / 2;
-      return buildDoseSamples(min, max, steps, base);
-    });
-
-    const combinations = cartesianProduct(samples);
-
-    combinations.forEach(sample => {
-      const doses = {};
-      compounds.forEach((compoundKey, idx) => {
-        doses[compoundKey] = sample[idx];
-      });
-
-      const base = computeBaseScores(compounds, doses, profile);
-      const withSynergy = applySynergy(base.benefit, base.risk, compounds);
-      const scoring = scoreStack(withSynergy.adjustedBenefit, withSynergy.adjustedRisk, presetKey);
-
-      results.push({
-        comboId: id,
-        label,
-        compounds,
-        doses,
-        baseBenefit: base.benefit,
-        baseRisk: base.risk,
-        adjustedBenefit: withSynergy.adjustedBenefit,
-        adjustedRisk: withSynergy.adjustedRisk,
-        synergy: withSynergy.synergy,
-        score: scoring.score,
-        ratio: scoring.ratio,
-        presetKey
-      });
-    });
+  const samples = compounds.map(compoundKey => {
+    const [min, max] = doseRanges?.[compoundKey] || [0, 1000];
+    const base = defaultDoses[compoundKey] ?? (min + max) / 2;
+    return buildDoseSamples(min, max, steps, base);
   });
 
+  const combinations = cartesianProduct(samples);
+  const results = combinations.map(sample => {
+    const doses = {};
+    compounds.forEach((compoundKey, idx) => {
+      doses[compoundKey] = sample[idx];
+    });
+
+    const base = computeBaseScores(compounds, doses, profile);
+    const withSynergy = applySynergy(base.benefit, base.risk, compounds);
+    const scoring = scoreStack(withSynergy.adjustedBenefit, withSynergy.adjustedRisk, presetKey);
+
+    return {
+      comboId: id,
+      label,
+      narrative: narrative || '',
+      compounds,
+      doses,
+      baseBenefit: base.benefit,
+      baseRisk: base.risk,
+      adjustedBenefit: withSynergy.adjustedBenefit,
+      adjustedRisk: withSynergy.adjustedRisk,
+      synergy: withSynergy.synergy,
+      score: scoring.score,
+      ratio: scoring.ratio,
+      presetKey
+    };
+  });
+
+  return results;
+};
+
+export const runStackOptimizer = ({ combos, profile, goalOverride }) => {
+  const results = [];
+  combos.forEach(combo => {
+    results.push(...optimizeCombo({ combo, profile, goalOverride }));
+  });
   return results
     .sort((a, b) => b.score - a.score)
     .slice(0, 4);
 };
+
+export const generateStackOptimizerResults = ({ profile, goalOverride }) =>
+  runStackOptimizer({ combos: stackOptimizerCombos, profile, goalOverride });
+
+export const generateCustomStackResults = ({ combo, profile, goalOverride }) =>
+  runStackOptimizer({ combos: [combo], profile, goalOverride }).slice(0, 3);
