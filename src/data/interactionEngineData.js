@@ -1,0 +1,638 @@
+export const interactionDimensions = {
+  anabolic: {
+    label: 'Lean Mass',
+    type: 'benefit',
+    color: '#0EA5E9',
+    description: 'Pure anabolic synergy, net muscle accrual rate.'
+  },
+  vascularity: {
+    label: 'Vascularity / Cosmetic',
+    type: 'benefit',
+    color: '#14B8A6',
+    description: 'Dryness, vascularity, stage-ready look.'
+  },
+  strength: {
+    label: 'Strength Output',
+    type: 'benefit',
+    color: '#6366F1',
+    description: 'Neural drive + glycogen leverage.'
+  },
+  joint: {
+    label: 'Joint Comfort',
+    type: 'benefit',
+    color: '#10B981',
+    description: 'Synovial relief, soft tissue padding.'
+  },
+  bp: {
+    label: 'Blood Pressure / Cardio',
+    type: 'risk',
+    color: '#FB923C',
+    description: 'Systemic blood pressure, cardiac strain.'
+  },
+  hematocrit: {
+    label: 'Hematocrit / RBC',
+    type: 'risk',
+    color: '#FACC15',
+    description: 'HCT elevation, blood viscosity.'
+  },
+  bloat: {
+    label: 'Estrogenic / Bloat',
+    type: 'risk',
+    color: '#F97316',
+    description: 'Water retention, comfort, visual softness.'
+  },
+  neuro: {
+    label: 'Neuro / Psychological',
+    type: 'risk',
+    color: '#F472B6',
+    description: 'Anxiety, insomnia, aggression.'
+  },
+  estrogenic: {
+    label: 'Estrogen Deficit',
+    type: 'risk',
+    color: '#EC4899',
+    description: 'Too-low E2, libido, joint pain.'
+  },
+  hepatic: {
+    label: 'Hepatic / Lipids',
+    type: 'risk',
+    color: '#EF4444',
+    description: 'Liver enzymes, HDL/LDL destruction.'
+  }
+};
+
+export const interactionHeatmapModes = [
+  { key: 'benefit', label: 'Benefit Focus', description: 'Highlights strong positive synergies.' },
+  { key: 'risk', label: 'Risk Focus', description: 'Highlights penalty-heavy stacks.' },
+  { key: 'volatility', label: 'Volatility', description: 'Large swings (good or bad) show up hot.' }
+];
+
+export const defaultSensitivities = {
+  estrogen: 1,
+  water: 1,
+  neuro: 1,
+  cardio: 1
+};
+
+export const goalPresets = {
+  lean_mass: {
+    label: 'Lean Mass Engine',
+    benefitWeights: { anabolic: 1, vascularity: 0.5, strength: 0.4 },
+    riskWeights: { bp: 0.4, hematocrit: 0.5, bloat: 0.2 }
+  },
+  dry_cosmetic: {
+    label: 'Photoshoot Dryness',
+    benefitWeights: { vascularity: 1, anabolic: 0.4 },
+    riskWeights: { estrogenic: 0.7, bloat: 0.7, neuro: 0.3 }
+  },
+  joint_friendly: {
+    label: 'Joint-Friendly Recomp',
+    benefitWeights: { joint: 1, anabolic: 0.5, strength: 0.3 },
+    riskWeights: { bp: 0.3, bloat: 0.3, hepatic: 0.3 }
+  },
+  neuro_safe: {
+    label: 'Neuro-Stable Stack',
+    benefitWeights: { anabolic: 0.6, joint: 0.3 },
+    riskWeights: { neuro: 1, bp: 0.4, hematocrit: 0.2 }
+  }
+};
+
+export const stackOptimizerCombos = [
+  {
+    id: 'lean_mass_triple',
+    label: 'Lean Mass / Vascularity',
+    compounds: ['testosterone', 'eq', 'masteron'],
+    defaultDoses: { testosterone: 450, eq: 600, masteron: 350 },
+    doseRanges: {
+      testosterone: [200, 900],
+      eq: [300, 900],
+      masteron: [200, 500]
+    },
+    steps: 3,
+    goal: 'lean_mass'
+  },
+  {
+    id: 'recomp_tren_stack',
+    label: 'Aggressive Recomp',
+    compounds: ['testosterone', 'trenbolone', 'masteron'],
+    defaultDoses: { testosterone: 400, trenbolone: 250, masteron: 400 },
+    doseRanges: {
+      testosterone: [250, 700],
+      trenbolone: [150, 400],
+      masteron: [200, 500]
+    },
+    steps: 3,
+    goal: 'dry_cosmetic'
+  },
+  {
+    id: 'joint_strength_stack',
+    label: 'Joint-Friendly Strength',
+    compounds: ['testosterone', 'npp', 'dianabol'],
+    defaultDoses: { testosterone: 500, npp: 350, dianabol: 30 },
+    doseRanges: {
+      testosterone: [300, 800],
+      npp: [200, 500],
+      dianabol: [20, 50]
+    },
+    steps: 3,
+    goal: 'joint_friendly'
+  },
+  {
+    id: 'endurance_cut_stack',
+    label: 'Endurance Cut',
+    compounds: ['testosterone', 'eq', 'anavar'],
+    defaultDoses: { testosterone: 300, eq: 600, anavar: 50 },
+    doseRanges: {
+      testosterone: [200, 600],
+      eq: [400, 900],
+      anavar: [30, 60]
+    },
+    steps: 3,
+    goal: 'lean_mass'
+  }
+];
+
+export const interactionPairs = {
+  testosterone_npp: {
+    id: 'testosterone_npp',
+    compounds: ['testosterone', 'npp'],
+    label: 'Testosterone + NPP',
+    summary: 'Classic mass stack: Test base with nandrolone joint relief and fullness.',
+    defaultDimension: 'anabolic',
+    doseRanges: {
+      testosterone: [0, 1000],
+      npp: [0, 600]
+    },
+    defaultDoses: {
+      testosterone: 500,
+      npp: 300
+    },
+    synergy: {
+      anabolic: 0.3,
+      joint: 0.45,
+      strength: 0.2
+    },
+    penalties: {
+      bloat: 0.25,
+      estrogenic: 0.2,
+      neuro: 0.12
+    },
+    dimensionWeights: {
+      anabolic: { testosterone: 1, npp: 0.8 },
+      joint: { npp: 1 },
+      strength: { testosterone: 0.7, npp: 0.4 },
+      bloat: { testosterone: 0.7, npp: 0.6 },
+      estrogenic: { testosterone: 0.8, npp: 0.4 },
+      neuro: { npp: 0.5 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 350, d50B: 250, n: 2.1 }
+    },
+    evidence: {
+      clinical: 0.45,
+      anecdote: 0.55,
+      updated: '2025-01'
+    },
+    narratives: {
+      highlight: 'NPP bolsters connective tissue and adds lean tissue density on top of a Test base.',
+      caution: 'Dual estrogen/progestin management required; prolactin creeps fast above 350mg.'
+    }
+  },
+  testosterone_eq: {
+    id: 'testosterone_eq',
+    compounds: ['testosterone', 'eq'],
+    label: 'Testosterone + EQ',
+    summary: 'Classic lean-mass + endurance stack with RBC watch-outs.',
+    defaultDimension: 'anabolic',
+    doseRanges: {
+      testosterone: [0, 1000],
+      eq: [0, 1000]
+    },
+    defaultDoses: {
+      testosterone: 400,
+      eq: 500
+    },
+    synergy: {
+      anabolic: 0.35,
+      vascularity: 0.45
+    },
+    penalties: {
+      bp: 0.25,
+      hematocrit: 0.4,
+      bloat: 0.12
+    },
+    dimensionWeights: {
+      anabolic: { testosterone: 1, eq: 0.85 },
+      vascularity: { eq: 1, testosterone: 0.3 },
+      bp: { testosterone: 0.6, eq: 0.8 },
+      hematocrit: { eq: 1, testosterone: 0.4 },
+      bloat: { testosterone: 0.7 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 350, d50B: 450, n: 2 }
+    },
+    evidence: {
+      clinical: 0.55,
+      anecdote: 0.45,
+      updated: '2025-02'
+    },
+    narratives: {
+      highlight: 'EQ amplifies lean mass per mg and adds vascularity when RBC is managed.',
+      caution: 'Hematocrit climbs quickly; blood donation cadence becomes the limiting factor.'
+    }
+  },
+  testosterone_trenbolone: {
+    id: 'testosterone_trenbolone',
+    compounds: ['testosterone', 'trenbolone'],
+    label: 'Testosterone + Tren',
+    summary: 'Aggressive recomp engine with enormous neuro/cardio tax.',
+    defaultDimension: 'strength',
+    doseRanges: {
+      testosterone: [0, 900],
+      trenbolone: [0, 600]
+    },
+    defaultDoses: {
+      testosterone: 500,
+      trenbolone: 250
+    },
+    synergy: {
+      anabolic: 0.45,
+      strength: 0.55,
+      vascularity: 0.3
+    },
+    penalties: {
+      neuro: 0.55,
+      bp: 0.4,
+      hepatic: 0.2
+    },
+    dimensionWeights: {
+      anabolic: { testosterone: 0.8, trenbolone: 1 },
+      strength: { trenbolone: 1, testosterone: 0.5 },
+      vascularity: { trenbolone: 0.6, testosterone: 0.2 },
+      neuro: { trenbolone: 1 },
+      bp: { testosterone: 0.6, trenbolone: 0.7 },
+      hepatic: { trenbolone: 0.4 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 350, d50B: 200, n: 2.4 }
+    },
+    evidence: {
+      clinical: 0.25,
+      anecdote: 0.75,
+      updated: '2025-02'
+    },
+    narratives: {
+      highlight: 'Tren’s androgen receptor efficiency spikes when backed by ample Test, enabling drastic recomp.',
+      caution: 'Psychological volatility and BP load explode beyond 300mg Tren if Test stays high; cap duration to 10-12 weeks.'
+    }
+  },
+  testosterone_masteron: {
+    id: 'testosterone_masteron',
+    compounds: ['testosterone', 'masteron'],
+    label: 'Testosterone + Masteron',
+    summary: 'Test base with cosmetic hardness and anti-estrogen support.',
+    defaultDimension: 'vascularity',
+    doseRanges: {
+      testosterone: [0, 900],
+      masteron: [0, 600]
+    },
+    defaultDoses: {
+      testosterone: 450,
+      masteron: 400
+    },
+    synergy: {
+      vascularity: 0.5,
+      anabolic: 0.15
+    },
+    penalties: {
+      estrogenic: 0.25,
+      neuro: 0.1
+    },
+    dimensionWeights: {
+      vascularity: { masteron: 1, testosterone: 0.4 },
+      anabolic: { testosterone: 1, masteron: 0.3 },
+      estrogenic: { masteron: 0.9, testosterone: 0.4 },
+      neuro: { masteron: 0.2 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 350, d50B: 300, n: 2 }
+    },
+    evidence: {
+      clinical: 0.35,
+      anecdote: 0.65,
+      updated: '2025-02'
+    },
+    narratives: {
+      highlight: 'Masteron trims water and adds graininess while the Test base preserves libido and drive.',
+      caution: 'Low E2 risk if total aromatizing dose is modest; monitor joints/libido when running high Mast ratios.'
+    }
+  },
+  testosterone_primobolan: {
+    id: 'testosterone_primobolan',
+    compounds: ['testosterone', 'primobolan'],
+    label: 'Testosterone + Primo',
+    summary: 'High-safety lean tissue stack favored for long cruises.',
+    defaultDimension: 'anabolic',
+    doseRanges: {
+      testosterone: [0, 900],
+      primobolan: [0, 800]
+    },
+    defaultDoses: {
+      testosterone: 350,
+      primobolan: 500
+    },
+    synergy: {
+      anabolic: 0.2,
+      vascularity: 0.25
+    },
+    penalties: {
+      bp: 0.12,
+      hepatic: 0.05
+    },
+    dimensionWeights: {
+      anabolic: { primobolan: 0.9, testosterone: 0.6 },
+      vascularity: { primobolan: 1 },
+      bp: { testosterone: 0.5 },
+      hepatic: { primobolan: 0.2 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 300, d50B: 450, n: 2 }
+    },
+    evidence: {
+      clinical: 0.4,
+      anecdote: 0.6,
+      updated: '2025-01'
+    },
+    narratives: {
+      highlight: 'Primo extends the anabolic curve without aromatase baggage, perfect for long recomp blocks.',
+      caution: 'Under-dosed raws common; verify supply. Mild but cumulative RBC impact when run >16 weeks.'
+    }
+  },
+  trenbolone_masteron: {
+    id: 'trenbolone_masteron',
+    compounds: ['trenbolone', 'masteron'],
+    label: 'Tren + Masteron',
+    summary: 'Ultra-dry cosmetic synergy with estrogen deficit risk.',
+    defaultDimension: 'vascularity',
+    doseRanges: {
+      trenbolone: [0, 600],
+      masteron: [0, 600]
+    },
+    defaultDoses: {
+      trenbolone: 250,
+      masteron: 400
+    },
+    synergy: {
+      vascularity: 0.55,
+      strength: 0.25
+    },
+    penalties: {
+      estrogenic: 0.4,
+      neuro: 0.35,
+      hepatic: 0.15
+    },
+    dimensionWeights: {
+      vascularity: { masteron: 1, trenbolone: 0.4 },
+      strength: { trenbolone: 1 },
+      estrogenic: { masteron: 0.9, trenbolone: 0.4 },
+      neuro: { trenbolone: 1 },
+      hepatic: { trenbolone: 0.5, masteron: 0.2 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 200, d50B: 300, n: 2.2 }
+    },
+    evidence: {
+      clinical: 0.2,
+      anecdote: 0.8,
+      updated: '2025-01'
+    },
+    narratives: {
+      highlight: 'Stage hardness and dryness shoot up when Tren’s aggression is balanced by Mast’s anti-estrogenic edge.',
+      caution: 'Too little baseline Test drives estrogen deficit: libido crash, flat mood, joint pain.'
+    }
+  },
+  trenbolone_eq: {
+    id: 'trenbolone_eq',
+    compounds: ['trenbolone', 'eq'],
+    label: 'Tren + EQ',
+    summary: 'Endurance + recomp mashup for contest preps with high RBC vigilance.',
+    defaultDimension: 'anabolic',
+    doseRanges: {
+      trenbolone: [0, 600],
+      eq: [0, 1000]
+    },
+    defaultDoses: {
+      trenbolone: 250,
+      eq: 600
+    },
+    synergy: {
+      anabolic: 0.3,
+      vascularity: 0.35
+    },
+    penalties: {
+      bp: 0.5,
+      hematocrit: 0.6,
+      neuro: 0.3
+    },
+    dimensionWeights: {
+      anabolic: { trenbolone: 1, eq: 0.6 },
+      vascularity: { eq: 1, trenbolone: 0.4 },
+      bp: { eq: 0.8, trenbolone: 0.5 },
+      hematocrit: { eq: 1 },
+      neuro: { trenbolone: 1 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 220, d50B: 500, n: 2.1 }
+    },
+    evidence: {
+      clinical: 0.2,
+      anecdote: 0.8,
+      updated: '2025-02'
+    },
+    narratives: {
+      highlight: 'EQ’s appetite/endurance dampens Tren lethargy, enabling brutal prep blocks.',
+      caution: 'RBC and BP skyrocket; mandatory phlebotomy schedule and cardiology-level monitoring.'
+    }
+  },
+  npp_dianabol: {
+    id: 'npp_dianabol',
+    compounds: ['npp', 'dianabol'],
+    label: 'NPP + Dbol',
+    summary: 'Joint-friendly brute strength with massive bloat and BP penalties.',
+    defaultDimension: 'strength',
+    doseRanges: {
+      npp: [0, 600],
+      dianabol: [0, 80]
+    },
+    defaultDoses: {
+      npp: 300,
+      dianabol: 30
+    },
+    synergy: {
+      strength: 0.5,
+      joint: 0.25
+    },
+    penalties: {
+      bloat: 0.55,
+      bp: 0.4,
+      hepatic: 0.45
+    },
+    dimensionWeights: {
+      strength: { npp: 0.8, dianabol: 1 },
+      joint: { npp: 1 },
+      bloat: { dianabol: 1 },
+      bp: { npp: 0.5, dianabol: 0.9 },
+      hepatic: { dianabol: 1 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 250, d50B: 35, n: 2.4 }
+    },
+    evidence: {
+      clinical: 0.15,
+      anecdote: 0.85,
+      updated: '2024-12'
+    },
+    narratives: {
+      highlight: 'Explosive strength jumps with knees and elbows thanking you thanks to NPP.',
+      caution: 'Bloat and BP skyrocket beyond 30mg Dbol; hepatic strain is the hard stop.'
+    }
+  },
+  testosterone_dianabol: {
+    id: 'testosterone_dianabol',
+    compounds: ['testosterone', 'dianabol'],
+    label: 'Test + Dbol',
+    summary: 'Classic mass + strength kickstart with heavy estrogenic burden.',
+    defaultDimension: 'strength',
+    doseRanges: {
+      testosterone: [0, 900],
+      dianabol: [0, 60]
+    },
+    defaultDoses: {
+      testosterone: 500,
+      dianabol: 30
+    },
+    synergy: {
+      strength: 0.55,
+      anabolic: 0.3
+    },
+    penalties: {
+      bloat: 0.6,
+      bp: 0.4,
+      hepatic: 0.35
+    },
+    dimensionWeights: {
+      strength: { testosterone: 0.7, dianabol: 1 },
+      anabolic: { testosterone: 1, dianabol: 0.8 },
+      bloat: { dianabol: 1 },
+      bp: { testosterone: 0.5, dianabol: 0.8 },
+      hepatic: { dianabol: 1 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 400, d50B: 25, n: 2.2 }
+    },
+    evidence: {
+      clinical: 0.3,
+      anecdote: 0.7,
+      updated: '2024-12'
+    },
+    narratives: {
+      highlight: 'Dbol multiplies Test’s acute glycogen swell, translating to 2-3 week strength ramps.',
+      caution: 'Estrogenic/bloat management becomes the limiting factor; liver strain beyond 40mg is exponential.'
+    }
+  },
+  testosterone_anadrol: {
+    id: 'testosterone_anadrol',
+    compounds: ['testosterone', 'anadrol'],
+    label: 'Test + Anadrol',
+    summary: 'Seismic strength and fullness with immediate BP/hepatic warnings.',
+    defaultDimension: 'strength',
+    doseRanges: {
+      testosterone: [0, 900],
+      anadrol: [0, 100]
+    },
+    defaultDoses: {
+      testosterone: 500,
+      anadrol: 50
+    },
+    synergy: {
+      strength: 0.6,
+      anabolic: 0.25
+    },
+    penalties: {
+      bp: 0.55,
+      hepatic: 0.5,
+      bloat: 0.5
+    },
+    dimensionWeights: {
+      strength: { testosterone: 0.7, anadrol: 1 },
+      anabolic: { testosterone: 1, anadrol: 0.6 },
+      bp: { anadrol: 1, testosterone: 0.5 },
+      hepatic: { anadrol: 1 },
+      bloat: { anadrol: 0.9, testosterone: 0.4 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 400, d50B: 40, n: 2.3 }
+    },
+    evidence: {
+      clinical: 0.25,
+      anecdote: 0.75,
+      updated: '2025-02'
+    },
+    narratives: {
+      highlight: 'Powerlifters bank on the immediate leverage boost from Anadrol stacked atop Test.',
+      caution: 'BP and hepatic markers skyrocket—treat >50mg as redline territory.'
+    }
+  },
+  eq_anavar: {
+    id: 'eq_anavar',
+    compounds: ['eq', 'anavar'],
+    label: 'EQ + Anavar',
+    summary: 'Slow-burn lean gains with low aromatase burden and cardio focus.',
+    defaultDimension: 'anabolic',
+    doseRanges: {
+      eq: [0, 1000],
+      anavar: [0, 80]
+    },
+    defaultDoses: {
+      eq: 600,
+      anavar: 50
+    },
+    synergy: {
+      anabolic: 0.22,
+      vascularity: 0.35
+    },
+    penalties: {
+      hepatic: 0.25,
+      bp: 0.2
+    },
+    dimensionWeights: {
+      anabolic: { eq: 1, anavar: 0.5 },
+      vascularity: { eq: 0.7, anavar: 0.9 },
+      hepatic: { anavar: 1 },
+      bp: { eq: 0.7 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 500, d50B: 40, n: 2 }
+    },
+    evidence: {
+      clinical: 0.35,
+      anecdote: 0.65,
+      updated: '2025-01'
+    },
+    narratives: {
+      highlight: 'Anavar adds neural drive and hardness to EQ’s appetite/endurance platform.',
+      caution: 'Despite mild branding, hepatic stress accrues when Anavar is held beyond 8 weeks.'
+    }
+  }
+};

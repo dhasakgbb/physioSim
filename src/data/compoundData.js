@@ -11,6 +11,13 @@ export const compoundData = {
     abbreviation: 'Test',
     type: 'injectable',
     category: 'base',
+    modelConfidence: 0.81,
+    evidenceProvenance: { human: 5, animal: 1, aggregate: 4 },
+    varianceDrivers: [
+      'Interindividual aromatase rate (±20%) shifts risk/benefit simultaneously',
+      'SHBG binding differences change free testosterone availability',
+      'Adherence to AI/PCT protocols and training quality'
+    ],
     benefitCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
       { dose: 100, value: 0.83, tier: 'Tier 1', source: 'Bhasin et al. (1996)', caveat: 'Direct empirical data from RCT', ci: 0.15 },
@@ -107,6 +114,13 @@ export const compoundData = {
     abbreviation: 'NPP',
     type: 'injectable',
     category: 'progestin',
+    modelConfidence: 0.61,
+    evidenceProvenance: { human: 2, animal: 3, aggregate: 5 },
+    varianceDrivers: [
+      'Prolactin receptor sensitivity varies ±40%',
+      'Progesterone/E2 cross-talk (AI + caber compliance)',
+      'Short ester pharmacokinetics (missed injections swing levels)'
+    ],
     benefitCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
       { dose: 100, value: 1.5, tier: 'Tier 2', source: 'Therapeutic Deca studies extrapolated', caveat: 'Faster ester kinetics vs Deca', ci: 0.3 },
@@ -190,6 +204,13 @@ export const compoundData = {
     abbreviation: 'Tren',
     type: 'injectable',
     category: 'androgen',
+    modelConfidence: 0.44,
+    evidenceProvenance: { human: 0, animal: 4, aggregate: 7 },
+    varianceDrivers: [
+      'Sympathetic nervous system sensitivity (anxiety/insomnia)',
+      'CNS resilience and sleep debt management',
+      'Renal filtration/hematocrit interactions'
+    ],
     benefitCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
       { dose: 100, value: 2.67, tier: 'Tier 3', source: 'Yarrow et al. (2011) rat study HED-scaled', caveat: 'Animal data; high potency; steep rise', ci: 0.6 },
@@ -292,6 +313,13 @@ export const compoundData = {
     abbreviation: 'EQ',
     type: 'injectable',
     category: 'endurance',
+    modelConfidence: 0.58,
+    evidenceProvenance: { human: 1, animal: 3, aggregate: 4 },
+    varianceDrivers: [
+      'Baseline hematocrit/RBC levels dictate cardio risk',
+      'Mildly anxiogenic in some users (neuro variance)',
+      'Underdosing risk due to long ester + UGL concentration drift'
+    ],
     benefitCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
       { dose: 200, value: 0.5, tier: 'Tier 2', source: 'Veterinary data extrapolated', caveat: 'Mild anabolic (index ~50); gradual rise', ci: 0.4 },
@@ -371,6 +399,13 @@ export const compoundData = {
     abbreviation: 'Masteron',
     type: 'injectable',
     category: 'cosmetic',
+    modelConfidence: 0.55,
+    evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
+    varianceDrivers: [
+      'Requires low bodyfat (<12%) for cosmetic hardness effect',
+      'DHT-sensitivity (hairline/prostate) amplifies risk variance',
+      'Masteron crushes SHBG — stacking context matters'
+    ],
     benefitCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
       { dose: 200, value: 0.8, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Cosmetic (hardening, anti-E); low anabolic index ~40', ci: 0.5 },
@@ -443,6 +478,13 @@ export const compoundData = {
     abbreviation: 'Primo',
     type: 'injectable',
     category: 'mild',
+    modelConfidence: 0.57,
+    evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
+    varianceDrivers: [
+      'High counterfeit/underdosed risk (costly compound)',
+      'Needs caloric surplus + high protein to shine',
+      'Low aromatization → synergy depends on Test baseline'
+    ],
     benefitCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
       { dose: 100, value: 0.44, tier: 'Tier 2', source: 'Therapeutic data', caveat: 'Mild anabolic index ~44; lean gains', ci: 0.3 },
@@ -515,6 +557,13 @@ export const compoundData = {
     abbreviation: 'Dbol',
     type: 'oral',
     category: 'oral_kickstart',
+    modelConfidence: 0.33,
+    evidenceProvenance: { human: 0, animal: 1, aggregate: 6 },
+    varianceDrivers: [
+      'Sodium intake + water retention habits swing perceived benefit',
+      'Aromatase expression dictates gyno/HCT risk',
+      'Baseline liver enzymes determine tolerability'
+    ],
     usagePattern: 'Kickstart (weeks 1-4) or mid-cycle (weeks 5-8)',
     benefitCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
@@ -614,6 +663,13 @@ export const compoundData = {
     abbreviation: 'Adrol',
     type: 'oral',
     category: 'oral_mass',
+    modelConfidence: 0.31,
+    evidenceProvenance: { human: 1, animal: 1, aggregate: 5 },
+    varianceDrivers: [
+      'Idiosyncratic hepatic tolerance varies ±50%',
+      'Paradoxical estrogenic pathway differs per user',
+      'RBC expansion and BP response drive cardio strain'
+    ],
     usagePattern: 'Mid-cycle mass push (weeks 5-8) or finisher (weeks 9-12)',
     benefitCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
@@ -714,6 +770,13 @@ export const compoundData = {
     abbreviation: 'Winny',
     type: 'oral',
     category: 'oral_cutting',
+    modelConfidence: 0.4,
+    evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
+    varianceDrivers: [
+      'Joint/tendon resilience (connective tissue dryness)',
+      'CYP3A4 polymorphisms in hepatic metabolism',
+      'Baseline lipid profile and dietary fat intake'
+    ],
     usagePattern: 'Cutting/contest prep (last 6-8 weeks)',
     benefitCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
@@ -810,6 +873,13 @@ export const compoundData = {
     abbreviation: 'Var',
     type: 'oral',
     category: 'oral_mild',
+    modelConfidence: 0.48,
+    evidenceProvenance: { human: 2, animal: 1, aggregate: 4 },
+    varianceDrivers: [
+      '3β-HSD polymorphisms determine activation efficiency',
+      'Sex-specific metabolism (female-friendly compound) alters dose needs',
+      'UGL dosing accuracy (expensive raw material)'
+    ],
     usagePattern: 'Cutting/recomp (8-12 weeks) or female-friendly compound',
     benefitCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
@@ -900,6 +970,13 @@ export const compoundData = {
     abbreviation: 'Halo',
     type: 'oral',
     category: 'oral_extreme',
+    modelConfidence: 0.27,
+    evidenceProvenance: { human: 0, animal: 1, aggregate: 4 },
+    varianceDrivers: [
+      'Neurotransmitter sensitivity (aggression/anxiety)',
+      'Hepatic enzyme capacity (ALT/AST baseline)',
+      'Sleep quality + recovery debt prior to peaking'
+    ],
     usagePattern: 'Contest prep final 2-3 weeks or strength peaking (powerlifting meet)',
     benefitCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
@@ -1026,4 +1103,3 @@ This tool visualizes dose-response relationships based on limited human data, an
 • Risk curves are modeled, not empirically measured, at most doses.
 • Consult a healthcare provider before using AAS.
 • This tool assumes proper ancillary use, training, diet, and baseline health.`;
-

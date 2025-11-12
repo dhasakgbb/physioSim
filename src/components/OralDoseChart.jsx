@@ -1,12 +1,14 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, Area } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Area, Tooltip } from 'recharts';
 import { compoundData } from '../data/compoundData';
+import { personalizeScore } from '../utils/personalization';
+import HoverAnalyticsTooltip from './HoverAnalyticsTooltip';
 
 /**
  * Oral Compound Dose-Response Chart
  * Displays oral compounds on mg/day scale (0-100mg)
  */
-const OralDoseChart = ({ viewMode, visibleCompounds }) => {
+const OralDoseChart = ({ viewMode, visibleCompounds, userProfile }) => {
   // Filter for oral compounds only
   const oralCompounds = Object.entries(compoundData).filter(([key, data]) => data.type === 'oral');
   
@@ -17,30 +19,61 @@ const OralDoseChart = ({ viewMode, visibleCompounds }) => {
   }
   
   // Build chart data
+  const lastBenefitByCompound = {};
+  const lastRiskByCompound = {};
+  
   const chartData = dosePoints.map(dose => {
     const point = { dose };
     
     oralCompounds.forEach(([key, compound]) => {
       if (!visibleCompounds[key]) return;
-      
-      // Find benefit value at this dose
+
+      // Benefit personalization
       const benefitPoint = compound.benefitCurve.find(p => p.dose === dose) ||
         interpolate(compound.benefitCurve, dose);
-      
-      // Find risk value at this dose
+
+      // Risk personalization
       const riskPoint = compound.riskCurve.find(p => p.dose === dose) ||
         interpolate(compound.riskCurve, dose);
-      
+
       if (viewMode === 'benefit' || viewMode === 'integrated') {
-        point[`${key}_benefit`] = benefitPoint?.value || 0;
-        point[`${key}_benefit_lower`] = benefitPoint?.lower || benefitPoint?.value || 0;
-        point[`${key}_benefit_upper`] = benefitPoint?.upper || benefitPoint?.value || 0;
+        if (benefitPoint) {
+          const personalized = personalizeScore({
+            compoundKey: key,
+            curveType: 'benefit',
+            dose,
+            baseValue: benefitPoint.value,
+            baseCi: benefitPoint.ci,
+            profile: userProfile
+          });
+          const previous = lastBenefitByCompound[key];
+          point[`${key}_benefit`] = personalized.value;
+          point[`${key}_benefit_lower`] = Math.max(0, personalized.value - personalized.ci);
+          point[`${key}_benefit_upper`] = personalized.value + personalized.ci;
+          point[`${key}-benefit-prevDose`] = previous?.dose ?? null;
+          point[`${key}-benefit-delta`] = previous ? personalized.value - previous.value : null;
+          lastBenefitByCompound[key] = { dose, value: personalized.value };
+        }
       }
       
       if (viewMode === 'risk' || viewMode === 'integrated') {
-        point[`${key}_risk`] = riskPoint?.value || 0;
-        point[`${key}_risk_lower`] = riskPoint?.lower || riskPoint?.value || 0;
-        point[`${key}_risk_upper`] = riskPoint?.upper || riskPoint?.value || 0;
+        if (riskPoint) {
+          const personalized = personalizeScore({
+            compoundKey: key,
+            curveType: 'risk',
+            dose,
+            baseValue: riskPoint.value,
+            baseCi: riskPoint.ci,
+            profile: userProfile
+          });
+          const previous = lastRiskByCompound[key];
+          point[`${key}_risk`] = personalized.value;
+          point[`${key}_risk_lower`] = Math.max(0, personalized.value - personalized.ci);
+          point[`${key}_risk_upper`] = personalized.value + personalized.ci;
+          point[`${key}-risk-prevDose`] = previous?.dose ?? null;
+          point[`${key}-risk-delta`] = previous ? personalized.value - previous.value : null;
+          lastRiskByCompound[key] = { dose, value: personalized.value };
+        }
       }
     });
     
@@ -83,6 +116,17 @@ const OralDoseChart = ({ viewMode, visibleCompounds }) => {
             stroke="var(--physio-bg-border)"
           />
           
+          <Tooltip
+            content={(tooltipProps) => (
+              <HoverAnalyticsTooltip
+                {...tooltipProps}
+                visibleCompounds={visibleCompounds}
+                unit=" mg/day"
+              />
+            )}
+            cursor={{ stroke: 'var(--physio-accent-cyan)', strokeDasharray: '4 4' }}
+          />
+
           {/* Render uncertainty bands and lines for each oral compound */}
           {oralCompounds.map(([key, compound]) => {
             if (!visibleCompounds[key]) return null;
@@ -91,26 +135,46 @@ const OralDoseChart = ({ viewMode, visibleCompounds }) => {
               <React.Fragment key={key}>
                 {/* Benefit uncertainty band */}
                 {(viewMode === 'benefit' || viewMode === 'integrated') && (
-                  <Area
-                    type="monotone"
-                    dataKey={`${key}_benefit_upper`}
-                    stroke="none"
-                    fill={compound.color}
-                    fillOpacity={0.35}
-                    stackId={`${key}_benefit_band`}
-                  />
+                  <>
+                    <Area
+                      type="monotone"
+                      dataKey={`${key}_benefit_upper`}
+                      stroke="none"
+                      fill={compound.color}
+                      fillOpacity={0.35}
+                      isAnimationActive={false}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey={`${key}_benefit_lower`}
+                      stroke="none"
+                      fill={compound.color}
+                      fillOpacity={0.35}
+                      isAnimationActive={false}
+                    />
+                  </>
                 )}
                 
                 {/* Risk uncertainty band */}
                 {(viewMode === 'risk' || viewMode === 'integrated') && (
-                  <Area
-                    type="monotone"
-                    dataKey={`${key}_risk_upper`}
-                    stroke="none"
-                    fill={compound.color}
-                    fillOpacity={0.40}
-                    stackId={`${key}_risk_band`}
-                  />
+                  <>
+                    <Area
+                      type="monotone"
+                      dataKey={`${key}_risk_upper`}
+                      stroke="none"
+                      fill={compound.color}
+                      fillOpacity={0.4}
+                      isAnimationActive={false}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey={`${key}_risk_lower`}
+                      stroke="none"
+                      fill={compound.color}
+                      fillOpacity={0.4}
+                      isAnimationActive={false}
+                    />
+                  </>
                 )}
                 
                 {/* Benefit line */}
@@ -165,17 +229,11 @@ function interpolate(curve, dose) {
       // Linear interpolation
       const ratio = (dose - x0) / (x1 - x0);
       const value = y0 + ratio * (y1 - y0);
+      const ci0 = curve[i].ci ?? 0;
+      const ci1 = curve[i + 1].ci ?? 0;
+      const ci = ci0 + ratio * (ci1 - ci0);
       
-      // Interpolate bounds if they exist
-      const lower = curve[i].lower !== undefined && curve[i + 1].lower !== undefined
-        ? curve[i].lower + ratio * (curve[i + 1].lower - curve[i].lower)
-        : value;
-      
-      const upper = curve[i].upper !== undefined && curve[i + 1].upper !== undefined
-        ? curve[i].upper + ratio * (curve[i + 1].upper - curve[i].upper)
-        : value;
-      
-      return { value, lower, upper };
+      return { value, ci };
     }
   }
   
@@ -189,4 +247,3 @@ function interpolate(curve, dose) {
 }
 
 export default OralDoseChart;
-

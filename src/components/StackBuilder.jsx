@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { compoundData } from '../data/compoundData';
 import { calculateStackSynergy } from '../data/interactionMatrix';
 import { getAncillaryProtocol } from '../data/sideFxAndAncillaries';
@@ -63,11 +63,19 @@ const calculateRiskScore = (compoundKey, dose) => {
  * Stack Builder Component
  * Interactive tool for building compound stacks with metrics and ancillary calculations
  */
-const StackBuilder = () => {
+const StackBuilder = ({ prefillStack }) => {
   const [stack, setStack] = useState([]);
   const [selectedCompound, setSelectedCompound] = useState('');
   const [dose, setDose] = useState('');
   const stackRef = useRef(null);
+
+  useEffect(() => {
+    if (!prefillStack || !prefillStack.compounds?.length) return;
+    setStack(prefillStack.compounds.map(item => ({
+      compound: item.compound,
+      dose: item.dose
+    })));
+  }, [prefillStack]);
   
   // Calculate stack metrics
   const stackMetrics = useMemo(() => {
@@ -511,4 +519,3 @@ const StackBuilder = () => {
 };
 
 export default StackBuilder;
-

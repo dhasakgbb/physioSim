@@ -38,6 +38,8 @@ const CustomLegend = ({ visibleCompounds, toggleCompound, onMethodologyClick, on
         <div className="space-y-1">
           {compounds.map(([key, compound]) => {
             const isVisible = visibleCompounds[key];
+            const provenance = compound.evidenceProvenance || { human: 0, animal: 0, aggregate: 0 };
+            const tooltip = `${compound.name} • Confidence ${compound.modelConfidence?.toFixed?.(2) ?? 'n/a'} • Citations H:${provenance.human} A:${provenance.animal} Agg:${provenance.aggregate}`;
             
             return (
               <div
@@ -45,6 +47,7 @@ const CustomLegend = ({ visibleCompounds, toggleCompound, onMethodologyClick, on
                 className={`flex items-center p-1.5 rounded transition-all ${
                   isVisible ? 'hover:bg-physio-bg-secondary' : 'opacity-50'
                 }`}
+                title={tooltip}
               >
                 <button
                   onClick={() => toggleCompound(key)}
@@ -106,4 +109,3 @@ const CustomLegend = ({ visibleCompounds, toggleCompound, onMethodologyClick, on
 };
 
 export default CustomLegend;
-

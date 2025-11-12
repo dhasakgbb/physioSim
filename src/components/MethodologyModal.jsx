@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { compoundData, tierDescriptions } from '../data/compoundData';
 
+const describeConfidence = (score = 0) => {
+  if (score >= 0.75) return 'High confidence — human clinical anchors dominate.';
+  if (score >= 0.55) return 'Moderate confidence — mix of human data + extrapolation.';
+  if (score >= 0.4) return 'Caution — modeled/animal data heavy.';
+  return 'Experimental — primarily anecdotal inputs.';
+};
+
 const MethodologyModal = ({ compound, onClose }) => {
   const [expandedSections, setExpandedSections] = useState({
     benefit: false,
@@ -77,6 +84,46 @@ const MethodologyModal = ({ compound, onClose }) => {
             <p className="text-physio-text-primary font-semibold">{data.methodology.summary}</p>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="border border-physio-bg-border rounded-lg p-4 bg-physio-bg-core">
+              <div className="text-sm font-semibold text-physio-text-secondary mb-1">Model Confidence</div>
+              <div className="text-3xl font-bold text-physio-text-primary">
+                {(data.modelConfidence ?? 0).toFixed(2)}
+              </div>
+              <p className="text-xs text-physio-text-tertiary mt-1">{describeConfidence(data.modelConfidence)}</p>
+              {data.varianceDrivers && (
+                <div className="mt-2 text-xs text-physio-text-secondary">
+                  <span className="font-semibold text-physio-text-primary">Variance drivers:</span>{' '}
+                  {data.varianceDrivers.join(' • ')}
+                </div>
+              )}
+            </div>
+
+            <div className="border border-physio-bg-border rounded-lg p-4 bg-physio-bg-core">
+              <div className="text-sm font-semibold text-physio-text-secondary mb-2">Data Provenance</div>
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="bg-physio-bg-secondary rounded-lg p-2">
+                  <div className="uppercase text-[10px] text-physio-text-tertiary">Human</div>
+                  <div className="text-xl font-bold text-green-400">
+                    {data.evidenceProvenance?.human ?? 0}
+                  </div>
+                </div>
+                <div className="bg-physio-bg-secondary rounded-lg p-2">
+                  <div className="uppercase text-[10px] text-physio-text-tertiary">Animal</div>
+                  <div className="text-xl font-bold text-amber-400">
+                    {data.evidenceProvenance?.animal ?? 0}
+                  </div>
+                </div>
+                <div className="bg-physio-bg-secondary rounded-lg p-2">
+                  <div className="uppercase text-[10px] text-physio-text-tertiary">Aggregate</div>
+                  <div className="text-xl font-bold text-physio-accent-cyan">
+                    {data.evidenceProvenance?.aggregate ?? 0}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Limitations (Start expanded - most important) */}
           <CollapsibleSection id="limitations" icon="🚨" title="Key Limitations" bgColor="bg-red-50">
             <ul className="list-disc list-inside space-y-2">
@@ -141,4 +188,3 @@ const MethodologyModal = ({ compound, onClose }) => {
 };
 
 export default MethodologyModal;
-

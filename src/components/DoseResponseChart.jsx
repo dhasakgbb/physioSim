@@ -7,11 +7,14 @@ import {
   YAxis,
   CartesianGrid,
   ResponsiveContainer,
-  ReferenceLine
+  ReferenceLine,
+  Tooltip
 } from 'recharts';
 import { compoundData } from '../data/compoundData';
+import { personalizeScore } from '../utils/personalization';
+import HoverAnalyticsTooltip from './HoverAnalyticsTooltip';
 
-const DoseResponseChart = ({ viewMode, visibleCompounds }) => {
+const DoseResponseChart = ({ viewMode, visibleCompounds, userProfile }) => {
   const chartRef = useRef(null);
   const [zoomDomain, setZoomDomain] = useState({ x: [0, 1200], y: [0, 5.5] });
 
@@ -28,6 +31,8 @@ const DoseResponseChart = ({ viewMode, visibleCompounds }) => {
     });
 
     const sortedDoses = Array.from(allDoses).sort((a, b) => a - b);
+    const lastBenefit = {};
+    const lastRisk = {};
     
     return sortedDoses.map(dose => {
       const dataPoint = { dose };
@@ -38,17 +43,45 @@ const DoseResponseChart = ({ viewMode, visibleCompounds }) => {
         // Benefit data - only show where we have data
         const benefitPoint = compound.benefitCurve.find(p => p.dose === dose);
         if (benefitPoint) {
-          dataPoint[`${key}-benefit-value`] = benefitPoint.value;
-          dataPoint[`${key}-benefit-upper`] = benefitPoint.value + benefitPoint.ci;
-          dataPoint[`${key}-benefit-lower`] = Math.max(0, benefitPoint.value - benefitPoint.ci);
+          const personalized = personalizeScore({
+            compoundKey: key,
+            curveType: 'benefit',
+            dose,
+            baseValue: benefitPoint.value,
+            baseCi: benefitPoint.ci,
+            profile: userProfile
+          });
+          const previous = lastBenefit[key];
+
+          dataPoint[`${key}-benefit-value`] = personalized.value;
+          dataPoint[`${key}-benefit-upper`] = personalized.value + personalized.ci;
+          dataPoint[`${key}-benefit-lower`] = Math.max(0, personalized.value - personalized.ci);
+          dataPoint[`${key}-benefit-prevDose`] = previous?.dose ?? null;
+          dataPoint[`${key}-benefit-delta`] = previous ? personalized.value - previous.value : null;
+          
+          lastBenefit[key] = { dose, value: personalized.value };
         }
         
         // Risk data - only show where we have data
         const riskPoint = compound.riskCurve.find(p => p.dose === dose);
         if (riskPoint) {
-          dataPoint[`${key}-risk-value`] = riskPoint.value;
-          dataPoint[`${key}-risk-upper`] = riskPoint.value + riskPoint.ci;
-          dataPoint[`${key}-risk-lower`] = Math.max(0, riskPoint.value - riskPoint.ci);
+          const personalized = personalizeScore({
+            compoundKey: key,
+            curveType: 'risk',
+            dose,
+            baseValue: riskPoint.value,
+            baseCi: riskPoint.ci,
+            profile: userProfile
+          });
+          const previous = lastRisk[key];
+
+          dataPoint[`${key}-risk-value`] = personalized.value;
+          dataPoint[`${key}-risk-upper`] = personalized.value + personalized.ci;
+          dataPoint[`${key}-risk-lower`] = Math.max(0, personalized.value - personalized.ci);
+          dataPoint[`${key}-risk-prevDose`] = previous?.dose ?? null;
+          dataPoint[`${key}-risk-delta`] = previous ? personalized.value - previous.value : null;
+
+          lastRisk[key] = { dose, value: personalized.value };
         }
       });
       
@@ -118,6 +151,17 @@ const DoseResponseChart = ({ viewMode, visibleCompounds }) => {
               style: { fontSize: 14, fontWeight: 'bold' }
             }}
             tick={{ fontSize: 12 }}
+          />
+
+          <Tooltip
+            content={(tooltipProps) => (
+              <HoverAnalyticsTooltip
+                {...tooltipProps}
+                visibleCompounds={visibleCompounds}
+                unit=" mg/wk"
+              />
+            )}
+            cursor={{ stroke: 'var(--physio-accent-cyan)', strokeDasharray: '4 4' }}
           />
 
           {/* Render uncertainty bands and lines for each compound */}
@@ -211,4 +255,3 @@ const DoseResponseChart = ({ viewMode, visibleCompounds }) => {
 };
 
 export default DoseResponseChart;
-

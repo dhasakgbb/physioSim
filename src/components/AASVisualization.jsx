@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import ViewToggle from './ViewToggle';
 import DoseResponseChart from './DoseResponseChart';
 import OralDoseChart from './OralDoseChart';
@@ -9,7 +9,27 @@ import InteractionHeatmap from './InteractionHeatmap';
 import StackBuilder from './StackBuilder';
 import SideEffectProfile from './SideEffectProfile';
 import AncillaryCalculator from './AncillaryCalculator';
+import PersonalizationPanel from './PersonalizationPanel.jsx';
+import EvidencePanel from './EvidencePanel';
+import SweetSpotFinder from './SweetSpotFinder';
 import { compoundData } from '../data/compoundData';
+import { defaultProfile, PROFILE_STORAGE_KEY } from '../utils/personalization';
+
+const mergeStoredProfile = (storedProfile) => {
+  if (!storedProfile) return { ...defaultProfile };
+  return {
+    ...defaultProfile,
+    ...storedProfile,
+    labMode: {
+      ...defaultProfile.labMode,
+      ...(storedProfile.labMode || {}),
+      scales: {
+        ...defaultProfile.labMode.scales,
+        ...(storedProfile.labMode?.scales || {})
+      }
+    }
+  };
+};
 
 const AASVisualization = () => {
   // Active tab: 'injectables', 'orals', 'interactions', 'stack'
@@ -28,7 +48,43 @@ const AASVisualization = () => {
   
   // Methodology modal state
   const [selectedCompound, setSelectedCompound] = useState(null);
-  
+
+  // Personalization state
+  const [userProfile, setUserProfile] = useState(() => {
+    if (typeof window === 'undefined') return defaultProfile;
+    try {
+      const stored = window.localStorage.getItem(PROFILE_STORAGE_KEY);
+      if (!stored) return { ...defaultProfile };
+      const parsed = JSON.parse(stored);
+      return mergeStoredProfile(parsed);
+    } catch (error) {
+      console.warn('Failed to parse stored profile', error);
+      return { ...defaultProfile };
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(userProfile));
+    } catch (error) {
+      console.warn('Failed to persist profile', error);
+    }
+  }, [userProfile]);
+
+  const handleClearProfile = () => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(PROFILE_STORAGE_KEY);
+    }
+    setUserProfile({ ...defaultProfile });
+  };
+
+  const [stackPrefill, setStackPrefill] = useState(null);
+
+  const handlePrefillStack = (compounds) => {
+    setStackPrefill({ id: Date.now(), compounds });
+    setActiveTab('stack');
+  };
   // Reference for chart (for PDF export)
   const chartRef = useRef(null);
 
@@ -59,6 +115,12 @@ const AASVisualization = () => {
             Evidence-based harm reduction modeling with transparent uncertainty quantification
           </p>
         </header>
+
+        <PersonalizationPanel
+          profile={userProfile}
+          onProfileChange={setUserProfile}
+          onClearProfile={handleClearProfile}
+        />
 
         {/* Tab Navigation - Underline Style */}
         <div className="mb-8 border-b border-physio-bg-border">
@@ -129,7 +191,14 @@ const AASVisualization = () => {
             {/* Controls */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
               <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
-              <PDFExport chartRef={chartRef} />
+              <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+                <SweetSpotFinder
+                  compoundType="injectable"
+                  visibleCompounds={visibleCompounds}
+                  userProfile={userProfile}
+                />
+                <PDFExport chartRef={chartRef} />
+              </div>
             </div>
 
             {/* Main Content Grid */}
@@ -140,6 +209,7 @@ const AASVisualization = () => {
                   <DoseResponseChart
                     viewMode={viewMode}
                     visibleCompounds={visibleCompounds}
+                    userProfile={userProfile}
                   />
                 </div>
               </div>
@@ -187,7 +257,7 @@ const AASVisualization = () => {
                 </div>
                 <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-error">
                   <div className="font-bold text-physio-error mb-2">⚠️ High Risk = High Reward?</div>
-                  <div className="text-sm text-physio-text-primary"><strong>No.</strong> Trenbolone benefit plateaus at 300mg, but risk keeps climbing. Anadrol >75mg = hepatic crisis territory. More ≠ better at extreme doses.</div>
+                  <div className="text-sm text-physio-text-primary"><strong>No.</strong> Trenbolone benefit plateaus at 300mg, but risk keeps climbing. Anadrol &gt;75mg = hepatic crisis territory. More ≠ better at extreme doses.</div>
                 </div>
               </div>
             </div>
@@ -230,7 +300,14 @@ const AASVisualization = () => {
             {/* Controls */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
               <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
-              <PDFExport chartRef={chartRef} />
+              <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+                <SweetSpotFinder
+                  compoundType="oral"
+                  visibleCompounds={visibleCompounds}
+                  userProfile={userProfile}
+                />
+                <PDFExport chartRef={chartRef} />
+              </div>
             </div>
 
             {/* Main Content Grid */}
@@ -241,6 +318,7 @@ const AASVisualization = () => {
                   <OralDoseChart
                     viewMode={viewMode}
                     visibleCompounds={visibleCompounds}
+                    userProfile={userProfile}
                   />
                 </div>
               </div>
@@ -261,16 +339,24 @@ const AASVisualization = () => {
         {/* Interaction Matrix Tab */}
         {activeTab === 'interactions' && (
           <div className="mt-6">
-            <InteractionHeatmap />
+            <InteractionHeatmap
+              userProfile={userProfile}
+              onPrefillStack={handlePrefillStack}
+            />
           </div>
         )}
 
         {/* Stack Builder Tab */}
         {activeTab === 'stack' && (
           <div className="mt-6">
-            <StackBuilder />
+            <StackBuilder prefillStack={stackPrefill} />
           </div>
         )}
+
+        <EvidencePanel
+          activeTab={activeTab}
+          visibleCompounds={visibleCompounds}
+        />
 
 
         {/* Footer */}
@@ -297,4 +383,3 @@ const AASVisualization = () => {
 };
 
 export default AASVisualization;
-
