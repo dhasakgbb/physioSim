@@ -40,10 +40,14 @@ const computeBaseScores = (compounds, doses, profile) => {
   return { benefit, risk };
 };
 
-const applySynergy = (benefit, risk, compoundKeys) => {
-  const synergy = calculateStackSynergy(compoundKeys);
-  const adjustedBenefit = benefit * (1 + (synergy.benefitSynergy || 0));
-  const adjustedRisk = risk * (1 + (synergy.riskSynergy || 0));
+const applySynergy = (benefit, risk, compoundKeys, doses, profile) => {
+  const stackEntries = compoundKeys.map(key => ({
+    compound: key,
+    dose: doses[key]
+  }));
+  const synergy = calculateStackSynergy(stackEntries, { profile, doses });
+  const adjustedBenefit = benefit + (synergy.benefitSynergy || 0);
+  const adjustedRisk = risk + (synergy.riskSynergy || 0);
   return {
     adjustedBenefit,
     adjustedRisk,
@@ -51,7 +55,7 @@ const applySynergy = (benefit, risk, compoundKeys) => {
   };
 };
 
-const scoreStack = (benefit, risk, presetKey) => {
+export const scoreStack = (benefit, risk, presetKey) => {
   const preset = goalPresets[presetKey] || goalPresets.lean_mass;
   const benefitWeight =
     Object.values(preset.benefitWeights || {}).reduce((acc, value) => acc + value, 0) || 1;
@@ -82,7 +86,7 @@ const optimizeCombo = ({ combo, profile, goalOverride }) => {
     });
 
     const base = computeBaseScores(compounds, doses, profile);
-    const withSynergy = applySynergy(base.benefit, base.risk, compounds);
+    const withSynergy = applySynergy(base.benefit, base.risk, compounds, doses, profile);
     const scoring = scoreStack(withSynergy.adjustedBenefit, withSynergy.adjustedRisk, presetKey);
 
     return {

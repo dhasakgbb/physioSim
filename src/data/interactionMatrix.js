@@ -1,3 +1,6 @@
+import { interactionPairs, defaultSensitivities } from './interactionEngineData.js';
+import { evaluatePairDimension } from '../utils/interactionEngine.js';
+
 /**
  * AAS Compound Interaction Matrix
  * Defines synergy, compatibility, and risk interactions between compounds
@@ -12,6 +15,127 @@ export const heatmapScores = {
   caution: { symbol: '⚠️', color: '#FFB347', value: -1, label: 'Use with Caution' },
   dangerous: { symbol: '❌', color: '#FF6B6B', value: -2, label: 'Dangerous Combination' },
   forbidden: { symbol: '✗', color: '#8B0000', value: -3, label: 'Not Recommended' }
+};
+
+const DEFAULT_EVIDENCE_BLEND = 0.5;
+const EMPTY_SYNERGY = { benefitSynergy: 0, riskSynergy: 0 };
+
+const resolvePairKey = (compoundA, compoundB) => {
+  if (!compoundA || !compoundB || compoundA === compoundB) return null;
+  const forward = `${compoundA}_${compoundB}`;
+  if (interactionPairs[forward]) return forward;
+  const reverse = `${compoundB}_${compoundA}`;
+  if (interactionPairs[reverse]) return reverse;
+  return null;
+};
+
+const resolveCompoundKey = entry => {
+  if (!entry) return null;
+  if (typeof entry === 'string') return entry;
+  if (typeof entry === 'object') return entry.compound || entry.id || null;
+  return null;
+};
+
+const normalizeStackInput = (stackInput, providedDoses = {}) => {
+  const compounds = [];
+  const seen = new Set();
+  const doses = {};
+
+  const assignDose = (key, value) => {
+    if (!key) return;
+    const numeric = Number(value);
+    if (!Number.isNaN(numeric) && Number.isFinite(numeric)) {
+      doses[key] = numeric;
+    }
+  };
+
+  Object.entries(providedDoses || {}).forEach(([key, value]) => assignDose(key, value));
+
+  if (Array.isArray(stackInput)) {
+    stackInput.forEach(entry => {
+      const key = resolveCompoundKey(entry);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      compounds.push(key);
+      if (typeof entry === 'object' && entry.dose != null) {
+        assignDose(key, entry.dose);
+      }
+    });
+  } else if (stackInput && typeof stackInput === 'object') {
+    const { compounds: list = [], doses: map = {} } = stackInput;
+    list.forEach(key => {
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      compounds.push(key);
+    });
+    Object.entries(map).forEach(([key, value]) => assignDose(key, value));
+  }
+
+  return { compounds, doses };
+};
+
+const buildPairDoseMap = (pair, stackDoses = {}, useDefaults = true) => {
+  const map = { ...stackDoses };
+  pair.compounds.forEach(compoundKey => {
+    if (map[compoundKey] == null) {
+      const fallback = useDefaults ? pair.defaultDoses?.[compoundKey] : 0;
+      map[compoundKey] = typeof fallback === 'number' ? fallback : 0;
+    }
+  });
+  return map;
+};
+
+const evaluatePairSynergy = ({
+  pair,
+  doses,
+  profile,
+  sensitivities = defaultSensitivities,
+  evidenceBlend = DEFAULT_EVIDENCE_BLEND
+}) => {
+  const pairId = pair.id || pair.compounds.join('_');
+  let benefit = 0;
+  let risk = 0;
+
+  Object.keys(pair.synergy || {}).forEach(dimensionKey => {
+    const res = evaluatePairDimension({
+      pairId,
+      dimensionKey,
+      doses,
+      profile,
+      sensitivities,
+      evidenceBlend
+    });
+    if (res?.delta) {
+      benefit += res.delta;
+    }
+  });
+
+  Object.keys(pair.penalties || {}).forEach(dimensionKey => {
+    const res = evaluatePairDimension({
+      pairId,
+      dimensionKey,
+      doses,
+      profile,
+      sensitivities,
+      evidenceBlend
+    });
+    if (res?.delta) {
+      risk += Math.abs(res.delta);
+    }
+  });
+
+  return { benefit, risk };
+};
+
+const determineSynergyRating = (benefit, risk) => {
+  const net = benefit - risk;
+  if (risk >= 1.2) return 'forbidden';
+  if (risk >= 0.8) return 'dangerous';
+  if (risk >= 0.5 && net < 0.1) return 'caution';
+  if (net >= 0.8 && risk <= 0.4) return 'excellent';
+  if (net >= 0.3) return 'good';
+  if (net >= -0.2) return 'compatible';
+  return 'caution';
 };
 
 // Injectable-Injectable Interaction Matrix (15 pairs)
@@ -798,43 +922,97 @@ export const getInteraction = (compound1, compound2) => {
  * Get heatmap score for compound pair
  * Returns color, symbol, and rating for visual display
  */
-export const getInteractionScore = (compound1, compound2) => {
+export const getInteractionScore = (compound1, compound2, options = {}) => {
   if (compound1 === compound2) {
-    return { ...heatmapScores.compatible, symbol: '—', label: 'Same Compound' };
+    return { ...heatmapScores.compatible, symbol: '—', label: 'Same Compound', rating: 'same' };
   }
-  
-  const interaction = getInteraction(compound1, compound2);
-  
-  if (!interaction) {
-    return heatmapScores.compatible; // Default if no interaction defined
+
+  const pairKey = resolvePairKey(compound1, compound2);
+  if (!pairKey) {
+    const legacy = getInteraction(compound1, compound2);
+    if (legacy) {
+      const rating = legacy.rating || 'compatible';
+      return {
+        ...(heatmapScores[rating] || heatmapScores.compatible),
+        rating,
+        benefitSynergy: legacy.synergy?.benefit ?? 0,
+        riskSynergy: legacy.synergy?.risk ?? 0
+      };
+    }
+    return { ...heatmapScores.compatible, rating: 'compatible' };
   }
-  
-  // Return the rating from the interaction data
-  return heatmapScores[interaction.rating] || heatmapScores.compatible;
+
+  const pair = interactionPairs[pairKey];
+  const {
+    doses: suppliedDoses,
+    profile,
+    sensitivities = defaultSensitivities,
+    evidenceBlend = DEFAULT_EVIDENCE_BLEND,
+    useDefaults = true
+  } = options;
+  const summary = evaluatePairSynergy({
+    pair,
+    doses: buildPairDoseMap(pair, suppliedDoses, useDefaults),
+    profile,
+    sensitivities,
+    evidenceBlend
+  });
+
+  const rating = determineSynergyRating(summary.benefit, summary.risk);
+  return {
+    ...(heatmapScores[rating] || heatmapScores.compatible),
+    rating,
+    benefitSynergy: summary.benefit,
+    riskSynergy: summary.risk
+  };
 };
 
 /**
  * Calculate synergy modifier for stack
  * Returns combined benefit and risk synergy values
  */
-export const calculateStackSynergy = (compounds) => {
+export const calculateStackSynergy = (compounds, options = {}) => {
+  const {
+    doses: suppliedDoses,
+    profile,
+    sensitivities = defaultSensitivities,
+    evidenceBlend = DEFAULT_EVIDENCE_BLEND,
+    useDefaults = true
+  } = options;
+
+  const { compounds: compoundKeys, doses } = normalizeStackInput(compounds, suppliedDoses);
+  if (compoundKeys.length < 2) return { ...EMPTY_SYNERGY };
+
   let totalBenefitSynergy = 0;
   let totalRiskSynergy = 0;
-  
-  // Loop through all pairs
-  for (let i = 0; i < compounds.length; i++) {
-    for (let j = i + 1; j < compounds.length; j++) {
-      const interaction = getInteraction(compounds[i], compounds[j]);
-      if (interaction && interaction.synergy) {
-        totalBenefitSynergy += interaction.synergy.benefit;
-        totalRiskSynergy += interaction.synergy.risk;
+
+  for (let i = 0; i < compoundKeys.length; i++) {
+    for (let j = i + 1; j < compoundKeys.length; j++) {
+      const pairKey = resolvePairKey(compoundKeys[i], compoundKeys[j]);
+      if (!pairKey) {
+        const legacy = getInteraction(compoundKeys[i], compoundKeys[j]);
+        if (legacy?.synergy) {
+          totalBenefitSynergy += legacy.synergy.benefit || 0;
+          totalRiskSynergy += legacy.synergy.risk || 0;
+        }
+        continue;
       }
+      const pair = interactionPairs[pairKey];
+      const summary = evaluatePairSynergy({
+        pair,
+        doses: buildPairDoseMap(pair, doses, useDefaults),
+        profile,
+        sensitivities,
+        evidenceBlend
+      });
+      totalBenefitSynergy += summary.benefit;
+      totalRiskSynergy += summary.risk;
     }
   }
-  
+
   return {
-    benefitSynergy: totalBenefitSynergy,
-    riskSynergy: totalRiskSynergy
+    benefitSynergy: Number(totalBenefitSynergy.toFixed(4)),
+    riskSynergy: Number(totalRiskSynergy.toFixed(4))
   };
 };
 
@@ -842,16 +1020,19 @@ export const calculateStackSynergy = (compounds) => {
  * Get all interactions for a specific compound
  * Useful for displaying compound-specific compatibility
  */
-export const getCompoundInteractions = (compoundKey) => {
+export const getCompoundInteractions = (compoundKey, options = {}) => {
   const interactions = {};
   
   Object.entries(interactionMatrix).forEach(([key, data]) => {
     if (key.includes(compoundKey)) {
       const otherCompound = key.replace(`${compoundKey}_`, '').replace(`_${compoundKey}`, '');
-      interactions[otherCompound] = data;
+      const score = getInteractionScore(compoundKey, otherCompound, options);
+      interactions[otherCompound] = {
+        ...data,
+        rating: score.rating
+      };
     }
   });
   
   return interactions;
 };
-

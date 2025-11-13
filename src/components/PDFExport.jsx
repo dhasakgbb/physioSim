@@ -5,7 +5,13 @@ import { compoundData, disclaimerText, tierDescriptions } from '../data/compound
 import { getInteraction, getInteractionScore } from '../data/interactionMatrix';
 import { getAncillaryProtocol } from '../data/sideFxAndAncillaries';
 
-const PDFExport = ({ chartRef, stackData = null, includeInteractions = false }) => {
+const PDFExport = ({
+  chartRef,
+  stackData = null,
+  includeInteractions = false,
+  contextSummary = null,
+  filename
+}) => {
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
@@ -45,6 +51,30 @@ const PDFExport = ({ chartRef, stackData = null, includeInteractions = false }) 
       pdf.setTextColor(0, 0, 0);
       const disclaimerLines = pdf.splitTextToSize(disclaimerText, pageWidth - 2 * margin);
       pdf.text(disclaimerLines, margin, yPosition);
+      yPosition += disclaimerLines.length * 4 + 10;
+
+      if (contextSummary?.items?.length) {
+        if (yPosition > pageHeight - 50) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(contextSummary.title || 'Context Summary', margin, yPosition);
+        yPosition += 8;
+
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        contextSummary.items.forEach(item => {
+          pdf.text(`• ${item.label}: ${item.value}`, margin + 3, yPosition);
+          yPosition += 5;
+          if (yPosition > pageHeight - 20) {
+            pdf.addPage();
+            yPosition = margin;
+          }
+        });
+        yPosition += 5;
+      }
       
       // Page 2: Chart
       pdf.addPage();
@@ -107,13 +137,27 @@ const PDFExport = ({ chartRef, stackData = null, includeInteractions = false }) 
         yPosition += 5;
         pdf.text(`Total Risk Score: ${stackData.totalRisk.toFixed(1)}`, margin + 3, yPosition);
         yPosition += 5;
-        pdf.text(`Benefit Synergy: ${stackData.benefitSynergy > 0 ? '+' : ''}${stackData.benefitSynergy.toFixed(1)}%`, margin + 3, yPosition);
+        const benefitSynergyPercent = stackData.benefitSynergyPercent ?? (
+          stackData.totalBenefit > 0 ? (stackData.benefitSynergy / stackData.totalBenefit) * 100 : 0
+        );
+        const riskSynergyPercent = stackData.riskSynergyPercent ?? (
+          stackData.totalRisk > 0 ? (stackData.riskSynergy / stackData.totalRisk) * 100 : 0
+        );
+        pdf.text(
+          `Benefit Synergy: ${benefitSynergyPercent >= 0 ? '+' : ''}${benefitSynergyPercent.toFixed(1)}%`,
+          margin + 3,
+          yPosition
+        );
         yPosition += 5;
-        pdf.text(`Risk Synergy: ${stackData.riskSynergy > 0 ? '+' : ''}${stackData.riskSynergy.toFixed(1)}%`, margin + 3, yPosition);
+        pdf.text(
+          `Risk Synergy: ${riskSynergyPercent >= 0 ? '+' : ''}${riskSynergyPercent.toFixed(1)}%`,
+          margin + 3,
+          yPosition
+        );
         yPosition += 5;
-        
-        const adjustedBenefit = stackData.totalBenefit * (1 + stackData.benefitSynergy / 100);
-        const adjustedRisk = stackData.totalRisk * (1 + stackData.riskSynergy / 100);
+
+        const adjustedBenefit = stackData.totalBenefit + (stackData.benefitSynergy || 0);
+        const adjustedRisk = stackData.totalRisk + (stackData.riskSynergy || 0);
         const ratio = adjustedRisk > 0 ? (adjustedBenefit / adjustedRisk).toFixed(2) : 'N/A';
         
         pdf.text(`Adjusted Benefit/Risk Ratio: ${ratio}`, margin + 3, yPosition);
@@ -329,7 +373,8 @@ const PDFExport = ({ chartRef, stackData = null, includeInteractions = false }) 
 
       // Save PDF
       const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
-      pdf.save(`AAS_DoseResponse_Report_${date}.pdf`);
+      const exportName = filename || `AAS_DoseResponse_Report_${date}.pdf`;
+      pdf.save(exportName);
       
     } catch (error) {
       console.error('PDF export error:', error);
@@ -365,4 +410,3 @@ const PDFExport = ({ chartRef, stackData = null, includeInteractions = false }) 
 };
 
 export default PDFExport;
-

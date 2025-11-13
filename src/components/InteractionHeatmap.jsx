@@ -7,15 +7,30 @@ import {
   goalPresets,
   stackOptimizerCombos
 } from '../data/interactionEngineData';
+import { heatmapScores, calculateStackSynergy } from '../data/interactionMatrix';
 import {
   computeHeatmapValue,
   evaluatePairDimension,
   generatePrimaryCurveSeries,
-  buildSurfaceData
+  buildSurfaceData,
+  evaluateCompoundResponse
 } from '../utils/interactionEngine';
 import { generateStackOptimizerResults, generateCustomStackResults } from '../utils/stackOptimizer';
 import { compoundData } from '../data/compoundData';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  BarChart,
+  Bar,
+  ReferenceLine,
+  ReferenceArea
+} from 'recharts';
 import PDFExport from './PDFExport';
 
 const uniqueCompounds = Array.from(
@@ -34,7 +49,7 @@ const heatmapColorScale = (value, maxValue, mode) => {
   return `rgba(168,85,247,${0.2 + normalized * 0.8})`;
 };
 
-const SurfaceCell = ({ score }) => {
+const SurfaceCell = ({ score, marker }) => {
   const capped = Math.max(Math.min(score, 5), -5);
   const hue = capped >= 0 ? 190 : 0;
   const intensity = Math.min(Math.abs(capped) / 5, 1);
@@ -43,28 +58,95 @@ const SurfaceCell = ({ score }) => {
 
   return (
     <div
-      className="w-5 h-5 md:w-6 md:h-6"
+      className="relative w-5 h-5 md:w-6 md:h-6 flex items-center justify-center"
       style={{ backgroundColor: color, border: '1px solid rgba(255,255,255,0.05)' }}
       title={`${score.toFixed(1)} net`}
-    />
+    >
+      {marker && (
+        <span className="text-[10px] font-semibold text-white drop-shadow">
+          {marker}
+        </span>
+      )}
+    </div>
   );
 };
 
-const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
+const SectionDivider = () => (
+  <div className="h-px bg-physio-bg-border/60 w-full my-2" role="presentation" aria-hidden="true"></div>
+);
+
+const DrawerChevron = ({ open }) => (
+  <svg
+    className={`w-4 h-4 text-physio-text-tertiary transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+    viewBox="0 0 20 20"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path
+      fillRule="evenodd"
+      d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
+const INTERACTION_CONTROL_STORAGE_KEY = 'interactionControls';
+const defaultHeatmapControls = {
+  heatmapMode: 'benefit',
+  goalPreset: 'lean_mass',
+  evidenceBlend: 0.35
+};
+
+const InteractionHeatmap = ({
+  userProfile,
+  onPrefillStack,
+  resetSignal = 0,
+  onFiltersDirtyChange
+}) => {
   const pairIds = Object.keys(interactionPairs);
   const [selectedPairId, setSelectedPairId] = useState(pairIds[0]);
-  const [heatmapMode, setHeatmapMode] = useState('benefit');
+  const [heatmapMode, setHeatmapMode] = useState(defaultHeatmapControls.heatmapMode);
   const [sensitivities, setSensitivities] = useState(() => ({ ...defaultSensitivities }));
-  const [evidenceBlend, setEvidenceBlend] = useState(0.35);
-  const [goalPreset, setGoalPreset] = useState('lean_mass');
+  const [evidenceBlend, setEvidenceBlend] = useState(defaultHeatmapControls.evidenceBlend);
+  const [goalPreset, setGoalPreset] = useState(defaultHeatmapControls.goalPreset);
   const [customGoal, setCustomGoal] = useState('lean_mass');
   const [customSelection, setCustomSelection] = useState('');
   const [customCompounds, setCustomCompounds] = useState([]);
   const [customRanges, setCustomRanges] = useState({});
   const [customResults, setCustomResults] = useState([]);
+  const [highlightedBand, setHighlightedBand] = useState(null);
+  const [optimizerCollapsed, setOptimizerCollapsed] = useState(() => !Boolean(userProfile?.labMode?.enabled));
+  const [contextCollapsed, setContextCollapsed] = useState(true);
+  const [heatmapCompact, setHeatmapCompact] = useState(false);
   const pairDetailRef = useRef(null);
+  const heatmapRef = useRef(null);
 
   const allCompoundKeys = useMemo(() => Object.keys(compoundData), []);
+  const labModeEnabled = Boolean(userProfile?.labMode?.enabled);
+
+  useEffect(() => {
+    if (!labModeEnabled) {
+      setOptimizerCollapsed(true);
+    }
+  }, [labModeEnabled]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleScroll = () => {
+      if (!pairDetailRef.current) return;
+      const rect = pairDetailRef.current.getBoundingClientRect();
+      setHeatmapCompact(rect.top < 180);
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToMatrix = () => {
+    if (typeof window === 'undefined' || !heatmapRef.current) return;
+    const top = heatmapRef.current.offsetTop - 24;
+    window.scrollTo({ top, behavior: 'smooth' });
+  };
 
   const pairOptions = useMemo(
     () =>
@@ -97,6 +179,12 @@ const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
     setSelectedDimension(nextDimension);
     setPrimaryCompound(pair.compounds[0]);
     setDoses({ ...pair.defaultDoses });
+    setHighlightedBand(null);
+    if (pairDetailRef.current) {
+      setTimeout(() => {
+        pairDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 200);
+    }
   };
 
   const clampValue = (value, min, max) => Math.min(Math.max(value, min), max);
@@ -290,6 +378,29 @@ const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
     return top;
   }, [surfaceData, selectedPair, compoundAKey, compoundBKey]);
 
+  const limitedRecommendations = useMemo(
+    () => (labModeEnabled ? recommendations : recommendations.slice(0, 2)),
+    [recommendations, labModeEnabled]
+  );
+  const displayedRecommendations = labModeEnabled ? recommendations : limitedRecommendations;
+
+  useEffect(() => {
+    setHighlightedBand(null);
+  }, [selectedPairId, primaryCompound]);
+
+  const setHighlightFromPoint = point => {
+    if (!selectedPair || !point || !primaryCompound) return;
+    const [minRange, maxRange] = selectedPair?.doseRanges?.[primaryCompound] || [0, 1000];
+    const centerDose = point[primaryCompound];
+    if (typeof centerDose !== 'number') return;
+    const span = Math.max((maxRange - minRange) * 0.05, 15);
+    setHighlightedBand({
+      primaryCompound,
+      min: clampValue(centerDose - span, minRange, maxRange),
+      max: clampValue(centerDose + span, minRange, maxRange)
+    });
+  };
+
   const handleSendCurrentToStack = () => {
     if (!selectedPair || !onPrefillStack) return;
     const payload = selectedPair.compounds.map(key => ({
@@ -326,31 +437,236 @@ const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
     });
   }, [userProfile, goalPreset]);
 
+  const pairBaseScores = useMemo(() => {
+    if (!selectedPair) return { benefit: 0, risk: 0 };
+    return selectedPair.compounds.reduce(
+      (acc, compoundKey) => {
+        const doseValue = doses?.[compoundKey] ?? selectedPair.defaultDoses?.[compoundKey] ?? 0;
+        acc.benefit += evaluateCompoundResponse(compoundKey, 'benefit', doseValue, userProfile);
+        acc.risk += evaluateCompoundResponse(compoundKey, 'risk', doseValue, userProfile);
+        return acc;
+      },
+      { benefit: 0, risk: 0 }
+    );
+  }, [selectedPair, doses, userProfile]);
+
+  const pairSynergy = useMemo(() => {
+    if (!selectedPair) return { benefitSynergy: 0, riskSynergy: 0 };
+    const payload = selectedPair.compounds.map(compoundKey => ({
+      compound: compoundKey,
+      dose: doses?.[compoundKey] ?? selectedPair.defaultDoses?.[compoundKey] ?? 0
+    }));
+    return calculateStackSynergy(payload, { profile: userProfile, doses });
+  }, [selectedPair, doses, userProfile]);
+
+  const pairNetChartData = useMemo(() => {
+    const adjustedBenefit = Math.max(pairBaseScores.benefit + (pairSynergy.benefitSynergy || 0), 0);
+    const adjustedRisk = Math.max(pairBaseScores.risk + (pairSynergy.riskSynergy || 0), 0);
+    return [
+      {
+        metric: 'Benefit',
+        Base: Number(pairBaseScores.benefit.toFixed(2)),
+        'With Synergy': Number(adjustedBenefit.toFixed(2))
+      },
+      {
+        metric: 'Risk',
+        Base: Number(pairBaseScores.risk.toFixed(2)),
+        'With Synergy': Number(adjustedRisk.toFixed(2))
+      }
+    ];
+  }, [pairBaseScores, pairSynergy]);
+
+  const benefitSynergyPercent =
+    pairBaseScores.benefit > 0 ? ((pairSynergy.benefitSynergy || 0) / pairBaseScores.benefit) * 100 : 0;
+  const riskSynergyPercent =
+    pairBaseScores.risk > 0 ? ((pairSynergy.riskSynergy || 0) / pairBaseScores.risk) * 100 : 0;
+  const surfaceMarkerMap = useMemo(() => {
+    const map = new Map();
+    if (!compoundAKey || !compoundBKey) return map;
+    displayedRecommendations.forEach((point, idx) => {
+      const key = `${point[compoundAKey]}-${point[compoundBKey]}`;
+      map.set(key, idx + 1);
+    });
+    return map;
+  }, [displayedRecommendations, compoundAKey, compoundBKey]);
+  const currentPrimaryDose =
+    doses?.[primaryCompound] ?? selectedPair?.defaultDoses?.[primaryCompound] ?? 0;
+  const pairEvidence = selectedPair?.evidence || {};
+  const evidenceTotalWeight = (pairEvidence.clinical ?? 0) + (pairEvidence.anecdote ?? 0);
+  const clinicalShare = evidenceTotalWeight
+    ? Math.round(((pairEvidence.clinical ?? 0) / evidenceTotalWeight) * 100)
+    : Math.round((1 - evidenceBlend) * 100);
+  const anecdoteShare = 100 - clinicalShare;
+  const baseBenefitValue = Number(pairBaseScores.benefit.toFixed(2));
+  const baseRiskValue = Number(pairBaseScores.risk.toFixed(2));
+  const adjustedBenefitValue = Number((pairBaseScores.benefit + (pairSynergy.benefitSynergy || 0)).toFixed(2));
+  const adjustedRiskValue = Number((pairBaseScores.risk + (pairSynergy.riskSynergy || 0)).toFixed(2));
+  const netRatio = adjustedRiskValue > 0 ? (adjustedBenefitValue / adjustedRiskValue).toFixed(2) : '—';
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = window.localStorage.getItem(INTERACTION_CONTROL_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.heatmapMode) setHeatmapMode(parsed.heatmapMode);
+        if (parsed.goalPreset) setGoalPreset(parsed.goalPreset);
+        if (typeof parsed.evidenceBlend === 'number') setEvidenceBlend(parsed.evidenceBlend);
+      }
+    } catch (error) {
+      console.warn('Failed to load interaction controls', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(
+        INTERACTION_CONTROL_STORAGE_KEY,
+        JSON.stringify({ heatmapMode, goalPreset, evidenceBlend })
+      );
+    } catch (error) {
+      console.warn('Failed to save interaction controls', error);
+    }
+  }, [heatmapMode, goalPreset, evidenceBlend]);
+
+  useEffect(() => {
+    const dirty =
+      heatmapMode !== defaultHeatmapControls.heatmapMode ||
+      goalPreset !== defaultHeatmapControls.goalPreset ||
+      evidenceBlend !== defaultHeatmapControls.evidenceBlend;
+    onFiltersDirtyChange?.(dirty);
+  }, [heatmapMode, goalPreset, evidenceBlend, onFiltersDirtyChange]);
+
+  useEffect(() => {
+    setHeatmapMode(defaultHeatmapControls.heatmapMode);
+    setGoalPreset(defaultHeatmapControls.goalPreset);
+    setEvidenceBlend(defaultHeatmapControls.evidenceBlend);
+    setContextCollapsed(true);
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(INTERACTION_CONTROL_STORAGE_KEY);
+    }
+  }, [resetSignal]);
+
+  const heatmapSectionClasses =
+    `bg-physio-bg-secondary border border-physio-bg-border rounded-2xl shadow-lg lg:sticky lg:top-4 lg:z-20 transition-all duration-200 ${heatmapCompact ? 'p-4 space-y-4' : 'p-6 space-y-6'}`;
+
   return (
     <div className="space-y-8">
       {/* Heatmap / Overview */}
-      <section className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-lg space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <section ref={heatmapRef} className={heatmapSectionClasses}>
+        <div className={`flex flex-col md:flex-row md:items-center md:justify-between gap-3 ${heatmapCompact ? 'text-sm' : ''}`}>
           <div>
-            <h2 className="text-2xl font-bold text-physio-text-primary">Interaction Matrix</h2>
-            <p className="text-sm text-physio-text-secondary">
-              Click a cell to load dose-aware synergy modeling for that pair.
-            </p>
+            <h2 className={`${heatmapCompact ? 'text-xl' : 'text-2xl'} font-bold text-physio-text-primary`}>
+              Interaction Matrix
+            </h2>
+            {!heatmapCompact && (
+              <p className="text-sm text-physio-text-secondary">
+                Click a cell to load dose-aware synergy modeling for that pair.
+              </p>
+            )}
           </div>
-          <div className="flex flex-wrap gap-2">
-            {interactionHeatmapModes.map(mode => (
-              <button
-                key={mode.key}
-                onClick={() => setHeatmapMode(mode.key)}
-                className={`px-3 py-1.5 text-xs rounded-lg border transition ${
-                  heatmapMode === mode.key
-                    ? 'border-physio-accent-cyan text-physio-accent-cyan'
-                    : 'border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary'
-                }`}
+          {heatmapCompact && (
+            <button
+              type="button"
+              onClick={scrollToMatrix}
+              className="px-3 py-1.5 rounded-full border border-physio-bg-border text-xs font-semibold text-physio-text-secondary hover:border-physio-accent-cyan hover:text-physio-accent-cyan transition"
+            >
+              Back to matrix
+            </button>
+          )}
+        </div>
+        {heatmapCompact && selectedPair && (
+          <div className="flex flex-wrap items-center gap-2 text-xs text-physio-text-tertiary">
+            <span className="font-semibold text-physio-text-primary">{selectedPair.label}</span>
+            <span className="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border">
+              {goalPresets[goalPreset]?.label || 'Goal'}
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border">
+              {clinicalShare}% clinical · {anecdoteShare}% anecdote
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-accent-mint">
+              Δ Benefit {benefitSynergyPercent.toFixed(1)}%
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-error">
+              Δ Risk {riskSynergyPercent.toFixed(1)}%
+            </span>
+          </div>
+        )}
+        <div className="flex flex-wrap items-center gap-4 text-xs text-physio-text-secondary">
+          <div className="flex flex-wrap gap-4">
+            {Object.entries(heatmapScores)
+              .filter(([key]) => key !== 'same')
+              .map(([key, score]) => (
+                <div key={key} className="flex items-center gap-2">
+                  <span
+                    className="w-6 h-6 flex items-center justify-center rounded-full text-physio-text-primary font-semibold"
+                    style={{ backgroundColor: score.color }}
+                  >
+                    {score.symbol}
+                  </span>
+                  <span>{score.label}</span>
+                </div>
+              ))}
+          </div>
+          <div className="text-xs text-physio-text-tertiary">
+            0.00 ≈ neutral • 0.30+ = strong swing
+          </div>
+        </div>
+
+        <div className={`bg-physio-bg-core/70 border border-physio-bg-border rounded-2xl flex flex-col ${heatmapCompact ? 'p-3 gap-3' : 'p-4 gap-4'}`}>
+          <div className={`flex flex-wrap items-center gap-3 ${heatmapCompact ? 'text-[11px]' : ''}`}>
+            <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Heatmap focus</p>
+            <div className="flex flex-wrap gap-2">
+              {interactionHeatmapModes.map(mode => (
+                <button
+                  key={mode.key}
+                  onClick={() => setHeatmapMode(mode.key)}
+                  className={`px-3 py-1.5 text-xs rounded-full border transition ${
+                    heatmapMode === mode.key
+                      ? 'border-physio-accent-cyan text-physio-accent-cyan bg-physio-bg-secondary'
+                      : 'border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary'
+                  }`}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className={`flex flex-col lg:flex-row lg:items-center lg:justify-between ${heatmapCompact ? 'gap-2' : 'gap-3 lg:gap-4'}`}>
+            <label className="flex items-center gap-2 text-sm text-physio-text-secondary">
+              Goal preset
+              <select
+                value={goalPreset}
+                onChange={e => setGoalPreset(e.target.value)}
+                className="px-3 py-1.5 rounded-lg border border-physio-bg-border bg-physio-bg-core text-physio-text-primary text-sm"
               >
-                {mode.label}
-              </button>
-            ))}
+                {Object.entries(goalPresets).map(([key, preset]) => (
+                  <option key={key} value={key}>
+                    {preset.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex-1 text-sm text-physio-text-secondary">
+              Evidence weighting
+              <div className="mt-1 flex items-center gap-3">
+                <span className="text-xs text-physio-text-tertiary whitespace-nowrap">
+                  Clinical {(1 - evidenceBlend) * 100 >> 0}%
+                </span>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={evidenceBlend}
+                  onChange={e => setEvidenceBlend(Number(e.target.value))}
+                  className="flex-1"
+                />
+                <span className="text-xs text-physio-text-tertiary whitespace-nowrap">
+                  Anecdote {(evidenceBlend) * 100 >> 0}%
+                </span>
+              </div>
+            </label>
           </div>
         </div>
 
@@ -412,9 +728,74 @@ const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
         </div>
       </section>
 
+      <section className="bg-physio-bg-secondary border border-physio-accent-cyan/50 rounded-2xl p-5 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setContextCollapsed(prev => !prev)}
+          className="w-full flex items-center justify-between text-left"
+        >
+          <div>
+            <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Need context?</p>
+            <h3 className="text-lg font-semibold text-physio-accent-cyan">Expand to learn how to work the matrix</h3>
+          </div>
+          <DrawerChevron open={!contextCollapsed} />
+        </button>
+        {!contextCollapsed && (
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-physio-text-primary">
+            <section className="bg-physio-bg-core rounded-xl border border-physio-bg-border p-4">
+              <h4 className="font-semibold text-physio-text-secondary mb-2">Heatmap quick read</h4>
+              <ul className="space-y-1.5 text-physio-text-secondary">
+                <li><strong>Bright cyan</strong> = strong positive synergy · <strong>deep violet</strong> = risk spike.</li>
+                <li>Hover the legend chips to translate symbols to clinical narratives.</li>
+                <li>Select any cell to auto-scroll into the pair detail workspace.</li>
+              </ul>
+            </section>
+            <section className="bg-physio-bg-core rounded-xl border border-physio-bg-border p-4">
+              <h4 className="font-semibold text-physio-text-secondary mb-2">Normal vs Lab mode</h4>
+              <p className="text-physio-text-secondary">
+                Normal mode keeps it simple: sliders + net benefit/risk and top three dose picks. Lab Mode unlocks dimension chips,
+                the dose sweep, surface grid, and the optimizer. Toggle Lab Mode from the personalization bar whenever you’re ready.
+              </p>
+            </section>
+            <section className="bg-physio-bg-core rounded-xl border border-physio-bg-border p-4">
+              <h4 className="font-semibold text-physio-text-secondary mb-2">Pair workflow</h4>
+              <ol className="list-decimal list-inside space-y-1.5 text-physio-text-secondary">
+                <li>Pick the outcome dimension chip that matches your goal.</li>
+                <li>Drag the compound sliders until the sticky summary sparkline hits your target.</li>
+                <li>Use the net bar chart to confirm whether synergy is worth the risk delta.</li>
+              </ol>
+            </section>
+            <section className="bg-physio-bg-core rounded-xl border border-physio-bg-border p-4">
+              <h4 className="font-semibold text-physio-text-secondary mb-2">Optimizer tips</h4>
+              <ul className="space-y-1.5 text-physio-text-secondary">
+                <li>Evidence slider shifts weighting between clinical and anecdotal inputs.</li>
+                <li>Penalty knobs (estrogen, neuro, cardio…) sharpen the optimizer before you run it.</li>
+                <li>Send any recommendation straight to Stack Builder to see whole-stack effects.</li>
+              </ul>
+            </section>
+          </div>
+        )}
+      </section>
+
       <div ref={pairDetailRef} className="space-y-8">
       {/* Pair Detail */}
       <section className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-lg space-y-6">
+        {selectedPair && (
+          <div className="sticky top-4 z-20 bg-physio-bg-secondary border border-physio-bg-border rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 shadow-sm">
+            <div className="text-sm text-physio-text-primary flex flex-wrap items-center gap-2">
+              <span className="font-semibold">{selectedPair.label}</span>
+              <span className="text-physio-text-tertiary">•</span>
+              <span>Goal: {goalPresets[goalPreset]?.label || 'Custom goal'}</span>
+              <span className="text-physio-text-tertiary">•</span>
+              <span>Evidence {clinicalShare}% clinical / {anecdoteShare}% anecdote</span>
+            </div>
+            <div className="text-xs text-physio-text-tertiary flex flex-wrap gap-3">
+              <span>Δ Benefit {benefitSynergyPercent.toFixed(1)}%</span>
+              <span>Δ Risk {riskSynergyPercent.toFixed(1)}%</span>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h2 className="text-2xl font-bold text-physio-text-primary">{selectedPair?.label}</h2>
@@ -436,7 +817,23 @@ const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
             >
               Send to Stack Builder
             </button>
-            <PDFExport chartRef={pairDetailRef} filename="interaction-report.pdf" />
+            <PDFExport
+              chartRef={pairDetailRef}
+              filename="interaction-report.pdf"
+              contextSummary={{
+                title: 'Interaction Context',
+                items: [
+                  { label: 'Goal preset', value: goalPresets[goalPreset]?.label || 'Custom' },
+                  {
+                    label: 'Heatmap focus',
+                    value: interactionHeatmapModes.find(mode => mode.key === heatmapMode)?.label || 'Benefit focus'
+                  },
+                  { label: 'Evidence mix', value: `${clinicalShare}% clinical / ${anecdoteShare}% anecdote` },
+                  { label: 'Δ Benefit', value: `${benefitSynergyPercent.toFixed(1)}%` },
+                  { label: 'Δ Risk', value: `${riskSynergyPercent.toFixed(1)}%` }
+                ]
+              }}
+            />
           </div>
         </div>
 
@@ -457,183 +854,225 @@ const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
           </label>
         </div>
 
-        {/* Dimension selector */}
-        <div className="flex flex-wrap gap-2">
-          {dimensionKeys.map(key => {
-            const dim = interactionDimensions[key];
-            return (
-              <button
-                key={key}
-                onClick={() => setSelectedDimension(key)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${
-                  selectedDimension === key
-                    ? 'border-physio-accent-cyan text-physio-accent-cyan'
-                    : 'border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary'
-                }`}
-              >
-                {dim?.label || key}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Sliders */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {selectedPair?.compounds.map(compoundKey => {
-            const [min, max] = selectedPair?.doseRanges?.[compoundKey] || [0, 1000];
-            const doseValue = doses?.[compoundKey] ?? selectedPair?.defaultDoses?.[compoundKey] ?? 0;
-            return (
-              <label key={compoundKey} className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4 text-sm space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-physio-text-primary">{compoundData[compoundKey]?.name}</span>
-                  <button
-                    onClick={() => setPrimaryCompound(compoundKey)}
-                    className={`text-xs px-2 py-0.5 rounded border ${
-                      primaryCompound === compoundKey ? 'border-physio-accent-cyan text-physio-accent-cyan' : 'border-physio-bg-border text-physio-text-tertiary'
-                    }`}
-                  >
-                    {primaryCompound === compoundKey ? 'Primary Axis' : 'Set Primary'}
-                  </button>
-                </div>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="range"
-                    min={min}
-                    max={max}
-                    step="10"
-                    value={doseValue}
-                    onChange={e => updateDose(compoundKey, e.target.value)}
-                    className="flex-1"
-                  />
-                  <div className="text-right">
-                    <div className="text-physio-text-primary font-semibold">{doseValue} mg</div>
-                    <div className="text-xs text-physio-text-tertiary">Range {min}-{max} mg</div>
-                  </div>
-                </div>
-              </label>
-            );
-          })}
-        </div>
-
-        {/* Metrics */}
-        {dimensionResult && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-            <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
-              <div className="text-xs text-physio-text-tertiary">Naïve sum</div>
-              <div className="text-2xl font-bold text-physio-text-primary">{dimensionResult.naive.toFixed(2)}</div>
-              <p className="text-xs text-physio-text-secondary mt-1">Base contributions without interaction.</p>
-            </div>
-            <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
-              <div className="text-xs text-physio-text-tertiary">Interaction delta</div>
-              <div className={`text-2xl font-bold ${dimensionResult.delta >= 0 ? 'text-physio-accent-mint' : 'text-physio-error'}`}>
-                {dimensionResult.delta >= 0 ? '+' : ''}
-                {dimensionResult.delta.toFixed(2)}
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.9fr)]">
+          <div className="space-y-4">
+            {labModeEnabled && dimensionKeys.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {dimensionKeys.map(key => {
+                  const dim = interactionDimensions[key];
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setSelectedDimension(key)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${
+                        selectedDimension === key
+                          ? 'border-physio-accent-cyan text-physio-accent-cyan'
+                          : 'border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary'
+                      }`}
+                    >
+                      {dim?.label || key}
+                    </button>
+                  );
+                })}
               </div>
-              <p className="text-xs text-physio-text-secondary mt-1">Correction applied via synergy/penalty layer.</p>
-            </div>
-            <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
-              <div className="text-xs text-physio-text-tertiary">Total modeled</div>
-              <div className="text-2xl font-bold text-physio-accent-cyan">{dimensionResult.total.toFixed(2)}</div>
-              <p className="text-xs text-physio-text-secondary mt-1">Final value for {interactionDimensions[selectedDimension]?.label}.</p>
-            </div>
-            <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
-              <div className="text-xs text-physio-text-tertiary">Shape saturation</div>
-              <div className="text-2xl font-bold text-physio-text-primary">
-                {(dimensionResult.doseShape * 100).toFixed(0)}%
-              </div>
-              <p className="text-xs text-physio-text-secondary mt-1">How deep into the interaction well you are.</p>
+            )}
+
+            <div className="space-y-4">
+              {selectedPair?.compounds.map(compoundKey => {
+                const [min, max] = selectedPair?.doseRanges?.[compoundKey] || [0, 1000];
+                const doseValue = doses?.[compoundKey] ?? selectedPair?.defaultDoses?.[compoundKey] ?? 0;
+                return (
+                  <label key={compoundKey} className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4 text-sm space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-physio-text-primary">{compoundData[compoundKey]?.name}</span>
+                      <button
+                        onClick={() => setPrimaryCompound(compoundKey)}
+                        className={`text-xs px-2 py-0.5 rounded border ${
+                          primaryCompound === compoundKey ? 'border-physio-accent-cyan text-physio-accent-cyan' : 'border-physio-bg-border text-physio-text-tertiary'
+                        }`}
+                      >
+                        {primaryCompound === compoundKey ? 'Primary Axis' : 'Set Primary'}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="range"
+                        min={min}
+                        max={max}
+                        step="10"
+                        value={doseValue}
+                        onChange={e => updateDose(compoundKey, e.target.value)}
+                        className="flex-1"
+                      />
+                      <div className="text-right">
+                        <div className="text-physio-text-primary font-semibold">{doseValue} mg</div>
+                        <div className="text-xs text-physio-text-tertiary">Range {min}-{max} mg</div>
+                      </div>
+                    </div>
+                  </label>
+                );
+              })}
             </div>
           </div>
-        )}
 
-        {/* Chart */}
+          <div className="space-y-3 lg:sticky lg:top-4">
+            <div className="bg-physio-bg-core border border-physio-bg-border rounded-xl p-4 text-sm text-physio-text-secondary">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Goal focus</p>
+                  <p className="text-sm font-semibold text-physio-text-primary">
+                    {goalPresets[goalPreset]?.label || 'Custom goal'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Evidence mix</p>
+                  <p className="text-sm font-semibold text-physio-text-primary">
+                    {clinicalShare}% clinical · {anecdoteShare}% anecdote
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              {labModeEnabled && dimensionResult ? (
+                <>
+                  <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
+                    <div className="text-xs text-physio-text-tertiary">Naïve sum</div>
+                    <div className="text-2xl font-bold text-physio-text-primary">{dimensionResult.naive.toFixed(2)}</div>
+                    <p className="text-xs text-physio-text-secondary mt-1">Base contributions without interaction.</p>
+                  </div>
+                  <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
+                    <div className="text-xs text-physio-text-tertiary">Interaction delta</div>
+                    <div className={`text-2xl font-bold ${dimensionResult.delta >= 0 ? 'text-physio-accent-mint' : 'text-physio-error'}`}>
+                      {dimensionResult.delta >= 0 ? '+' : ''}
+                      {dimensionResult.delta.toFixed(2)}
+                    </div>
+                    <p className="text-xs text-physio-text-secondary mt-1">Correction applied via synergy/penalty layer.</p>
+                  </div>
+                  <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
+                    <div className="text-xs text-physio-text-tertiary">Total modeled</div>
+                    <div className="text-2xl font-bold text-physio-accent-cyan">{dimensionResult.total.toFixed(2)}</div>
+                    <p className="text-xs text-physio-text-secondary mt-1">Final value for {interactionDimensions[selectedDimension]?.label}.</p>
+                  </div>
+                  <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
+                    <div className="text-xs text-physio-text-tertiary">Shape saturation</div>
+                    <div className="text-2xl font-bold text-physio-text-primary">
+                      {(dimensionResult.doseShape * 100).toFixed(0)}%
+                    </div>
+                    <p className="text-xs text-physio-text-secondary mt-1">How deep into the interaction well you are.</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
+                    <div className="text-xs text-physio-text-tertiary">Base benefit</div>
+                    <div className="text-2xl font-bold text-physio-accent-cyan">{baseBenefitValue.toFixed(2)}</div>
+                    <p className="text-xs text-physio-text-secondary mt-1">Current slider impact before synergy.</p>
+                  </div>
+                  <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
+                    <div className="text-xs text-physio-text-tertiary">Base risk</div>
+                    <div className="text-2xl font-bold text-physio-error">{baseRiskValue.toFixed(2)}</div>
+                    <p className="text-xs text-physio-text-secondary mt-1">Modeled risk from the same doses.</p>
+                  </div>
+                  <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
+                    <div className="text-xs text-physio-text-tertiary">Net benefit</div>
+                    <div className="text-2xl font-bold text-physio-accent-mint">{adjustedBenefitValue.toFixed(2)}</div>
+                    <p className="text-xs text-physio-text-secondary mt-1">After applying current synergy assumptions.</p>
+                  </div>
+                  <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
+                    <div className="text-xs text-physio-text-tertiary">Benefit : Risk</div>
+                    <div className="text-2xl font-bold text-physio-text-primary">
+                      {netRatio}
+                    </div>
+                    <p className="text-xs text-physio-text-secondary mt-1">Higher = more efficient stack.</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <SectionDivider />
+
+        {/* Net benefit vs risk chart */}
         <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-physio-text-primary">Primary Dose Sweep</h3>
+              <h3 className="text-lg font-semibold text-physio-text-primary">Net benefit vs. risk</h3>
               <p className="text-xs text-physio-text-tertiary">
-                Sweeping {compoundData[primaryCompound]?.abbreviation} while {secondarySummary}
+                Compares current doses with and without interaction effects.
               </p>
             </div>
+            <div className="text-xs text-physio-text-secondary">
+              Δ Benefit {benefitSynergyPercent.toFixed(1)}% • Δ Risk {riskSynergyPercent.toFixed(1)}%
+            </div>
           </div>
-          <ResponsiveContainer width="100%" height={320}>
-            <LineChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 20 }}>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={pairNetChartData} margin={{ top: 10, left: 0, right: 10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--physio-bg-border)" />
-              <XAxis
-                dataKey="dose"
-                label={{ value: `${compoundData[primaryCompound]?.abbreviation} dose`, position: 'insideBottom', offset: -10 }}
-                tick={{ fontSize: 12 }}
-              />
-              <YAxis tick={{ fontSize: 12 }} domain={[0, 6]} />
-              <Tooltip formatter={tooltipFormatter} />
+              <XAxis dataKey="metric" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip formatter={(value) => Number(value).toFixed(2)} />
               <Legend />
-              <Line type="monotone" dataKey="basePrimary" name={`${compoundData[primaryCompound]?.abbreviation} alone`} stroke="#38bdf8" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="naive" name="Naïve Sum" stroke="#a5b4fc" strokeDasharray="4 4" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="total" name="Interaction Total" stroke="#34d399" strokeWidth={3} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
+              <Bar dataKey="Base" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="With Synergy" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
         </div>
 
-        {/* Surface */}
-        <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold text-physio-text-primary">Dose Surface — Net Score</h3>
-              <p className="text-xs text-physio-text-tertiary">
-                Colored by benefit − risk using the {goalPresets[goalPreset]?.label}.
-              </p>
+        <SectionDivider />
+
+        {!labModeEnabled && limitedRecommendations.length > 0 && (
+          <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-physio-text-primary">Smart dose suggestions</h3>
+              <span className="text-xs text-physio-text-tertiary">Top {limitedRecommendations.length} picks</span>
             </div>
-            <div className="flex flex-wrap gap-2 text-xs">
-              {Object.entries(goalPresets).map(([key, preset]) => (
-                <button
-                  key={key}
-                  onClick={() => setGoalPreset(key)}
-                  className={`px-3 py-1 rounded-lg border ${
-                    goalPreset === key ? 'border-physio-accent-cyan text-physio-accent-cyan' : 'border-physio-bg-border text-physio-text-tertiary'
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <div className="inline-flex flex-col gap-1">
-              {selectedSurfacePair &&
-                surfaceRows.map((row, idx) => (
-                  <div key={idx} className="flex gap-1">
-                    {row.map((point, cellIdx) => (
-                      <SurfaceCell key={cellIdx} score={point.score} />
-                    ))}
-                  </div>
-                ))}
-            </div>
-          </div>
-          {recommendations.length > 0 && (
-            <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {recommendations.map((point, idx) => {
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {limitedRecommendations.map((point, idx) => {
                 const benefit = point.benefit;
                 const risk = point.risk;
                 const ratio = risk > 0 ? (benefit / risk).toFixed(2) : '—';
                 return (
-                  <div key={idx} className="border border-physio-bg-border rounded-lg p-4 bg-physio-bg-secondary flex flex-col gap-2">
-                    <div className="flex items-center justify-between text-sm text-physio-text-tertiary">
-                      <span>Recommendation #{idx + 1}</span>
-                      <span className={`font-semibold ${point.score >= 0 ? 'text-physio-accent-cyan' : 'text-physio-error'}`}>
-                        Net {point.score.toFixed(2)}
-                      </span>
+                  <div
+                    key={`quick-rec-${idx}`}
+                    className="border border-physio-bg-border rounded-lg p-3 bg-physio-bg-secondary text-sm space-y-1"
+                    onMouseEnter={() => setHighlightFromPoint(point)}
+                    onFocus={() => setHighlightFromPoint(point)}
+                    tabIndex={0}
+                  >
+                    <div className="flex items-center justify-between text-xs text-physio-text-tertiary gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary">
+                          Rec #{idx + 1}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary">
+                          {goalPresets[goalPreset]?.label || 'Goal'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary">
+                          {clinicalShare}% clinical
+                        </span>
+                        <span className={`font-semibold ${point.score >= 0 ? 'text-physio-accent-cyan' : 'text-physio-error'}`}>
+                          Net {point.score.toFixed(2)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-sm text-physio-text-primary">
-                      {compoundData[compoundAKey]?.abbreviation || compoundAKey}: <strong>{point[compoundAKey]} mg</strong> •{' '}
+                    <div className="text-physio-text-primary">
+                      {compoundData[compoundAKey]?.abbreviation || compoundAKey}: <strong>{point[compoundAKey]} mg</strong> ·{' '}
                       {compoundData[compoundBKey]?.abbreviation || compoundBKey}: <strong>{point[compoundBKey]} mg</strong>
                     </div>
-                    <div className="text-xs text-physio-text-secondary flex gap-4">
+                    <div className="text-xs text-physio-text-tertiary flex gap-3">
                       <span>Benefit {benefit.toFixed(2)}</span>
                       <span>Risk {risk.toFixed(2)}</span>
                       <span>Ratio {ratio}</span>
                     </div>
                     <button
-                      onClick={() => handleSendRecommendation(point)}
+                      onClick={() => {
+                        setHighlightFromPoint(point);
+                        handleSendRecommendation(point);
+                      }}
                       className="mt-2 px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
                     >
                       Load in Stack Builder
@@ -642,10 +1081,195 @@ const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
                 );
               })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {!labModeEnabled && (
+          <p className="text-xs text-physio-text-tertiary">
+            Enable Lab Mode inside the personalization panel to unlock dimension-level analytics, dose surfaces, and the multi-compound optimizer.
+          </p>
+        )}
+        {/* Chart */}
+{labModeEnabled && (
+  <>
+  <SectionDivider />
+  <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
+    <div className="flex items-center justify-between mb-3">
+      <div>
+        <h3 className="text-lg font-semibold text-physio-text-primary">Primary Dose Sweep</h3>
+                <p className="text-xs text-physio-text-tertiary">
+                  Sweeping {compoundData[primaryCompound]?.abbreviation} while {secondarySummary}
+                </p>
+              </div>
+            </div>
+          <ResponsiveContainer width="100%" height={320}>
+            <LineChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--physio-bg-border)" />
+              {highlightedBand && highlightedBand.primaryCompound === primaryCompound && (
+                <ReferenceArea
+                  x1={highlightedBand.min}
+                  x2={highlightedBand.max}
+                  strokeOpacity={0}
+                  fill="#fcd34d"
+                  fillOpacity={0.15}
+                />
+              )}
+              <XAxis
+                dataKey="dose"
+                label={{ value: `${compoundData[primaryCompound]?.abbreviation} dose`, position: 'insideBottom', offset: -10 }}
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis tick={{ fontSize: 12 }} domain={[0, 6]} />
+              <Tooltip formatter={tooltipFormatter} />
+              <Legend />
+              <ReferenceLine
+                x={currentPrimaryDose}
+                stroke="#f97316"
+                strokeDasharray="4 4"
+                label={{
+                  value: `${currentPrimaryDose} mg`,
+                  position: 'top',
+                  fill: '#f97316',
+                  fontSize: 12
+                }}
+              />
+              <Line type="monotone" dataKey="basePrimary" name={`${compoundData[primaryCompound]?.abbreviation} alone`} stroke="#38bdf8" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="naive" name="Naïve Sum" stroke="#a5b4fc" strokeDasharray="4 4" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="total" name="Interaction Total" stroke="#34d399" strokeWidth={3} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+  </div>
+  </>
+)}
+
+{/* Surface + Recommendations */}
+{labModeEnabled && (
+  <>
+  <SectionDivider />
+  <div className="grid gap-4 lg:grid-cols-2">
+            <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-physio-text-primary">Dose Surface — Net Score</h3>
+                  <p className="text-xs text-physio-text-tertiary">
+                    Colored by benefit − risk using the {goalPresets[goalPreset]?.label}.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {Object.entries(goalPresets).map(([key, preset]) => (
+                    <button
+                      key={key}
+                      onClick={() => setGoalPreset(key)}
+                      className={`px-3 py-1 rounded-lg border ${
+                        goalPreset === key ? 'border-physio-accent-cyan text-physio-accent-cyan' : 'border-physio-bg-border text-physio-text-tertiary'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <div className="flex items-start gap-3">
+                  <div
+                    className="text-xs text-physio-text-tertiary"
+                    style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+                  >
+                    {(compoundData[compoundBKey]?.abbreviation || compoundBKey) ?? 'B'} dose (mg)
+                  </div>
+                  <div className="inline-flex flex-col gap-1">
+                    {selectedSurfacePair &&
+                      surfaceRows.map((row, idx) => (
+                        <div key={idx} className="flex gap-1">
+                          {row.map((point, cellIdx) => {
+                            const marker = surfaceMarkerMap.get(`${point[compoundAKey]}-${point[compoundBKey]}`);
+                            return <SurfaceCell key={cellIdx} score={point.score} marker={marker} />;
+                          })}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+                <p className="text-xs text-physio-text-tertiary text-center mt-2">
+                  {(compoundData[compoundAKey]?.abbreviation || compoundAKey) ?? 'A'} dose (mg)
+                </p>
+              </div>
+            </div>
+            <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-physio-text-primary">Stack suggestions</h3>
+                  <p className="text-xs text-physio-text-tertiary">Top interaction waypoints (benefit − risk score)</p>
+                </div>
+                <span className="text-xs text-physio-text-tertiary">{displayedRecommendations.length} options</span>
+              </div>
+              <div className="space-y-3">
+                {displayedRecommendations.map((point, idx) => {
+                  const benefit = point.benefit;
+                  const risk = point.risk;
+                  const ratio = risk > 0 ? (benefit / risk).toFixed(2) : '—';
+                  return (
+                    <div
+                      key={`lab-rec-${idx}`}
+                      className="border border-physio-bg-border rounded-lg p-3 bg-physio-bg-secondary text-sm space-y-1"
+                      onMouseEnter={() => setHighlightFromPoint(point)}
+                      onFocus={() => setHighlightFromPoint(point)}
+                      tabIndex={0}
+                    >
+                      <div className="flex items-center justify-between text-xs text-physio-text-tertiary gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary">
+                            Rec #{idx + 1}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary">
+                            {goalPresets[goalPreset]?.label || 'Goal'}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary">
+                            {point.score >= 0 ? 'Favorable' : 'Caution'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary">
+                            {clinicalShare}% clinical
+                          </span>
+                          <span className={`font-semibold ${point.score >= 0 ? 'text-physio-accent-cyan' : 'text-physio-error'}`}>
+                            Net {point.score.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-physio-text-primary">
+                        {compoundData[compoundAKey]?.abbreviation || compoundAKey}: <strong>{point[compoundAKey]} mg</strong> ·{' '}
+                        {compoundData[compoundBKey]?.abbreviation || compoundBKey}: <strong>{point[compoundBKey]} mg</strong>
+                      </div>
+                      <div className="text-xs text-physio-text-tertiary flex gap-3">
+                        <span>Benefit {benefit.toFixed(2)}</span>
+                        <span>Risk {risk.toFixed(2)}</span>
+                        <span>Ratio {ratio}</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setHighlightFromPoint(point);
+                          handleSendRecommendation(point);
+                        }}
+                        className="mt-2 px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
+                      >
+                        Load in Stack Builder
+                      </button>
+                    </div>
+                  );
+                })}
+                {!displayedRecommendations.length && (
+                  <p className="text-xs text-physio-text-tertiary">No recommendation points surfaced for this pairing yet.</p>
+                )}
+              </div>
+            </div>
+  </div>
+  </>
+)}
       </section>
 
+{labModeEnabled && (
+<>
+<SectionDivider />
       {/* Multi-Compound Optimizer */}
       <section className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-lg space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -655,57 +1279,81 @@ const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
               Sampling predefined three-compound templates using your personalization + synergy model.
             </p>
           </div>
-          <div className="text-xs text-physio-text-tertiary">
-            Presets: {stackOptimizerCombos.map(combo => combo.label).join(' • ')}
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-physio-text-tertiary hidden sm:block">
+              Presets: {stackOptimizerCombos.map(combo => combo.label).join(' • ')}
+            </span>
+            <button
+              onClick={() => setOptimizerCollapsed(prev => !prev)}
+              className="px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
+            >
+              {optimizerCollapsed ? 'Expand' : 'Collapse'}
+            </button>
           </div>
         </div>
+
+        {!optimizerCollapsed && (
+          <>
 
         {stackResults.length === 0 ? (
           <p className="text-sm text-physio-text-tertiary">No stack data available.</p>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {stackResults.map(result => (
-              <article key={`${result.comboId}-${Object.values(result.doses).join('-')}`} className="border border-physio-bg-border rounded-xl p-4 bg-physio-bg-core flex flex-col gap-3">
-                <div className="flex items-center justify-between text-sm text-physio-text-tertiary">
-                  <span>{stackOptimizerCombos.find(combo => combo.id === result.comboId)?.label || result.label}</span>
-                  <span className={`font-semibold ${result.score >= 0 ? 'text-physio-accent-cyan' : 'text-physio-error'}`}>
-                    Net {result.score.toFixed(2)}
-                  </span>
-                </div>
-                <p className="text-xs text-physio-text-secondary">
-                  {stackOptimizerCombos.find(combo => combo.id === result.comboId)?.narrative || result.narrative}
-                </p>
-                <div className="space-y-1 text-sm text-physio-text-primary">
-                  {result.compounds.map(compoundKey => (
-                    <div key={compoundKey}>
-                      {compoundData[compoundKey]?.abbreviation || compoundKey}: <strong>{result.doses[compoundKey]} mg</strong>
-                      <span className="text-xs text-physio-text-tertiary"> {compoundData[compoundKey]?.type === 'oral' ? 'per day' : 'per week'}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex flex-wrap gap-4 text-xs text-physio-text-secondary">
-                  <span>Benefit {result.adjustedBenefit.toFixed(2)}</span>
-                  <span>Risk {result.adjustedRisk.toFixed(2)}</span>
-                  <span>Ratio {result.ratio.toFixed(2)}</span>
-                </div>
-                <div className="text-xs text-physio-text-tertiary">
-                  Synergy: {((result.synergy?.benefitSynergy || 0) * 100).toFixed(1)}% benefit · {((result.synergy?.riskSynergy || 0) * 100).toFixed(1)}% risk
-                </div>
-                <button
-                  onClick={() =>
-                    onPrefillStack?.(
-                      result.compounds.map(compoundKey => ({
-                        compound: compoundKey,
-                        dose: result.doses[compoundKey]
-                      }))
-                    )
-                  }
-                  className="mt-2 px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
+            {stackResults.map(result => {
+              const benefitSynergyPercent =
+                result.baseBenefit > 0
+                  ? ((result.synergy?.benefitSynergy || 0) / result.baseBenefit) * 100
+                  : 0;
+              const riskSynergyPercent =
+                result.baseRisk > 0
+                  ? ((result.synergy?.riskSynergy || 0) / result.baseRisk) * 100
+                  : 0;
+              return (
+                <article
+                  key={`${result.comboId}-${Object.values(result.doses).join('-')}`}
+                  className="border border-physio-bg-border rounded-xl p-4 bg-physio-bg-core flex flex-col gap-3"
                 >
-                  Load in Stack Builder
-                </button>
-              </article>
-            ))}
+                  <div className="flex items-center justify-between text-sm text-physio-text-tertiary">
+                    <span>{stackOptimizerCombos.find(combo => combo.id === result.comboId)?.label || result.label}</span>
+                    <span className={`font-semibold ${result.score >= 0 ? 'text-physio-accent-cyan' : 'text-physio-error'}`}>
+                      Net {result.score.toFixed(2)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-physio-text-secondary">
+                    {stackOptimizerCombos.find(combo => combo.id === result.comboId)?.narrative || result.narrative}
+                  </p>
+                  <div className="space-y-1 text-sm text-physio-text-primary">
+                    {result.compounds.map(compoundKey => (
+                      <div key={compoundKey}>
+                        {compoundData[compoundKey]?.abbreviation || compoundKey}: <strong>{result.doses[compoundKey]} mg</strong>
+                        <span className="text-xs text-physio-text-tertiary"> {compoundData[compoundKey]?.type === 'oral' ? 'per day' : 'per week'}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-4 text-xs text-physio-text-secondary">
+                    <span>Benefit {result.adjustedBenefit.toFixed(2)}</span>
+                    <span>Risk {result.adjustedRisk.toFixed(2)}</span>
+                    <span>Ratio {result.ratio.toFixed(2)}</span>
+                  </div>
+                  <div className="text-xs text-physio-text-tertiary">
+                    Synergy: {benefitSynergyPercent.toFixed(1)}% benefit · {riskSynergyPercent.toFixed(1)}% risk
+                  </div>
+                  <button
+                    onClick={() =>
+                      onPrefillStack?.(
+                        result.compounds.map(compoundKey => ({
+                          compound: compoundKey,
+                          dose: result.doses[compoundKey]
+                        }))
+                      )
+                    }
+                    className="mt-2 px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
+                  >
+                    Load in Stack Builder
+                  </button>
+                </article>
+              );
+            })}
           </div>
         )}
         <div className="border-t border-physio-bg-border pt-6 space-y-4">
@@ -843,10 +1491,17 @@ const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
             </div>
           )}
         </div>
+          </>
+        )}
       </section>
+      </>
+      )}
       </div>
 
       {/* Controls */}
+      {labModeEnabled && (
+        <>
+        <SectionDivider />
       <section className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-lg space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
@@ -884,28 +1539,12 @@ const InteractionHeatmap = ({ userProfile, onPrefillStack }) => {
           ))}
         </div>
 
-        <div className="border border-physio-bg-border rounded-lg p-4 bg-physio-bg-core">
-          <label className="text-sm font-semibold text-physio-text-primary flex items-center justify-between">
-            Evidence weighting
-            <span className="text-xs text-physio-text-tertiary">
-              Clinical {(1 - evidenceBlend) * 100 >> 0}% / Anecdote {(evidenceBlend) * 100 >> 0}%
-            </span>
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            value={evidenceBlend}
-            onChange={e => setEvidenceBlend(Number(e.target.value))}
-            className="w-full mt-3"
-          />
-          <div className="flex justify-between text-xs text-physio-text-tertiary mt-2">
-            <span>Clinical bias</span>
-            <span>Anecdote / bro science bias</span>
-          </div>
+        <div className="border border-physio-bg-border rounded-lg p-4 bg-physio-bg-core text-sm text-physio-text-secondary">
+          Evidence weighting now lives in the control strip above the matrix so you can re-balance clinical vs anecdote inputs without scrolling.
         </div>
       </section>
+        </>
+      )}
     </div>
   );
 };

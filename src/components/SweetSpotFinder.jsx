@@ -9,9 +9,15 @@ const formatRange = (range) => {
   return `${start}–${end}`;
 };
 
-const SweetSpotFinder = ({ compoundType, visibleCompounds, userProfile }) => {
+const SweetSpotFinder = ({
+  compoundType,
+  visibleCompounds,
+  userProfile,
+  variant = 'panel'
+}) => {
   const [results, setResults] = useState([]);
   const [status, setStatus] = useState('idle');
+  const inline = variant === 'inline';
 
   const handleFind = () => {
     const applicable = Object.entries(compoundData)
@@ -29,26 +35,36 @@ const SweetSpotFinder = ({ compoundType, visibleCompounds, userProfile }) => {
   };
 
   return (
-    <div className="min-w-[220px]">
-      <button
-        onClick={handleFind}
-        className="px-4 py-2 rounded-lg bg-physio-accent-cyan text-physio-bg-core font-semibold text-sm hover:bg-physio-accent-cyan/80 transition-standard shadow-md"
+    <div className={inline ? 'flex flex-col gap-2 flex-1 min-w-[220px]' : 'min-w-[220px]'}>
+      <div
+        className={inline
+          ? 'flex flex-wrap items-center gap-2 justify-start md:justify-end'
+          : 'flex flex-col gap-2'}
       >
-        Find my sweet spot
-      </button>
+        <button
+          onClick={handleFind}
+          className={`font-semibold text-sm transition-standard shadow-md ${
+            inline
+              ? 'px-4 py-2 rounded-full bg-physio-accent-cyan text-white hover:bg-physio-accent-cyan/85'
+              : 'px-4 py-2 rounded-lg bg-physio-accent-cyan text-physio-bg-core hover:bg-physio-accent-cyan/80'
+          }`}
+        >
+          Find my sweet spot
+        </button>
 
-      {status === 'no-visible' && (
-        <p className="text-xs text-physio-text-tertiary mt-2">
-          Turn on at least one compound to run the optimizer.
-        </p>
-      )}
+        {status === 'no-visible' && (
+          <p className="text-xs text-physio-text-tertiary">
+            Turn on a compound to run the optimizer.
+          </p>
+        )}
+      </div>
 
       {results.length > 0 && (
-        <div className="mt-3 grid grid-cols-1 gap-3">
+        <div className={`grid grid-cols-1 gap-3 text-xs ${inline ? 'pt-2 border-t border-dashed border-physio-bg-border/70' : 'mt-3'}`}>
           {results.map(result => (
             <div
               key={result.compoundKey}
-              className="border border-physio-bg-border rounded-lg p-3 bg-physio-bg-secondary text-xs shadow-inner"
+              className="border border-physio-bg-border rounded-lg p-3 bg-physio-bg-secondary shadow-inner"
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="font-semibold text-physio-text-primary">

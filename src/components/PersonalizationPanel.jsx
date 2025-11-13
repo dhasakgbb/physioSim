@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { defaultProfile, buildPersonalizationNarrative, labPresets, defaultLabScales } from '../utils/personalization';
 
 const numericFields = [
@@ -52,11 +52,67 @@ const labScaleFields = [
   { key: 'uncertaintyImpact', label: 'Uncertainty width', helper: 'Widen or tighten CI bands when lab mode is active.' }
 ];
 
-const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile }) => {
+const experienceLabels = {
+  none: 'No cycle history',
+  test_only: 'Test-only background',
+  multi_compound: 'Multi-compound user',
+  blast_cruise: 'Blast/cruise veteran'
+};
+
+const isProfileCustomized = (profile = defaultProfile) => {
+  if (!profile) return false;
+  const trackedKeys = ['age', 'bodyweight', 'yearsTraining', 'shbg', 'aromatase', 'anxiety', 'experience'];
+  return (
+    trackedKeys.some(key => (profile?.[key] ?? defaultProfile[key]) !== defaultProfile[key]) ||
+    Boolean(profile?.labMode?.enabled)
+  );
+};
+
+const formatProfileSummary = (profile = defaultProfile) => {
+  if (!profile) return 'Using baseline defaults';
+  const tokens = [];
+  if (profile.age) tokens.push(`${profile.age}y`);
+  if (profile.bodyweight) tokens.push(`${Math.round(Number(profile.bodyweight) * 2.2)} lb`);
+  if (profile.yearsTraining) tokens.push(`${profile.yearsTraining}y training`);
+  if (profile.shbg) tokens.push(`SHBG ${profile.shbg}`);
+  if (profile.aromatase) tokens.push(`Arom ${profile.aromatase}`);
+  if (profile.anxiety) tokens.push(`Anxiety ${profile.anxiety}`);
+  if (profile.experience) tokens.push(experienceLabels[profile.experience] || profile.experience);
+  if (profile.labMode?.enabled) tokens.push(`Lab preset: ${profile.labMode?.preset || 'custom'}`);
+  return tokens.filter(Boolean).join(' • ') || 'Using baseline defaults';
+};
+
+const ChevronIcon = ({ open }) => (
+  <svg
+    className={`w-4 h-4 text-physio-text-tertiary transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+    viewBox="0 0 20 20"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path
+      fillRule="evenodd"
+      d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
+const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compressed = false }) => {
   const narrative = buildPersonalizationNarrative(profile);
   const labModeEnabled = profile?.labMode?.enabled;
   const labPreset = profile?.labMode?.preset || 'baseline';
   const labScales = { ...defaultLabScales, ...(profile?.labMode?.scales || {}) };
+  const [collapsed, setCollapsed] = useState(false);
+  const [autoCollapsed, setAutoCollapsed] = useState(false);
+  const profileSummary = useMemo(() => formatProfileSummary(profile), [profile]);
+  const customized = useMemo(() => isProfileCustomized(profile), [profile]);
+
+  useEffect(() => {
+    if (customized && !autoCollapsed) {
+      setCollapsed(true);
+      setAutoCollapsed(true);
+    }
+  }, [customized, autoCollapsed]);
 
   const handleNumericChange = (field, rawValue) => {
     const value = rawValue === '' ? '' : Number(rawValue);
@@ -114,32 +170,81 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile }) => {
     }));
   };
 
+  const containerPadding = compressed ? 'p-4' : 'p-6';
+  const headerSpacing = compressed ? 'mb-4' : 'mb-6';
+  const gridGap = compressed ? 'gap-3' : 'gap-4';
+  const blockSpacing = compressed ? 'mt-4' : 'mt-6';
+  const cardPadding = compressed ? 'p-3' : 'p-4';
+
   return (
-    <section className="mb-8 bg-physio-bg-core border-2 border-physio-accent-cyan/60 rounded-2xl p-6 shadow-lg">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-physio-text-primary">Personalized Dose-Response</h2>
-          <p className="text-sm text-physio-text-secondary">
-            Plug in your physiology to morph the benefit vs. risk curves in real time.
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2 self-start md:self-auto">
-          <button
-            onClick={resetProfile}
-            className="px-4 py-2 border border-physio-accent-cyan rounded-lg text-sm font-semibold text-physio-accent-cyan hover:bg-physio-accent-cyan hover:text-physio-bg-core transition-standard"
-          >
-            Reset to baseline
-          </button>
-          <button
-            onClick={() => onClearProfile?.()}
-            className="px-4 py-2 border border-physio-bg-border rounded-lg text-sm font-semibold text-physio-text-secondary hover:text-physio-text-primary transition-standard"
-          >
-            Forget saved profile
-          </button>
-        </div>
+    <section className={`mb-8 bg-physio-bg-core border-2 border-physio-accent-cyan/60 rounded-2xl shadow-lg ${containerPadding}`}>
+      <div className={`flex flex-col md:flex-row md:items-center gap-3 ${collapsed ? 'mb-0' : 'mb-4'}`}>
+        <button
+          type="button"
+          onClick={() => setCollapsed(prev => !prev)}
+          aria-expanded={!collapsed}
+          className={`flex-1 text-left bg-physio-bg-secondary border border-physio-bg-border rounded-xl ${compressed ? 'px-3 py-2' : 'px-4 py-3'} hover:border-physio-accent-cyan transition-standard`}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-physio-text-primary">
+                {customized ? 'Profile (custom)' : 'Profile (baseline)'}
+              </p>
+              <p className="text-xs text-physio-text-secondary truncate">{profileSummary}</p>
+            </div>
+            <ChevronIcon open={!collapsed} />
+          </div>
+        </button>
+        {collapsed && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setCollapsed(false)}
+              className="px-3 py-2 text-xs font-semibold border border-physio-accent-cyan text-physio-accent-cyan rounded-lg hover:bg-physio-accent-cyan hover:text-physio-bg-core transition-standard"
+            >
+              Edit profile
+            </button>
+            <button
+              onClick={resetProfile}
+              className="px-3 py-2 text-xs font-semibold border border-physio-bg-border rounded-lg text-physio-text-secondary hover:text-physio-text-primary transition-standard"
+            >
+              Reset
+            </button>
+            <button
+              onClick={() => onClearProfile?.()}
+              className="px-3 py-2 text-xs font-semibold border border-physio-bg-border rounded-lg text-physio-text-secondary hover:text-physio-text-primary transition-standard"
+            >
+              Forget saved
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {!collapsed && (
+        <>
+          <div className={`flex flex-col md:flex-row md:items-center md:justify-between gap-4 ${headerSpacing}`}>
+            <div>
+              <h2 className="text-2xl font-bold text-physio-text-primary">Personalized Dose-Response</h2>
+              <p className="text-sm text-physio-text-secondary">
+                Plug in your physiology to morph the benefit vs. risk curves in real time.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 self-start md:self-auto">
+              <button
+                onClick={resetProfile}
+                className="px-4 py-2 border border-physio-accent-cyan rounded-lg text-sm font-semibold text-physio-accent-cyan hover:bg-physio-accent-cyan hover:text-physio-bg-core transition-standard"
+              >
+                Reset to baseline
+              </button>
+              <button
+                onClick={() => onClearProfile?.()}
+                className="px-4 py-2 border border-physio-bg-border rounded-lg text-sm font-semibold text-physio-text-secondary hover:text-physio-text-primary transition-standard"
+              >
+                Forget saved profile
+              </button>
+            </div>
+          </div>
+
+      <div className={`grid grid-cols-1 md:grid-cols-4 ${gridGap}`}>
         {numericFields.map(field => (
           <label key={field.name} className="flex flex-col text-sm">
             <span className="font-semibold text-physio-text-secondary">{field.label}</span>
@@ -162,7 +267,7 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile }) => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+      <div className={`grid grid-cols-1 md:grid-cols-3 ${gridGap} ${compressed ? 'mt-4' : 'mt-5'}`}>
         {selectFields.map(field => (
           <label key={field.name} className="flex flex-col text-sm">
             <span className="font-semibold text-physio-text-secondary">{field.label}</span>
@@ -182,7 +287,7 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile }) => {
         ))}
       </div>
 
-      <div className="mt-6 bg-physio-bg-secondary border border-physio-bg-border rounded-xl p-4">
+      <div className={`${blockSpacing} bg-physio-bg-secondary border border-physio-bg-border rounded-xl ${cardPadding}`}>
         <div className="flex items-center mb-2 text-sm font-semibold text-physio-accent-cyan">
           <span className="mr-2">🧠</span>
           Real-time narrative
@@ -194,7 +299,7 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile }) => {
         </ul>
       </div>
 
-      <div className="mt-6 border border-physio-bg-border rounded-xl p-4 bg-physio-bg-secondary">
+      <div className={`${blockSpacing} border border-physio-bg-border rounded-xl bg-physio-bg-secondary ${cardPadding}`}>
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-bold text-physio-text-primary">Lab Mode (advanced coefficients)</h3>
@@ -252,6 +357,8 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile }) => {
           </div>
         )}
       </div>
+        </>
+      )}
     </section>
   );
 };

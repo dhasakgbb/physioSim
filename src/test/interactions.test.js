@@ -3,7 +3,8 @@ import {
   getInteraction, 
   getInteractionScore, 
   calculateStackSynergy,
-  getCompoundInteractions 
+  getCompoundInteractions,
+  heatmapScores
 } from '../data/interactionMatrix';
 import { getAncillaryProtocol } from '../data/sideFxAndAncillaries';
 import { compoundData } from '../data/compoundData';
@@ -47,6 +48,7 @@ describe('Interaction Matrix Tests', () => {
       expect(score.color).toBeDefined();
       expect(score.symbol).toBeDefined();
       expect(score.label).toBeDefined();
+      expect(score.rating).toBeDefined();
     });
 
     it('should return compatible score for unknown pairs', () => {
@@ -56,12 +58,10 @@ describe('Interaction Matrix Tests', () => {
     });
 
     it('should classify ratings correctly', () => {
-      // Test that excellent rating returns green hex color
-      const testInteraction = getInteraction('testosterone', 'npp');
-      if (testInteraction && testInteraction.rating === 'excellent') {
-        const score = getInteractionScore('testosterone', 'npp');
-        expect(score.color).toBe('#00AA00');
-        expect(score.label).toBe('Excellent Synergy');
+      const score = getInteractionScore('testosterone', 'npp');
+      if (score.rating && heatmapScores[score.rating]) {
+        expect(score.color).toBe(heatmapScores[score.rating].color);
+        expect(score.label).toBe(heatmapScores[score.rating].label);
       }
     });
   });
