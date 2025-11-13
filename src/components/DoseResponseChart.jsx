@@ -7,12 +7,35 @@ import {
   YAxis,
   CartesianGrid,
   ResponsiveContainer,
+  ReferenceArea,
   ReferenceLine,
   Tooltip
 } from 'recharts';
 import { compoundData } from '../data/compoundData';
-import { personalizeScore } from '../utils/personalization';
+import { evaluateCompoundResponse } from '../utils/interactionEngine';
 import HoverAnalyticsTooltip from './HoverAnalyticsTooltip';
+
+const getCurveCap = (curve = []) => {
+  if (!curve?.length) return 0;
+  return curve[curve.length - 1]?.dose ?? 0;
+};
+
+const derivePlateauDose = (curve = []) => {
+  if (!curve?.length) return 0;
+  if (curve.length === 1) return curve[0].dose;
+  return curve[Math.max(0, curve.length - 2)].dose;
+};
+
+const getPlateauDose = compound =>
+  compound.plateauDose ?? derivePlateauDose(compound.benefitCurve);
+
+const getHardMax = compound => {
+  const plateauDose = getPlateauDose(compound);
+  return (
+    compound.hardMax ??
+    Math.max(getCurveCap(compound.benefitCurve), getCurveCap(compound.riskCurve), plateauDose)
+  );
+};
 
 const DoseResponseChart = ({ viewMode, visibleCompounds, userProfile }) => {
   const chartRef = useRef(null);
@@ -43,45 +66,43 @@ const DoseResponseChart = ({ viewMode, visibleCompounds, userProfile }) => {
         // Benefit data - only show where we have data
         const benefitPoint = compound.benefitCurve.find(p => p.dose === dose);
         if (benefitPoint) {
-          const personalized = personalizeScore({
-            compoundKey: key,
-            curveType: 'benefit',
-            dose,
-            baseValue: benefitPoint.value,
-            baseCi: benefitPoint.ci,
-            profile: userProfile
-          });
+          const evaluation = evaluateCompoundResponse(key, 'benefit', dose, userProfile);
           const previous = lastBenefit[key];
+          const ci = evaluation.ci ?? 0;
+          const meta = evaluation.meta || {};
 
-          dataPoint[`${key}-benefit-value`] = personalized.value;
-          dataPoint[`${key}-benefit-upper`] = personalized.value + personalized.ci;
-          dataPoint[`${key}-benefit-lower`] = Math.max(0, personalized.value - personalized.ci);
+          dataPoint[`${key}-benefit-value`] = evaluation.value;
+          dataPoint[`${key}-benefit-upper`] = evaluation.value + ci;
+          dataPoint[`${key}-benefit-lower`] = Math.max(0, evaluation.value - ci);
           dataPoint[`${key}-benefit-prevDose`] = previous?.dose ?? null;
-          dataPoint[`${key}-benefit-delta`] = previous ? personalized.value - previous.value : null;
+          dataPoint[`${key}-benefit-delta`] = previous ? evaluation.value - previous.value : null;
+          dataPoint[`${key}-benefit-meta`] = meta;
+          dataPoint[`${key}-benefit-pre`] = meta.nearingPlateau ? null : evaluation.value;
+          dataPoint[`${key}-benefit-post`] = meta.nearingPlateau ? evaluation.value : null;
+          dataPoint[`${key}-benefit-beyond`] = meta.beyondEvidence ? evaluation.value : null;
           
-          lastBenefit[key] = { dose, value: personalized.value };
+          lastBenefit[key] = { dose, value: evaluation.value };
         }
         
         // Risk data - only show where we have data
         const riskPoint = compound.riskCurve.find(p => p.dose === dose);
         if (riskPoint) {
-          const personalized = personalizeScore({
-            compoundKey: key,
-            curveType: 'risk',
-            dose,
-            baseValue: riskPoint.value,
-            baseCi: riskPoint.ci,
-            profile: userProfile
-          });
+          const evaluation = evaluateCompoundResponse(key, 'risk', dose, userProfile);
           const previous = lastRisk[key];
+          const ci = evaluation.ci ?? 0;
+          const meta = evaluation.meta || {};
 
-          dataPoint[`${key}-risk-value`] = personalized.value;
-          dataPoint[`${key}-risk-upper`] = personalized.value + personalized.ci;
-          dataPoint[`${key}-risk-lower`] = Math.max(0, personalized.value - personalized.ci);
+          dataPoint[`${key}-risk-value`] = evaluation.value;
+          dataPoint[`${key}-risk-upper`] = evaluation.value + ci;
+          dataPoint[`${key}-risk-lower`] = Math.max(0, evaluation.value - ci);
           dataPoint[`${key}-risk-prevDose`] = previous?.dose ?? null;
-          dataPoint[`${key}-risk-delta`] = previous ? personalized.value - previous.value : null;
+          dataPoint[`${key}-risk-delta`] = previous ? evaluation.value - previous.value : null;
+          dataPoint[`${key}-risk-meta`] = meta;
+          dataPoint[`${key}-risk-pre`] = meta.nearingPlateau ? null : evaluation.value;
+          dataPoint[`${key}-risk-post`] = meta.nearingPlateau ? evaluation.value : null;
+          dataPoint[`${key}-risk-beyond`] = meta.beyondEvidence ? evaluation.value : null;
 
-          lastRisk[key] = { dose, value: personalized.value };
+          lastRisk[key] = { dose, value: evaluation.value };
         }
       });
       
@@ -166,16 +187,40 @@ const DoseResponseChart = ({ viewMode, visibleCompounds, userProfile }) => {
 
           {/* Render uncertainty bands and lines for each compound */}
           {Object.entries(compoundData).map(([key, compound]) => {
-            // Only render injectable compounds on this chart
             if (compound.type !== 'injectable') return null;
             if (!visibleCompounds[key]) return null;
+            const plateauDose = getPlateauDose(compound);
+            const hardMax = getHardMax(compound);
+            const plateauEnd = hardMax || zoomDomain.x[1] || 1200;
 
             return (
               <React.Fragment key={key}>
+                {showBenefit && plateauDose && plateauDose < plateauEnd && (
+                  <ReferenceArea
+                    x1={plateauDose}
+                    x2={plateauEnd}
+                    fill="var(--physio-warning)"
+                    fillOpacity={0.08}
+                    strokeOpacity={0}
+                  />
+                )}
+                {showBenefit && hardMax && (
+                  <ReferenceLine
+                    x={hardMax}
+                    stroke="var(--physio-error)"
+                    strokeDasharray="4 4"
+                    label={{
+                      value: `${compound.abbreviation || key} cap`,
+                      position: 'top',
+                      fill: 'var(--physio-error)',
+                      fontSize: 11
+                    }}
+                  />
+                )}
+
                 {/* BENEFIT CURVES */}
                 {showBenefit && (
                   <>
-                    {/* Benefit uncertainty band */}
                     <Area
                       dataKey={`${key}-benefit-upper`}
                       stroke="none"
@@ -191,16 +236,40 @@ const DoseResponseChart = ({ viewMode, visibleCompounds, userProfile }) => {
                       isAnimationActive={false}
                     />
                     
-                    {/* Benefit line (solid) */}
                     <Line
                       type="monotone"
-                      dataKey={`${key}-benefit-value`}
+                      dataKey={`${key}-benefit-pre`}
                       stroke={compound.color}
                       strokeWidth={2.5}
                       dot={false}
                       activeDot={false}
                       isAnimationActive={false}
                       connectNulls
+                      name={`${compound.abbreviation} Benefit`}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey={`${key}-benefit-post`}
+                      stroke={compound.color}
+                      strokeWidth={2.5}
+                      strokeOpacity={0.5}
+                      dot={false}
+                      activeDot={false}
+                      isAnimationActive={false}
+                      connectNulls
+                      legendType="none"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey={`${key}-benefit-beyond`}
+                      stroke="var(--physio-error)"
+                      strokeWidth={3}
+                      strokeDasharray="6 4"
+                      dot={false}
+                      activeDot={false}
+                      isAnimationActive={false}
+                      connectNulls
+                      legendType="none"
                     />
                   </>
                 )}
@@ -208,7 +277,6 @@ const DoseResponseChart = ({ viewMode, visibleCompounds, userProfile }) => {
                 {/* RISK CURVES */}
                 {showRisk && (
                   <>
-                    {/* Risk uncertainty band */}
                     <Area
                       dataKey={`${key}-risk-upper`}
                       stroke="none"
@@ -224,10 +292,9 @@ const DoseResponseChart = ({ viewMode, visibleCompounds, userProfile }) => {
                       isAnimationActive={false}
                     />
                     
-                    {/* Risk line (dotted) */}
                     <Line
                       type="monotone"
-                      dataKey={`${key}-risk-value`}
+                      dataKey={`${key}-risk-pre`}
                       stroke={compound.color}
                       strokeWidth={2.5}
                       strokeDasharray="5 5"
@@ -235,6 +302,32 @@ const DoseResponseChart = ({ viewMode, visibleCompounds, userProfile }) => {
                       activeDot={false}
                       isAnimationActive={false}
                       connectNulls
+                      name={`${compound.abbreviation} Risk`}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey={`${key}-risk-post`}
+                      stroke={compound.color}
+                      strokeWidth={2}
+                      strokeDasharray="2 2"
+                      strokeOpacity={0.6}
+                      dot={false}
+                      activeDot={false}
+                      isAnimationActive={false}
+                      connectNulls
+                      legendType="none"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey={`${key}-risk-beyond`}
+                      stroke="var(--physio-error)"
+                      strokeWidth={3}
+                      strokeDasharray="4 2"
+                      dot={false}
+                      activeDot={false}
+                      isAnimationActive={false}
+                      connectNulls
+                      legendType="none"
                     />
                   </>
                 )}

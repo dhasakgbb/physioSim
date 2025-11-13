@@ -1081,6 +1081,23 @@ export const compoundData = {
   }
 };
 
+const derivePlateauDose = (curve = []) => {
+  if (!curve.length) return 0;
+  if (curve.length === 1) return curve[0].dose;
+  return curve[Math.max(0, curve.length - 2)].dose ?? curve[curve.length - 1].dose ?? 0;
+};
+
+Object.values(compoundData).forEach(compound => {
+  if (compound.plateauDose == null) {
+    compound.plateauDose = derivePlateauDose(compound.benefitCurve);
+  }
+  if (compound.hardMax == null) {
+    const benefitCap = compound.benefitCurve?.[compound.benefitCurve.length - 1]?.dose ?? 0;
+    const riskCap = compound.riskCurve?.[compound.riskCurve.length - 1]?.dose ?? 0;
+    compound.hardMax = Math.max(benefitCap, riskCap, compound.plateauDose || 0);
+  }
+});
+
 // Dose range for visualization (0-1200 mg/week)
 export const doseRange = [0, 100, 200, 300, 400, 500, 600, 800, 1000, 1200];
 

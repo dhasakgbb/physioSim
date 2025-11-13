@@ -20,7 +20,7 @@ export const heatmapScores = {
 const DEFAULT_EVIDENCE_BLEND = 0.5;
 const EMPTY_SYNERGY = { benefitSynergy: 0, riskSynergy: 0 };
 
-const resolvePairKey = (compoundA, compoundB) => {
+export const resolvePairKey = (compoundA, compoundB) => {
   if (!compoundA || !compoundB || compoundA === compoundB) return null;
   const forward = `${compoundA}_${compoundB}`;
   if (interactionPairs[forward]) return forward;
@@ -36,7 +36,7 @@ const resolveCompoundKey = entry => {
   return null;
 };
 
-const normalizeStackInput = (stackInput, providedDoses = {}) => {
+export const normalizeStackInput = (stackInput, providedDoses = {}) => {
   const compounds = [];
   const seen = new Set();
   const doses = {};

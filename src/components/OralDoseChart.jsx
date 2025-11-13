@@ -1,8 +1,41 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Area, Tooltip } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  Area,
+  Tooltip,
+  ReferenceArea,
+  ReferenceLine
+} from 'recharts';
 import { compoundData } from '../data/compoundData';
-import { personalizeScore } from '../utils/personalization';
+import { evaluateCompoundResponse } from '../utils/interactionEngine';
 import HoverAnalyticsTooltip from './HoverAnalyticsTooltip';
+
+const getCurveCap = (curve = []) => {
+  if (!curve?.length) return 0;
+  return curve[curve.length - 1]?.dose ?? 0;
+};
+
+const derivePlateauDose = (curve = []) => {
+  if (!curve?.length) return 0;
+  if (curve.length === 1) return curve[0].dose;
+  return curve[Math.max(0, curve.length - 2)].dose;
+};
+
+const getPlateauDose = compound =>
+  compound.plateauDose ?? derivePlateauDose(compound.benefitCurve);
+
+const getHardMax = compound => {
+  const plateauDose = getPlateauDose(compound);
+  return (
+    compound.hardMax ??
+    Math.max(getCurveCap(compound.benefitCurve), getCurveCap(compound.riskCurve), plateauDose)
+  );
+};
 
 /**
  * Oral Compound Dose-Response Chart
@@ -28,51 +61,47 @@ const OralDoseChart = ({ viewMode, visibleCompounds, userProfile }) => {
     oralCompounds.forEach(([key, compound]) => {
       if (!visibleCompounds[key]) return;
 
-      // Benefit personalization
-      const benefitPoint = compound.benefitCurve.find(p => p.dose === dose) ||
-        interpolate(compound.benefitCurve, dose);
-
-      // Risk personalization
-      const riskPoint = compound.riskCurve.find(p => p.dose === dose) ||
-        interpolate(compound.riskCurve, dose);
-
       if (viewMode === 'benefit' || viewMode === 'integrated') {
-        if (benefitPoint) {
-          const personalized = personalizeScore({
-            compoundKey: key,
-            curveType: 'benefit',
-            dose,
-            baseValue: benefitPoint.value,
-            baseCi: benefitPoint.ci,
-            profile: userProfile
-          });
+        const evaluation = evaluateCompoundResponse(key, 'benefit', dose, userProfile);
+        if (!evaluation?.meta?.missing) {
           const previous = lastBenefitByCompound[key];
-          point[`${key}_benefit`] = personalized.value;
-          point[`${key}_benefit_lower`] = Math.max(0, personalized.value - personalized.ci);
-          point[`${key}_benefit_upper`] = personalized.value + personalized.ci;
+          const ci = evaluation.ci ?? 0;
+          const meta = evaluation.meta || {};
+          point[`${key}_benefit`] = evaluation.value;
+          point[`${key}_benefit_lower`] = Math.max(0, evaluation.value - ci);
+          point[`${key}_benefit_upper`] = evaluation.value + ci;
+          point[`${key}-benefit-value`] = evaluation.value;
+          point[`${key}-benefit-upper`] = evaluation.value + ci;
+          point[`${key}-benefit-lower`] = Math.max(0, evaluation.value - ci);
           point[`${key}-benefit-prevDose`] = previous?.dose ?? null;
-          point[`${key}-benefit-delta`] = previous ? personalized.value - previous.value : null;
-          lastBenefitByCompound[key] = { dose, value: personalized.value };
+          point[`${key}-benefit-delta`] = previous ? evaluation.value - previous.value : null;
+          point[`${key}-benefit-meta`] = meta;
+          point[`${key}-benefit-pre`] = meta.nearingPlateau ? null : evaluation.value;
+          point[`${key}-benefit-post`] = meta.nearingPlateau ? evaluation.value : null;
+          point[`${key}-benefit-beyond`] = meta.beyondEvidence ? evaluation.value : null;
+          lastBenefitByCompound[key] = { dose, value: evaluation.value };
         }
       }
       
       if (viewMode === 'risk' || viewMode === 'integrated') {
-        if (riskPoint) {
-          const personalized = personalizeScore({
-            compoundKey: key,
-            curveType: 'risk',
-            dose,
-            baseValue: riskPoint.value,
-            baseCi: riskPoint.ci,
-            profile: userProfile
-          });
+        const evaluation = evaluateCompoundResponse(key, 'risk', dose, userProfile);
+        if (!evaluation?.meta?.missing) {
           const previous = lastRiskByCompound[key];
-          point[`${key}_risk`] = personalized.value;
-          point[`${key}_risk_lower`] = Math.max(0, personalized.value - personalized.ci);
-          point[`${key}_risk_upper`] = personalized.value + personalized.ci;
+          const ci = evaluation.ci ?? 0;
+          const meta = evaluation.meta || {};
+          point[`${key}_risk`] = evaluation.value;
+          point[`${key}_risk_lower`] = Math.max(0, evaluation.value - ci);
+          point[`${key}_risk_upper`] = evaluation.value + ci;
+          point[`${key}-risk-value`] = evaluation.value;
+          point[`${key}-risk-upper`] = evaluation.value + ci;
+          point[`${key}-risk-lower`] = Math.max(0, evaluation.value - ci);
           point[`${key}-risk-prevDose`] = previous?.dose ?? null;
-          point[`${key}-risk-delta`] = previous ? personalized.value - previous.value : null;
-          lastRiskByCompound[key] = { dose, value: personalized.value };
+          point[`${key}-risk-delta`] = previous ? evaluation.value - previous.value : null;
+          point[`${key}-risk-meta`] = meta;
+          point[`${key}-risk-pre`] = meta.nearingPlateau ? null : evaluation.value;
+          point[`${key}-risk-post`] = meta.nearingPlateau ? evaluation.value : null;
+          point[`${key}-risk-beyond`] = meta.beyondEvidence ? evaluation.value : null;
+          lastRiskByCompound[key] = { dose, value: evaluation.value };
         }
       }
     });
@@ -130,10 +159,35 @@ const OralDoseChart = ({ viewMode, visibleCompounds, userProfile }) => {
           {/* Render uncertainty bands and lines for each oral compound */}
           {oralCompounds.map(([key, compound]) => {
             if (!visibleCompounds[key]) return null;
+            const plateauDose = getPlateauDose(compound);
+            const hardMax = getHardMax(compound);
+            const plateauEnd = hardMax || 100;
             
             return (
               <React.Fragment key={key}>
-                {/* Benefit uncertainty band */}
+                {(viewMode === 'benefit' || viewMode === 'integrated') && plateauDose && plateauDose < plateauEnd && (
+                  <ReferenceArea
+                    x1={plateauDose}
+                    x2={plateauEnd}
+                    fill="var(--physio-warning)"
+                    fillOpacity={0.08}
+                    strokeOpacity={0}
+                  />
+                )}
+                {(viewMode === 'benefit' || viewMode === 'integrated') && hardMax && (
+                  <ReferenceLine
+                    x={hardMax}
+                    stroke="var(--physio-error)"
+                    strokeDasharray="4 4"
+                    label={{
+                      value: `${compound.abbreviation || key} cap`,
+                      position: 'top',
+                      fill: 'var(--physio-error)',
+                      fontSize: 11
+                    }}
+                  />
+                )}
+
                 {(viewMode === 'benefit' || viewMode === 'integrated') && (
                   <>
                     <Area
@@ -152,10 +206,44 @@ const OralDoseChart = ({ viewMode, visibleCompounds, userProfile }) => {
                       fillOpacity={0.35}
                       isAnimationActive={false}
                     />
+                    <Line
+                      type="monotone"
+                      dataKey={`${key}-benefit-pre`}
+                      stroke={compound.color}
+                      strokeWidth={2.5}
+                      dot={false}
+                      activeDot={false}
+                      isAnimationActive={false}
+                      name={`${compound.abbreviation} Benefit`}
+                      connectNulls
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey={`${key}-benefit-post`}
+                      stroke={compound.color}
+                      strokeWidth={2.5}
+                      strokeOpacity={0.5}
+                      dot={false}
+                      activeDot={false}
+                      isAnimationActive={false}
+                      legendType="none"
+                      connectNulls
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey={`${key}-benefit-beyond`}
+                      stroke="var(--physio-error)"
+                      strokeWidth={3}
+                      strokeDasharray="6 4"
+                      dot={false}
+                      activeDot={false}
+                      isAnimationActive={false}
+                      legendType="none"
+                      connectNulls
+                    />
                   </>
                 )}
                 
-                {/* Risk uncertainty band */}
                 {(viewMode === 'risk' || viewMode === 'integrated') && (
                   <>
                     <Area
@@ -174,36 +262,44 @@ const OralDoseChart = ({ viewMode, visibleCompounds, userProfile }) => {
                       fillOpacity={0.4}
                       isAnimationActive={false}
                     />
+                    <Line
+                      type="monotone"
+                      dataKey={`${key}-risk-pre`}
+                      stroke={compound.color}
+                      strokeWidth={2.5}
+                      strokeDasharray="5 5"
+                      dot={false}
+                      activeDot={false}
+                      isAnimationActive={false}
+                      name={`${compound.abbreviation} Risk`}
+                      connectNulls
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey={`${key}-risk-post`}
+                      stroke={compound.color}
+                      strokeWidth={2}
+                      strokeDasharray="2 2"
+                      strokeOpacity={0.6}
+                      dot={false}
+                      activeDot={false}
+                      isAnimationActive={false}
+                      legendType="none"
+                      connectNulls
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey={`${key}-risk-beyond`}
+                      stroke="var(--physio-error)"
+                      strokeWidth={3}
+                      strokeDasharray="4 2"
+                      dot={false}
+                      activeDot={false}
+                      isAnimationActive={false}
+                      legendType="none"
+                      connectNulls
+                    />
                   </>
-                )}
-                
-                {/* Benefit line */}
-                {(viewMode === 'benefit' || viewMode === 'integrated') && (
-                  <Line
-                    type="monotone"
-                    dataKey={`${key}_benefit`}
-                    stroke={compound.color}
-                    strokeWidth={2.5}
-                    dot={false}
-                    activeDot={false}
-                    isAnimationActive={false}
-                    name={`${compound.abbreviation} Benefit`}
-                  />
-                )}
-                
-                {/* Risk line */}
-                {(viewMode === 'risk' || viewMode === 'integrated') && (
-                  <Line
-                    type="monotone"
-                    dataKey={`${key}_risk`}
-                    stroke={compound.color}
-                    strokeWidth={2.5}
-                    strokeDasharray="5 5"
-                    dot={false}
-                    activeDot={false}
-                    isAnimationActive={false}
-                    name={`${compound.abbreviation} Risk`}
-                  />
                 )}
               </React.Fragment>
             );
@@ -213,37 +309,5 @@ const OralDoseChart = ({ viewMode, visibleCompounds, userProfile }) => {
     </div>
   );
 };
-
-// Helper function to interpolate between curve points
-function interpolate(curve, dose) {
-  if (!curve || curve.length === 0) return null;
-  
-  // Find surrounding points
-  for (let i = 0; i < curve.length - 1; i++) {
-    if (dose >= curve[i].dose && dose <= curve[i + 1].dose) {
-      const x0 = curve[i].dose;
-      const x1 = curve[i + 1].dose;
-      const y0 = curve[i].value;
-      const y1 = curve[i + 1].value;
-      
-      // Linear interpolation
-      const ratio = (dose - x0) / (x1 - x0);
-      const value = y0 + ratio * (y1 - y0);
-      const ci0 = curve[i].ci ?? 0;
-      const ci1 = curve[i + 1].ci ?? 0;
-      const ci = ci0 + ratio * (ci1 - ci0);
-      
-      return { value, ci };
-    }
-  }
-  
-  // If dose is beyond range, return last point
-  if (dose >= curve[curve.length - 1].dose) {
-    return curve[curve.length - 1];
-  }
-  
-  // If dose is before range, return first point
-  return curve[0];
-}
 
 export default OralDoseChart;

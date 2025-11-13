@@ -1,6 +1,5 @@
-import { stackOptimizerCombos, goalPresets } from '../data/interactionEngineData';
-import { evaluateCompoundResponse } from './interactionEngine';
-import { calculateStackSynergy } from '../data/interactionMatrix';
+import { stackOptimizerCombos } from '../data/interactionEngineData';
+import { evaluateStack } from './stackEngine';
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -13,8 +12,9 @@ const buildDoseSamples = (min, max, steps, base) => {
   for (let i = 0; i < steps; i++) {
     samples.push(Math.round(min + i * increment));
   }
-  if (!samples.includes(clamp(base, min, max))) {
-    samples.push(clamp(base, min, max));
+  const baseValue = clamp(base, min, max);
+  if (!samples.includes(baseValue)) {
+    samples.push(baseValue);
   }
   return samples;
 };
@@ -30,43 +30,6 @@ const cartesianProduct = (arrays) =>
     return res;
   }, [[]]);
 
-const computeBaseScores = (compounds, doses, profile) => {
-  let benefit = 0;
-  let risk = 0;
-  compounds.forEach(compoundKey => {
-    benefit += evaluateCompoundResponse(compoundKey, 'benefit', doses[compoundKey], profile);
-    risk += evaluateCompoundResponse(compoundKey, 'risk', doses[compoundKey], profile);
-  });
-  return { benefit, risk };
-};
-
-const applySynergy = (benefit, risk, compoundKeys, doses, profile) => {
-  const stackEntries = compoundKeys.map(key => ({
-    compound: key,
-    dose: doses[key]
-  }));
-  const synergy = calculateStackSynergy(stackEntries, { profile, doses });
-  const adjustedBenefit = benefit + (synergy.benefitSynergy || 0);
-  const adjustedRisk = risk + (synergy.riskSynergy || 0);
-  return {
-    adjustedBenefit,
-    adjustedRisk,
-    synergy
-  };
-};
-
-export const scoreStack = (benefit, risk, presetKey) => {
-  const preset = goalPresets[presetKey] || goalPresets.lean_mass;
-  const benefitWeight =
-    Object.values(preset.benefitWeights || {}).reduce((acc, value) => acc + value, 0) || 1;
-  const riskWeight =
-    Object.values(preset.riskWeights || {}).reduce((acc, value) => acc + value, 0) || 1;
-
-  const score = benefit * benefitWeight - risk * riskWeight;
-  const ratio = risk > 0 ? benefit / risk : benefit;
-  return { score, ratio };
-};
-
 const optimizeCombo = ({ combo, profile, goalOverride }) => {
   const { compounds, doseRanges, defaultDoses = {}, steps = 3, id, label, narrative, goal } = combo;
   if (!compounds?.length) return [];
@@ -79,34 +42,38 @@ const optimizeCombo = ({ combo, profile, goalOverride }) => {
   });
 
   const combinations = cartesianProduct(samples);
-  const results = combinations.map(sample => {
-    const doses = {};
-    compounds.forEach((compoundKey, idx) => {
-      doses[compoundKey] = sample[idx];
-    });
+  return combinations.map(sample => {
+    const stackEntries = compounds.map((compoundKey, idx) => ({
+      compound: compoundKey,
+      dose: sample[idx]
+    }));
 
-    const base = computeBaseScores(compounds, doses, profile);
-    const withSynergy = applySynergy(base.benefit, base.risk, compounds, doses, profile);
-    const scoring = scoreStack(withSynergy.adjustedBenefit, withSynergy.adjustedRisk, presetKey);
+    const evaluation = evaluateStack({
+      stackInput: stackEntries,
+      profile,
+      goalKey: presetKey
+    });
+    const totals = evaluation.totals;
 
     return {
       comboId: id,
       label,
       narrative: narrative || '',
       compounds,
-      doses,
-      baseBenefit: base.benefit,
-      baseRisk: base.risk,
-      adjustedBenefit: withSynergy.adjustedBenefit,
-      adjustedRisk: withSynergy.adjustedRisk,
-      synergy: withSynergy.synergy,
-      score: scoring.score,
-      ratio: scoring.ratio,
+      doses: stackEntries.reduce((acc, item) => {
+        acc[item.compound] = item.dose;
+        return acc;
+      }, {}),
+      evaluation,
+      baseBenefit: totals.baseBenefit,
+      baseRisk: totals.baseRisk,
+      adjustedBenefit: totals.totalBenefit,
+      adjustedRisk: totals.totalRisk,
+      score: totals.netScore,
+      ratio: totals.brRatio,
       presetKey
     };
   });
-
-  return results;
 };
 
 export const runStackOptimizer = ({ combos, profile, goalOverride }) => {

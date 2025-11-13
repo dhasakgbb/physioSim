@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import InteractionHeatmap from '../components/InteractionHeatmap';
 import StackBuilder from '../components/StackBuilder';
@@ -13,9 +13,18 @@ import { defaultProfile } from '../utils/personalization';
  * Tests user interactions, state management, and component integration
  */
 
+const renderWithAct = async (ui) => {
+  let utils;
+  await act(async () => {
+    utils = render(ui);
+  });
+  await act(async () => {});
+  return utils;
+};
+
 describe('InteractionHeatmap Component', () => {
-  it('should render the heatmap with compound names', () => {
-    const { container } = render(<InteractionHeatmap />);
+  it('should render the heatmap with compound names', async () => {
+    const { container } = await renderWithAct(<InteractionHeatmap />);
     
     // Check if component renders
     expect(container).toBeDefined();
@@ -25,8 +34,8 @@ describe('InteractionHeatmap Component', () => {
     expect(screen.getAllByText(/NPP/i).length).toBeGreaterThan(0);
   });
 
-  it('should display interaction cells with symbols', () => {
-    const { container } = render(<InteractionHeatmap />);
+  it('should display interaction cells with symbols', async () => {
+    const { container } = await renderWithAct(<InteractionHeatmap />);
     
     // Check if any interactive cells exist (they render as divs with onClick, not buttons)
     const allText = container.textContent;
@@ -36,8 +45,8 @@ describe('InteractionHeatmap Component', () => {
     expect(hasSymbols).toBe(true);
   });
 
-  it('should show rating legend', () => {
-    render(<InteractionHeatmap />);
+  it('should show rating legend', async () => {
+    await renderWithAct(<InteractionHeatmap />);
     
     // Should show rating labels
     expect(screen.getByText(/Excellent Synergy/i)).toBeDefined();
@@ -47,8 +56,8 @@ describe('InteractionHeatmap Component', () => {
 });
 
 describe('StackBuilder Component', () => {
-  it('should render the stack builder interface', () => {
-    render(<StackBuilder userProfile={defaultProfile} />);
+  it('should render the stack builder interface', async () => {
+    await renderWithAct(<StackBuilder userProfile={defaultProfile} />);
     
     expect(screen.getByText(/Build Your Stack/i)).toBeDefined();
     expect(screen.getByText(/Current Stack/i)).toBeDefined();
@@ -56,14 +65,14 @@ describe('StackBuilder Component', () => {
     expect(screen.getByRole('button', { name: /Add to Stack/i })).toBeDefined();
   });
 
-  it('should show empty stack message initially', () => {
-    render(<StackBuilder userProfile={defaultProfile} />);
+  it('should show empty stack message initially', async () => {
+    await renderWithAct(<StackBuilder userProfile={defaultProfile} />);
     
     expect(screen.getByText(/No compounds in stack/i)).toBeDefined();
   });
 
   it('should enable Add button only when compound and dose are selected', async () => {
-    render(<StackBuilder userProfile={defaultProfile} />);
+    await renderWithAct(<StackBuilder userProfile={defaultProfile} />);
     const user = userEvent.setup();
     
     const addButton = screen.getByRole('button', { name: /Add to Stack/i });
@@ -73,14 +82,18 @@ describe('StackBuilder Component', () => {
     
     // Select compound
     const select = screen.getByLabelText(/Select Compound/i);
-    await user.selectOptions(select, 'testosterone');
+    await act(async () => {
+      await user.selectOptions(select, 'testosterone');
+    });
     await waitFor(() => {
       expect(addButton.disabled).toBe(true);
     });
     
     // Enter dose
     const doseInput = screen.getByPlaceholderText(/Enter dose/i);
-    await user.type(doseInput, '500');
+    await act(async () => {
+      await user.type(doseInput, '500');
+    });
     
     // Should be enabled now
     await waitFor(() => {
@@ -89,20 +102,26 @@ describe('StackBuilder Component', () => {
   });
 
   it('should add compound to stack when Add button is clicked', async () => {
-    render(<StackBuilder userProfile={defaultProfile} />);
+    await renderWithAct(<StackBuilder userProfile={defaultProfile} />);
     const user = userEvent.setup();
     
     // Select testosterone
     const select = screen.getByLabelText(/Select Compound/i);
-    await user.selectOptions(select, 'testosterone');
+    await act(async () => {
+      await user.selectOptions(select, 'testosterone');
+    });
     
     // Enter dose
     const doseInput = screen.getByPlaceholderText(/Enter dose/i);
-    await user.type(doseInput, '500');
+    await act(async () => {
+      await user.type(doseInput, '500');
+    });
     
     // Click Add
     const addButton = screen.getByRole('button', { name: /Add to Stack/i });
-    await user.click(addButton);
+    await act(async () => {
+      await user.click(addButton);
+    });
     
     // Should see testosterone in the stack
     await waitFor(() => {
@@ -111,18 +130,24 @@ describe('StackBuilder Component', () => {
   });
 
   it('should display stack metrics when compounds are added', async () => {
-    render(<StackBuilder userProfile={defaultProfile} />);
+    await renderWithAct(<StackBuilder userProfile={defaultProfile} />);
     const user = userEvent.setup();
     
     // Add testosterone
     const select = screen.getByLabelText(/Select Compound/i);
-    await user.selectOptions(select, 'testosterone');
+    await act(async () => {
+      await user.selectOptions(select, 'testosterone');
+    });
     
     const doseInput = screen.getByPlaceholderText(/Enter dose/i);
-    await user.type(doseInput, '500');
+    await act(async () => {
+      await user.type(doseInput, '500');
+    });
     
     const addButton = screen.getByRole('button', { name: /Add to Stack/i });
-    await user.click(addButton);
+    await act(async () => {
+      await user.click(addButton);
+    });
     
     // Should show stack metrics
     await waitFor(() => {
@@ -134,18 +159,24 @@ describe('StackBuilder Component', () => {
   });
 
   it('should display ancillary protocol when compounds are added', async () => {
-    render(<StackBuilder userProfile={defaultProfile} />);
+    await renderWithAct(<StackBuilder userProfile={defaultProfile} />);
     const user = userEvent.setup();
     
     // Add testosterone
     const select = screen.getByLabelText(/Select Compound/i);
-    await user.selectOptions(select, 'testosterone');
+    await act(async () => {
+      await user.selectOptions(select, 'testosterone');
+    });
     
     const doseInput = screen.getByPlaceholderText(/Enter dose/i);
-    await user.type(doseInput, '500');
+    await act(async () => {
+      await user.type(doseInput, '500');
+    });
     
     const addButton = screen.getByRole('button', { name: /Add to Stack/i });
-    await user.click(addButton);
+    await act(async () => {
+      await user.click(addButton);
+    });
     
     // Should show ancillary protocol
     await waitFor(() => {
@@ -154,23 +185,31 @@ describe('StackBuilder Component', () => {
   });
 
   it('should allow removing compounds from stack', async () => {
-    render(<StackBuilder userProfile={defaultProfile} />);
+    await renderWithAct(<StackBuilder userProfile={defaultProfile} />);
     const user = userEvent.setup();
     
     // Add testosterone
     const select = screen.getByLabelText(/Select Compound/i);
-    await user.selectOptions(select, 'testosterone');
+    await act(async () => {
+      await user.selectOptions(select, 'testosterone');
+    });
     
     const doseInput = screen.getByPlaceholderText(/Enter dose/i);
-    await user.type(doseInput, '500');
+    await act(async () => {
+      await user.type(doseInput, '500');
+    });
     
     const addButton = screen.getByRole('button', { name: /Add to Stack/i });
-    await user.click(addButton);
+    await act(async () => {
+      await user.click(addButton);
+    });
     
     // Remove testosterone
     await waitFor(async () => {
       const removeButton = screen.getByRole('button', { name: /Remove/i });
-      await user.click(removeButton);
+      await act(async () => {
+        await user.click(removeButton);
+      });
     });
     
     // Should show empty stack message again
@@ -180,50 +219,74 @@ describe('StackBuilder Component', () => {
   });
 
   it('should allow updating dose for compounds in stack', async () => {
-    render(<StackBuilder userProfile={defaultProfile} />);
+    await renderWithAct(<StackBuilder userProfile={defaultProfile} />);
     const user = userEvent.setup();
     
     // Add testosterone
     const select = screen.getByLabelText(/Select Compound/i);
-    await user.selectOptions(select, 'testosterone');
+    await act(async () => {
+      await user.selectOptions(select, 'testosterone');
+    });
     
     const doseInput = screen.getByPlaceholderText(/Enter dose/i);
-    await user.type(doseInput, '500');
+    await act(async () => {
+      await user.type(doseInput, '500');
+    });
     
     const addButton = screen.getByRole('button', { name: /Add to Stack/i });
-    await user.click(addButton);
+    await act(async () => {
+      await user.click(addButton);
+    });
     
     // Verify compound was added and dose input is present
     await waitFor(() => {
       const stackDoseInputs = screen.getAllByRole('spinbutton');
       expect(stackDoseInputs.length).toBeGreaterThan(0);
     });
+    
+    const stackDoseInputs = screen.getAllByRole('spinbutton');
+    await act(async () => {
+      await user.clear(stackDoseInputs[0]);
+      await user.type(stackDoseInputs[0], '600');
+    });
   });
 
   it('should calculate synergy for multi-compound stacks', async () => {
-    render(<StackBuilder userProfile={defaultProfile} />);
+    await renderWithAct(<StackBuilder userProfile={defaultProfile} />);
     const user = userEvent.setup();
     
     // Add testosterone
     let select = screen.getByLabelText(/Select Compound/i);
-    await user.selectOptions(select, 'testosterone');
+    await act(async () => {
+      await user.selectOptions(select, 'testosterone');
+    });
     
     let doseInput = screen.getByPlaceholderText(/Enter dose/i);
-    await user.type(doseInput, '500');
+    await act(async () => {
+      await user.type(doseInput, '500');
+    });
     
     let addButton = screen.getByRole('button', { name: /Add to Stack/i });
-    await user.click(addButton);
+    await act(async () => {
+      await user.click(addButton);
+    });
     
     // Add NPP
     await waitFor(async () => {
       select = screen.getByLabelText(/Select Compound/i);
-      await user.selectOptions(select, 'npp');
+      await act(async () => {
+        await user.selectOptions(select, 'npp');
+      });
       
       doseInput = screen.getByPlaceholderText(/Enter dose/i);
-      await user.type(doseInput, '300');
+      await act(async () => {
+        await user.type(doseInput, '300');
+      });
       
       addButton = screen.getByRole('button', { name: /Add to Stack/i });
-      await user.click(addButton);
+      await act(async () => {
+        await user.click(addButton);
+      });
     });
     
     // Should show synergy calculations
@@ -234,18 +297,24 @@ describe('StackBuilder Component', () => {
   });
 
   it('should show PDF export button when stack has compounds', async () => {
-    render(<StackBuilder userProfile={defaultProfile} />);
+    await renderWithAct(<StackBuilder userProfile={defaultProfile} />);
     const user = userEvent.setup();
     
     // Add testosterone
-    const select = screen.getByRole('combobox');
-    await user.selectOptions(select, 'testosterone');
+    const select = screen.getByLabelText(/Select Compound/i);
+    await act(async () => {
+      await user.selectOptions(select, 'testosterone');
+    });
     
     const doseInput = screen.getByPlaceholderText(/Enter dose/i);
-    await user.type(doseInput, '500');
+    await act(async () => {
+      await user.type(doseInput, '500');
+    });
     
     const addButton = screen.getByRole('button', { name: /Add to Stack/i });
-    await user.click(addButton);
+    await act(async () => {
+      await user.click(addButton);
+    });
     
     // Should show PDF export button
     await waitFor(() => {
@@ -274,7 +343,9 @@ describe('SideEffectProfile Component', () => {
     const user = userEvent.setup();
     
     const select = screen.getByRole('combobox');
-    await user.selectOptions(select, 'testosterone');
+    await act(async () => {
+      await user.selectOptions(select, 'testosterone');
+    });
     
     // Should show side effect categories
     await waitFor(() => {
@@ -289,13 +360,17 @@ describe('SideEffectProfile Component', () => {
     const select = screen.getByRole('combobox');
     
     // Select testosterone
-    await user.selectOptions(select, 'testosterone');
+    await act(async () => {
+      await user.selectOptions(select, 'testosterone');
+    });
     await waitFor(() => {
       expect(screen.getAllByText(/Testosterone/i).length).toBeGreaterThan(0);
     });
     
     // Select trenbolone
-    await user.selectOptions(select, 'trenbolone');
+    await act(async () => {
+      await user.selectOptions(select, 'trenbolone');
+    });
     await waitFor(() => {
       expect(screen.getAllByText(/Trenbolone/i).length).toBeGreaterThan(0);
     });
@@ -306,7 +381,9 @@ describe('SideEffectProfile Component', () => {
     const user = userEvent.setup();
     
     const select = screen.getByRole('combobox');
-    await user.selectOptions(select, 'testosterone');
+    await act(async () => {
+      await user.selectOptions(select, 'testosterone');
+    });
     
     // Should show detailed information (checking for common sections)
     await waitFor(() => {

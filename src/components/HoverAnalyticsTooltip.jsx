@@ -19,6 +19,7 @@ const HoverAnalyticsTooltip = ({ active, payload, label, unit = 'mg', visibleCom
 
   const row = payload[0]?.payload;
   if (!row) return null;
+  const trimmedUnit = unit?.trim() || 'mg';
 
   const entries = Object.entries(compoundData)
     .filter(([key]) => visibleCompounds?.[key])
@@ -30,6 +31,38 @@ const HoverAnalyticsTooltip = ({ active, payload, label, unit = 'mg', visibleCom
       const prevDose = row[`${key}-benefit-prevDose`] ?? row[`${key}-risk-prevDose`];
       const deltaBenefit = row[`${key}-benefit-delta`];
       const deltaRisk = row[`${key}-risk-delta`];
+      const benefitMeta = row[`${key}-benefit-meta`];
+      const riskMeta = row[`${key}-risk-meta`];
+      const metaSources = [benefitMeta, riskMeta].filter(Boolean);
+      const plateauDose =
+        metaSources.find(source => typeof source?.plateauDose === 'number')?.plateauDose ?? null;
+      const hardMax =
+        metaSources.find(source => typeof source?.hardMax === 'number')?.hardMax ?? null;
+      const clampedEntry = metaSources.find(
+        source => source && source.clampedDose !== undefined && source.requestedDose !== undefined
+      );
+      const clamped =
+        metaSources.some(
+          source =>
+            source &&
+            source.clampedDose !== undefined &&
+            source.requestedDose !== undefined &&
+            source.clampedDose !== source.requestedDose
+        ) || false;
+      const beyondEvidence = metaSources.some(source => source?.beyondEvidence);
+      const nearingPlateau = metaSources.some(source => source?.nearingPlateau);
+      const guardrailCaption = [];
+      if (nearingPlateau && plateauDose !== null) {
+        guardrailCaption.push(`Plateau kicks in near ${plateauDose} ${trimmedUnit}.`);
+      }
+      if (beyondEvidence && hardMax !== null) {
+        guardrailCaption.push(`Outside evidence (> ${hardMax} ${trimmedUnit}). Values are damped.`);
+      }
+      if (clamped && clampedEntry) {
+        guardrailCaption.push(
+          `Requested ${clampedEntry.requestedDose} ${trimmedUnit} but clamped to ${clampedEntry.clampedDose} ${trimmedUnit}.`
+        );
+      }
 
       return {
         key,
@@ -39,7 +72,18 @@ const HoverAnalyticsTooltip = ({ active, payload, label, unit = 'mg', visibleCom
         risk,
         prevDose,
         deltaBenefit,
-        deltaRisk
+        deltaRisk,
+        guardrails: {
+          plateauDose,
+          hardMax,
+          clamped,
+          clampedDose: clampedEntry?.clampedDose ?? null,
+          requestedDose: clampedEntry?.requestedDose ?? null,
+          beyondEvidence,
+          nearingPlateau,
+          caption: guardrailCaption.join(' '),
+          active: Boolean(nearingPlateau || beyondEvidence || clamped)
+        }
       };
     })
     .filter(Boolean);
@@ -66,6 +110,28 @@ const HoverAnalyticsTooltip = ({ active, payload, label, unit = 'mg', visibleCom
               <div className="text-[11px] text-physio-text-tertiary mt-0.5">
                 {item.prevDose}→{label}{unit} • ΔBenefit {formatDelta(item.deltaBenefit)} vs ΔRisk {formatDelta(item.deltaRisk)}
               </div>
+            )}
+            {item.guardrails?.active && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {item.guardrails.nearingPlateau && item.guardrails.plateauDose !== null && (
+                  <span className="px-2 py-0.5 rounded-full bg-physio-warning/10 border border-physio-warning/30 text-[10px] text-physio-warning font-semibold">
+                    Plateau @ {item.guardrails.plateauDose} {trimmedUnit}
+                  </span>
+                )}
+                {item.guardrails.beyondEvidence && item.guardrails.hardMax !== null && (
+                  <span className="px-2 py-0.5 rounded-full bg-physio-error/10 border border-physio-error/30 text-[10px] text-physio-error font-semibold">
+                    Outside evidence &gt; {item.guardrails.hardMax} {trimmedUnit}
+                  </span>
+                )}
+                {item.guardrails.clamped && item.guardrails.clampedDose !== null && (
+                  <span className="px-2 py-0.5 rounded-full bg-physio-warning/5 border border-physio-warning/30 text-[10px] text-physio-text-primary font-semibold">
+                    Clamped to {item.guardrails.clampedDose} {trimmedUnit}
+                  </span>
+                )}
+              </div>
+            )}
+            {item.guardrails?.caption && (
+              <p className="text-[11px] text-physio-text-tertiary mt-0.5">{item.guardrails.caption}</p>
             )}
           </div>
         ))}

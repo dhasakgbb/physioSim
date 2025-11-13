@@ -46,7 +46,7 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
         <span
           class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-accent-mint"
         >
-          Δ Benefit 2.3%
+          Δ Benefit 2.2%
         </span>
         <span
           class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-error"
@@ -1130,7 +1130,7 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
             class="text-xs text-physio-text-tertiary flex flex-wrap gap-3"
           >
             <span>
-              Δ Benefit 2.3%
+              Δ Benefit 2.2%
             </span>
             <span>
               Δ Risk 3.2%
@@ -1305,10 +1305,10 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
               class="space-y-4"
             >
               <label
-                class="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4 text-sm space-y-2"
+                class="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4 text-sm space-y-3"
               >
                 <div
-                  class="flex items-center justify-between"
+                  class="flex items-center justify-between gap-3"
                 >
                   <span
                     class="font-semibold text-physio-text-primary"
@@ -1347,12 +1347,15 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
                     </div>
                   </div>
                 </div>
+                <div
+                  class="flex flex-wrap gap-2 text-[11px] text-physio-text-tertiary"
+                />
               </label>
               <label
-                class="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4 text-sm space-y-2"
+                class="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4 text-sm space-y-3"
               >
                 <div
-                  class="flex items-center justify-between"
+                  class="flex items-center justify-between gap-3"
                 >
                   <span
                     class="font-semibold text-physio-text-primary"
@@ -1391,6 +1394,9 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
                     </div>
                   </div>
                 </div>
+                <div
+                  class="flex flex-wrap gap-2 text-[11px] text-physio-text-tertiary"
+                />
               </label>
             </div>
           </div>
@@ -1483,7 +1489,7 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
                 <div
                   class="text-2xl font-bold text-physio-accent-mint"
                 >
-                  8.66
+                  8.65
                 </div>
                 <p
                   class="text-xs text-physio-text-secondary mt-1"
@@ -1539,7 +1545,7 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
             <div
               class="text-xs text-physio-text-secondary"
             >
-              Δ Benefit 2.3% • Δ Risk 3.2%
+              Δ Benefit 2.2% • Δ Risk 3.2%
             </div>
           </div>
           <div

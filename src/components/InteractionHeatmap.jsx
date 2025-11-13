@@ -7,16 +7,17 @@ import {
   goalPresets,
   stackOptimizerCombos
 } from '../data/interactionEngineData';
-import { heatmapScores, calculateStackSynergy } from '../data/interactionMatrix';
+import { heatmapScores } from '../data/interactionMatrix';
 import {
   computeHeatmapValue,
   evaluatePairDimension,
   generatePrimaryCurveSeries,
-  buildSurfaceData,
-  evaluateCompoundResponse
+  buildSurfaceData
 } from '../utils/interactionEngine';
+import { evaluateStack } from '../utils/stackEngine';
 import { generateStackOptimizerResults, generateCustomStackResults } from '../utils/stackOptimizer';
 import { compoundData } from '../data/compoundData';
+import { defaultProfile } from '../utils/personalization';
 import {
   ResponsiveContainer,
   LineChart,
@@ -97,11 +98,22 @@ const defaultHeatmapControls = {
   evidenceBlend: 0.35
 };
 
+const getInteractionStorage = () => {
+  if (typeof window === 'undefined') return null;
+  const storage = window.localStorage;
+  if (!storage) return null;
+  if (typeof storage.getItem !== 'function' || typeof storage.setItem !== 'function') {
+    return null;
+  }
+  return storage;
+};
+
 const InteractionHeatmap = ({
   userProfile,
   onPrefillStack,
   resetSignal = 0,
-  onFiltersDirtyChange
+  onFiltersDirtyChange,
+  uiMode = 'simple'
 }) => {
   const pairIds = Object.keys(interactionPairs);
   const [selectedPairId, setSelectedPairId] = useState(pairIds[0]);
@@ -115,20 +127,19 @@ const InteractionHeatmap = ({
   const [customRanges, setCustomRanges] = useState({});
   const [customResults, setCustomResults] = useState([]);
   const [highlightedBand, setHighlightedBand] = useState(null);
-  const [optimizerCollapsed, setOptimizerCollapsed] = useState(() => !Boolean(userProfile?.labMode?.enabled));
+  const labUnlocked = uiMode === 'lab' || Boolean(userProfile?.labMode?.enabled);
+  const [optimizerCollapsed, setOptimizerCollapsed] = useState(() => !labUnlocked);
   const [contextCollapsed, setContextCollapsed] = useState(true);
   const [heatmapCompact, setHeatmapCompact] = useState(false);
   const pairDetailRef = useRef(null);
   const heatmapRef = useRef(null);
 
   const allCompoundKeys = useMemo(() => Object.keys(compoundData), []);
-  const labModeEnabled = Boolean(userProfile?.labMode?.enabled);
-
   useEffect(() => {
-    if (!labModeEnabled) {
+    if (!labUnlocked) {
       setOptimizerCollapsed(true);
     }
-  }, [labModeEnabled]);
+  }, [labUnlocked]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -379,10 +390,10 @@ const InteractionHeatmap = ({
   }, [surfaceData, selectedPair, compoundAKey, compoundBKey]);
 
   const limitedRecommendations = useMemo(
-    () => (labModeEnabled ? recommendations : recommendations.slice(0, 2)),
-    [recommendations, labModeEnabled]
+    () => (labUnlocked ? recommendations : recommendations.slice(0, 2)),
+    [recommendations, labUnlocked]
   );
-  const displayedRecommendations = labModeEnabled ? recommendations : limitedRecommendations;
+  const displayedRecommendations = labUnlocked ? recommendations : limitedRecommendations;
 
   useEffect(() => {
     setHighlightedBand(null);
@@ -430,56 +441,74 @@ const InteractionHeatmap = ({
     [allCompoundKeys, customCompounds]
   );
 
-  const stackResults = useMemo(() => {
-    return generateStackOptimizerResults({
-      profile: userProfile,
-      goalOverride: goalPreset
-    });
-  }, [userProfile, goalPreset]);
+  const stackResults = useMemo(
+    () =>
+      generateStackOptimizerResults({
+        profile: userProfile,
+        goalOverride: goalPreset
+      }),
+    [userProfile, goalPreset]
+  );
 
-  const pairBaseScores = useMemo(() => {
-    if (!selectedPair) return { benefit: 0, risk: 0 };
-    return selectedPair.compounds.reduce(
-      (acc, compoundKey) => {
-        const doseValue = doses?.[compoundKey] ?? selectedPair.defaultDoses?.[compoundKey] ?? 0;
-        acc.benefit += evaluateCompoundResponse(compoundKey, 'benefit', doseValue, userProfile);
-        acc.risk += evaluateCompoundResponse(compoundKey, 'risk', doseValue, userProfile);
-        return acc;
-      },
-      { benefit: 0, risk: 0 }
-    );
-  }, [selectedPair, doses, userProfile]);
-
-  const pairSynergy = useMemo(() => {
-    if (!selectedPair) return { benefitSynergy: 0, riskSynergy: 0 };
+  const pairEvaluation = useMemo(() => {
+    if (!selectedPair) return null;
     const payload = selectedPair.compounds.map(compoundKey => ({
       compound: compoundKey,
       dose: doses?.[compoundKey] ?? selectedPair.defaultDoses?.[compoundKey] ?? 0
     }));
-    return calculateStackSynergy(payload, { profile: userProfile, doses });
-  }, [selectedPair, doses, userProfile]);
+    const profile = userProfile || defaultProfile;
+    return evaluateStack({
+      stackInput: payload,
+      profile,
+      goalKey: goalPreset
+    });
+  }, [selectedPair, doses, userProfile, goalPreset]);
+
+  const guardrailByCompound = pairEvaluation?.byCompound || {};
+
+  useEffect(() => {
+    if (labUnlocked || !selectedPair) return;
+    setDoses(prev => {
+      let changed = false;
+      const next = { ...prev };
+      selectedPair.compounds.forEach(compoundKey => {
+        const compoundEval = guardrailByCompound[compoundKey];
+        const benefitMeta = compoundEval?.meta?.benefit;
+        const riskMeta = compoundEval?.meta?.risk;
+        const hardMax = benefitMeta?.hardMax || riskMeta?.hardMax;
+        if (hardMax && next[compoundKey] > hardMax) {
+          next[compoundKey] = hardMax;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [guardrailByCompound, labUnlocked, selectedPair]);
+  const pairTotals = pairEvaluation?.totals || null;
+  const baseBenefitValue = Number(pairTotals?.baseBenefit ?? 0);
+  const baseRiskValue = Number(pairTotals?.baseRisk ?? 0);
+  const adjustedBenefitValue = Number(pairTotals?.totalBenefit ?? baseBenefitValue);
+  const adjustedRiskValue = Number(pairTotals?.totalRisk ?? baseRiskValue);
+  const benefitDelta = adjustedBenefitValue - baseBenefitValue;
+  const riskDelta = adjustedRiskValue - baseRiskValue;
 
   const pairNetChartData = useMemo(() => {
-    const adjustedBenefit = Math.max(pairBaseScores.benefit + (pairSynergy.benefitSynergy || 0), 0);
-    const adjustedRisk = Math.max(pairBaseScores.risk + (pairSynergy.riskSynergy || 0), 0);
     return [
       {
         metric: 'Benefit',
-        Base: Number(pairBaseScores.benefit.toFixed(2)),
-        'With Synergy': Number(adjustedBenefit.toFixed(2))
+        Base: Number(baseBenefitValue.toFixed(2)),
+        'With Synergy': Number(adjustedBenefitValue.toFixed(2))
       },
       {
         metric: 'Risk',
-        Base: Number(pairBaseScores.risk.toFixed(2)),
-        'With Synergy': Number(adjustedRisk.toFixed(2))
+        Base: Number(baseRiskValue.toFixed(2)),
+        'With Synergy': Number(adjustedRiskValue.toFixed(2))
       }
     ];
-  }, [pairBaseScores, pairSynergy]);
+  }, [baseBenefitValue, baseRiskValue, adjustedBenefitValue, adjustedRiskValue]);
 
-  const benefitSynergyPercent =
-    pairBaseScores.benefit > 0 ? ((pairSynergy.benefitSynergy || 0) / pairBaseScores.benefit) * 100 : 0;
-  const riskSynergyPercent =
-    pairBaseScores.risk > 0 ? ((pairSynergy.riskSynergy || 0) / pairBaseScores.risk) * 100 : 0;
+  const benefitSynergyPercent = baseBenefitValue > 0 ? (benefitDelta / baseBenefitValue) * 100 : 0;
+  const riskSynergyPercent = baseRiskValue > 0 ? (riskDelta / baseRiskValue) * 100 : 0;
   const surfaceMarkerMap = useMemo(() => {
     const map = new Map();
     if (!compoundAKey || !compoundBKey) return map;
@@ -497,15 +526,12 @@ const InteractionHeatmap = ({
     ? Math.round(((pairEvidence.clinical ?? 0) / evidenceTotalWeight) * 100)
     : Math.round((1 - evidenceBlend) * 100);
   const anecdoteShare = 100 - clinicalShare;
-  const baseBenefitValue = Number(pairBaseScores.benefit.toFixed(2));
-  const baseRiskValue = Number(pairBaseScores.risk.toFixed(2));
-  const adjustedBenefitValue = Number((pairBaseScores.benefit + (pairSynergy.benefitSynergy || 0)).toFixed(2));
-  const adjustedRiskValue = Number((pairBaseScores.risk + (pairSynergy.riskSynergy || 0)).toFixed(2));
   const netRatio = adjustedRiskValue > 0 ? (adjustedBenefitValue / adjustedRiskValue).toFixed(2) : '—';
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    const storage = getInteractionStorage();
+    if (!storage) return;
     try {
-      const stored = window.localStorage.getItem(INTERACTION_CONTROL_STORAGE_KEY);
+      const stored = storage.getItem(INTERACTION_CONTROL_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed.heatmapMode) setHeatmapMode(parsed.heatmapMode);
@@ -518,9 +544,10 @@ const InteractionHeatmap = ({
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    const storage = getInteractionStorage();
+    if (!storage) return;
     try {
-      window.localStorage.setItem(
+      storage.setItem(
         INTERACTION_CONTROL_STORAGE_KEY,
         JSON.stringify({ heatmapMode, goalPreset, evidenceBlend })
       );
@@ -542,8 +569,11 @@ const InteractionHeatmap = ({
     setGoalPreset(defaultHeatmapControls.goalPreset);
     setEvidenceBlend(defaultHeatmapControls.evidenceBlend);
     setContextCollapsed(true);
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem(INTERACTION_CONTROL_STORAGE_KEY);
+    const storage = getInteractionStorage();
+    if (storage) {
+      try {
+        storage.removeItem(INTERACTION_CONTROL_STORAGE_KEY);
+      } catch {}
     }
   }, [resetSignal]);
 
@@ -856,7 +886,7 @@ const InteractionHeatmap = ({
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.9fr)]">
           <div className="space-y-4">
-            {labModeEnabled && dimensionKeys.length > 0 && (
+            {labUnlocked && dimensionKeys.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {dimensionKeys.map(key => {
                   const dim = interactionDimensions[key];
@@ -881,9 +911,25 @@ const InteractionHeatmap = ({
               {selectedPair?.compounds.map(compoundKey => {
                 const [min, max] = selectedPair?.doseRanges?.[compoundKey] || [0, 1000];
                 const doseValue = doses?.[compoundKey] ?? selectedPair?.defaultDoses?.[compoundKey] ?? 0;
+                const compoundEval = guardrailByCompound[compoundKey];
+                const benefitMeta = compoundEval?.meta?.benefit;
+                const riskMeta = compoundEval?.meta?.risk;
+                const plateauDose = benefitMeta?.plateauDose || riskMeta?.plateauDose || null;
+                const hardMax = benefitMeta?.hardMax || riskMeta?.hardMax || null;
+                const nearingPlateau = benefitMeta?.nearingPlateau || riskMeta?.nearingPlateau || false;
+                const beyondEvidence = benefitMeta?.beyondEvidence || riskMeta?.beyondEvidence || false;
+                const clamped = (() => {
+                  const meta = benefitMeta || riskMeta;
+                  if (!meta) return false;
+                  if (meta.clampedDose === undefined || meta.requestedDose === undefined) return false;
+                  return meta.clampedDose !== meta.requestedDose;
+                })();
+                const sliderMax = !labUnlocked && hardMax ? Math.min(max, hardMax) : max;
+                const displayDose = Math.min(doseValue, sliderMax);
+                const needsLabUnlock = !labUnlocked && hardMax && sliderMax < max;
                 return (
-                  <label key={compoundKey} className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4 text-sm space-y-2">
-                    <div className="flex items-center justify-between">
+                  <label key={compoundKey} className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4 text-sm space-y-3">
+                    <div className="flex items-center justify-between gap-3">
                       <span className="font-semibold text-physio-text-primary">{compoundData[compoundKey]?.name}</span>
                       <button
                         onClick={() => setPrimaryCompound(compoundKey)}
@@ -898,16 +944,38 @@ const InteractionHeatmap = ({
                       <input
                         type="range"
                         min={min}
-                        max={max}
+                        max={sliderMax}
                         step="10"
-                        value={doseValue}
+                        value={displayDose}
                         onChange={e => updateDose(compoundKey, e.target.value)}
                         className="flex-1"
                       />
                       <div className="text-right">
-                        <div className="text-physio-text-primary font-semibold">{doseValue} mg</div>
-                        <div className="text-xs text-physio-text-tertiary">Range {min}-{max} mg</div>
+                        <div className="text-physio-text-primary font-semibold">{displayDose} mg</div>
+                        <div className="text-xs text-physio-text-tertiary">Range {min}-{sliderMax} mg</div>
                       </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-[11px] text-physio-text-tertiary">
+                      {nearingPlateau && plateauDose !== null && (
+                        <span className="px-2 py-0.5 rounded-full bg-physio-warning/10 border border-physio-warning/40 text-physio-warning font-semibold">
+                          Plateau @ {plateauDose} mg
+                        </span>
+                      )}
+                      {beyondEvidence && hardMax !== null && (
+                        <span className="px-2 py-0.5 rounded-full bg-physio-error/10 border border-physio-error/30 text-physio-error font-semibold">
+                          Outside evidence &gt; {hardMax} mg
+                        </span>
+                      )}
+                      {clamped && (
+                        <span className="px-2 py-0.5 rounded-full bg-physio-warning/5 border border-physio-warning/30 text-physio-text-primary font-semibold">
+                          Clamped to {benefitMeta?.clampedDose || riskMeta?.clampedDose} mg
+                        </span>
+                      )}
+                      {needsLabUnlock && (
+                        <span className="px-2 py-0.5 rounded-full bg-physio-bg-tertiary border border-physio-bg-border text-physio-text-secondary font-semibold">
+                          Lab mode unlocks overrides
+                        </span>
+                      )}
                     </div>
                   </label>
                 );
@@ -934,7 +1002,7 @@ const InteractionHeatmap = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              {labModeEnabled && dimensionResult ? (
+              {labUnlocked && dimensionResult ? (
                 <>
                   <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
                     <div className="text-xs text-physio-text-tertiary">Naïve sum</div>
@@ -1022,7 +1090,7 @@ const InteractionHeatmap = ({
 
         <SectionDivider />
 
-        {!labModeEnabled && limitedRecommendations.length > 0 && (
+        {!labUnlocked && limitedRecommendations.length > 0 && (
           <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold text-physio-text-primary">Smart dose suggestions</h3>
@@ -1084,13 +1152,13 @@ const InteractionHeatmap = ({
           </div>
         )}
 
-        {!labModeEnabled && (
+        {!labUnlocked && (
           <p className="text-xs text-physio-text-tertiary">
             Enable Lab Mode inside the personalization panel to unlock dimension-level analytics, dose surfaces, and the multi-compound optimizer.
           </p>
         )}
         {/* Chart */}
-{labModeEnabled && (
+{labUnlocked && (
   <>
   <SectionDivider />
   <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
@@ -1143,7 +1211,7 @@ const InteractionHeatmap = ({
 )}
 
 {/* Surface + Recommendations */}
-{labModeEnabled && (
+{labUnlocked && (
   <>
   <SectionDivider />
   <div className="grid gap-4 lg:grid-cols-2">
@@ -1267,7 +1335,7 @@ const InteractionHeatmap = ({
 )}
       </section>
 
-{labModeEnabled && (
+{labUnlocked && (
 <>
 <SectionDivider />
       {/* Multi-Compound Optimizer */}
@@ -1300,14 +1368,12 @@ const InteractionHeatmap = ({
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {stackResults.map(result => {
+              const benefitDelta = result.adjustedBenefit - result.baseBenefit;
+              const riskDelta = result.adjustedRisk - result.baseRisk;
               const benefitSynergyPercent =
-                result.baseBenefit > 0
-                  ? ((result.synergy?.benefitSynergy || 0) / result.baseBenefit) * 100
-                  : 0;
+                result.baseBenefit > 0 ? (benefitDelta / result.baseBenefit) * 100 : 0;
               const riskSynergyPercent =
-                result.baseRisk > 0
-                  ? ((result.synergy?.riskSynergy || 0) / result.baseRisk) * 100
-                  : 0;
+                result.baseRisk > 0 ? (riskDelta / result.baseRisk) * 100 : 0;
               return (
                 <article
                   key={`${result.comboId}-${Object.values(result.doses).join('-')}`}
@@ -1499,7 +1565,7 @@ const InteractionHeatmap = ({
       </div>
 
       {/* Controls */}
-      {labModeEnabled && (
+      {labUnlocked && (
         <>
         <SectionDivider />
       <section className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-lg space-y-6">

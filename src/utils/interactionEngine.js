@@ -4,6 +4,18 @@ import { interactionDimensions, interactionPairs, goalPresets } from '../data/in
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
+const getCurveCap = (curve = []) => {
+  if (!curve.length) return 0;
+  return curve[curve.length - 1]?.dose ?? 0;
+};
+
+const derivePlateauDose = (curve = []) => {
+  if (!curve.length) return 0;
+  if (curve.length === 1) return curve[0].dose;
+  // Use the penultimate dose as plateau proxy to avoid asymptote artifacts.
+  return curve[Math.max(0, curve.length - 2)].dose;
+};
+
 const interpolateCurvePoint = (curve = [], dose) => {
   if (!curve.length) return null;
   if (dose <= curve[0].dose) return curve[0];
@@ -25,19 +37,52 @@ const interpolateCurvePoint = (curve = [], dose) => {
 
 export const evaluateCompoundResponse = (compoundKey, curveType, dose, profile) => {
   const compound = compoundData[compoundKey];
-  if (!compound) return 0;
+  if (!compound) {
+    return { value: 0, ci: 0, meta: { missing: true, clampedDose: 0, requestedDose: dose } };
+  }
   const curve = curveType === 'risk' ? compound.riskCurve : compound.benefitCurve;
-  const point = interpolateCurvePoint(curve, dose);
-  if (!point) return 0;
+  const plateauDose = compound.plateauDose ?? derivePlateauDose(compound.benefitCurve);
+  const hardMax =
+    compound.hardMax ??
+    Math.max(getCurveCap(compound.benefitCurve), getCurveCap(compound.riskCurve), plateauDose);
+  const clampedDose = Math.min(Math.max(dose, 0), hardMax || dose || 0);
+  const point = interpolateCurvePoint(curve, clampedDose);
+  if (!point) {
+    return {
+      value: 0,
+      ci: 0,
+      meta: {
+        clampedDose,
+        requestedDose: dose,
+        plateauDose,
+        hardMax,
+        nearingPlateau: false,
+        beyondEvidence: dose > hardMax
+      }
+    };
+  }
   const personalized = personalizeScore({
     compoundKey,
     curveType,
-    dose,
+    dose: clampedDose,
     baseValue: point.value,
     baseCi: point.ci,
     profile
   });
-  return personalized.value;
+  const nearingPlateau = plateauDose ? clampedDose >= plateauDose : false;
+  const beyondEvidence = hardMax ? dose > hardMax : false;
+  return {
+    value: personalized.value,
+    ci: personalized.ci ?? 0,
+    meta: {
+      clampedDose,
+      requestedDose: dose,
+      plateauDose,
+      hardMax,
+      nearingPlateau,
+      beyondEvidence
+    }
+  };
 };
 
 const hillTerm = (dose, d50 = 300, n = 2) => {
@@ -74,19 +119,21 @@ export const evaluatePairDimension = ({
 
   const weights = pair.dimensionWeights?.[dimensionKey] || {};
 
-  const baseA = evaluateCompoundResponse(
+  const baseAResponse = evaluateCompoundResponse(
     compoundA,
     dimension.type === 'risk' ? 'risk' : 'benefit',
     doseA,
     profile
-  ) * (weights[compoundA] ?? 1);
+  );
+  const baseA = (baseAResponse?.value ?? 0) * (weights[compoundA] ?? 1);
 
-  const baseB = evaluateCompoundResponse(
+  const baseBResponse = evaluateCompoundResponse(
     compoundB,
     dimension.type === 'risk' ? 'risk' : 'benefit',
     doseB,
     profile
-  ) * (weights[compoundB] ?? 1);
+  );
+  const baseB = (baseBResponse?.value ?? 0) * (weights[compoundB] ?? 1);
 
   const naive = baseA + baseB;
 
@@ -206,7 +253,7 @@ export const generatePrimaryCurveSeries = ({
       dimension?.type === 'risk' ? 'risk' : 'benefit',
       pointDoses[primaryCompound],
       profile
-    );
+    )?.value ?? 0;
     data.push({
       dose: Math.round(pointDoses[primaryCompound]),
       basePrimary,

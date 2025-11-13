@@ -8,6 +8,7 @@ import StackBuilder from './StackBuilder';
 import SideEffectProfile from './SideEffectProfile';
 import AncillaryCalculator from './AncillaryCalculator';
 import PersonalizationPanel from './PersonalizationPanel.jsx';
+import ProfileStatusBar from './ProfileStatusBar.jsx';
 import EvidencePanel from './EvidencePanel';
 import ChartControlBar from './ChartControlBar';
 import { compoundData } from '../data/compoundData';
@@ -82,6 +83,7 @@ const AASVisualization = () => {
       return { ...defaultProfile };
     }
   });
+  const [uiMode, setUIMode] = useState(() => (userProfile?.labMode?.enabled ? 'lab' : 'simple'));
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -130,7 +132,7 @@ const AASVisualization = () => {
     orals: true
   });
   const [compressedMode, setCompressedMode] = useState(false);
-  const [evidencePanelCollapsed, setEvidencePanelCollapsed] = useState(true);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [filtersDirty, setFiltersDirty] = useState(false);
   const [interactionFiltersDirty, setInteractionFiltersDirty] = useState(false);
   const [interactionResetKey, setInteractionResetKey] = useState(0);
@@ -142,6 +144,22 @@ const AASVisualization = () => {
       ...prev,
       [tabKey]: !prev[tabKey]
     }));
+  };
+
+  const handleToggleLabMode = () => {
+    setUserProfile(prev => {
+      const nextEnabled = !prev?.labMode?.enabled;
+      if (nextEnabled) {
+        setUIMode('lab');
+      }
+      return {
+        ...prev,
+        labMode: {
+          ...(prev?.labMode || defaultProfile.labMode),
+          enabled: nextEnabled
+        }
+      };
+    });
   };
 
   const handlePrefillStack = (compounds) => {
@@ -200,6 +218,36 @@ const AASVisualization = () => {
           <p className="text-lg text-physio-text-secondary">
             Evidence-based harm reduction modeling with transparent uncertainty quantification
           </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <span className="text-sm text-physio-text-secondary">Interface mode</span>
+            <div className="inline-flex rounded-full border border-physio-bg-border bg-physio-bg-core">
+              <button
+                onClick={() => setUIMode('simple')}
+                className={`px-4 py-1.5 text-xs font-semibold rounded-full transition ${
+                  uiMode === 'simple'
+                    ? 'bg-physio-accent-cyan text-white shadow-physio-strong'
+                    : 'text-physio-text-secondary'
+                }`}
+              >
+                Simple
+              </button>
+              <button
+                onClick={() => setUIMode('lab')}
+                className={`px-4 py-1.5 text-xs font-semibold rounded-full transition ${
+                  uiMode === 'lab'
+                    ? 'bg-physio-accent-violet text-white shadow-physio-strong'
+                    : 'text-physio-text-secondary'
+                }`}
+              >
+                Lab
+              </button>
+            </div>
+            <span className="text-xs text-physio-text-tertiary">
+              {uiMode === 'simple'
+                ? 'Keeps focus on planning and guardrails.'
+                : 'Shows evidence sliders, interaction surfaces, and optimizers.'}
+            </span>
+          </div>
         </header>
 
         <div className="flex flex-wrap items-center justify-end gap-2 mb-4">
@@ -216,12 +264,13 @@ const AASVisualization = () => {
           </button>
         </div>
 
-        <PersonalizationPanel
-          profile={userProfile}
-          onProfileChange={setUserProfile}
-          onClearProfile={handleClearProfile}
-          compressed={compressedMode}
-        />
+        <div className="mb-6">
+          <ProfileStatusBar
+            profile={userProfile}
+            onEditProfile={() => setProfileModalOpen(true)}
+            onToggleLabMode={handleToggleLabMode}
+          />
+        </div>
 
         {/* Tab Navigation - Underline Style */}
         <div className="mb-8 border-b border-physio-bg-border relative">
@@ -362,32 +411,30 @@ const AASVisualization = () => {
               chartRef={chartRef}
             />
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Chart - Takes 3 columns on large screens */}
-              <div className="lg:col-span-3">
-                <div ref={chartRef}>
+            <section className="bg-physio-bg-secondary/70 border border-physio-bg-border rounded-3xl p-4 lg:p-6 shadow-physio-subtle">
+              <div className="flex flex-col lg:flex-row gap-6">
+                <div className="flex-1" ref={chartRef}>
                   <DoseResponseChart
                     viewMode={viewMode}
                     visibleCompounds={visibleCompounds}
                     userProfile={userProfile}
                   />
                 </div>
+                <div className="lg:w-80">
+                  <CustomLegend
+                    visibleCompounds={visibleCompounds}
+                    toggleCompound={toggleCompound}
+                    onMethodologyClick={openMethodology}
+                    activeTab={activeTab}
+                  />
+                </div>
               </div>
+            </section>
 
-              {/* Legend - Takes 1 column on large screens */}
-              <div className="lg:col-span-1">
-                <CustomLegend
-                  visibleCompounds={visibleCompounds}
-                  toggleCompound={toggleCompound}
-                  onMethodologyClick={openMethodology}
-                  activeTab={activeTab}
-                />
-              </div>
-            </div>
-
-            {/* Context Drawer */}
-            <div className={`${compressedMode ? 'mt-4' : 'mt-6'} bg-physio-bg-secondary border-2 border-physio-accent-cyan rounded-lg ${compressedMode ? 'p-4' : 'p-5'}`}>
+            <div
+              data-section="context-drawer"
+              className="mt-5 bg-physio-bg-secondary/80 border border-physio-bg-border rounded-2xl p-5 shadow-physio-subtle"
+            >
               <button
                 type="button"
                 onClick={() => toggleContextDrawer('injectables')}
@@ -400,7 +447,7 @@ const AASVisualization = () => {
                 <CollapseChevron open={!contextCollapsed.injectables} />
               </button>
               {!contextCollapsed.injectables && (
-                <div className={`text-sm text-physio-text-primary ${compressedMode ? 'mt-3 space-y-4' : 'mt-5 space-y-6'}`}>
+                <div className="text-sm text-physio-text-primary mt-4 space-y-5">
                   <section>
                     <h4 className="font-semibold text-physio-text-secondary mb-2">Quick Guide</h4>
                     <ul className="space-y-1.5">
@@ -451,6 +498,10 @@ const AASVisualization = () => {
                       </div>
                     </div>
                   </section>
+                  <section className="bg-physio-bg-core border border-physio-bg-border rounded-xl p-4">
+                    <h4 className="font-semibold text-physio-text-secondary mb-2">Evidence & Confidence</h4>
+                    <EvidencePanel activeTab={activeTab} visibleCompounds={visibleCompounds} />
+                  </section>
                 </div>
               )}
             </div>
@@ -474,32 +525,30 @@ const AASVisualization = () => {
               chartRef={chartRef}
             />
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Chart - Takes 3 columns on large screens */}
-              <div className="lg:col-span-3">
-                <div ref={chartRef}>
+            <section className="bg-physio-bg-secondary/70 border border-physio-bg-border rounded-3xl p-4 lg:p-6 shadow-physio-subtle">
+              <div className="flex flex-col lg:flex-row gap-6">
+                <div className="flex-1" ref={chartRef}>
                   <OralDoseChart
                     viewMode={viewMode}
                     visibleCompounds={visibleCompounds}
                     userProfile={userProfile}
                   />
                 </div>
+                <div className="lg:w-80">
+                  <CustomLegend
+                    visibleCompounds={visibleCompounds}
+                    toggleCompound={toggleCompound}
+                    onMethodologyClick={openMethodology}
+                    activeTab={activeTab}
+                  />
+                </div>
               </div>
+            </section>
 
-              {/* Legend - Takes 1 column on large screens */}
-              <div className="lg:col-span-1">
-                <CustomLegend
-                  visibleCompounds={visibleCompounds}
-                  toggleCompound={toggleCompound}
-                  onMethodologyClick={openMethodology}
-                  activeTab={activeTab}
-                />
-              </div>
-            </div>
-
-            {/* Context Drawer */}
-            <div className={`${compressedMode ? 'mt-4' : 'mt-6'} bg-physio-bg-secondary border-2 border-physio-accent-cyan rounded-lg ${compressedMode ? 'p-4' : 'p-5'}`}>
+            <div
+              data-section="context-drawer"
+              className="mt-5 bg-physio-bg-secondary/80 border border-physio-bg-border rounded-2xl p-5 shadow-physio-subtle"
+            >
               <button
                 type="button"
                 onClick={() => toggleContextDrawer('orals')}
@@ -512,7 +561,7 @@ const AASVisualization = () => {
                 <CollapseChevron open={!contextCollapsed.orals} />
               </button>
               {!contextCollapsed.orals && (
-                <div className={`text-sm text-physio-text-primary ${compressedMode ? 'mt-3 space-y-4' : 'mt-5 space-y-6'}`}>
+                <div className="text-sm text-physio-text-primary mt-4 space-y-5">
                   <section>
                     <h4 className="font-semibold text-physio-text-secondary mb-2">Quick Guide</h4>
                     <ul className="space-y-1.5">
@@ -563,6 +612,10 @@ const AASVisualization = () => {
                       </div>
                     </div>
                   </section>
+                  <section className="bg-physio-bg-core border border-physio-bg-border rounded-xl p-4">
+                    <h4 className="font-semibold text-physio-text-secondary mb-2">Evidence & Confidence</h4>
+                    <EvidencePanel activeTab={activeTab} visibleCompounds={visibleCompounds} />
+                  </section>
                 </div>
               )}
             </div>
@@ -577,6 +630,7 @@ const AASVisualization = () => {
               onPrefillStack={handlePrefillStack}
               resetSignal={interactionResetKey}
               onFiltersDirtyChange={handleInteractionFiltersDirty}
+              uiMode={uiMode}
             />
           </div>
         )}
@@ -584,32 +638,9 @@ const AASVisualization = () => {
         {/* Stack Builder Tab */}
         {activeTab === 'stack' && (
           <div className="mt-6">
-            <StackBuilder prefillStack={stackPrefill} userProfile={userProfile} />
+            <StackBuilder prefillStack={stackPrefill} userProfile={userProfile} uiMode={uiMode} />
           </div>
         )}
-
-        <section className="mt-8 bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-5 shadow-sm">
-          <button
-            type="button"
-            onClick={() => setEvidencePanelCollapsed(prev => !prev)}
-            className="w-full flex items-center justify-between text-left"
-          >
-            <div>
-              <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Deep dive</p>
-              <h3 className="text-xl font-bold text-physio-text-primary">Evidence & Confidence Layer</h3>
-            </div>
-            <CollapseChevron open={!evidencePanelCollapsed} />
-          </button>
-          {!evidencePanelCollapsed && (
-            <div className="mt-4">
-              <EvidencePanel
-                activeTab={activeTab}
-                visibleCompounds={visibleCompounds}
-              />
-            </div>
-          )}
-        </section>
-
 
         {/* Footer */}
         <footer className="mt-8 text-center text-sm text-physio-text-tertiary pb-8">
@@ -622,6 +653,34 @@ const AASVisualization = () => {
           </p>
         </footer>
       </div>
+
+      {profileModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex items-center justify-between p-4 border-b border-physio-bg-border">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Profile controls</p>
+                <h3 className="text-xl font-semibold text-physio-text-primary">Personalize guidance</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setProfileModalOpen(false)}
+                className="px-3 py-1.5 rounded-full border border-physio-bg-border text-physio-text-secondary hover:text-physio-text-primary"
+              >
+                Close
+              </button>
+            </div>
+            <div className="p-4">
+              <PersonalizationPanel
+                profile={userProfile}
+                onProfileChange={setUserProfile}
+                onClearProfile={handleClearProfile}
+                compressed
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Methodology Modal */}
       {selectedCompound && (

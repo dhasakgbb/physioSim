@@ -59,7 +59,7 @@ const experienceLabels = {
   blast_cruise: 'Blast/cruise veteran'
 };
 
-const isProfileCustomized = (profile = defaultProfile) => {
+export const isProfileCustomized = (profile = defaultProfile) => {
   if (!profile) return false;
   const trackedKeys = ['age', 'bodyweight', 'yearsTraining', 'shbg', 'aromatase', 'anxiety', 'experience'];
   return (
@@ -68,7 +68,7 @@ const isProfileCustomized = (profile = defaultProfile) => {
   );
 };
 
-const formatProfileSummary = (profile = defaultProfile) => {
+export const formatProfileSummary = (profile = defaultProfile) => {
   if (!profile) return 'Using baseline defaults';
   const tokens = [];
   if (profile.age) tokens.push(`${profile.age}y`);
