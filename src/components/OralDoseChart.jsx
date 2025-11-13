@@ -41,7 +41,12 @@ const getHardMax = compound => {
  * Oral Compound Dose-Response Chart
  * Displays oral compounds on mg/day scale (0-100mg)
  */
-const OralDoseChart = ({ viewMode, visibleCompounds, userProfile }) => {
+const OralDoseChart = ({
+  viewMode,
+  visibleCompounds,
+  userProfile,
+  highlightedCompound = null
+}) => {
   // Filter for oral compounds only
   const oralCompounds = Object.entries(compoundData).filter(([key, data]) => data.type === 'oral');
   
@@ -162,6 +167,11 @@ const OralDoseChart = ({ viewMode, visibleCompounds, userProfile }) => {
             const plateauDose = getPlateauDose(compound);
             const hardMax = getHardMax(compound);
             const plateauEnd = hardMax || 100;
+            const guardrailActive = Boolean(highlightedCompound);
+            const isHighlighted = highlightedCompound === key;
+            const plateauOpacity = isHighlighted ? 0.25 : guardrailActive ? 0.03 : 0.08;
+            const capStrokeOpacity = isHighlighted ? 1 : guardrailActive ? 0.2 : 0.8;
+            const capStrokeWidth = isHighlighted ? 3 : 1.5;
             
             return (
               <React.Fragment key={key}>
@@ -170,7 +180,7 @@ const OralDoseChart = ({ viewMode, visibleCompounds, userProfile }) => {
                     x1={plateauDose}
                     x2={plateauEnd}
                     fill="var(--physio-warning)"
-                    fillOpacity={0.08}
+                    fillOpacity={plateauOpacity}
                     strokeOpacity={0}
                   />
                 )}
@@ -178,7 +188,9 @@ const OralDoseChart = ({ viewMode, visibleCompounds, userProfile }) => {
                   <ReferenceLine
                     x={hardMax}
                     stroke="var(--physio-error)"
-                    strokeDasharray="4 4"
+                    strokeDasharray={isHighlighted ? '2 2' : '4 4'}
+                    strokeOpacity={capStrokeOpacity}
+                    strokeWidth={capStrokeWidth}
                     label={{
                       value: `${compound.abbreviation || key} cap`,
                       position: 'top',

@@ -1,0 +1,32 @@
+<svg width="780" height="260" viewBox="0 0 780 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="injectables-flow-title injectables-flow-desc">
+  <title id="injectables-flow-title">Injectables tab flow</title>
+  <desc id="injectables-flow-desc">Diagram showing Profile Status Bar, Chart Control Bar, Hero chart and Context drawer stacking order.</desc>
+  <style>
+    .box { fill: #0f172a; stroke: #38bdf8; stroke-width: 2; rx: 14; }
+    .label { fill: #e2e8f0; font-family: 'Inter', 'Segoe UI', sans-serif; font-size: 16px; font-weight: 600; }
+    .sub { fill: #94a3b8; font-size: 13px; font-weight: 400; }
+    .arrow { stroke: #475569; stroke-width: 2; marker-end: url(#arrowhead); }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <polygon points="0 0, 8 4, 0 8" fill="#475569" />
+    </marker>
+  </defs>
+  <rect class="box" x="30" y="20" width="720" height="60" />
+  <text class="label" x="50" y="55">ProfileStatusBar</text>
+  <text class="sub" x="50" y="76">Shows persona summary, lab toggle, unsaved badge + save action.</text>
+
+  <rect class="box" x="60" y="105" width="660" height="50" />
+  <text class="label" x="80" y="138">ChartControlBar</text>
+  <text class="sub" x="80" y="158">Sticky view toggle, legend warnings, PDF + sweet-spot actions.</text>
+
+  <rect class="box" x="90" y="170" width="600" height="70" />
+  <text class="label" x="110" y="205">Hero chart + CustomLegend</text>
+  <text class="sub" x="110" y="225">Dose-response card + hover-aware legend.</text>
+
+  <rect class="box" x="110" y="190" width="560" height="120" opacity="0.15" />
+  <text class="sub" x="500" y="230">Context drawer (lazy evidence)</text>
+
+  <line class="arrow" x1="390" y1="80" x2="390" y2="105" />
+  <line class="arrow" x1="390" y1="155" x2="390" y2="170" />
+</svg>

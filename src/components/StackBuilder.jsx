@@ -59,6 +59,38 @@ const formatNarrativeDelta = value => {
   return `${value >= 0 ? '+' : '-'}${rounded}`;
 };
 
+const describeAncillaryDelta = (baseline = null, contender = null) => {
+  if (!baseline || !contender) return '';
+  const essentialDelta = contender.essential.length - baseline.essential.length;
+  const recommendedDelta = contender.recommended.length - baseline.recommended.length;
+  const monitoringDelta = contender.monitoring.length - baseline.monitoring.length;
+  const costDelta = contender.totalWeeklyCost - baseline.totalWeeklyCost;
+  const bits = [];
+  if (essentialDelta) {
+    bits.push(`${essentialDelta > 0 ? '+' : ''}${essentialDelta} essential`);
+  }
+  if (recommendedDelta) {
+    bits.push(`${recommendedDelta > 0 ? '+' : ''}${recommendedDelta} recommended`);
+  }
+  if (monitoringDelta) {
+    bits.push(`${monitoringDelta > 0 ? '+' : ''}${monitoringDelta} labs`);
+  }
+  if (Math.abs(costDelta) >= 1) {
+    const direction = costDelta >= 0 ? 'higher' : 'lower';
+    bits.push(`${direction} $${Math.abs(costDelta).toFixed(2)}/wk`);
+  }
+  if (!bits.length) return '';
+  return `Ancillary plan shifts ${bits.join(', ')}`;
+};
+
+const formatStackForProtocol = (stackItems = []) =>
+  stackItems.map(item => ({
+    compound: item.compound,
+    dose: item.dose,
+    type: compoundData[item.compound]?.type,
+    category: compoundData[item.compound]?.category
+  }));
+
 const collectBucketTotals = evaluation => {
   const totals = {};
   Object.values(evaluation?.pairInteractions || {}).forEach(interaction => {
@@ -111,7 +143,13 @@ const pickDriverLabel = (bucketKey, drivers) => {
   return null;
 };
 
-const summarizeCycleDelta = ({ baselineEval, contenderEval, contenderName }) => {
+const summarizeCycleDelta = ({
+  baselineEval,
+  contenderEval,
+  contenderName,
+  baselineAncillary = null,
+  contenderAncillary = null
+}) => {
   if (!baselineEval || !contenderEval) return null;
   const baselineBuckets = collectBucketTotals(baselineEval);
   const contenderBuckets = collectBucketTotals(contenderEval);
@@ -123,7 +161,8 @@ const summarizeCycleDelta = ({ baselineEval, contenderEval, contenderName }) => 
   const drivers = collectBucketDrivers(contenderEval);
   const benefitBucket = selectTopBucket(bucketDelta, 'benefit');
   const riskBucket = selectTopBucket(bucketDelta, 'risk');
-  if (!benefitBucket && !riskBucket) return null;
+  const ancillarySentence = describeAncillaryDelta(baselineAncillary, contenderAncillary);
+  if (!benefitBucket && !riskBucket && !ancillarySentence) return null;
 
   let narrative = '';
   if (benefitBucket) {
@@ -151,7 +190,11 @@ const summarizeCycleDelta = ({ baselineEval, contenderEval, contenderName }) => 
     narrative += ` driven by ${driverLabel}`;
   }
 
-  return narrative;
+  if (ancillarySentence) {
+    narrative += narrative ? `. ${ancillarySentence}` : ancillarySentence;
+  }
+
+  return narrative || null;
 };
 
 const formatTimestamp = isoString => {
@@ -327,9 +370,11 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
       profile: contender.profile || userProfile || defaultProfile,
       goalKey: contender.goalPreset || goalPreset
     });
+    const baselineAncillary = getAncillaryProtocol(formatStackForProtocol(baseline.stack));
+    const contenderAncillary = getAncillaryProtocol(formatStackForProtocol(contender.stack));
     return {
-      baseline: { ...baseline, totals: baselineEval.totals, evaluation: baselineEval },
-      contender: { ...contender, totals: contenderEval.totals, evaluation: contenderEval },
+      baseline: { ...baseline, totals: baselineEval.totals, evaluation: baselineEval, ancillary: baselineAncillary },
+      contender: { ...contender, totals: contenderEval.totals, evaluation: contenderEval, ancillary: contenderAncillary },
       deltas: {
         benefit: contenderEval.totals.totalBenefit - baselineEval.totals.totalBenefit,
         risk: contenderEval.totals.totalRisk - baselineEval.totals.totalRisk,
@@ -342,23 +387,17 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
     return summarizeCycleDelta({
       baselineEval: comparisonResult.baseline.evaluation,
       contenderEval: comparisonResult.contender.evaluation,
-      contenderName: comparisonResult.contender.name || 'Contender cycle'
+      contenderName: comparisonResult.contender.name || 'Contender cycle',
+      baselineAncillary: comparisonResult.baseline.ancillary,
+      contenderAncillary: comparisonResult.contender.ancillary
     });
   }, [comparisonResult]);
   
   // Calculate ancillary protocol
   const ancillaryProtocol = useMemo(() => {
     if (stack.length === 0) return null;
-    
-    // Build protocol input from stack
-    const stackWithTypes = stack.map(item => ({
-      compound: item.compound,
-      dose: item.dose,
-      type: compoundData[item.compound].type,
-      category: compoundData[item.compound].category
-    }));
-    
-    return getAncillaryProtocol(stackWithTypes);
+
+    return getAncillaryProtocol(formatStackForProtocol(stack));
   }, [stack]);
   
   // Add compound to stack
@@ -1083,3 +1122,4 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
 };
 
 export default StackBuilder;
+export { summarizeCycleDelta };

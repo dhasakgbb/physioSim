@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import InteractionHeatmap from '../components/InteractionHeatmap';
-import StackBuilder from '../components/StackBuilder';
+import StackBuilder, { summarizeCycleDelta } from '../components/StackBuilder';
 import SideEffectProfile from '../components/SideEffectProfile';
 import AncillaryCalculator from '../components/AncillaryCalculator';
 import { compoundData } from '../data/compoundData';
@@ -320,6 +320,70 @@ describe('StackBuilder Component', () => {
     await waitFor(() => {
       expect(screen.getByText(/Export PDF Report/i)).toBeDefined();
     });
+  });
+});
+
+describe('summarizeCycleDelta narrative', () => {
+  const baseAncillary = {
+    essential: [],
+    recommended: [],
+    optional: [],
+    monitoring: [],
+    totalWeeklyCost: 10
+  };
+
+  it('includes ancillary shifts when support plans differ', () => {
+    const baselineEval = {
+      pairInteractions: {
+        pair1: { deltaDims: { anabolic: 0.5 } }
+      }
+    };
+    const contenderEval = {
+      pairInteractions: {
+        pair1: { deltaDims: { anabolic: 1.4 } },
+        pair2: { deltaDims: { bp: -0.6 } }
+      }
+    };
+    const contenderAncillary = {
+      essential: [{}, {}],
+      recommended: [{}],
+      optional: [],
+      monitoring: [{}, {}],
+      totalWeeklyCost: 18
+    };
+
+    const narrative = summarizeCycleDelta({
+      baselineEval,
+      contenderEval,
+      contenderName: 'Cycle B',
+      baselineAncillary: baseAncillary,
+      contenderAncillary
+    });
+
+    expect(narrative).toMatch(/Ancillary plan shifts/);
+    expect(narrative).toMatch(/Cycle B adds \+0.9 lean-mass benefit/);
+  });
+
+  it('returns ancillary sentence even without bucket deltas', () => {
+    const evalStub = { pairInteractions: {} };
+    const contenderAncillary = {
+      essential: [{}],
+      recommended: [],
+      optional: [],
+      monitoring: [{}, {}],
+      totalWeeklyCost: 30
+    };
+
+    const narrative = summarizeCycleDelta({
+      baselineEval: evalStub,
+      contenderEval: evalStub,
+      contenderName: 'Cycle C',
+      baselineAncillary: baseAncillary,
+      contenderAncillary
+    });
+
+    expect(narrative).toBeTruthy();
+    expect(narrative).toMatch(/Ancillary plan shifts/);
   });
 });
 

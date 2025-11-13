@@ -72,6 +72,15 @@ Click any compound name to view:
 - Limitations & assumptions
 - Individual variance factors
 
+### 🧭 Injectables / Orals Flow
+
+![Injectables tab flow](docs/injectables-tab-flow.svg)
+
+- **ProfileStatusBar** now surfaces persona summary, the new unsaved-profile warning badge, and quick actions (Save profile, Lab toggle, Edit profile).
+- **ChartControlBar** is a sticky rail for view toggles, legend warnings, and PDF/Sweet-Spot utilities so controls stay visible while scrolling.
+- **Hero card** unifies the injectable/oral dose-response chart with the hover-aware legend so plateau highlights and guardrail chips are co-located.
+- **Context drawer** (“Need context?”) lazily loads the evidence deck (EvidencePanel mounts only after the drawer expands) alongside the Quick Guide + scenarios.
+
 ### 📄 PDF Export
 Download complete report including:
 - High-resolution chart
@@ -369,6 +378,13 @@ npm test dataValidation.test.js
 - ✅ Legend toggles compound visibility
 - ✅ Methodology cards open/close
 - ✅ PDF export functionality
+
+### Interaction Test Guidelines
+
+- `src/test/setup.js` shims `localStorage`, `scrollTo`, and other browser APIs so Vitest can exercise the heavy UI safely—importing this file is handled automatically by the test runner.
+- Prefer the shared `renderWithAct` helper (see `src/test/stackBuilder.test.jsx`) so component mounts and async user-event chains are wrapped in `act(...)` by default.
+- When using `userEvent`, always `await` the call (e.g., `await user.click(...)`) to avoid reintroducing act warnings.
+- If you add a new helper, keep it colocated with the relevant tests and document the usage in this section so future contributors follow the “render + act” pattern.
 
 ### Key Test: Tren Benefit Plateau
 
@@ -678,4 +694,3 @@ This tool would not exist without:
 **Built with ❤️ for harm reduction education**
 
 *Remember: This is a thinking tool, not a prescription. Stay safe, stay informed, and prioritize your health.*
-

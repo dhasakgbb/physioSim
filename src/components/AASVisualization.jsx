@@ -16,7 +16,7 @@ import { defaultProfile, PROFILE_STORAGE_KEY } from '../utils/personalization';
 
 const mergeStoredProfile = (storedProfile) => {
   if (!storedProfile) return { ...defaultProfile };
-  return {
+  const merged = {
     ...defaultProfile,
     ...storedProfile,
     labMode: {
@@ -28,7 +28,20 @@ const mergeStoredProfile = (storedProfile) => {
       }
     }
   };
+  if (storedProfile.meta) {
+    merged.meta = { ...storedProfile.meta };
+  }
+  return merged;
 };
+
+const withProfileMeta = (profile = defaultProfile) => ({
+  ...profile,
+  meta: {
+    ...(profile?.meta || {}),
+    unsaved: profile?.meta?.unsaved ?? false,
+    savedAt: profile?.meta?.savedAt ?? null
+  }
+});
 
 const CollapseChevron = ({ open }) => (
   <svg
@@ -66,23 +79,51 @@ const AASVisualization = () => {
       return acc;
     }, {})
   );
+  const [hoveredCompound, setHoveredCompound] = useState(null);
   
   // Methodology modal state
   const [selectedCompound, setSelectedCompound] = useState(null);
 
   // Personalization state
   const [userProfile, setUserProfile] = useState(() => {
-    if (typeof window === 'undefined') return defaultProfile;
+    if (typeof window === 'undefined') return withProfileMeta(defaultProfile);
     try {
       const stored = window.localStorage.getItem(PROFILE_STORAGE_KEY);
-      if (!stored) return { ...defaultProfile };
+      if (!stored) return withProfileMeta(defaultProfile);
       const parsed = JSON.parse(stored);
-      return mergeStoredProfile(parsed);
+      return withProfileMeta(mergeStoredProfile(parsed));
     } catch (error) {
       console.warn('Failed to parse stored profile', error);
-      return { ...defaultProfile };
+      return withProfileMeta(defaultProfile);
     }
   });
+  const applyProfileUpdate = useCallback(
+    (updater, { markUnsaved = true } = {}) => {
+      setUserProfile(prev => {
+        const previous = prev || defaultProfile;
+        const nextValue = typeof updater === 'function' ? updater(previous) : updater;
+        const normalized = withProfileMeta(nextValue);
+        if (markUnsaved) {
+          return {
+            ...normalized,
+            meta: {
+              ...normalized.meta,
+              unsaved: true
+            }
+          };
+        }
+        return {
+          ...normalized,
+          meta: {
+            ...normalized.meta,
+            unsaved: false
+          }
+        };
+      });
+    },
+    []
+  );
+  const profileUnsaved = Boolean(userProfile?.meta?.unsaved);
   const [uiMode, setUIMode] = useState(() => (userProfile?.labMode?.enabled ? 'lab' : 'simple'));
 
   useEffect(() => {
@@ -93,6 +134,44 @@ const AASVisualization = () => {
       console.warn('Failed to persist profile', error);
     }
   }, [userProfile]);
+
+
+  const handleClearProfile = () => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(PROFILE_STORAGE_KEY);
+    }
+    applyProfileUpdate(() => ({ ...defaultProfile }), { markUnsaved: false });
+  };
+
+  const handleSaveProfile = () => {
+    applyProfileUpdate(
+      prev => ({
+        ...prev,
+        meta: {
+          ...(prev?.meta || {}),
+          savedAt: Date.now()
+        }
+      }),
+      { markUnsaved: false }
+    );
+  };
+
+  const [stackPrefill, setStackPrefill] = useState(null);
+  const [filterPrefs, setFilterPrefs] = useState(defaultFilterPrefs);
+  const [contextCollapsed, setContextCollapsed] = useState({
+    injectables: true,
+    orals: true
+  });
+  const [evidenceReady, setEvidenceReady] = useState({
+    injectables: false,
+    orals: false
+  });
+  const [compressedMode, setCompressedMode] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [filtersDirty, setFiltersDirty] = useState(false);
+  const [interactionFiltersDirty, setInteractionFiltersDirty] = useState(false);
+  const [interactionResetKey, setInteractionResetKey] = useState(0);
+  const [filterPrefsOpen, setFilterPrefsOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -119,35 +198,27 @@ const AASVisualization = () => {
     }
   }, [filterPrefs]);
 
-  const handleClearProfile = () => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem(PROFILE_STORAGE_KEY);
-    }
-    setUserProfile({ ...defaultProfile });
-  };
-
-  const [stackPrefill, setStackPrefill] = useState(null);
-  const [contextCollapsed, setContextCollapsed] = useState({
-    injectables: true,
-    orals: true
-  });
-  const [compressedMode, setCompressedMode] = useState(false);
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [filtersDirty, setFiltersDirty] = useState(false);
-  const [interactionFiltersDirty, setInteractionFiltersDirty] = useState(false);
-  const [interactionResetKey, setInteractionResetKey] = useState(0);
-  const [filterPrefs, setFilterPrefs] = useState(defaultFilterPrefs);
-  const [filterPrefsOpen, setFilterPrefsOpen] = useState(false);
-
   const toggleContextDrawer = (tabKey) => {
-    setContextCollapsed(prev => ({
-      ...prev,
-      [tabKey]: !prev[tabKey]
-    }));
+    setContextCollapsed(prev => {
+      const nextCollapsed = !prev[tabKey];
+      if (!nextCollapsed) {
+        setEvidenceReady(prevReady => {
+          if (prevReady[tabKey]) return prevReady;
+          return {
+            ...prevReady,
+            [tabKey]: true
+          };
+        });
+      }
+      return {
+        ...prev,
+        [tabKey]: nextCollapsed
+      };
+    });
   };
 
   const handleToggleLabMode = () => {
-    setUserProfile(prev => {
+    applyProfileUpdate(prev => {
       const nextEnabled = !prev?.labMode?.enabled;
       if (nextEnabled) {
         setUIMode('lab');
@@ -267,8 +338,10 @@ const AASVisualization = () => {
         <div className="mb-6">
           <ProfileStatusBar
             profile={userProfile}
+            unsaved={profileUnsaved}
             onEditProfile={() => setProfileModalOpen(true)}
             onToggleLabMode={handleToggleLabMode}
+            onSaveProfile={handleSaveProfile}
           />
         </div>
 
@@ -418,6 +491,7 @@ const AASVisualization = () => {
                     viewMode={viewMode}
                     visibleCompounds={visibleCompounds}
                     userProfile={userProfile}
+                    highlightedCompound={hoveredCompound}
                   />
                 </div>
                 <div className="lg:w-80">
@@ -426,6 +500,8 @@ const AASVisualization = () => {
                     toggleCompound={toggleCompound}
                     onMethodologyClick={openMethodology}
                     activeTab={activeTab}
+                    onCompoundHover={setHoveredCompound}
+                    highlightedCompound={hoveredCompound}
                   />
                 </div>
               </div>
@@ -500,7 +576,11 @@ const AASVisualization = () => {
                   </section>
                   <section className="bg-physio-bg-core border border-physio-bg-border rounded-xl p-4">
                     <h4 className="font-semibold text-physio-text-secondary mb-2">Evidence & Confidence</h4>
-                    <EvidencePanel activeTab={activeTab} visibleCompounds={visibleCompounds} />
+                    {evidenceReady.injectables ? (
+                      <EvidencePanel activeTab={activeTab} visibleCompounds={visibleCompounds} />
+                    ) : (
+                      <p className="text-xs text-physio-text-tertiary">Expand the drawer to load the evidence breakdown.</p>
+                    )}
                   </section>
                 </div>
               )}
@@ -532,6 +612,7 @@ const AASVisualization = () => {
                     viewMode={viewMode}
                     visibleCompounds={visibleCompounds}
                     userProfile={userProfile}
+                    highlightedCompound={hoveredCompound}
                   />
                 </div>
                 <div className="lg:w-80">
@@ -540,6 +621,8 @@ const AASVisualization = () => {
                     toggleCompound={toggleCompound}
                     onMethodologyClick={openMethodology}
                     activeTab={activeTab}
+                    onCompoundHover={setHoveredCompound}
+                    highlightedCompound={hoveredCompound}
                   />
                 </div>
               </div>
@@ -614,7 +697,11 @@ const AASVisualization = () => {
                   </section>
                   <section className="bg-physio-bg-core border border-physio-bg-border rounded-xl p-4">
                     <h4 className="font-semibold text-physio-text-secondary mb-2">Evidence & Confidence</h4>
-                    <EvidencePanel activeTab={activeTab} visibleCompounds={visibleCompounds} />
+                    {evidenceReady.orals ? (
+                      <EvidencePanel activeTab={activeTab} visibleCompounds={visibleCompounds} />
+                    ) : (
+                      <p className="text-xs text-physio-text-tertiary">Expand the drawer to load the evidence breakdown.</p>
+                    )}
                   </section>
                 </div>
               )}
@@ -673,7 +760,7 @@ const AASVisualization = () => {
             <div className="p-4">
               <PersonalizationPanel
                 profile={userProfile}
-                onProfileChange={setUserProfile}
+                onProfileChange={applyProfileUpdate}
                 onClearProfile={handleClearProfile}
                 compressed
               />

@@ -1,24 +1,37 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
-The Vite/React entry points live in `src/main.jsx` and `src/App.jsx`, with reusable UI housed under `src/components` and shared helpers in `src/utils`. Domain data for dose-response curves is kept in `src/data`, while exploratory specs and stories belong in `src/test`. Global styles are centralized in `src/index.css`, backed by Tailwind settings in `tailwind.config.js`. Built assets land in `dist/` after running the production build.
+## Source Layout & Key Modules
+- Entry points live in `src/main.jsx` and `src/App.jsx`, and almost all UI is composed in `src/components`. Critical surfaces: `AASVisualization` (top-level layout + tab orchestration), `DoseResponseChart`/`OralDoseChart` (curve rendering), `InteractionHeatmap` (pair analysis, lab vs simple modes), `StackBuilder`, `AncillaryCalculator`, `SideEffectProfile`, and `ProfileStatusBar`.
+- Domain data is under `src/data`: `compoundData` (curves + methodology copy), `interactionMatrix` (ratings + utility helpers), `interactionEngineData` (presets, dimensions, sensitivity defaults), and `sideFxAndAncillaries`. Shared logic sits in `src/utils` (`interactionEngine`, `stackEngine`, `stackOptimizer`, `sweetSpot`, `cycleStore`, `personalization`).
+- Tests live near their concern (`src/components/__tests__`) or in `src/test` for broader suites (`stackBuilder`, `interactions`, `dataValidation`, `components`). Global styles are in `src/index.css` with Tailwind configuration via `tailwind.config.js`.
 
-## Build, Test, and Development Commands
-Run `npm install` once per environment. Everyday workflows rely on:
+## State, Persistence & Modes
+- Local storage keys matter: `PROFILE_STORAGE_KEY` for personalization/lab mode, `layoutFilterPrefs` for filter chips, `interactionControls` for heatmap focus, and `physioSim:cycles` for saved stacks/cycles. Be defensive when accessing `window` (SSR guards already exist) and keep these keys in sync if you add new persisted controls.
+- Simple vs Lab UI: `ProfileStatusBar` + `PersonalizationPanel` govern `uiMode`. Advanced panels (optimizer, dimension chips, evidence overrides) unlock only when lab mode is on, and InteractionHeatmap collapses those sections otherwise. Maintain that gating when introducing new controls.
+- Filter dirty state is centralized in `AASVisualization` (`filtersDirty`, `interactionFiltersDirty`, `filterPrefs`). New knobs should register themselves through those mechanisms so the global “Filters active” indicator stays accurate.
 
-```bash
-npm run dev       # Vite dev server with fast HMR on http://localhost:5173
-npm run build     # Optimized production bundle in dist/
-npm run preview   # Serves the build output for smoke tests
-npm test          # Vitest unit/integration suite in watch mode
-npm run test:ui   # Launches the Vitest UI for targeted debugging
-```
+## Styling & UX Patterns
+- Stick to 2-space indentation, modern React (hooks + functional components), and descriptive filenames (`SimulationPanel.jsx`). Compose Tailwind utilities from layout → typography → state. Heavy context drawers (e.g., EvidencePanel) should remain lazy/opt-in to keep first paint light.
+- The post-merge layout (see `SUMMARY.md`) expects: profile status → sticky control bar → hero charts, with context drawers for injectables/orals and sticky interaction pair summaries. Preserve those affordances when touching layout.
 
-## Coding Style & Naming Conventions
-Use modern React with functional components, hooks, and explicit prop shapes. Prefer 2-space indentation, ES module syntax, and descriptive file names such as `SimulationPanel.jsx`. Tailwind utility classes should be composed in logical layers (layout → typography → state). Keep data modules camelCase (`riskCurves.js`) and co-locate companion CSS or hooks beside the component they serve. Before pushing, format via your editor’s Prettier integration and ensure imports stay sorted.
+## Build, Dev & Tooling
+- Install deps with `npm install`. Common scripts:
+  - `npm run dev` – Vite dev server (HMR on http://localhost:5173).
+  - `npm run build` – production bundle into `dist/`.
+  - `npm run preview` – serve the built output for smoke tests.
+  - `npm test` – Vitest in watch mode (uses `src/test/setup.js` to stub `localStorage`, `ResizeObserver`, and `scrollTo`).
+  - `npm run test:ui` – Vitest UI for targeted suites.
+- HTML export tooling relies on `html2canvas` + `jspdf` inside `PDFExport`; changes there should be validated manually since automated coverage is thin.
 
-## Testing Guidelines
-Vitest with Testing Library (`@testing-library/react`) is the default stack; tests sit near the code they exercise inside `src/test` or as `ComponentName.test.jsx`. Mock network and canvas APIs using happy-dom or jsdom helpers. Add regression tests for every new UI surface plus edge-case coverage for dose calculations; aim to keep meaningful assertions rather than raw coverage percentages, but avoid regressions below current thresholds in CI. Run `npm test` locally and attach failing snapshots when relevant.
+## Testing Guidance
+- Vitest + Testing Library is the default. Always import `src/test/setup.js` (configured via Vitest) so DOM shims are available.
+- Regression-critical suites:
+  - `src/test/dataValidation.test.js` protects compound curve integrity (plateaus, tiers, monotonic risk curves, CI bounds).
+  - `src/test/interactions.test.js` covers interaction scoring, ancillary protocols, and synergy ranges.
+  - `src/test/stackBuilder.test.jsx` and `src/test/components.test.jsx` ensure UI toggles and StackBuilder flows keep working (`renderWithAct` helper already set up).
+  - `src/components/__tests__/InteractionHeatmap.test.jsx` maintains heatmap snapshots; update via `vitest -u` only when intentional.
+- When adding complex interactivity, prefer new Vitest tests near the feature plus a note in `README` describing any shims or required mocks (per `1.md` outstanding work).
 
-## Commit & Pull Request Guidelines
-Follow the existing short, imperative commit style (`Add custom stack optimizer…`). Group related changes into a single commit that explains the “why,” not just the “what.” Pull requests should include: a concise summary, screenshots or GIFs for UI changes, references to linked issues, and explicit testing notes (e.g., “npm test`, `npm run preview`). Keep branch names descriptive (`feature/interaction-engine`). Request review once CI passes and all checklist items are addressed.
+## Outstanding Work & References
+- High-priority polish from `1.md`: (1) CustomLegend hover guardrail badges + sticky pair summary badge. (2) Interaction tab reflow (sticky summary bar, anchor chunks, lab-mode gating). (3) Document the compressed mode + profile warning badge and lazy-load heavy drawers. (4) Cycle workspace narrative upgrades. (5) Document testing setup + add interaction test guidance. Keep these items in mind when touching related areas.
+- `README.md` holds a comprehensive feature overview and methodology notes; `SUMMARY.md` documents recent layout decisions; `1.md` tracks remaining UX/testing debt. Update those docs when you alter related functionality.

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   interactionPairs,
   interactionHeatmapModes,
@@ -132,7 +132,12 @@ const InteractionHeatmap = ({
   const [contextCollapsed, setContextCollapsed] = useState(true);
   const [heatmapCompact, setHeatmapCompact] = useState(false);
   const pairDetailRef = useRef(null);
+  const controlsSectionRef = useRef(null);
   const heatmapRef = useRef(null);
+  const metricsRef = useRef(null);
+  const chartsRef = useRef(null);
+  const surfacesRef = useRef(null);
+  const optimizersRef = useRef(null);
 
   const allCompoundKeys = useMemo(() => Object.keys(compoundData), []);
   useEffect(() => {
@@ -159,6 +164,19 @@ const InteractionHeatmap = ({
     window.scrollTo({ top, behavior: 'smooth' });
   };
 
+  const scrollToSection = useCallback(
+    (ref) => {
+      if (typeof window === 'undefined' || !ref?.current) return;
+      const offset = window.innerWidth < 768 ? 64 : 96;
+      const targetTop = ref.current.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({
+        top: Math.max(0, targetTop),
+        behavior: 'smooth'
+      });
+    },
+    []
+  );
+
   const pairOptions = useMemo(
     () =>
       Object.values(interactionPairs).map(pair => ({
@@ -166,6 +184,17 @@ const InteractionHeatmap = ({
         label: pair.label
       })).sort((a, b) => a.label.localeCompare(b.label)),
     []
+  );
+  const anchorSections = useMemo(
+    () => [
+      { key: 'matrix', label: 'Matrix', ref: heatmapRef, available: true },
+      { key: 'controls', label: 'Controls', ref: controlsSectionRef, available: true },
+      { key: 'metrics', label: 'Metrics', ref: metricsRef, available: true },
+      { key: 'charts', label: 'Charts', ref: chartsRef, available: labUnlocked },
+      { key: 'surfaces', label: 'Surfaces', ref: surfacesRef, available: labUnlocked },
+      { key: 'optimizers', label: 'Optimizers', ref: optimizersRef, available: labUnlocked }
+    ],
+    [labUnlocked, heatmapRef, controlsSectionRef, metricsRef, chartsRef, surfacesRef, optimizersRef]
   );
 
   const selectedPair = interactionPairs[selectedPairId];
@@ -191,9 +220,9 @@ const InteractionHeatmap = ({
     setPrimaryCompound(pair.compounds[0]);
     setDoses({ ...pair.defaultDoses });
     setHighlightedBand(null);
-    if (pairDetailRef.current) {
+    if (controlsSectionRef.current) {
       setTimeout(() => {
-        pairDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        scrollToSection(controlsSectionRef);
       }, 200);
     }
   };
@@ -399,17 +428,45 @@ const InteractionHeatmap = ({
     setHighlightedBand(null);
   }, [selectedPairId, primaryCompound]);
 
-  const setHighlightFromPoint = point => {
-    if (!selectedPair || !point || !primaryCompound) return;
-    const [minRange, maxRange] = selectedPair?.doseRanges?.[primaryCompound] || [0, 1000];
-    const centerDose = point[primaryCompound];
-    if (typeof centerDose !== 'number') return;
-    const span = Math.max((maxRange - minRange) * 0.05, 15);
-    setHighlightedBand({
-      primaryCompound,
-      min: clampValue(centerDose - span, minRange, maxRange),
-      max: clampValue(centerDose + span, minRange, maxRange)
-    });
+  useEffect(() => {
+    if (labUnlocked) return;
+    setCustomCompounds([]);
+    setCustomRanges({});
+    setCustomResults([]);
+    setCustomSelection('');
+    setHighlightedBand(null);
+  }, [labUnlocked]);
+
+  const setHighlightFromPoint = useCallback(
+    point => {
+      if (!selectedPair || !point || !primaryCompound) return;
+      const [minRange, maxRange] = selectedPair?.doseRanges?.[primaryCompound] || [0, 1000];
+      const centerDose = point[primaryCompound];
+      if (typeof centerDose !== 'number') return;
+      const span = Math.max((maxRange - minRange) * 0.05, 15);
+      setHighlightedBand({
+        primaryCompound,
+        min: clampValue(centerDose - span, minRange, maxRange),
+        max: clampValue(centerDose + span, minRange, maxRange)
+      });
+    },
+    [primaryCompound, selectedPair]
+  );
+
+  const handleRecommendationInspect = useCallback(
+    (point) => {
+      if (!point) return;
+      setHighlightFromPoint(point);
+      scrollToSection(controlsSectionRef);
+    },
+    [controlsSectionRef, scrollToSection, setHighlightFromPoint]
+  );
+
+  const handleRecommendationKeyDown = (event, point) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleRecommendationInspect(point);
+    }
   };
 
   const handleSendCurrentToStack = () => {
@@ -465,6 +522,49 @@ const InteractionHeatmap = ({
   }, [selectedPair, doses, userProfile, goalPreset]);
 
   const guardrailByCompound = pairEvaluation?.byCompound || {};
+  const guardrailBadge = useMemo(() => {
+    if (!selectedPair) return null;
+    const statuses = selectedPair.compounds.map(compoundKey => {
+      const compoundEval = guardrailByCompound[compoundKey];
+      const benefitMeta = compoundEval?.meta?.benefit;
+      const riskMeta = compoundEval?.meta?.risk;
+      return {
+        compoundKey,
+        beyond: Boolean(benefitMeta?.beyondEvidence || riskMeta?.beyondEvidence),
+        plateau: Boolean(benefitMeta?.nearingPlateau || riskMeta?.nearingPlateau)
+      };
+    });
+    const labelize = keys =>
+      keys
+        .map(code => compoundData[code]?.abbreviation || compoundData[code]?.name || code)
+        .join(', ');
+    const beyondKeys = statuses.filter(entry => entry.beyond).map(entry => entry.compoundKey);
+    if (beyondKeys.length) {
+      return {
+        tone: 'error',
+        label: 'Outside evidence',
+        detail: labelize(beyondKeys)
+      };
+    }
+    const plateauKeys = statuses.filter(entry => entry.plateau).map(entry => entry.compoundKey);
+    if (plateauKeys.length) {
+      return {
+        tone: 'warning',
+        label: 'Plateau guardrail',
+        detail: labelize(plateauKeys)
+      };
+    }
+    return {
+      tone: 'muted',
+      label: 'Guardrails nominal',
+      detail: labelize(selectedPair.compounds)
+    };
+  }, [guardrailByCompound, selectedPair]);
+  const guardrailToneStyles = {
+    error: 'text-physio-error border-physio-error/40 bg-physio-error/5',
+    warning: 'text-physio-warning border-physio-warning/40 bg-physio-warning/5',
+    muted: 'text-physio-text-tertiary border-physio-bg-border bg-physio-bg-core'
+  };
 
   useEffect(() => {
     if (labUnlocked || !selectedPair) return;
@@ -690,12 +790,18 @@ const InteractionHeatmap = ({
                   step="0.05"
                   value={evidenceBlend}
                   onChange={e => setEvidenceBlend(Number(e.target.value))}
-                  className="flex-1"
+                  className={`flex-1 ${!labUnlocked ? 'opacity-40 cursor-not-allowed' : ''}`}
+                  disabled={!labUnlocked}
                 />
                 <span className="text-xs text-physio-text-tertiary whitespace-nowrap">
                   Anecdote {(evidenceBlend) * 100 >> 0}%
                 </span>
               </div>
+              {!labUnlocked && (
+                <p className="mt-1 text-[11px] font-semibold text-physio-text-tertiary">
+                  Lab mode unlocks custom evidence weighting.
+                </p>
+              )}
             </label>
           </div>
         </div>
@@ -807,9 +913,32 @@ const InteractionHeatmap = ({
         )}
       </section>
 
+      <nav
+        className="sticky top-16 z-30 bg-physio-bg-secondary/95 border border-physio-bg-border rounded-2xl px-4 py-3 shadow-physio-subtle backdrop-blur"
+        aria-label="Interaction anchors"
+      >
+        <div className="flex flex-wrap gap-2 text-xs font-semibold">
+          {anchorSections.map(section => (
+            <button
+              key={section.key}
+              type="button"
+              onClick={() => scrollToSection(section.ref)}
+              disabled={!section.available}
+              className={`px-3 py-1.5 rounded-full border transition ${
+                section.available
+                  ? 'text-physio-text-secondary border-physio-bg-border hover:border-physio-accent-cyan hover:text-physio-accent-cyan'
+                  : 'text-physio-text-tertiary/60 border-dashed border-physio-bg-border/70 cursor-not-allowed'
+              }`}
+            >
+              {section.label}
+            </button>
+          ))}
+        </div>
+      </nav>
+
       <div ref={pairDetailRef} className="space-y-8">
       {/* Pair Detail */}
-      <section className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-lg space-y-6">
+      <section ref={controlsSectionRef} className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-lg space-y-6">
         {selectedPair && (
           <div className="sticky top-4 z-20 bg-physio-bg-secondary border border-physio-bg-border rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 shadow-sm">
             <div className="text-sm text-physio-text-primary flex flex-wrap items-center gap-2">
@@ -819,9 +948,20 @@ const InteractionHeatmap = ({
               <span className="text-physio-text-tertiary">•</span>
               <span>Evidence {clinicalShare}% clinical / {anecdoteShare}% anecdote</span>
             </div>
-            <div className="text-xs text-physio-text-tertiary flex flex-wrap gap-3">
-              <span>Δ Benefit {benefitSynergyPercent.toFixed(1)}%</span>
-              <span>Δ Risk {riskSynergyPercent.toFixed(1)}%</span>
+            <div className="text-xs flex flex-wrap items-center gap-3">
+              {guardrailBadge && (
+                <span
+                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border font-semibold ${guardrailToneStyles[guardrailBadge.tone]}`}
+                  title={`Guardrail status · ${guardrailBadge.detail}`}
+                >
+                  <span>{guardrailBadge.label}</span>
+                  {guardrailBadge.detail && (
+                    <span className="text-[10px] font-medium tracking-wide uppercase">{guardrailBadge.detail}</span>
+                  )}
+                </span>
+              )}
+              <span className="text-physio-text-tertiary">Δ Benefit {benefitSynergyPercent.toFixed(1)}%</span>
+              <span className="text-physio-text-tertiary">Δ Risk {riskSynergyPercent.toFixed(1)}%</span>
             </div>
           </div>
         )}
@@ -1060,6 +1200,8 @@ const InteractionHeatmap = ({
           </div>
         </div>
 
+        <div ref={metricsRef} className="h-0" aria-hidden="true" />
+
         <SectionDivider />
 
         {/* Net benefit vs risk chart */}
@@ -1107,6 +1249,9 @@ const InteractionHeatmap = ({
                     className="border border-physio-bg-border rounded-lg p-3 bg-physio-bg-secondary text-sm space-y-1"
                     onMouseEnter={() => setHighlightFromPoint(point)}
                     onFocus={() => setHighlightFromPoint(point)}
+                    onClick={() => handleRecommendationInspect(point)}
+                    onKeyDown={(event) => handleRecommendationKeyDown(event, point)}
+                    role="button"
                     tabIndex={0}
                   >
                     <div className="flex items-center justify-between text-xs text-physio-text-tertiary gap-2">
@@ -1137,7 +1282,8 @@ const InteractionHeatmap = ({
                       <span>Ratio {ratio}</span>
                     </div>
                     <button
-                      onClick={() => {
+                      onClick={(event) => {
+                        event.stopPropagation();
                         setHighlightFromPoint(point);
                         handleSendRecommendation(point);
                       }}
@@ -1158,61 +1304,70 @@ const InteractionHeatmap = ({
           </p>
         )}
         {/* Chart */}
-{labUnlocked && (
-  <>
-  <SectionDivider />
-  <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
-    <div className="flex items-center justify-between mb-3">
-      <div>
-        <h3 className="text-lg font-semibold text-physio-text-primary">Primary Dose Sweep</h3>
-                <p className="text-xs text-physio-text-tertiary">
-                  Sweeping {compoundData[primaryCompound]?.abbreviation} while {secondarySummary}
-                </p>
+        {labUnlocked && (
+          <>
+            <div ref={chartsRef} className="h-0" aria-hidden="true" />
+            <SectionDivider />
+            <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-physio-text-primary">Primary Dose Sweep</h3>
+                  <p className="text-xs text-physio-text-tertiary">
+                    Sweeping {compoundData[primaryCompound]?.abbreviation} while {secondarySummary}
+                  </p>
+                </div>
               </div>
+              <ResponsiveContainer width="100%" height={320}>
+                <LineChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--physio-bg-border)" />
+                  {highlightedBand && highlightedBand.primaryCompound === primaryCompound && (
+                    <ReferenceArea
+                      x1={highlightedBand.min}
+                      x2={highlightedBand.max}
+                      strokeOpacity={0}
+                      fill="#fcd34d"
+                      fillOpacity={0.15}
+                    />
+                  )}
+                  <XAxis
+                    dataKey="dose"
+                    label={{ value: `${compoundData[primaryCompound]?.abbreviation} dose`, position: 'insideBottom', offset: -10 }}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis tick={{ fontSize: 12 }} domain={[0, 6]} />
+                  <Tooltip formatter={tooltipFormatter} />
+                  <Legend />
+                  <ReferenceLine
+                    x={currentPrimaryDose}
+                    stroke="#f97316"
+                    strokeDasharray="4 4"
+                    label={{
+                      value: `${currentPrimaryDose} mg`,
+                      position: 'top',
+                      fill: '#f97316',
+                      fontSize: 12
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="basePrimary"
+                    name={`${compoundData[primaryCompound]?.abbreviation} alone`}
+                    stroke="#38bdf8"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line type="monotone" dataKey="naive" name="Naïve Sum" stroke="#a5b4fc" strokeDasharray="4 4" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="total" name="Interaction Total" stroke="#34d399" strokeWidth={3} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
-          <ResponsiveContainer width="100%" height={320}>
-            <LineChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--physio-bg-border)" />
-              {highlightedBand && highlightedBand.primaryCompound === primaryCompound && (
-                <ReferenceArea
-                  x1={highlightedBand.min}
-                  x2={highlightedBand.max}
-                  strokeOpacity={0}
-                  fill="#fcd34d"
-                  fillOpacity={0.15}
-                />
-              )}
-              <XAxis
-                dataKey="dose"
-                label={{ value: `${compoundData[primaryCompound]?.abbreviation} dose`, position: 'insideBottom', offset: -10 }}
-                tick={{ fontSize: 12 }}
-              />
-              <YAxis tick={{ fontSize: 12 }} domain={[0, 6]} />
-              <Tooltip formatter={tooltipFormatter} />
-              <Legend />
-              <ReferenceLine
-                x={currentPrimaryDose}
-                stroke="#f97316"
-                strokeDasharray="4 4"
-                label={{
-                  value: `${currentPrimaryDose} mg`,
-                  position: 'top',
-                  fill: '#f97316',
-                  fontSize: 12
-                }}
-              />
-              <Line type="monotone" dataKey="basePrimary" name={`${compoundData[primaryCompound]?.abbreviation} alone`} stroke="#38bdf8" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="naive" name="Naïve Sum" stroke="#a5b4fc" strokeDasharray="4 4" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="total" name="Interaction Total" stroke="#34d399" strokeWidth={3} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-  </div>
-  </>
-)}
+          </>
+        )}
 
 {/* Surface + Recommendations */}
 {labUnlocked && (
   <>
+  <div ref={surfacesRef} className="h-0" aria-hidden="true" />
   <SectionDivider />
   <div className="grid gap-4 lg:grid-cols-2">
             <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
@@ -1281,6 +1436,9 @@ const InteractionHeatmap = ({
                       className="border border-physio-bg-border rounded-lg p-3 bg-physio-bg-secondary text-sm space-y-1"
                       onMouseEnter={() => setHighlightFromPoint(point)}
                       onFocus={() => setHighlightFromPoint(point)}
+                      onClick={() => handleRecommendationInspect(point)}
+                      onKeyDown={(event) => handleRecommendationKeyDown(event, point)}
+                      role="button"
                       tabIndex={0}
                     >
                       <div className="flex items-center justify-between text-xs text-physio-text-tertiary gap-2">
@@ -1314,7 +1472,8 @@ const InteractionHeatmap = ({
                         <span>Ratio {ratio}</span>
                       </div>
                       <button
-                        onClick={() => {
+                        onClick={(event) => {
+                          event.stopPropagation();
                           setHighlightFromPoint(point);
                           handleSendRecommendation(point);
                         }}
@@ -1330,42 +1489,43 @@ const InteractionHeatmap = ({
                 )}
               </div>
             </div>
-  </div>
-  </>
-)}
+          </div>
+          </>
+        )}
       </section>
 
-{labUnlocked && (
-<>
-<SectionDivider />
-      {/* Multi-Compound Optimizer */}
-      <section className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-lg space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <h3 className="text-xl font-bold text-physio-text-primary">Multi-Compound Optimizer</h3>
-            <p className="text-sm text-physio-text-secondary">
-              Sampling predefined three-compound templates using your personalization + synergy model.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-physio-text-tertiary hidden sm:block">
-              Presets: {stackOptimizerCombos.map(combo => combo.label).join(' • ')}
-            </span>
-            <button
-              onClick={() => setOptimizerCollapsed(prev => !prev)}
-              className="px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
-            >
-              {optimizerCollapsed ? 'Expand' : 'Collapse'}
-            </button>
-          </div>
-        </div>
+      {labUnlocked && (
+        <>
+          <div ref={optimizersRef} className="h-0" aria-hidden="true" />
+          <SectionDivider />
+          {/* Multi-Compound Optimizer */}
+          <section className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-lg space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-bold text-physio-text-primary">Multi-Compound Optimizer</h3>
+                <p className="text-sm text-physio-text-secondary">
+                  Sampling predefined three-compound templates using your personalization + synergy model.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-physio-text-tertiary hidden sm:block">
+                  Presets: {stackOptimizerCombos.map(combo => combo.label).join(' • ')}
+                </span>
+                <button
+                  onClick={() => setOptimizerCollapsed(prev => !prev)}
+                  className="px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
+                >
+                  {optimizerCollapsed ? 'Expand' : 'Collapse'}
+                </button>
+              </div>
+            </div>
 
-        {!optimizerCollapsed && (
-          <>
+            {!optimizerCollapsed && (
+              <>
 
-        {stackResults.length === 0 ? (
-          <p className="text-sm text-physio-text-tertiary">No stack data available.</p>
-        ) : (
+            {stackResults.length === 0 ? (
+              <p className="text-sm text-physio-text-tertiary">No stack data available.</p>
+            ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {stackResults.map(result => {
               const benefitDelta = result.adjustedBenefit - result.baseBenefit;

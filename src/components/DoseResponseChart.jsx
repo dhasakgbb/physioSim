@@ -37,7 +37,12 @@ const getHardMax = compound => {
   );
 };
 
-const DoseResponseChart = ({ viewMode, visibleCompounds, userProfile }) => {
+const DoseResponseChart = ({
+  viewMode,
+  visibleCompounds,
+  userProfile,
+  highlightedCompound = null
+}) => {
   const chartRef = useRef(null);
   const [zoomDomain, setZoomDomain] = useState({ x: [0, 1200], y: [0, 5.5] });
 
@@ -192,6 +197,12 @@ const DoseResponseChart = ({ viewMode, visibleCompounds, userProfile }) => {
             const plateauDose = getPlateauDose(compound);
             const hardMax = getHardMax(compound);
             const plateauEnd = hardMax || zoomDomain.x[1] || 1200;
+            const guardrailActive = Boolean(highlightedCompound);
+            const isHighlighted = highlightedCompound === key;
+            const plateauOpacity = isHighlighted ? 0.25 : guardrailActive ? 0.03 : 0.08;
+            const capStrokeOpacity = isHighlighted ? 1 : guardrailActive ? 0.2 : 0.8;
+            const capStrokeWidth = isHighlighted ? 3 : 1.5;
+            const capLabelColor = 'var(--physio-error)';
 
             return (
               <React.Fragment key={key}>
@@ -200,7 +211,7 @@ const DoseResponseChart = ({ viewMode, visibleCompounds, userProfile }) => {
                     x1={plateauDose}
                     x2={plateauEnd}
                     fill="var(--physio-warning)"
-                    fillOpacity={0.08}
+                    fillOpacity={plateauOpacity}
                     strokeOpacity={0}
                   />
                 )}
@@ -208,12 +219,15 @@ const DoseResponseChart = ({ viewMode, visibleCompounds, userProfile }) => {
                   <ReferenceLine
                     x={hardMax}
                     stroke="var(--physio-error)"
-                    strokeDasharray="4 4"
+                    strokeDasharray={isHighlighted ? '2 2' : '4 4'}
+                    strokeOpacity={capStrokeOpacity}
+                    strokeWidth={capStrokeWidth}
                     label={{
                       value: `${compound.abbreviation || key} cap`,
                       position: 'top',
-                      fill: 'var(--physio-error)',
-                      fontSize: 11
+                      fill: capLabelColor,
+                      fontSize: 11,
+                      fontWeight: isHighlighted ? 600 : 400
                     }}
                   />
                 )}

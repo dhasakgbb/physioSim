@@ -1,7 +1,15 @@
 import React from 'react';
 import { compoundData } from '../data/compoundData';
 
-const CustomLegend = ({ visibleCompounds, toggleCompound, onMethodologyClick, onToggleAll, activeTab }) => {
+const CustomLegend = ({
+  visibleCompounds,
+  toggleCompound,
+  onMethodologyClick,
+  onToggleAll,
+  activeTab,
+  onCompoundHover = () => {},
+  highlightedCompound = null
+}) => {
   // Separate compounds by type
   const injectables = Object.entries(compoundData).filter(([_, compound]) => compound.type === 'injectable');
   const orals = Object.entries(compoundData).filter(([_, compound]) => compound.type === 'oral');
@@ -40,24 +48,34 @@ const CustomLegend = ({ visibleCompounds, toggleCompound, onMethodologyClick, on
             const isVisible = visibleCompounds[key];
             const provenance = compound.evidenceProvenance || { human: 0, animal: 0, aggregate: 0 };
             const tooltip = `${compound.name} • Confidence ${compound.modelConfidence?.toFixed?.(2) ?? 'n/a'} • Citations H:${provenance.human} A:${provenance.animal} Agg:${provenance.aggregate}`;
+            const isHovered = highlightedCompound === key;
+            const guardrailActive = Boolean(highlightedCompound) && !isHovered;
             
             return (
               <div
                 key={key}
                 className={`flex items-center p-1.5 rounded transition-all ${
                   isVisible ? 'hover:bg-physio-bg-secondary' : 'opacity-50'
-                }`}
+                } ${guardrailActive ? 'opacity-40' : ''}`}
                 title={tooltip}
+                onMouseEnter={() => onCompoundHover(key)}
+                onMouseLeave={() => onCompoundHover(null)}
               >
                 <button
                   onClick={() => toggleCompound(key)}
-                  className="flex items-center flex-1 text-left"
+                  className="flex items-center flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-cyan/60 rounded"
+                  onFocus={() => onCompoundHover(key)}
+                  onBlur={() => onCompoundHover(null)}
                 >
                   <div
-                    className="w-3 h-3 rounded mr-2 flex-shrink-0"
+                    className={`w-3 h-3 rounded mr-2 flex-shrink-0 ${isHovered ? 'ring-2 ring-offset-1 ring-physio-accent-cyan/70 ring-offset-physio-bg-core' : ''}`}
                     style={{ backgroundColor: compound.color }}
                   />
-                  <span className={`text-sm ${isVisible ? 'text-physio-text-primary' : 'line-through text-physio-text-tertiary'}`}>
+                  <span
+                    className={`text-sm ${
+                      isVisible ? 'text-physio-text-primary' : 'line-through text-physio-text-tertiary'
+                    } ${isHovered ? 'font-semibold text-physio-accent-cyan' : ''}`}
+                  >
                     {compound.abbreviation}
                   </span>
                 </button>
