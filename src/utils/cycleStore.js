@@ -1,24 +1,15 @@
-const STORAGE_KEY = 'physioSim:cycles';
+import { createJSONStore } from './storage';
+import { CYCLE_STORAGE_KEY } from './storageKeys';
 
-const readStorage = () => {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
+const cyclesStore = createJSONStore(CYCLE_STORAGE_KEY, { fallback: [] });
+
+const readStorage = () =>
+  cyclesStore.read({
+    transform: value => (Array.isArray(value) ? value : [])
+  });
 
 const writeStorage = (cycles) => {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cycles));
-  } catch (error) {
-    console.warn('Failed to persist cycles', error);
-  }
+  cyclesStore.write(cycles);
 };
 
 export const loadCycles = () => readStorage();

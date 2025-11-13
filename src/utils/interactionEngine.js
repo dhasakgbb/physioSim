@@ -4,16 +4,28 @@ import { interactionDimensions, interactionPairs, goalPresets } from '../data/in
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-const getCurveCap = (curve = []) => {
+export const getCurveCap = (curve = []) => {
   if (!curve.length) return 0;
   return curve[curve.length - 1]?.dose ?? 0;
 };
 
-const derivePlateauDose = (curve = []) => {
+export const derivePlateauDose = (curve = []) => {
   if (!curve.length) return 0;
   if (curve.length === 1) return curve[0].dose;
   // Use the penultimate dose as plateau proxy to avoid asymptote artifacts.
   return curve[Math.max(0, curve.length - 2)].dose;
+};
+
+export const getPlateauDose = compound =>
+  compound?.plateauDose ?? derivePlateauDose(compound?.benefitCurve || []);
+
+export const getHardMax = compound => {
+  if (!compound) return 0;
+  const plateauDose = getPlateauDose(compound);
+  return (
+    compound.hardMax ??
+    Math.max(getCurveCap(compound.benefitCurve), getCurveCap(compound.riskCurve), plateauDose)
+  );
 };
 
 const interpolateCurvePoint = (curve = [], dose) => {
@@ -41,10 +53,8 @@ export const evaluateCompoundResponse = (compoundKey, curveType, dose, profile) 
     return { value: 0, ci: 0, meta: { missing: true, clampedDose: 0, requestedDose: dose } };
   }
   const curve = curveType === 'risk' ? compound.riskCurve : compound.benefitCurve;
-  const plateauDose = compound.plateauDose ?? derivePlateauDose(compound.benefitCurve);
-  const hardMax =
-    compound.hardMax ??
-    Math.max(getCurveCap(compound.benefitCurve), getCurveCap(compound.riskCurve), plateauDose);
+  const plateauDose = getPlateauDose(compound);
+  const hardMax = getHardMax(compound);
   const clampedDose = Math.min(Math.max(dose, 0), hardMax || dose || 0);
   const point = interpolateCurvePoint(curve, clampedDose);
   if (!point) {

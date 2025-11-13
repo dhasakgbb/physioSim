@@ -5,11 +5,19 @@ import { compoundData, disclaimerText, tierDescriptions } from '../data/compound
 import { getInteraction, getInteractionScore } from '../data/interactionMatrix';
 import { getAncillaryProtocol } from '../data/sideFxAndAncillaries';
 
+const badgePalette = {
+  success: { fill: [220, 252, 231], border: [34, 197, 94], text: [22, 101, 52] },
+  warning: { fill: [254, 249, 195], border: [234, 179, 8], text: [120, 53, 15] },
+  error: { fill: [254, 226, 226], border: [248, 113, 113], text: [153, 27, 27] },
+  muted: { fill: [229, 231, 235], border: [148, 163, 184], text: [55, 65, 81] }
+};
+
 const PDFExport = ({
   chartRef,
   stackData = null,
   includeInteractions = false,
   contextSummary = null,
+  badgeContext = [],
   filename
 }) => {
   const [isExporting, setIsExporting] = useState(false);
@@ -53,6 +61,35 @@ const PDFExport = ({
       pdf.text(disclaimerLines, margin, yPosition);
       yPosition += disclaimerLines.length * 4 + 10;
 
+      const renderBadgeRow = (badges = []) => {
+        if (!badges.length) return;
+        const chipHeight = 8;
+        let chipX = margin;
+        badges.forEach(chip => {
+          const palette = badgePalette[chip.tone] || badgePalette.muted;
+          const text = `${chip.label}: ${chip.value}`;
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(9);
+          const textWidth = pdf.getTextWidth(text) + 6;
+          if (chipX + textWidth > pageWidth - margin) {
+            chipX = margin;
+            yPosition += chipHeight + 3;
+            if (yPosition > pageHeight - 15) {
+              pdf.addPage();
+              yPosition = margin;
+            }
+          }
+          pdf.setDrawColor(...palette.border);
+          pdf.setFillColor(...palette.fill);
+          pdf.roundedRect(chipX, yPosition, textWidth, chipHeight, 2, 2, 'FD');
+          pdf.setTextColor(...palette.text);
+          pdf.text(text, chipX + 3, yPosition + chipHeight - 2);
+          chipX += textWidth + 4;
+        });
+        yPosition += chipHeight + 4;
+        pdf.setTextColor(0, 0, 0);
+      };
+
       if (contextSummary?.items?.length) {
         if (yPosition > pageHeight - 50) {
           pdf.addPage();
@@ -74,6 +111,14 @@ const PDFExport = ({
           }
         });
         yPosition += 5;
+      }
+
+      if (badgeContext?.length) {
+        if (yPosition > pageHeight - 20) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+        renderBadgeRow(badgeContext);
       }
       
       // Page 2: Chart

@@ -6,6 +6,7 @@ import { defaultProfile } from '../utils/personalization';
 import { evaluateStack } from '../utils/stackEngine';
 import { loadCycles, saveCycle, deleteCycle } from '../utils/cycleStore';
 import PDFExport from './PDFExport';
+import GuardrailChip from './GuardrailChip';
 
 const OrientationBar = ({ items, tone = 'default' }) => {
   const toneClasses = tone === 'accent'
@@ -59,28 +60,44 @@ const formatNarrativeDelta = value => {
   return `${value >= 0 ? '+' : '-'}${rounded}`;
 };
 
+const pluralize = (count, singular, plural) => (Math.abs(count) === 1 ? singular : plural);
+
+const formatSignedDelta = (delta, singular, plural) => {
+  const abs = Math.abs(delta);
+  if (!abs) return null;
+  const prefix = delta > 0 ? `+${abs}` : `-${abs}`;
+  const noun = pluralize(abs, singular, plural);
+  return `${prefix} ${noun}`;
+};
+
 const describeAncillaryDelta = (baseline = null, contender = null) => {
   if (!baseline || !contender) return '';
   const essentialDelta = contender.essential.length - baseline.essential.length;
   const recommendedDelta = contender.recommended.length - baseline.recommended.length;
   const monitoringDelta = contender.monitoring.length - baseline.monitoring.length;
   const costDelta = contender.totalWeeklyCost - baseline.totalWeeklyCost;
-  const bits = [];
-  if (essentialDelta) {
-    bits.push(`${essentialDelta > 0 ? '+' : ''}${essentialDelta} essential`);
+
+  const clauses = [];
+  const essentialText = formatSignedDelta(essentialDelta, 'essential med', 'essential meds');
+  if (essentialText) clauses.push(essentialText);
+  const recommendedText = formatSignedDelta(recommendedDelta, 'recommended med', 'recommended meds');
+  if (recommendedText) clauses.push(recommendedText);
+  const labText = formatSignedDelta(monitoringDelta, 'lab draw', 'lab draws');
+  if (labText) clauses.push(labText);
+
+  let sentence = '';
+  if (clauses.length) {
+    sentence = `Ancillary plan shifts ${clauses.join(', ')}`;
   }
-  if (recommendedDelta) {
-    bits.push(`${recommendedDelta > 0 ? '+' : ''}${recommendedDelta} recommended`);
-  }
-  if (monitoringDelta) {
-    bits.push(`${monitoringDelta > 0 ? '+' : ''}${monitoringDelta} labs`);
-  }
+
   if (Math.abs(costDelta) >= 1) {
-    const direction = costDelta >= 0 ? 'higher' : 'lower';
-    bits.push(`${direction} $${Math.abs(costDelta).toFixed(2)}/wk`);
+    const costPhrase = costDelta >= 0
+      ? `costs an extra $${Math.abs(costDelta).toFixed(2)}/wk`
+      : `saves $${Math.abs(costDelta).toFixed(2)}/wk`;
+    sentence = sentence ? `${sentence}; ${costPhrase}` : `Ancillary plan ${costPhrase}`;
   }
-  if (!bits.length) return '';
-  return `Ancillary plan shifts ${bits.join(', ')}`;
+
+  return sentence;
 };
 
 const formatStackForProtocol = (stackItems = []) =>
@@ -289,6 +306,7 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
         adjustedRatio: 0,
       goalScore: 0
       };
+  const formatMetric = (value, digits = 2) => Number(value ?? 0).toFixed(digits);
 
   const guardrailMap = useMemo(() => {
     if (!stackEvaluation) return {};
@@ -312,6 +330,59 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
   }, [stackEvaluation, stack]);
 
   const guardrailNotices = Object.values(guardrailMap);
+
+  const stackChipContext = useMemo(() => {
+    const chips = [];
+    chips.push({
+      label: 'Goal',
+      value: goalPresets[goalPreset]?.label || 'Custom',
+      tone: 'muted'
+    });
+    const netTone = stackMetrics.goalScore >= 0 ? 'success' : 'error';
+    chips.push({
+      label: netTone === 'success' ? 'Favorable' : 'Caution',
+      value: `Net ${formatMetric(stackMetrics.goalScore)}`,
+      tone: netTone
+    });
+    chips.push({
+      label: 'Ratio',
+      value: stackMetrics.adjustedRatio ? formatMetric(stackMetrics.adjustedRatio) : '—',
+      tone: 'warning'
+    });
+    if (guardrailNotices.length) {
+      const notice = guardrailNotices[0];
+      chips.push({
+        label: notice.beyond ? 'Outside evidence' : 'Plateau',
+        value: notice.compound ? (compoundData[notice.compound]?.abbreviation || notice.compound) : '',
+        tone: notice.beyond ? 'error' : 'warning'
+      });
+    }
+    return chips;
+  }, [goalPreset, stackMetrics, guardrailNotices, compoundData]);
+
+  const savedCycleMeta = useMemo(() => {
+    const meta = {};
+    savedCycles.forEach(cycle => {
+      if (!cycle?.stack?.length) return;
+      const profile = cycle.profile || userProfile || defaultProfile;
+      const evaluation = evaluateStack({
+        stackInput: cycle.stack,
+        profile,
+        goalKey: cycle.goalPreset || 'lean_mass'
+      });
+      const totals = evaluation?.totals;
+      if (!totals) return;
+      const net = totals.netScore ?? 0;
+      const ratio = totals.totalRisk > 0 ? totals.totalBenefit / totals.totalRisk : totals.totalBenefit;
+      meta[cycle.id] = {
+        net,
+        ratio,
+        tone: net >= 0 ? 'success' : 'error',
+        label: net >= 0 ? 'Favorable' : 'Caution'
+      };
+    });
+    return meta;
+  }, [savedCycles, userProfile]);
 
   const handleLoadCycle = (cycleId) => {
     if (!cycleId) return;
@@ -454,7 +525,6 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
   const injectables = availableCompounds.filter(key => compoundData[key].type === 'injectable');
   const orals = availableCompounds.filter(key => compoundData[key].type === 'oral');
   const goalLabel = goalPresets[goalPreset]?.label || 'Custom goal';
-  const formatMetric = (value, digits = 2) => Number(value ?? 0).toFixed(digits);
   const labViewEnabled = uiMode === 'lab' || Boolean(userProfile?.labMode?.enabled);
   const hasStack = stack.length > 0;
   const activeCycle = savedCycles.find(cycle => cycle.id === activeCycleId) || null;
@@ -795,6 +865,7 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
                 { label: 'Goal score', value: stackMetrics.goalScore }
               ]
             }}
+            badgeContext={stackChipContext}
           />
         </div>
         </div>
@@ -844,29 +915,48 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
         ) : (
           <>
             <div className="grid gap-3 md:grid-cols-2">
-              {savedCycles.map(cycle => (
-                <div
-                  key={cycle.id}
-                  className={`border rounded-lg p-3 flex items-center justify-between gap-3 ${
-                    cycle.id === activeCycleId ? 'border-physio-accent-cyan' : 'border-physio-bg-border'
-                  }`}
-                >
-                  <div>
-                    <p className="font-semibold text-physio-text-primary">{cycle.name}</p>
-                    <p className="text-xs text-physio-text-tertiary">
-                      Goal: {goalPresets[cycle.goalPreset]?.label || 'Custom'} · Updated {formatTimestamp(cycle.updatedAt)}
-                    </p>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      <span className="px-2 py-0.5 rounded-full border border-physio-bg-border text-[10px] text-physio-text-secondary">
-                        Preset { (cycle.goalPreset || 'custom').toUpperCase() }
-                      </span>
-                      {cycle.notes && (
-                        <span className="px-2 py-0.5 rounded-full border border-physio-bg-border text-[10px] text-physio-text-secondary">
-                          Notes saved
-                        </span>
-                      )}
+              {savedCycles.map(cycle => {
+                const meta = savedCycleMeta[cycle.id];
+                return (
+                  <div
+                    key={cycle.id}
+                    className={`border rounded-lg p-3 flex items-center justify-between gap-3 ${
+                      cycle.id === activeCycleId ? 'border-physio-accent-cyan' : 'border-physio-bg-border'
+                    }`}
+                  >
+                    <div>
+                      <p className="font-semibold text-physio-text-primary">{cycle.name}</p>
+                      <p className="text-xs text-physio-text-tertiary">
+                        Goal: {goalPresets[cycle.goalPreset]?.label || 'Custom'} · Updated {formatTimestamp(cycle.updatedAt)}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        <GuardrailChip
+                          size="sm"
+                          tone="muted"
+                          label="Preset"
+                          detail={goalPresets[cycle.goalPreset]?.label || 'Custom'}
+                        />
+                        {meta && (
+                          <>
+                            <GuardrailChip
+                              size="sm"
+                              tone={meta.tone}
+                              label={meta.label}
+                              detail={`Net ${formatMetric(meta.net)}`}
+                            />
+                            <GuardrailChip
+                              size="sm"
+                              tone="warning"
+                              label="Ratio"
+                              detail={Number.isFinite(meta.ratio) ? formatMetric(meta.ratio) : '—'}
+                            />
+                          </>
+                        )}
+                        {cycle.notes && (
+                          <GuardrailChip size="sm" tone="muted" label="Notes" detail="Saved" />
+                        )}
+                      </div>
                     </div>
-                  </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleLoadCycle(cycle.id)}
@@ -881,8 +971,9 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
                       Delete
                     </button>
                   </div>
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
 
             {labViewEnabled && (

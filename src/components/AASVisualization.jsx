@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, lazy, Suspense, useMemo } from 'react';
 import DoseResponseChart from './DoseResponseChart';
 import OralDoseChart from './OralDoseChart';
 import CustomLegend from './CustomLegend';
@@ -9,10 +9,14 @@ import SideEffectProfile from './SideEffectProfile';
 import AncillaryCalculator from './AncillaryCalculator';
 import PersonalizationPanel from './PersonalizationPanel.jsx';
 import ProfileStatusBar from './ProfileStatusBar.jsx';
-import EvidencePanel from './EvidencePanel';
 import ChartControlBar from './ChartControlBar';
+import ContextDrawer from './ContextDrawer';
 import { compoundData } from '../data/compoundData';
 import { defaultProfile, PROFILE_STORAGE_KEY } from '../utils/personalization';
+import { readJSONStorage, writeJSONStorage, removeStorageKey } from '../utils/storage';
+import { LAYOUT_FILTER_PREFS_KEY } from '../utils/storageKeys';
+
+const EvidencePanel = lazy(() => import('./EvidencePanel'));
 
 const mergeStoredProfile = (storedProfile) => {
   if (!storedProfile) return { ...defaultProfile };
@@ -43,27 +47,39 @@ const withProfileMeta = (profile = defaultProfile) => ({
   }
 });
 
-const CollapseChevron = ({ open }) => (
-  <svg
-    className={`w-4 h-4 text-physio-text-tertiary transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-    viewBox="0 0 20 20"
-    fill="currentColor"
-    aria-hidden="true"
-  >
-    <path
-      fillRule="evenodd"
-      d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
-      clipRule="evenodd"
-    />
-  </svg>
-);
+const FILTER_TRACKING_OPTIONS = [
+  {
+    key: 'viewMode',
+    label: 'Chart view mode',
+    helper: 'Benefit-only or risk-only counts as dirty.'
+  },
+  {
+    key: 'density',
+    label: 'Layout density',
+    helper: 'Compressed layout toggles the chip.'
+  },
+  {
+    key: 'interaction',
+    label: 'Interaction controls',
+    helper: 'Heatmap focus, goal preset, evidence blend.'
+  },
+  {
+    key: 'legend',
+    label: 'Legend visibility',
+    helper: 'Hide/show compounds counts as dirty + resets with the global button.'
+  }
+];
 
-const FILTER_PREF_KEY = 'layoutFilterPrefs';
-const defaultFilterPrefs = {
-  viewMode: true,
-  density: true,
-  interaction: true
-};
+const defaultFilterPrefs = FILTER_TRACKING_OPTIONS.reduce((acc, option) => {
+  acc[option.key] = option.key === 'legend' ? false : true;
+  return acc;
+}, {});
+
+const buildDefaultVisibilityMap = () =>
+  Object.keys(compoundData).reduce((acc, key) => {
+    acc[key] = true;
+    return acc;
+  }, {});
 
 const AASVisualization = () => {
   // Active tab: 'injectables', 'orals', 'interactions', 'stack'
@@ -73,11 +89,10 @@ const AASVisualization = () => {
   const [viewMode, setViewMode] = useState('integrated');
   
   // Visible compounds (all visible by default)
-  const [visibleCompounds, setVisibleCompounds] = useState(
-    Object.keys(compoundData).reduce((acc, key) => {
-      acc[key] = true;
-      return acc;
-    }, {})
+  const [visibleCompounds, setVisibleCompounds] = useState(() => buildDefaultVisibilityMap());
+  const legendDirty = useMemo(
+    () => Object.values(visibleCompounds || {}).some(value => !value),
+    [visibleCompounds]
   );
   const [hoveredCompound, setHoveredCompound] = useState(null);
   
@@ -86,16 +101,9 @@ const AASVisualization = () => {
 
   // Personalization state
   const [userProfile, setUserProfile] = useState(() => {
-    if (typeof window === 'undefined') return withProfileMeta(defaultProfile);
-    try {
-      const stored = window.localStorage.getItem(PROFILE_STORAGE_KEY);
-      if (!stored) return withProfileMeta(defaultProfile);
-      const parsed = JSON.parse(stored);
-      return withProfileMeta(mergeStoredProfile(parsed));
-    } catch (error) {
-      console.warn('Failed to parse stored profile', error);
-      return withProfileMeta(defaultProfile);
-    }
+    const stored = readJSONStorage(PROFILE_STORAGE_KEY, null);
+    if (!stored) return withProfileMeta(defaultProfile);
+    return withProfileMeta(mergeStoredProfile(stored));
   });
   const applyProfileUpdate = useCallback(
     (updater, { markUnsaved = true } = {}) => {
@@ -127,19 +135,12 @@ const AASVisualization = () => {
   const [uiMode, setUIMode] = useState(() => (userProfile?.labMode?.enabled ? 'lab' : 'simple'));
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(userProfile));
-    } catch (error) {
-      console.warn('Failed to persist profile', error);
-    }
+    writeJSONStorage(PROFILE_STORAGE_KEY, userProfile);
   }, [userProfile]);
 
 
   const handleClearProfile = () => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem(PROFILE_STORAGE_KEY);
-    }
+    removeStorageKey(PROFILE_STORAGE_KEY);
     applyProfileUpdate(() => ({ ...defaultProfile }), { markUnsaved: false });
   };
 
@@ -174,28 +175,17 @@ const AASVisualization = () => {
   const [filterPrefsOpen, setFilterPrefsOpen] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const stored = window.localStorage.getItem(FILTER_PREF_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setFilterPrefs(prev => ({
-          ...prev,
-          ...parsed
-        }));
-      }
-    } catch (error) {
-      console.warn('Failed to load filter prefs', error);
+    const stored = readJSONStorage(LAYOUT_FILTER_PREFS_KEY, null);
+    if (stored) {
+      setFilterPrefs(prev => ({
+        ...prev,
+        ...stored
+      }));
     }
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.setItem(FILTER_PREF_KEY, JSON.stringify(filterPrefs));
-    } catch (error) {
-      console.warn('Failed to persist filter prefs', error);
-    }
+    writeJSONStorage(LAYOUT_FILTER_PREFS_KEY, filterPrefs);
   }, [filterPrefs]);
 
   const toggleContextDrawer = (tabKey) => {
@@ -245,9 +235,10 @@ const AASVisualization = () => {
     const dirty =
       (filterPrefs.viewMode && viewDirty) ||
       (filterPrefs.density && densityDirty) ||
-      (filterPrefs.interaction && interactionDirty);
+      (filterPrefs.interaction && interactionDirty) ||
+      (filterPrefs.legend && legendDirty);
     setFiltersDirty(dirty);
-  }, [viewMode, compressedMode, interactionFiltersDirty, filterPrefs]);
+  }, [viewMode, compressedMode, interactionFiltersDirty, legendDirty, filterPrefs]);
 
   const handleInteractionFiltersDirty = useCallback((dirty) => {
     setInteractionFiltersDirty(dirty);
@@ -256,6 +247,7 @@ const AASVisualization = () => {
   const resetAllFilters = useCallback(() => {
     setViewMode('integrated');
     setCompressedMode(false);
+    setVisibleCompounds(buildDefaultVisibilityMap());
     setInteractionResetKey(prev => prev + 1);
     setInteractionFiltersDirty(false);
   }, []);
@@ -427,12 +419,8 @@ const AASVisualization = () => {
           {filterPrefsOpen && (
             <div className="mt-3 p-4 border border-physio-bg-border rounded-xl bg-physio-bg-secondary max-w-xl">
               <p className="text-xs uppercase tracking-wide text-physio-text-tertiary mb-2">Filters counted</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-physio-text-secondary">
-                {[
-                  { key: 'viewMode', label: 'Chart view mode', helper: 'Benefit-only or risk-only counts as dirty.' },
-                  { key: 'density', label: 'Layout density', helper: 'Compressed layout toggles the chip.' },
-                  { key: 'interaction', label: 'Interaction controls', helper: 'Heatmap focus, goal, evidence blend.' }
-                ].map(pref => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-physio-text-secondary">
+                {FILTER_TRACKING_OPTIONS.map(pref => (
                   <label
                     key={pref.key}
                     className="flex items-start gap-2 bg-physio-bg-core border border-physio-bg-border rounded-lg p-3 cursor-pointer"
@@ -499,6 +487,16 @@ const AASVisualization = () => {
                     visibleCompounds={visibleCompounds}
                     toggleCompound={toggleCompound}
                     onMethodologyClick={openMethodology}
+                    onToggleAll={(action, keys) => {
+                      setVisibleCompounds(prev => {
+                        const next = { ...prev };
+                        keys.forEach(key => {
+                          if (action === 'all-on') next[key] = true;
+                          if (action === 'all-off') next[key] = false;
+                        });
+                        return next;
+                      });
+                    }}
                     activeTab={activeTab}
                     onCompoundHover={setHoveredCompound}
                     highlightedCompound={hoveredCompound}
@@ -507,84 +505,71 @@ const AASVisualization = () => {
               </div>
             </section>
 
-            <div
-              data-section="context-drawer"
-              className="mt-5 bg-physio-bg-secondary/80 border border-physio-bg-border rounded-2xl p-5 shadow-physio-subtle"
+            <ContextDrawer
+              dataSection="context-drawer"
+              collapsed={contextCollapsed.injectables}
+              onToggle={() => toggleContextDrawer('injectables')}
+              renderEvidence={() =>
+                evidenceReady.injectables ? (
+                  <Suspense fallback={<p className="text-xs text-physio-text-tertiary">Loading evidence deck…</p>}>
+                    <EvidencePanel activeTab={activeTab} visibleCompounds={visibleCompounds} />
+                  </Suspense>
+                ) : (
+                  <p className="text-xs text-physio-text-tertiary">Expand the drawer to load the evidence breakdown.</p>
+                )
+              }
             >
-              <button
-                type="button"
-                onClick={() => toggleContextDrawer('injectables')}
-                className="w-full flex items-center justify-between text-left"
-              >
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Need context?</p>
-                  <h3 className="text-lg font-bold text-physio-accent-cyan">Expand to learn how to read the charts</h3>
+              <section>
+                <h4 className="font-semibold text-physio-text-secondary mb-2">Quick Guide</h4>
+                <ul className="space-y-1.5">
+                  <li><strong>Solid lines = Benefit</strong> • Dotted lines = Risk</li>
+                  <li><strong>Shaded bands = Uncertainty</strong> • Wider = less confident data</li>
+                  <li><strong>Legend:</strong> Click compounds to show/hide • Tap ⓘ for methodology</li>
+                </ul>
+              </section>
+              <section>
+                <h4 className="font-semibold text-physio-text-secondary mb-2">Common Scenarios</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-mint">
+                    <div className="font-bold text-physio-accent-mint mb-2">🔰 First Cycle?</div>
+                    <p>Start with <strong>Testosterone only</strong> at 300-500mg/week. Observe your baseline response before layering other compounds.</p>
+                  </div>
+                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-cyan">
+                    <div className="font-bold text-physio-accent-cyan mb-2">📈 Mass Building</div>
+                    <p>Test 500mg + NPP 300mg — optional Dbol 20-30mg (weeks 1-4) for kickstart. Monitor E2 closely.</p>
+                  </div>
+                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-violet">
+                    <div className="font-bold text-physio-accent-violet mb-2">✂️ Cutting / Recomp</div>
+                    <p>Test 300-400mg + Masteron 400mg. Optional Anavar 50mg (weeks 8-14) for final hardening. Skip wet compounds.</p>
+                  </div>
+                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-error">
+                    <div className="font-bold text-physio-error mb-2">⚠️ High Risk ≠ High Reward</div>
+                    <p>Tren benefit plateaus ~300mg while risk keeps climbing. Anadrol &gt;75mg pushes hepatic thresholds quickly.</p>
+                  </div>
                 </div>
-                <CollapseChevron open={!contextCollapsed.injectables} />
-              </button>
-              {!contextCollapsed.injectables && (
-                <div className="text-sm text-physio-text-primary mt-4 space-y-5">
-                  <section>
-                    <h4 className="font-semibold text-physio-text-secondary mb-2">Quick Guide</h4>
-                    <ul className="space-y-1.5">
-                      <li><strong>Solid lines = Benefit</strong> • Dotted lines = Risk</li>
-                      <li><strong>Shaded bands = Uncertainty</strong> • Wider = less confident data</li>
-                      <li><strong>Legend:</strong> Click compounds to show/hide • Tap ⓘ for methodology</li>
-                    </ul>
-                  </section>
-                  <section>
-                    <h4 className="font-semibold text-physio-text-secondary mb-2">Common Scenarios</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-mint">
-                        <div className="font-bold text-physio-accent-mint mb-2">🔰 First Cycle?</div>
-                        <p>Start with <strong>Testosterone only</strong> at 300-500mg/week. Observe your baseline response before layering other compounds.</p>
-                      </div>
-                      <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-cyan">
-                        <div className="font-bold text-physio-accent-cyan mb-2">📈 Mass Building</div>
-                        <p>Test 500mg + NPP 300mg — optional Dbol 20-30mg (weeks 1-4) for kickstart. Monitor E2 closely.</p>
-                      </div>
-                      <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-violet">
-                        <div className="font-bold text-physio-accent-violet mb-2">✂️ Cutting / Recomp</div>
-                        <p>Test 300-400mg + Masteron 400mg. Optional Anavar 50mg (weeks 8-14) for final hardening. Skip wet compounds.</p>
-                      </div>
-                      <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-error">
-                        <div className="font-bold text-physio-error mb-2">⚠️ High Risk ≠ High Reward</div>
-                        <p>Tren benefit plateaus ~300mg while risk keeps climbing. Anadrol &gt;75mg pushes hepatic thresholds quickly.</p>
-                      </div>
-                    </div>
-                  </section>
-                  <section>
-                    <h4 className="font-semibold text-physio-text-secondary mb-2">Evidence Tier System</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="border-l-4 border-physio-tier-1 pl-4">
-                        <div className="font-bold text-physio-tier-1">Tier 1 · Highest confidence</div>
-                        <p className="text-physio-text-secondary">Randomized controlled trials in humans at specific doses.</p>
-                      </div>
-                      <div className="border-l-4 border-physio-tier-2 pl-4">
-                        <div className="font-bold text-physio-tier-2">Tier 2 · High confidence</div>
-                        <p className="text-physio-text-secondary">Clinical/therapeutic human data extrapolated to supra levels.</p>
-                      </div>
-                      <div className="border-l-4 border-physio-tier-3 pl-4">
-                        <div className="font-bold text-physio-tier-3">Tier 3 · Medium confidence</div>
-                        <p className="text-physio-text-secondary">Animal studies converted to human equivalent dose (HED).</p>
-                      </div>
-                      <div className="border-l-4 border-physio-tier-4 pl-4">
-                        <div className="font-bold text-physio-tier-4">Tier 4 · Low confidence</div>
-                        <p className="text-physio-text-secondary">Mechanistic models + aggregated community reports.</p>
-                      </div>
-                    </div>
-                  </section>
-                  <section className="bg-physio-bg-core border border-physio-bg-border rounded-xl p-4">
-                    <h4 className="font-semibold text-physio-text-secondary mb-2">Evidence & Confidence</h4>
-                    {evidenceReady.injectables ? (
-                      <EvidencePanel activeTab={activeTab} visibleCompounds={visibleCompounds} />
-                    ) : (
-                      <p className="text-xs text-physio-text-tertiary">Expand the drawer to load the evidence breakdown.</p>
-                    )}
-                  </section>
+              </section>
+              <section>
+                <h4 className="font-semibold text-physio-text-secondary mb-2">Evidence Tier System</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="border-l-4 border-physio-tier-1 pl-4">
+                    <div className="font-bold text-physio-tier-1">Tier 1 · Highest confidence</div>
+                    <p className="text-physio-text-secondary">Randomized controlled trials in humans at specific doses.</p>
+                  </div>
+                  <div className="border-l-4 border-physio-tier-2 pl-4">
+                    <div className="font-bold text-physio-tier-2">Tier 2 · High confidence</div>
+                    <p className="text-physio-text-secondary">Clinical/therapeutic human data extrapolated to supra levels.</p>
+                  </div>
+                  <div className="border-l-4 border-physio-tier-3 pl-4">
+                    <div className="font-bold text-physio-tier-3">Tier 3 · Medium confidence</div>
+                    <p className="text-physio-text-secondary">Animal studies converted to human equivalent dose (HED).</p>
+                  </div>
+                  <div className="border-l-4 border-physio-tier-4 pl-4">
+                    <div className="font-bold text-physio-tier-4">Tier 4 · Low confidence</div>
+                    <p className="text-physio-text-secondary">Mechanistic models + aggregated community reports.</p>
+                  </div>
                 </div>
-              )}
-            </div>
+              </section>
+            </ContextDrawer>
           </>
         )}
 
@@ -620,6 +605,16 @@ const AASVisualization = () => {
                     visibleCompounds={visibleCompounds}
                     toggleCompound={toggleCompound}
                     onMethodologyClick={openMethodology}
+                    onToggleAll={(action, keys) => {
+                      setVisibleCompounds(prev => {
+                        const next = { ...prev };
+                        keys.forEach(key => {
+                          if (action === 'all-on') next[key] = true;
+                          if (action === 'all-off') next[key] = false;
+                        });
+                        return next;
+                      });
+                    }}
                     activeTab={activeTab}
                     onCompoundHover={setHoveredCompound}
                     highlightedCompound={hoveredCompound}
@@ -628,84 +623,71 @@ const AASVisualization = () => {
               </div>
             </section>
 
-            <div
-              data-section="context-drawer"
-              className="mt-5 bg-physio-bg-secondary/80 border border-physio-bg-border rounded-2xl p-5 shadow-physio-subtle"
+            <ContextDrawer
+              dataSection="context-drawer"
+              collapsed={contextCollapsed.orals}
+              onToggle={() => toggleContextDrawer('orals')}
+              renderEvidence={() =>
+                evidenceReady.orals ? (
+                  <Suspense fallback={<p className="text-xs text-physio-text-tertiary">Loading evidence deck…</p>}>
+                    <EvidencePanel activeTab={activeTab} visibleCompounds={visibleCompounds} />
+                  </Suspense>
+                ) : (
+                  <p className="text-xs text-physio-text-tertiary">Expand the drawer to load the evidence breakdown.</p>
+                )
+              }
             >
-              <button
-                type="button"
-                onClick={() => toggleContextDrawer('orals')}
-                className="w-full flex items-center justify-between text-left"
-              >
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Need context?</p>
-                  <h3 className="text-lg font-bold text-physio-accent-cyan">Expand to learn how to read the charts</h3>
+              <section>
+                <h4 className="font-semibold text-physio-text-secondary mb-2">Quick Guide</h4>
+                <ul className="space-y-1.5">
+                  <li><strong>Solid lines = Benefit</strong> • Dotted lines = Risk</li>
+                  <li><strong>Shaded bands = Uncertainty</strong> • Wider = less confident data</li>
+                  <li><strong>Legend:</strong> Click compounds to show/hide • Tap ⓘ for methodology</li>
+                </ul>
+              </section>
+              <section>
+                <h4 className="font-semibold text-physio-text-secondary mb-2">Common Scenarios</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-mint">
+                    <div className="font-bold text-physio-accent-mint mb-2">🔰 First Oral Run</div>
+                    <p>Start conservative (Anavar or Tbol 30-40mg). Pair with a TRT-level Test base to manage hormonal balance.</p>
+                  </div>
+                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-cyan">
+                    <div className="font-bold text-physio-accent-cyan mb-2">📈 Photo/Stage Finish</div>
+                    <p>Lean Test base + Anavar or Winstrol for 4–6 weeks. Layer cardio + hydration management.</p>
+                  </div>
+                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-violet">
+                    <div className="font-bold text-physio-accent-violet mb-2">⚙️ Power Boost</div>
+                    <p>Dbol 20-30mg (short bursts) to spike neural drive, but manage BP and hematocrit tightly.</p>
+                  </div>
+                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-error">
+                    <div className="font-bold text-physio-error mb-2">⚠️ Don’t Stack Orals</div>
+                    <p>Doubling up (e.g., Anadrol + Winstrol) cuts into hepatic budget fast. Keep liver support + labs front and center.</p>
+                  </div>
                 </div>
-                <CollapseChevron open={!contextCollapsed.orals} />
-              </button>
-              {!contextCollapsed.orals && (
-                <div className="text-sm text-physio-text-primary mt-4 space-y-5">
-                  <section>
-                    <h4 className="font-semibold text-physio-text-secondary mb-2">Quick Guide</h4>
-                    <ul className="space-y-1.5">
-                      <li><strong>Solid lines = Benefit</strong> • Dotted lines = Risk</li>
-                      <li><strong>Shaded bands = Uncertainty</strong> • Wider = less confident data</li>
-                      <li><strong>Legend:</strong> Click compounds to show/hide • Tap ⓘ for methodology</li>
-                    </ul>
-                  </section>
-                  <section>
-                    <h4 className="font-semibold text-physio-text-secondary mb-2">Common Scenarios</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-mint">
-                        <div className="font-bold text-physio-accent-mint mb-2">🔰 First Oral Run</div>
-                        <p>Start conservative (Anavar or Tbol 30-40mg). Pair with a TRT-level Test base to manage hormonal balance.</p>
-                      </div>
-                      <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-cyan">
-                        <div className="font-bold text-physio-accent-cyan mb-2">📈 Photo/Stage Finish</div>
-                        <p>Lean Test base + Anavar or Winstrol for 4–6 weeks. Layer cardio + hydration management.</p>
-                      </div>
-                      <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-violet">
-                        <div className="font-bold text-physio-accent-violet mb-2">⚙️ Power Boost</div>
-                        <p>Dbol 20-30mg (short bursts) to spike neural drive, but manage BP and hematocrit tightly.</p>
-                      </div>
-                      <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-error">
-                        <div className="font-bold text-physio-error mb-2">⚠️ Don’t Stack Orals</div>
-                        <p>Doubling up (e.g., Anadrol + Winstrol) cuts into hepatic budget fast. Keep liver support + labs front and center.</p>
-                      </div>
-                    </div>
-                  </section>
-                  <section>
-                    <h4 className="font-semibold text-physio-text-secondary mb-2">Evidence Tier System</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="border-l-4 border-physio-tier-1 pl-4">
-                        <div className="font-bold text-physio-tier-1">Tier 1 · Highest confidence</div>
-                        <p className="text-physio-text-secondary">Randomized controlled trials in humans at specific doses.</p>
-                      </div>
-                      <div className="border-l-4 border-physio-tier-2 pl-4">
-                        <div className="font-bold text-physio-tier-2">Tier 2 · High confidence</div>
-                        <p className="text-physio-text-secondary">Clinical/therapeutic human data extrapolated to supra levels.</p>
-                      </div>
-                      <div className="border-l-4 border-physio-tier-3 pl-4">
-                        <div className="font-bold text-physio-tier-3">Tier 3 · Medium confidence</div>
-                        <p className="text-physio-text-secondary">Animal studies converted to human equivalent dose (HED).</p>
-                      </div>
-                      <div className="border-l-4 border-physio-tier-4 pl-4">
-                        <div className="font-bold text-physio-tier-4">Tier 4 · Low confidence</div>
-                        <p className="text-physio-text-secondary">Mechanistic models + aggregated community reports.</p>
-                      </div>
-                    </div>
-                  </section>
-                  <section className="bg-physio-bg-core border border-physio-bg-border rounded-xl p-4">
-                    <h4 className="font-semibold text-physio-text-secondary mb-2">Evidence & Confidence</h4>
-                    {evidenceReady.orals ? (
-                      <EvidencePanel activeTab={activeTab} visibleCompounds={visibleCompounds} />
-                    ) : (
-                      <p className="text-xs text-physio-text-tertiary">Expand the drawer to load the evidence breakdown.</p>
-                    )}
-                  </section>
+              </section>
+              <section>
+                <h4 className="font-semibold text-physio-text-secondary mb-2">Evidence Tier System</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="border-l-4 border-physio-tier-1 pl-4">
+                    <div className="font-bold text-physio-tier-1">Tier 1 · Highest confidence</div>
+                    <p className="text-physio-text-secondary">Randomized controlled trials in humans at specific doses.</p>
+                  </div>
+                  <div className="border-l-4 border-physio-tier-2 pl-4">
+                    <div className="font-bold text-physio-tier-2">Tier 2 · High confidence</div>
+                    <p className="text-physio-text-secondary">Clinical/therapeutic human data extrapolated to supra levels.</p>
+                  </div>
+                  <div className="border-l-4 border-physio-tier-3 pl-4">
+                    <div className="font-bold text-physio-tier-3">Tier 3 · Medium confidence</div>
+                    <p className="text-physio-text-secondary">Animal studies converted to human equivalent dose (HED).</p>
+                  </div>
+                  <div className="border-l-4 border-physio-tier-4 pl-4">
+                    <div className="font-bold text-physio-tier-4">Tier 4 · Low confidence</div>
+                    <p className="text-physio-text-secondary">Mechanistic models + aggregated community reports.</p>
+                  </div>
                 </div>
-              )}
-            </div>
+              </section>
+            </ContextDrawer>
           </>
         )}
 

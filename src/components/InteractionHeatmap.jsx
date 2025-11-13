@@ -18,6 +18,8 @@ import { evaluateStack } from '../utils/stackEngine';
 import { generateStackOptimizerResults, generateCustomStackResults } from '../utils/stackOptimizer';
 import { compoundData } from '../data/compoundData';
 import { defaultProfile } from '../utils/personalization';
+import { readJSONStorage, writeJSONStorage, removeStorageKey } from '../utils/storage';
+import { INTERACTION_CONTROL_STORAGE_KEY, HEATMAP_FOCUS_PIN_KEY } from '../utils/storageKeys';
 import {
   ResponsiveContainer,
   LineChart,
@@ -91,21 +93,10 @@ const DrawerChevron = ({ open }) => (
   </svg>
 );
 
-const INTERACTION_CONTROL_STORAGE_KEY = 'interactionControls';
 const defaultHeatmapControls = {
   heatmapMode: 'benefit',
   goalPreset: 'lean_mass',
   evidenceBlend: 0.35
-};
-
-const getInteractionStorage = () => {
-  if (typeof window === 'undefined') return null;
-  const storage = window.localStorage;
-  if (!storage) return null;
-  if (typeof storage.getItem !== 'function' || typeof storage.setItem !== 'function') {
-    return null;
-  }
-  return storage;
 };
 
 const InteractionHeatmap = ({
@@ -118,6 +109,7 @@ const InteractionHeatmap = ({
   const pairIds = Object.keys(interactionPairs);
   const [selectedPairId, setSelectedPairId] = useState(pairIds[0]);
   const [heatmapMode, setHeatmapMode] = useState(defaultHeatmapControls.heatmapMode);
+  const [focusPinned, setFocusPinned] = useState(false);
   const [sensitivities, setSensitivities] = useState(() => ({ ...defaultSensitivities }));
   const [evidenceBlend, setEvidenceBlend] = useState(defaultHeatmapControls.evidenceBlend);
   const [goalPreset, setGoalPreset] = useState(defaultHeatmapControls.goalPreset);
@@ -131,6 +123,7 @@ const InteractionHeatmap = ({
   const [optimizerCollapsed, setOptimizerCollapsed] = useState(() => !labUnlocked);
   const [contextCollapsed, setContextCollapsed] = useState(true);
   const [heatmapCompact, setHeatmapCompact] = useState(false);
+  const [activeAnchor, setActiveAnchor] = useState('matrix');
   const pairDetailRef = useRef(null);
   const controlsSectionRef = useRef(null);
   const heatmapRef = useRef(null);
@@ -162,10 +155,11 @@ const InteractionHeatmap = ({
     if (typeof window === 'undefined' || !heatmapRef.current) return;
     const top = heatmapRef.current.offsetTop - 24;
     window.scrollTo({ top, behavior: 'smooth' });
+    setActiveAnchor('matrix');
   };
 
   const scrollToSection = useCallback(
-    (ref) => {
+    (ref, keyOverride = null) => {
       if (typeof window === 'undefined' || !ref?.current) return;
       const offset = window.innerWidth < 768 ? 64 : 96;
       const targetTop = ref.current.getBoundingClientRect().top + window.scrollY - offset;
@@ -173,6 +167,9 @@ const InteractionHeatmap = ({
         top: Math.max(0, targetTop),
         behavior: 'smooth'
       });
+      if (keyOverride) {
+        setActiveAnchor(keyOverride);
+      }
     },
     []
   );
@@ -196,6 +193,38 @@ const InteractionHeatmap = ({
     ],
     [labUnlocked, heatmapRef, controlsSectionRef, metricsRef, chartsRef, surfacesRef, optimizersRef]
   );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    let frame = null;
+    const evaluateActiveAnchor = () => {
+      frame = null;
+      const offset = window.innerWidth < 768 ? 80 : 140;
+      let current = null;
+      anchorSections.forEach(section => {
+        if (!section.available || !section.ref?.current) return;
+        const rect = section.ref.current.getBoundingClientRect();
+        if (rect.top - offset <= 0) {
+          current = section.key;
+        }
+      });
+      if (!current) {
+        const fallback = anchorSections.find(section => section.available)?.key || 'matrix';
+        current = fallback;
+      }
+      setActiveAnchor(prev => (prev === current ? prev : current));
+    };
+    const handleScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(evaluateActiveAnchor);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    evaluateActiveAnchor();
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [anchorSections]);
 
   const selectedPair = interactionPairs[selectedPairId];
   const dimensionKeys = useMemo(() => {
@@ -222,7 +251,7 @@ const InteractionHeatmap = ({
     setHighlightedBand(null);
     if (controlsSectionRef.current) {
       setTimeout(() => {
-        scrollToSection(controlsSectionRef);
+        scrollToSection(controlsSectionRef, 'controls');
       }, 200);
     }
   };
@@ -378,6 +407,11 @@ const InteractionHeatmap = ({
     return values;
   }, [pairIds, heatmapMode, userProfile, sensitivities, evidenceBlend]);
 
+  const activeFocusLabel = useMemo(() => {
+    const activeMode = interactionHeatmapModes.find(mode => mode.key === heatmapMode);
+    return activeMode?.label || 'Focus';
+  }, [heatmapMode]);
+
   const maxHeatmapValue = Math.max(...Object.values(heatmapValues));
 
   const updateDose = (compoundKey, value) => {
@@ -457,7 +491,7 @@ const InteractionHeatmap = ({
     (point) => {
       if (!point) return;
       setHighlightFromPoint(point);
-      scrollToSection(controlsSectionRef);
+      scrollToSection(controlsSectionRef, 'controls');
     },
     [controlsSectionRef, scrollToSection, setHighlightFromPoint]
   );
@@ -485,6 +519,20 @@ const InteractionHeatmap = ({
       dose: point[key]
     }));
     onPrefillStack(payload);
+  };
+
+  const handleToggleFocusPin = () => {
+    setFocusPinned(prev => {
+      if (prev) {
+        removeStorageKey(HEATMAP_FOCUS_PIN_KEY);
+        return false;
+      }
+      writeJSONStorage(HEATMAP_FOCUS_PIN_KEY, {
+        mode: heatmapMode,
+        pinnedAt: Date.now()
+      });
+      return true;
+    });
   };
 
   const tooltipFormatter = (value, name) => {
@@ -628,33 +676,35 @@ const InteractionHeatmap = ({
   const anecdoteShare = 100 - clinicalShare;
   const netRatio = adjustedRiskValue > 0 ? (adjustedBenefitValue / adjustedRiskValue).toFixed(2) : '—';
   useEffect(() => {
-    const storage = getInteractionStorage();
-    if (!storage) return;
-    try {
-      const stored = storage.getItem(INTERACTION_CONTROL_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.heatmapMode) setHeatmapMode(parsed.heatmapMode);
-        if (parsed.goalPreset) setGoalPreset(parsed.goalPreset);
-        if (typeof parsed.evidenceBlend === 'number') setEvidenceBlend(parsed.evidenceBlend);
-      }
-    } catch (error) {
-      console.warn('Failed to load interaction controls', error);
+    const storedControls = readJSONStorage(INTERACTION_CONTROL_STORAGE_KEY, null);
+    if (storedControls) {
+      if (storedControls.goalPreset) setGoalPreset(storedControls.goalPreset);
+      if (typeof storedControls.evidenceBlend === 'number') setEvidenceBlend(storedControls.evidenceBlend);
+    }
+    const pinnedFocus = readJSONStorage(HEATMAP_FOCUS_PIN_KEY, null);
+    if (pinnedFocus?.mode) {
+      setFocusPinned(true);
+      setHeatmapMode(pinnedFocus.mode);
+    } else if (storedControls?.heatmapMode) {
+      // Migration path for older persisted focus settings
+      setHeatmapMode(storedControls.heatmapMode);
     }
   }, []);
 
   useEffect(() => {
-    const storage = getInteractionStorage();
-    if (!storage) return;
-    try {
-      storage.setItem(
-        INTERACTION_CONTROL_STORAGE_KEY,
-        JSON.stringify({ heatmapMode, goalPreset, evidenceBlend })
-      );
-    } catch (error) {
-      console.warn('Failed to save interaction controls', error);
-    }
-  }, [heatmapMode, goalPreset, evidenceBlend]);
+    writeJSONStorage(INTERACTION_CONTROL_STORAGE_KEY, {
+      goalPreset,
+      evidenceBlend
+    });
+  }, [goalPreset, evidenceBlend]);
+
+  useEffect(() => {
+    if (!focusPinned) return;
+    writeJSONStorage(HEATMAP_FOCUS_PIN_KEY, {
+      mode: heatmapMode,
+      pinnedAt: Date.now()
+    });
+  }, [focusPinned, heatmapMode]);
 
   useEffect(() => {
     const dirty =
@@ -665,17 +715,17 @@ const InteractionHeatmap = ({
   }, [heatmapMode, goalPreset, evidenceBlend, onFiltersDirtyChange]);
 
   useEffect(() => {
-    setHeatmapMode(defaultHeatmapControls.heatmapMode);
+    const pinnedFocus = focusPinned ? readJSONStorage(HEATMAP_FOCUS_PIN_KEY, null) : null;
+    const nextMode = pinnedFocus?.mode || defaultHeatmapControls.heatmapMode;
+    setHeatmapMode(nextMode);
     setGoalPreset(defaultHeatmapControls.goalPreset);
     setEvidenceBlend(defaultHeatmapControls.evidenceBlend);
     setContextCollapsed(true);
-    const storage = getInteractionStorage();
-    if (storage) {
-      try {
-        storage.removeItem(INTERACTION_CONTROL_STORAGE_KEY);
-      } catch {}
+    removeStorageKey(INTERACTION_CONTROL_STORAGE_KEY);
+    if (!focusPinned) {
+      removeStorageKey(HEATMAP_FOCUS_PIN_KEY);
     }
-  }, [resetSignal]);
+  }, [resetSignal, focusPinned]);
 
   const heatmapSectionClasses =
     `bg-physio-bg-secondary border border-physio-bg-border rounded-2xl shadow-lg lg:sticky lg:top-4 lg:z-20 transition-all duration-200 ${heatmapCompact ? 'p-4 space-y-4' : 'p-6 space-y-6'}`;
@@ -745,7 +795,22 @@ const InteractionHeatmap = ({
 
         <div className={`bg-physio-bg-core/70 border border-physio-bg-border rounded-2xl flex flex-col ${heatmapCompact ? 'p-3 gap-3' : 'p-4 gap-4'}`}>
           <div className={`flex flex-wrap items-center gap-3 ${heatmapCompact ? 'text-[11px]' : ''}`}>
-            <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Heatmap focus</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Heatmap focus</p>
+              <button
+                type="button"
+                onClick={handleToggleFocusPin}
+                aria-pressed={focusPinned}
+                className={`px-2 py-1 rounded-full border text-[11px] font-semibold uppercase tracking-wide transition ${
+                  focusPinned
+                    ? 'border-physio-accent-cyan text-physio-accent-cyan bg-physio-bg-core shadow-physio-subtle'
+                    : 'border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary'
+                }`}
+                title={focusPinned ? `Pinned to ${activeFocusLabel}` : 'Pin your preferred focus'}
+              >
+                {focusPinned ? `Pinned · ${activeFocusLabel}` : 'Pin focus'}
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2">
               {interactionHeatmapModes.map(mode => (
                 <button
@@ -922,11 +987,13 @@ const InteractionHeatmap = ({
             <button
               key={section.key}
               type="button"
-              onClick={() => scrollToSection(section.ref)}
+              onClick={() => scrollToSection(section.ref, section.key)}
               disabled={!section.available}
               className={`px-3 py-1.5 rounded-full border transition ${
                 section.available
-                  ? 'text-physio-text-secondary border-physio-bg-border hover:border-physio-accent-cyan hover:text-physio-accent-cyan'
+                  ? activeAnchor === section.key
+                    ? 'bg-physio-accent-cyan/10 border-physio-accent-cyan text-physio-accent-cyan'
+                    : 'text-physio-text-secondary border-physio-bg-border hover:border-physio-accent-cyan hover:text-physio-accent-cyan'
                   : 'text-physio-text-tertiary/60 border-dashed border-physio-bg-border/70 cursor-not-allowed'
               }`}
             >

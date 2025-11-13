@@ -12,30 +12,8 @@ import {
   ReferenceLine
 } from 'recharts';
 import { compoundData } from '../data/compoundData';
-import { evaluateCompoundResponse } from '../utils/interactionEngine';
+import { evaluateCompoundResponse, getPlateauDose, getHardMax } from '../utils/interactionEngine';
 import HoverAnalyticsTooltip from './HoverAnalyticsTooltip';
-
-const getCurveCap = (curve = []) => {
-  if (!curve?.length) return 0;
-  return curve[curve.length - 1]?.dose ?? 0;
-};
-
-const derivePlateauDose = (curve = []) => {
-  if (!curve?.length) return 0;
-  if (curve.length === 1) return curve[0].dose;
-  return curve[Math.max(0, curve.length - 2)].dose;
-};
-
-const getPlateauDose = compound =>
-  compound.plateauDose ?? derivePlateauDose(compound.benefitCurve);
-
-const getHardMax = compound => {
-  const plateauDose = getPlateauDose(compound);
-  return (
-    compound.hardMax ??
-    Math.max(getCurveCap(compound.benefitCurve), getCurveCap(compound.riskCurve), plateauDose)
-  );
-};
 
 /**
  * Oral Compound Dose-Response Chart

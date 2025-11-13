@@ -360,7 +360,7 @@ describe('summarizeCycleDelta narrative', () => {
       contenderAncillary
     });
 
-    expect(narrative).toMatch(/Ancillary plan shifts/);
+    expect(narrative).toMatch(/Ancillary plan shifts \+2 essential meds, \+1 recommended med, \+2 lab draws; costs an extra \$8.00\/wk/);
     expect(narrative).toMatch(/Cycle B adds \+0.9 lean-mass benefit/);
   });
 
@@ -383,7 +383,36 @@ describe('summarizeCycleDelta narrative', () => {
     });
 
     expect(narrative).toBeTruthy();
-    expect(narrative).toMatch(/Ancillary plan shifts/);
+    expect(narrative).toMatch(/Ancillary plan shifts \+1 essential med, \+2 lab draws; costs an extra \$20.00\/wk/);
+  });
+
+  it('describes support reductions and savings', () => {
+    const evalStub = { pairInteractions: {} };
+    const richerAncillary = {
+      essential: [{}, {}],
+      recommended: [{}],
+      optional: [],
+      monitoring: [{}, {}, {}],
+      totalWeeklyCost: 25
+    };
+    const leanerAncillary = {
+      essential: [{}],
+      recommended: [],
+      optional: [],
+      monitoring: [{}, {}],
+      totalWeeklyCost: 20
+    };
+
+    const narrative = summarizeCycleDelta({
+      baselineEval: evalStub,
+      contenderEval: evalStub,
+      contenderName: 'Cycle D',
+      baselineAncillary: richerAncillary,
+      contenderAncillary: leanerAncillary
+    });
+
+    expect(narrative).toMatch(/Ancillary plan shifts -1 essential med, -1 recommended med, -1 lab draw/);
+    expect(narrative).toMatch(/saves \$5.00\/wk/);
   });
 });
 

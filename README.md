@@ -80,6 +80,8 @@ Click any compound name to view:
 - **ChartControlBar** is a sticky rail for view toggles, legend warnings, and PDF/Sweet-Spot utilities so controls stay visible while scrolling.
 - **Hero card** unifies the injectable/oral dose-response chart with the hover-aware legend so plateau highlights and guardrail chips are co-located.
 - **Context drawer** (“Need context?”) lazily loads the evidence deck (EvidencePanel mounts only after the drawer expands) alongside the Quick Guide + scenarios.
+- **Compressed mode toggle** below the status bar tightens spacing/line-height across cards for dense reviews and participates in the global “Filters active” signal so users know when the layout deviates from default.
+- **Lazy loading guardrails** ensure heavy evidence cards only hydrate after the user expands the drawer, keeping first paint lean even on lower-power devices.
 
 ### 📄 PDF Export
 Download complete report including:

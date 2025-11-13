@@ -1,3 +1,5 @@
+export { PROFILE_STORAGE_KEY } from './storageKeys';
+
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 export const defaultLabScales = {
@@ -67,8 +69,6 @@ export const defaultProfile = {
     scales: { ...defaultLabScales }
   }
 };
-
-export const PROFILE_STORAGE_KEY = 'physioSim:userProfile';
 
 const experienceImpact = {
   none: { benefit: 0.18, risk: 0.35 },
