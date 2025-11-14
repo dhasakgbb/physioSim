@@ -3,8 +3,8 @@ import { generateStackOptimizerResults, generateCustomStackResults } from '../..
 import { defaultProfile } from '../../utils/personalization';
 
 describe('stackOptimizer', () => {
-  it('returns ranked presets', () => {
-    const results = generateStackOptimizerResults({ profile: defaultProfile, goalOverride: 'lean_mass' });
+  it('returns ranked templates', () => {
+    const results = generateStackOptimizerResults({ profile: defaultProfile });
     expect(results.length).toBeGreaterThan(0);
     for (let i = 1; i < results.length; i += 1) {
       expect(results[i - 1].score).toBeGreaterThanOrEqual(results[i].score);
@@ -27,7 +27,7 @@ describe('stackOptimizer', () => {
       steps: 2,
       goal: 'lean_mass'
     };
-    const results = generateCustomStackResults({ combo, profile: defaultProfile, goalOverride: 'lean_mass' });
+    const results = generateCustomStackResults({ combo, profile: defaultProfile });
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].compounds).toEqual(['testosterone', 'primobolan']);
   });

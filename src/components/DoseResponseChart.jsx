@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -15,6 +15,16 @@ import { compoundData } from '../data/compoundData';
 import { evaluateCompoundResponse, getPlateauDose, getHardMax } from '../utils/interactionEngine';
 import HoverAnalyticsTooltip from './HoverAnalyticsTooltip';
 
+const hexToRgba = (hex, alpha = 1) => {
+  if (!hex) return `rgba(255,255,255,${alpha})`;
+  const normalized = hex.replace('#', '');
+  const bigint = parseInt(normalized.length === 3 ? normalized.repeat(2) : normalized, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 const DoseResponseChart = ({
   viewMode,
   visibleCompounds,
@@ -23,6 +33,10 @@ const DoseResponseChart = ({
 }) => {
   const chartRef = useRef(null);
   const [zoomDomain, setZoomDomain] = useState({ x: [0, 1200], y: [0, 5.5] });
+  const injectableCompounds = useMemo(
+    () => Object.entries(compoundData).filter(([, compound]) => compound.type === 'injectable'),
+    []
+  );
 
   // Prepare data for Recharts - merge all doses from injectable compounds only
   // Only show data where we actually have it (scientifically honest)
@@ -30,8 +44,7 @@ const DoseResponseChart = ({
     const allDoses = new Set();
     
     // Collect all dose points from INJECTABLE compounds only
-    Object.values(compoundData).forEach(compound => {
-      if (compound.type !== 'injectable') return;
+    injectableCompounds.forEach(([, compound]) => {
       compound.benefitCurve.forEach(point => allDoses.add(point.dose));
       compound.riskCurve.forEach(point => allDoses.add(point.dose));
     });
@@ -43,10 +56,8 @@ const DoseResponseChart = ({
     return sortedDoses.map(dose => {
       const dataPoint = { dose };
       
-      Object.entries(compoundData).forEach(([key, compound]) => {
-        if (compound.type !== 'injectable') return;
+      injectableCompounds.forEach(([key, compound]) => {
         
-        // Benefit data - only show where we have data
         const benefitPoint = compound.benefitCurve.find(p => p.dose === dose);
         if (benefitPoint) {
           const evaluation = evaluateCompoundResponse(key, 'benefit', dose, userProfile);
@@ -67,7 +78,6 @@ const DoseResponseChart = ({
           lastBenefit[key] = { dose, value: evaluation.value };
         }
         
-        // Risk data - only show where we have data
         const riskPoint = compound.riskCurve.find(p => p.dose === dose);
         if (riskPoint) {
           const evaluation = evaluateCompoundResponse(key, 'risk', dose, userProfile);
@@ -87,6 +97,13 @@ const DoseResponseChart = ({
 
           lastRisk[key] = { dose, value: evaluation.value };
         }
+
+        const benefitValue = dataPoint[`${key}-benefit-value`];
+        const riskValue = dataPoint[`${key}-risk-value`];
+        if (benefitValue !== undefined && riskValue !== undefined) {
+          const eff = riskValue > 0.1 ? benefitValue / riskValue : benefitValue;
+          dataPoint[`${key}-efficiency-value`] = Number(eff.toFixed(3));
+        }
       });
       
       return dataPoint;
@@ -99,8 +116,12 @@ const DoseResponseChart = ({
     setZoomDomain({ x: [0, 1200], y: [0, 5.5] });
   };
 
-  const showBenefit = viewMode === 'benefit' || viewMode === 'integrated';
-  const showRisk = viewMode === 'risk' || viewMode === 'integrated';
+  const mode = viewMode || 'benefit';
+  const showBenefit = mode === 'benefit';
+  const showRisk = mode === 'risk';
+  const showEfficiency = mode === 'efficiency';
+  const showUncertainty = mode === 'uncertainty';
+  const showPlateau = showBenefit || showEfficiency;
 
   return (
     <div 
@@ -110,16 +131,21 @@ const DoseResponseChart = ({
     >
       <div className="mb-4">
         <h2 className="text-2xl font-bold text-physio-text-primary">
-          AAS Dose-Response Models: {
-            viewMode === 'benefit' ? 'Benefit Curves' :
-            viewMode === 'risk' ? 'Risk Curves' :
-            'Benefit vs. Risk'
+          AAS Spotlight View · {
+            mode === 'benefit'
+              ? 'Benefit Curve'
+              : mode === 'risk'
+              ? 'Risk Curve'
+              : mode === 'efficiency'
+              ? 'Efficiency (Benefit ÷ Risk)'
+              : 'Uncertainty Bands'
           }
         </h2>
         <p className="text-sm text-physio-text-secondary mt-1">
-          {viewMode === 'benefit' && 'Solid lines show anabolic benefit (mass/strength gains)'}
-          {viewMode === 'risk' && 'Dotted lines show side burden (lipids/cardio/psych/organ stress)'}
-          {viewMode === 'integrated' && 'Solid = Benefit | Dotted = Risk | Shaded = Uncertainty'}
+          {mode === 'benefit' && 'Thin bezier lines show personalized anabolic response with plateau shading.'}
+          {mode === 'risk' && 'Under-curve fill visualizes cumulative burden (lipids, cardio, hepatic, neuro).'}
+          {mode === 'efficiency' && 'Ratio line highlights the true sweet spot — higher means more benefit per unit of risk.'}
+          {mode === 'uncertainty' && 'Only the mist bands render, so you can gauge confidence without signal overload.'}
         </p>
         <p className="text-xs text-physio-text-tertiary mt-1">
           Double-click to reset zoom | Scroll to zoom | Drag to pan
@@ -131,6 +157,25 @@ const DoseResponseChart = ({
           data={chartData}
           margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
         >
+          <defs>
+            {injectableCompounds.map(([key, compound]) => (
+              <React.Fragment key={`defs-${key}`}>
+                <linearGradient id={`inj-benefit-mist-${key}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={hexToRgba(compound.color, 0.35)} />
+                  <stop offset="100%" stopColor={hexToRgba(compound.color, 0.05)} />
+                </linearGradient>
+                <linearGradient id={`inj-risk-fill-${key}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={hexToRgba('#ff6b6b', 0.45)} />
+                  <stop offset="60%" stopColor={hexToRgba(compound.color, 0.18)} />
+                  <stop offset="100%" stopColor={hexToRgba(compound.color, 0.02)} />
+                </linearGradient>
+                <linearGradient id={`inj-uncertainty-mist-${key}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={hexToRgba('#45E2AB', 0.35)} />
+                  <stop offset="100%" stopColor={hexToRgba('#45E2AB', 0)} />
+                </linearGradient>
+              </React.Fragment>
+            ))}
+          </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--physio-bg-border)" strokeOpacity={0.2} />
           
           <XAxis
@@ -163,14 +208,14 @@ const DoseResponseChart = ({
                 {...tooltipProps}
                 visibleCompounds={visibleCompounds}
                 unit=" mg/wk"
+                mode={mode}
               />
             )}
             cursor={{ stroke: 'var(--physio-accent-cyan)', strokeDasharray: '4 4' }}
           />
 
           {/* Render uncertainty bands and lines for each compound */}
-          {Object.entries(compoundData).map(([key, compound]) => {
-            if (compound.type !== 'injectable') return null;
+          {injectableCompounds.map(([key, compound]) => {
             if (!visibleCompounds[key]) return null;
             const plateauDose = getPlateauDose(compound);
             const hardMax = getHardMax(compound);
@@ -181,10 +226,22 @@ const DoseResponseChart = ({
             const capStrokeOpacity = isHighlighted ? 1 : guardrailActive ? 0.2 : 0.8;
             const capStrokeWidth = isHighlighted ? 3 : 1.5;
             const capLabelColor = 'var(--physio-error)';
+            const benefitMistFill = `url(#inj-benefit-mist-${key})`;
+            const riskGradientFill = `url(#inj-risk-fill-${key})`;
+            const uncertaintyMistFill = `url(#inj-uncertainty-mist-${key})`;
+            const strokeOpacity = guardrailActive ? (isHighlighted ? 1 : 0.18) : 1;
+            const mutedStrokeOpacity = guardrailActive ? (isHighlighted ? 0.65 : 0.12) : 0.65;
+            const mistFillOpacity = guardrailActive ? (isHighlighted ? 0.85 : 0.12) : 0.5;
+            const riskFillOpacity = guardrailActive ? (isHighlighted ? 0.9 : 0.15) : 0.65;
+            const uncertaintyFillOpacity = guardrailActive ? (isHighlighted ? 0.75 : 0.1) : 0.35;
+            const benefitStrokeWidth = isHighlighted ? 3.2 : 2.4;
+            const riskStrokeWidth = isHighlighted ? 3 : 2.2;
+            const efficiencyStrokeWidth = isHighlighted ? 3.4 : 2.6;
+            const beyondStrokeOpacity = guardrailActive ? (isHighlighted ? 1 : 0.25) : 1;
 
             return (
               <React.Fragment key={key}>
-                {showBenefit && plateauDose && plateauDose < plateauEnd && (
+                {showPlateau && plateauDose && plateauDose < plateauEnd && (
                   <ReferenceArea
                     x1={plateauDose}
                     x2={plateauEnd}
@@ -193,7 +250,7 @@ const DoseResponseChart = ({
                     strokeOpacity={0}
                   />
                 )}
-                {showBenefit && hardMax && (
+                {showPlateau && hardMax && (
                   <ReferenceLine
                     x={hardMax}
                     stroke="var(--physio-error)"
@@ -216,15 +273,15 @@ const DoseResponseChart = ({
                     <Area
                       dataKey={`${key}-benefit-upper`}
                       stroke="none"
-                      fill={compound.color}
-                      fillOpacity={0.35}
+                      fill={benefitMistFill}
+                      fillOpacity={mistFillOpacity}
                       isAnimationActive={false}
                     />
                     <Area
                       dataKey={`${key}-benefit-lower`}
                       stroke="none"
-                      fill={compound.color}
-                      fillOpacity={0.35}
+                      fill={benefitMistFill}
+                      fillOpacity={mistFillOpacity}
                       isAnimationActive={false}
                     />
                     
@@ -232,7 +289,8 @@ const DoseResponseChart = ({
                       type="monotone"
                       dataKey={`${key}-benefit-pre`}
                       stroke={compound.color}
-                      strokeWidth={2.5}
+                      strokeWidth={benefitStrokeWidth}
+                      strokeOpacity={strokeOpacity}
                       dot={false}
                       activeDot={false}
                       isAnimationActive={false}
@@ -243,8 +301,8 @@ const DoseResponseChart = ({
                       type="monotone"
                       dataKey={`${key}-benefit-post`}
                       stroke={compound.color}
-                      strokeWidth={2.5}
-                      strokeOpacity={0.5}
+                      strokeWidth={benefitStrokeWidth}
+                      strokeOpacity={mutedStrokeOpacity}
                       dot={false}
                       activeDot={false}
                       isAnimationActive={false}
@@ -256,6 +314,7 @@ const DoseResponseChart = ({
                       dataKey={`${key}-benefit-beyond`}
                       stroke="var(--physio-error)"
                       strokeWidth={3}
+                      strokeOpacity={beyondStrokeOpacity}
                       strokeDasharray="6 4"
                       dot={false}
                       activeDot={false}
@@ -272,15 +331,15 @@ const DoseResponseChart = ({
                     <Area
                       dataKey={`${key}-risk-upper`}
                       stroke="none"
-                      fill={compound.color}
-                      fillOpacity={0.40}
+                      fill={riskGradientFill}
+                      fillOpacity={riskFillOpacity}
                       isAnimationActive={false}
                     />
                     <Area
                       dataKey={`${key}-risk-lower`}
                       stroke="none"
-                      fill={compound.color}
-                      fillOpacity={0.40}
+                      fill={riskGradientFill}
+                      fillOpacity={riskFillOpacity}
                       isAnimationActive={false}
                     />
                     
@@ -288,8 +347,9 @@ const DoseResponseChart = ({
                       type="monotone"
                       dataKey={`${key}-risk-pre`}
                       stroke={compound.color}
-                      strokeWidth={2.5}
+                      strokeWidth={riskStrokeWidth}
                       strokeDasharray="5 5"
+                      strokeOpacity={strokeOpacity}
                       dot={false}
                       activeDot={false}
                       isAnimationActive={false}
@@ -300,9 +360,9 @@ const DoseResponseChart = ({
                       type="monotone"
                       dataKey={`${key}-risk-post`}
                       stroke={compound.color}
-                      strokeWidth={2}
+                      strokeWidth={riskStrokeWidth - 0.4}
                       strokeDasharray="2 2"
-                      strokeOpacity={0.6}
+                      strokeOpacity={mutedStrokeOpacity}
                       dot={false}
                       activeDot={false}
                       isAnimationActive={false}
@@ -322,6 +382,53 @@ const DoseResponseChart = ({
                       legendType="none"
                     />
                   </>
+                )}
+
+                {/* UNCERTAINTY-ONLY MODE */}
+                {showUncertainty && (
+                  <>
+                    <Area
+                      dataKey={`${key}-benefit-upper`}
+                      stroke="none"
+                      fill={uncertaintyMistFill}
+                      fillOpacity={uncertaintyFillOpacity}
+                      isAnimationActive={false}
+                    />
+                    <Area
+                      dataKey={`${key}-benefit-lower`}
+                      stroke="none"
+                      fill={uncertaintyMistFill}
+                      fillOpacity={uncertaintyFillOpacity}
+                      isAnimationActive={false}
+                    />
+                    <Area
+                      dataKey={`${key}-risk-upper`}
+                      stroke="none"
+                      fill={uncertaintyMistFill}
+                      fillOpacity={uncertaintyFillOpacity}
+                      isAnimationActive={false}
+                    />
+                    <Area
+                      dataKey={`${key}-risk-lower`}
+                      stroke="none"
+                      fill={uncertaintyMistFill}
+                      fillOpacity={uncertaintyFillOpacity}
+                      isAnimationActive={false}
+                    />
+                  </>
+                )}
+
+                {showEfficiency && (
+                  <Line
+                    type="monotone"
+                    dataKey={`${key}-efficiency-value`}
+                    stroke={compound.color}
+                    strokeWidth={efficiencyStrokeWidth}
+                    strokeOpacity={strokeOpacity}
+                    dot={false}
+                    isAnimationActive={false}
+                    name={`${compound.abbreviation} Efficiency`}
+                  />
                 )}
               </React.Fragment>
             );

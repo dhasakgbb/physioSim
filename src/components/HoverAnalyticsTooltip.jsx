@@ -12,7 +12,14 @@ const formatDelta = (value) => {
   return value >= 0 ? `+${rounded}` : rounded;
 };
 
-const HoverAnalyticsTooltip = ({ active, payload, label, unit = 'mg', visibleCompounds }) => {
+const HoverAnalyticsTooltip = ({
+  active,
+  payload,
+  label,
+  unit = 'mg',
+  visibleCompounds,
+  mode = 'benefit'
+}) => {
   if (!active || !payload || !payload.length) {
     return null;
   }
@@ -24,9 +31,10 @@ const HoverAnalyticsTooltip = ({ active, payload, label, unit = 'mg', visibleCom
   const entries = Object.entries(compoundData)
     .filter(([key]) => visibleCompounds?.[key])
     .map(([key, data]) => {
-      const benefit = row[`${key}-benefit-value`] ?? row[`${key}_benefit`];
-      const risk = row[`${key}-risk-value`] ?? row[`${key}_risk`];
-      if (benefit === undefined && risk === undefined) return null;
+      const benefit = row[`${key}-benefit-value`];
+      const risk = row[`${key}-risk-value`];
+      const efficiency = row[`${key}-efficiency-value`];
+      if (benefit === undefined && risk === undefined && efficiency === undefined) return null;
 
       const prevDose = row[`${key}-benefit-prevDose`] ?? row[`${key}-risk-prevDose`];
       const deltaBenefit = row[`${key}-benefit-delta`];
@@ -83,7 +91,8 @@ const HoverAnalyticsTooltip = ({ active, payload, label, unit = 'mg', visibleCom
           nearingPlateau,
           caption: guardrailCaption.join(' '),
           active: Boolean(nearingPlateau || beyondEvidence || clamped)
-        }
+        },
+        efficiency
       };
     })
     .filter(Boolean);
@@ -96,45 +105,58 @@ const HoverAnalyticsTooltip = ({ active, payload, label, unit = 'mg', visibleCom
         Dose: <span className="font-semibold text-physio-text-primary">{label}{unit}</span>
       </div>
       <div className="space-y-2">
-        {entries.map(item => (
-          <div key={item.key} className="text-xs">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold" style={{ color: item.color }}>
-                {item.label}
-              </span>
-              <span className="text-physio-text-secondary">
-                Benefit {formatScore(item.benefit)} | Risk {formatScore(item.risk)}
-              </span>
+        {entries.map(item => {
+          const showBenefit = mode === 'benefit' || mode === 'efficiency' || mode === 'uncertainty';
+          const showRisk = mode === 'risk' || mode === 'efficiency' || mode === 'uncertainty';
+          const showEfficiency = mode === 'efficiency';
+          return (
+            <div key={item.key} className="text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold" style={{ color: item.color }}>
+                  {item.label}
+                </span>
+                <div className="text-physio-text-secondary flex flex-col items-end leading-tight">
+                  {showBenefit && (
+                    <span>Benefit {formatScore(item.benefit)}</span>
+                  )}
+                  {showRisk && (
+                    <span>Risk {formatScore(item.risk)}</span>
+                  )}
+                  {showEfficiency && (
+                    <span>Efficiency {formatScore(item.efficiency)}</span>
+                  )}
+                </div>
+              </div>
+              {item.prevDose !== null && item.prevDose !== undefined && (
+                <div className="text-[11px] text-physio-text-tertiary mt-0.5">
+                  {item.prevDose}→{label}{unit} • ΔBenefit {formatDelta(item.deltaBenefit)} vs ΔRisk {formatDelta(item.deltaRisk)}
+                </div>
+              )}
+              {item.guardrails?.active && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {item.guardrails.nearingPlateau && item.guardrails.plateauDose !== null && (
+                    <span className="px-2 py-0.5 rounded-full bg-physio-warning/10 border border-physio-warning/30 text-[10px] text-physio-warning font-semibold">
+                      Plateau @ {item.guardrails.plateauDose} {trimmedUnit}
+                    </span>
+                  )}
+                  {item.guardrails.beyondEvidence && item.guardrails.hardMax !== null && (
+                    <span className="px-2 py-0.5 rounded-full bg-physio-error/10 border border-physio-error/30 text-[10px] text-physio-error font-semibold">
+                      Outside evidence &gt; {item.guardrails.hardMax} {trimmedUnit}
+                    </span>
+                  )}
+                  {item.guardrails.clamped && item.guardrails.clampedDose !== null && (
+                    <span className="px-2 py-0.5 rounded-full bg-physio-warning/5 border border-physio-warning/30 text-[10px] text-physio-text-primary font-semibold">
+                      Clamped to {item.guardrails.clampedDose} {trimmedUnit}
+                    </span>
+                  )}
+                </div>
+              )}
+              {item.guardrails?.caption && (
+                <p className="text-[11px] text-physio-text-tertiary mt-0.5">{item.guardrails.caption}</p>
+              )}
             </div>
-            {item.prevDose !== null && item.prevDose !== undefined && (
-              <div className="text-[11px] text-physio-text-tertiary mt-0.5">
-                {item.prevDose}→{label}{unit} • ΔBenefit {formatDelta(item.deltaBenefit)} vs ΔRisk {formatDelta(item.deltaRisk)}
-              </div>
-            )}
-            {item.guardrails?.active && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                {item.guardrails.nearingPlateau && item.guardrails.plateauDose !== null && (
-                  <span className="px-2 py-0.5 rounded-full bg-physio-warning/10 border border-physio-warning/30 text-[10px] text-physio-warning font-semibold">
-                    Plateau @ {item.guardrails.plateauDose} {trimmedUnit}
-                  </span>
-                )}
-                {item.guardrails.beyondEvidence && item.guardrails.hardMax !== null && (
-                  <span className="px-2 py-0.5 rounded-full bg-physio-error/10 border border-physio-error/30 text-[10px] text-physio-error font-semibold">
-                    Outside evidence &gt; {item.guardrails.hardMax} {trimmedUnit}
-                  </span>
-                )}
-                {item.guardrails.clamped && item.guardrails.clampedDose !== null && (
-                  <span className="px-2 py-0.5 rounded-full bg-physio-warning/5 border border-physio-warning/30 text-[10px] text-physio-text-primary font-semibold">
-                    Clamped to {item.guardrails.clampedDose} {trimmedUnit}
-                  </span>
-                )}
-              </div>
-            )}
-            {item.guardrails?.caption && (
-              <p className="text-[11px] text-physio-text-tertiary mt-0.5">{item.guardrails.caption}</p>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

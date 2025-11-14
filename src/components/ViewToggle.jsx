@@ -2,14 +2,15 @@ import React from 'react';
 
 const ViewToggle = ({ viewMode, setViewMode }) => {
   const modes = [
-    { id: 'integrated', label: 'Benefit + Risk', tag: 'recommended' },
-    { id: 'benefit', label: 'Benefit only' },
-    { id: 'risk', label: 'Risk only' }
+    { id: 'benefit', label: 'Benefit Curve', description: 'Pure anabolic signal' },
+    { id: 'risk', label: 'Risk Curve', description: 'Under-curve burden' },
+    { id: 'efficiency', label: 'Efficiency Mode', description: 'Benefit ÷ Risk' },
+    { id: 'uncertainty', label: 'Uncertainty', description: 'Noise bands only' }
   ];
 
   return (
     <fieldset
-      className="flex flex-wrap items-center gap-2"
+      className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
       role="radiogroup"
       aria-label="Chart view mode"
     >
@@ -17,10 +18,10 @@ const ViewToggle = ({ viewMode, setViewMode }) => {
       {modes.map(mode => (
         <label
           key={mode.id}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm cursor-pointer transition-standard ${
+          className={`flex flex-col gap-1 px-4 py-2 rounded-2xl border cursor-pointer transition-all duration-150 shadow-sm ${
             viewMode === mode.id
-              ? 'bg-physio-bg-tertiary border-physio-accent-cyan text-physio-accent-cyan shadow-sm'
-              : 'border-physio-bg-border text-physio-text-secondary hover:border-physio-text-tertiary hover:text-physio-text-primary'
+              ? 'bg-physio-bg-tertiary/80 border-physio-accent-cyan text-physio-text-primary shadow-physio-subtle'
+              : 'border-physio-bg-border text-physio-text-secondary hover:border-physio-text-tertiary/50'
           }`}
         >
           <input
@@ -31,11 +32,9 @@ const ViewToggle = ({ viewMode, setViewMode }) => {
             onChange={() => setViewMode(mode.id)}
             className="sr-only"
           />
-          <span className="font-medium">{mode.label}</span>
-          {mode.tag && (
-            <span className="px-2 py-0.5 text-[11px] uppercase tracking-wide bg-physio-accent-mint text-physio-bg-core rounded-full font-semibold">
-              {mode.tag}
-            </span>
+          <span className="text-sm font-semibold">{mode.label}</span>
+          {mode.description && (
+            <span className="text-xs text-physio-text-tertiary">{mode.description}</span>
           )}
         </label>
       ))}

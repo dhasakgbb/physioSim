@@ -21,7 +21,6 @@ export const saveCycle = (cycle) => {
   const record = {
     id: cycle.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`),
     name: cycle.name || 'Untitled Cycle',
-    goalPreset: cycle.goalPreset || 'lean_mass',
     notes: cycle.notes || '',
     stack: cycle.stack || [],
     profile: cycle.profile || null,

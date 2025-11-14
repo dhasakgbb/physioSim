@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { defaultProfile, buildPersonalizationNarrative, labPresets, defaultLabScales } from '../utils/personalization';
+import { defaultProfile, buildPersonalizationNarrative, defaultCurveScales } from '../utils/personalization';
 
 const numericFields = [
   { name: 'age', label: 'Age', min: 18, max: 70, suffix: 'yrs', helper: 'Biological recovery capacity declines with age.' },
@@ -42,14 +42,14 @@ const selectFields = [
   }
 ];
 
-const labScaleFields = [
+const scaleFields = [
   { key: 'ageImpact', label: 'Age sensitivity', helper: 'Scales how strongly age drags benefit / inflates risk.' },
   { key: 'trainingImpact', label: 'Training load boost', helper: 'Controls bonus for heavy lifters and CI tightening.' },
   { key: 'shbgImpact', label: 'SHBG weighting', helper: 'Amplify or soften SHBG drag on Testosterone.' },
   { key: 'aromataseImpact', label: 'Aromatase weighting', helper: 'Adjust estrogenic risk acceleration for wet compounds.' },
   { key: 'anxietyImpact', label: 'Neuro sensitivity', helper: 'Impacts Tren/Halo risk slope for anxiety-prone users.' },
   { key: 'experienceImpact', label: 'Experience effect', helper: 'Tweak novice boost vs. veteran dampening.' },
-  { key: 'uncertaintyImpact', label: 'Uncertainty width', helper: 'Widen or tighten CI bands when lab mode is active.' }
+  { key: 'uncertaintyImpact', label: 'Uncertainty width', helper: 'Widen or tighten the confidence bands if data feels too strict or loose.' }
 ];
 
 const experienceLabels = {
@@ -63,8 +63,7 @@ export const isProfileCustomized = (profile = defaultProfile) => {
   if (!profile) return false;
   const trackedKeys = ['age', 'bodyweight', 'yearsTraining', 'shbg', 'aromatase', 'anxiety', 'experience'];
   return (
-    trackedKeys.some(key => (profile?.[key] ?? defaultProfile[key]) !== defaultProfile[key]) ||
-    Boolean(profile?.labMode?.enabled)
+    trackedKeys.some(key => (profile?.[key] ?? defaultProfile[key]) !== defaultProfile[key])
   );
 };
 
@@ -78,7 +77,6 @@ export const formatProfileSummary = (profile = defaultProfile) => {
   if (profile.aromatase) tokens.push(`Arom ${profile.aromatase}`);
   if (profile.anxiety) tokens.push(`Anxiety ${profile.anxiety}`);
   if (profile.experience) tokens.push(experienceLabels[profile.experience] || profile.experience);
-  if (profile.labMode?.enabled) tokens.push(`Lab preset: ${profile.labMode?.preset || 'custom'}`);
   return tokens.filter(Boolean).join(' • ') || 'Using baseline defaults';
 };
 
@@ -99,9 +97,7 @@ const ChevronIcon = ({ open }) => (
 
 const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compressed = false }) => {
   const narrative = buildPersonalizationNarrative(profile);
-  const labModeEnabled = profile?.labMode?.enabled;
-  const labPreset = profile?.labMode?.preset || 'baseline';
-  const labScales = { ...defaultLabScales, ...(profile?.labMode?.scales || {}) };
+  const curveScales = { ...defaultCurveScales, ...(profile?.curveScales || {}) };
   const [collapsed, setCollapsed] = useState(false);
   const [autoCollapsed, setAutoCollapsed] = useState(false);
   const profileSummary = useMemo(() => formatProfileSummary(profile), [profile]);
@@ -133,40 +129,21 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compre
     onProfileChange(() => ({ ...defaultProfile }));
   };
 
-  const toggleLabMode = () => {
-    onProfileChange(prev => ({
-      ...prev,
-      labMode: {
-        ...prev.labMode,
-        enabled: !labModeEnabled
-      }
-    }));
-  };
-
-  const applyLabPreset = (presetKey) => {
-    const preset = labPresets[presetKey] || labPresets.baseline;
-    onProfileChange(prev => ({
-      ...prev,
-      labMode: {
-        enabled: true,
-        preset: presetKey,
-        scales: { ...preset.scales }
-      }
-    }));
-  };
-
-  const updateLabScale = (key, value) => {
+  const updateCurveScale = (key, value) => {
     const numeric = Number(value);
     onProfileChange(prev => ({
       ...prev,
-      labMode: {
-        ...(prev.labMode || {}),
-        enabled: true,
-        scales: {
-          ...(prev.labMode?.scales || {}),
-          [key]: numeric
-        }
+      curveScales: {
+        ...(prev?.curveScales || {}),
+        [key]: numeric
       }
+    }));
+  };
+
+  const resetCurveScales = () => {
+    onProfileChange(prev => ({
+      ...prev,
+      curveScales: { ...defaultCurveScales }
     }));
   };
 
@@ -300,62 +277,39 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compre
       </div>
 
       <div className={`${blockSpacing} border border-physio-bg-border rounded-xl bg-physio-bg-secondary ${cardPadding}`}>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-lg font-bold text-physio-text-primary">Lab Mode (advanced coefficients)</h3>
-            <p className="text-xs text-physio-text-secondary">Override curve heuristics with responder presets or manual sliders.</p>
+            <h3 className="text-lg font-bold text-physio-text-primary">Response tuning sliders</h3>
+            <p className="text-xs text-physio-text-secondary">Dial the heuristics that tailor benefit/risk curves to your physiology.</p>
           </div>
           <button
-            onClick={toggleLabMode}
-            className={`px-3 py-1 text-xs font-semibold rounded-lg border transition-standard ${
-              labModeEnabled
-                ? 'border-physio-accent-cyan text-physio-accent-cyan'
-                : 'border-physio-bg-border text-physio-text-tertiary'
-            }`}
+            onClick={resetCurveScales}
+            className="px-3 py-1 text-xs font-semibold rounded-lg border border-physio-accent-cyan text-physio-accent-cyan transition-standard"
           >
-            {labModeEnabled ? 'Disable' : 'Enable'}
+            Reset sliders
           </button>
         </div>
 
-        {labModeEnabled && (
-          <div className="mt-4 space-y-4">
-            <label className="text-xs font-semibold text-physio-text-secondary">
-              Preset
-              <select
-                value={labPreset}
-                onChange={e => applyLabPreset(e.target.value)}
-                className="mt-1 w-full bg-physio-bg-core border border-physio-bg-border rounded-lg px-3 py-2 text-sm text-physio-text-primary"
-              >
-                {Object.entries(labPresets).map(([key, preset]) => (
-                  <option key={key} value={key} className="bg-physio-bg-core text-physio-text-primary">
-                    {preset.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {labScaleFields.map(field => (
-                <div key={field.key} className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-3">
-                  <div className="flex items-center justify-between text-xs font-semibold text-physio-text-primary mb-1">
-                    <span>{field.label}</span>
-                    <span className="text-physio-accent-cyan">{labScales[field.key].toFixed(2)}×</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0.5"
-                    max="1.5"
-                    step="0.05"
-                    value={labScales[field.key]}
-                    onChange={e => updateLabScale(field.key, parseFloat(e.target.value))}
-                    className="w-full"
-                  />
-                  <p className="text-[11px] text-physio-text-tertiary mt-1">{field.helper}</p>
-                </div>
-              ))}
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {scaleFields.map(field => (
+            <div key={field.key} className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-3">
+              <div className="flex items-center justify-between text-xs font-semibold text-physio-text-primary mb-1">
+                <span>{field.label}</span>
+                <span className="text-physio-accent-cyan">{curveScales[field.key].toFixed(2)}×</span>
+              </div>
+              <input
+                type="range"
+                min="0.5"
+                max="1.5"
+                step="0.05"
+                value={curveScales[field.key]}
+                onChange={e => updateCurveScale(field.key, parseFloat(e.target.value))}
+                className="w-full"
+              />
+              <p className="text-[11px] text-physio-text-tertiary mt-1">{field.helper}</p>
             </div>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
         </>
       )}

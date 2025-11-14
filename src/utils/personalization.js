@@ -2,7 +2,7 @@ export { PROFILE_STORAGE_KEY } from './storageKeys';
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-export const defaultLabScales = {
+export const defaultCurveScales = {
   ageImpact: 1,
   trainingImpact: 1,
   shbgImpact: 1,
@@ -10,49 +10,6 @@ export const defaultLabScales = {
   anxietyImpact: 1,
   experienceImpact: 1,
   uncertaintyImpact: 1
-};
-
-export const labPresets = {
-  baseline: {
-    label: 'Baseline (spec data)',
-    scales: { ...defaultLabScales }
-  },
-  powerlifter: {
-    label: 'Powerlifter (high training load)',
-    scales: {
-      ageImpact: 0.9,
-      trainingImpact: 1.25,
-      shbgImpact: 0.9,
-      aromataseImpact: 0.9,
-      anxietyImpact: 1,
-      experienceImpact: 1.1,
-      uncertaintyImpact: 0.9
-    }
-  },
-  highAromatase: {
-    label: 'High Aromatase',
-    scales: {
-      ageImpact: 1,
-      trainingImpact: 1,
-      shbgImpact: 1.2,
-      aromataseImpact: 1.3,
-      anxietyImpact: 1,
-      experienceImpact: 1,
-      uncertaintyImpact: 1.1
-    }
-  },
-  conservative: {
-    label: 'Conservative / TRT',
-    scales: {
-      ageImpact: 1.2,
-      trainingImpact: 0.85,
-      shbgImpact: 1.1,
-      aromataseImpact: 1,
-      anxietyImpact: 1.15,
-      experienceImpact: 0.9,
-      uncertaintyImpact: 1.2
-    }
-  }
 };
 
 export const defaultProfile = {
@@ -63,10 +20,10 @@ export const defaultProfile = {
   aromatase: 'moderate', // low | moderate | high
   anxiety: 'moderate', // low | moderate | high
   experience: 'test_only', // none | test_only | multi_compound | blast_cruise
+  curveScales: { ...defaultCurveScales },
   labMode: {
     enabled: false,
-    preset: 'baseline',
-    scales: { ...defaultLabScales }
+    scales: {}
   }
 };
 
@@ -112,10 +69,7 @@ const deriveShbgDelta = (profile) => {
   return clamp((shbgValue - 30) / 40, -1, 1);
 };
 
-const getScale = (profile, key) => {
-  if (!profile?.labMode?.enabled) return defaultLabScales[key] ?? 1;
-  return profile.labMode.scales?.[key] ?? defaultLabScales[key] ?? 1;
-};
+const getScale = (profile, key) => profile?.curveScales?.[key] ?? defaultCurveScales[key] ?? 1;
 
 export const personalizeScore = ({
   compoundKey,
@@ -240,10 +194,6 @@ export const buildPersonalizationNarrative = (profile = defaultProfile) => {
     talkingPoints.push('No prior AAS exposure — benefit inflated but risk penalty applied across compounds.');
   } else if (profile.experience === 'blast_cruise') {
     talkingPoints.push('Blast/cruise veteran — marginal benefit dampening assumed due to desensitization.');
-  }
-
-  if (profile.labMode?.enabled) {
-    talkingPoints.push('Lab Mode active — coefficient overrides applied from ' + (labPresets[profile.labMode.preset]?.label || 'custom preset') + '.');
   }
 
   if (!talkingPoints.length) {

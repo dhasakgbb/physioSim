@@ -74,29 +74,6 @@ export const defaultSensitivities = {
   cardio: 1
 };
 
-export const goalPresets = {
-  lean_mass: {
-    label: 'Lean Mass Engine',
-    benefitWeights: { anabolic: 1, vascularity: 0.5, strength: 0.4 },
-    riskWeights: { bp: 0.4, hematocrit: 0.5, bloat: 0.2 }
-  },
-  dry_cosmetic: {
-    label: 'Photoshoot Dryness',
-    benefitWeights: { vascularity: 1, anabolic: 0.4 },
-    riskWeights: { estrogenic: 0.7, bloat: 0.7, neuro: 0.3 }
-  },
-  joint_friendly: {
-    label: 'Joint-Friendly Recomp',
-    benefitWeights: { joint: 1, anabolic: 0.5, strength: 0.3 },
-    riskWeights: { bp: 0.3, bloat: 0.3, hepatic: 0.3 }
-  },
-  neuro_safe: {
-    label: 'Neuro-Stable Stack',
-    benefitWeights: { anabolic: 0.6, joint: 0.3 },
-    riskWeights: { neuro: 1, bp: 0.4, hematocrit: 0.2 }
-  }
-};
-
 export const stackOptimizerCombos = [
   {
     id: 'lean_mass_triple',

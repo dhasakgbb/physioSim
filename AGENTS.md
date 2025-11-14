@@ -1,13 +1,13 @@
 # Repository Guidelines
 
 ## Source Layout & Key Modules
-- Entry points live in `src/main.jsx` and `src/App.jsx`, and almost all UI is composed in `src/components`. Critical surfaces: `AASVisualization` (top-level layout + tab orchestration), `DoseResponseChart`/`OralDoseChart` (curve rendering), `InteractionHeatmap` (pair analysis, lab vs simple modes), `StackBuilder`, `AncillaryCalculator`, `SideEffectProfile`, and `ProfileStatusBar`.
-- Domain data is under `src/data`: `compoundData` (curves + methodology copy), `interactionMatrix` (ratings + utility helpers), `interactionEngineData` (presets, dimensions, sensitivity defaults), and `sideFxAndAncillaries`. Shared logic sits in `src/utils` (`interactionEngine`, `stackEngine`, `stackOptimizer`, `sweetSpot`, `cycleStore`, `personalization`).
+- Entry points live in `src/main.jsx` and `src/App.jsx`, and almost all UI is composed in `src/components`. Critical surfaces: `AASVisualization` (top-level layout + tab orchestration), `DoseResponseChart`/`OralDoseChart` (curve rendering), `InteractionHeatmap` (pair analysis with the full analytics stack), `StackBuilder`, `AncillaryCalculator`, `SideEffectProfile`, and `ProfileStatusBar`.
+- Domain data is under `src/data`: `compoundData` (curves + methodology copy), `interactionMatrix` (ratings + utility helpers), `interactionEngineData` (optimizer templates, dimensions, sensitivity defaults), and `sideFxAndAncillaries`. Shared logic sits in `src/utils` (`interactionEngine`, `stackEngine`, `stackOptimizer`, `sweetSpot`, `cycleStore`, `personalization`).
 - Tests live near their concern (`src/components/__tests__`) or in `src/test` for broader suites (`stackBuilder`, `interactions`, `dataValidation`, `components`). Global styles are in `src/index.css` with Tailwind configuration via `tailwind.config.js`.
 
-## State, Persistence & Modes
-- Local storage keys matter: `PROFILE_STORAGE_KEY` for personalization/lab mode, `layoutFilterPrefs` for filter chips, `interactionControls` for heatmap focus, and `physioSim:cycles` for saved stacks/cycles. Be defensive when accessing `window` (SSR guards already exist) and keep these keys in sync if you add new persisted controls.
-- Simple vs Lab UI: `ProfileStatusBar` + `PersonalizationPanel` govern `uiMode`. Advanced panels (optimizer, dimension chips, evidence overrides) unlock only when lab mode is on, and InteractionHeatmap collapses those sections otherwise. Maintain that gating when introducing new controls.
+## State & Persistence
+- Local storage keys matter: `PROFILE_STORAGE_KEY` for personalization, `layoutFilterPrefs` for filter chips, `interactionControls` for heatmap focus, and `physioSim:cycles` for saved stacks/cycles. Be defensive when accessing `window` (SSR guards already exist) and keep these keys in sync if you add new persisted controls.
+- InteractionHeatmap and StackBuilder now always run in the dense, advanced configuration—assume optimizer/surface tooling is available by default and persist only the user-tunable controls tied to the keys above.
 - Filter dirty state is centralized in `AASVisualization` (`filtersDirty`, `interactionFiltersDirty`, `filterPrefs`). New knobs should register themselves through those mechanisms so the global “Filters active” indicator stays accurate.
 
 ## Styling & UX Patterns
@@ -33,5 +33,5 @@
 - When adding complex interactivity, prefer new Vitest tests near the feature plus a note in `README` describing any shims or required mocks (per `1.md` outstanding work).
 
 ## Outstanding Work & References
-- High-priority polish from `1.md`: (1) CustomLegend hover guardrail badges + sticky pair summary badge. (2) Interaction tab reflow (sticky summary bar, anchor chunks, lab-mode gating). (3) Document the compressed mode + profile warning badge and lazy-load heavy drawers. (4) Cycle workspace narrative upgrades. (5) Document testing setup + add interaction test guidance. Keep these items in mind when touching related areas.
+- High-priority polish from `1.md`: (1) CustomLegend hover guardrail badges + sticky pair summary badge. (2) Interaction tab reflow (sticky summary bar, anchor chunks, unified analytics messaging). (3) Document the compressed mode + profile warning badge and lazy-load heavy drawers. (4) Cycle workspace narrative upgrades. (5) Document testing setup + add interaction test guidance. Keep these items in mind when touching related areas.
 - `README.md` holds a comprehensive feature overview and methodology notes; `SUMMARY.md` documents recent layout decisions; `1.md` tracks remaining UX/testing debt. Update those docs when you alter related functionality.

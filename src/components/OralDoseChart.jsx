@@ -44,58 +44,72 @@ const OralDoseChart = ({
     oralCompounds.forEach(([key, compound]) => {
       if (!visibleCompounds[key]) return;
 
-      if (viewMode === 'benefit' || viewMode === 'integrated') {
-        const evaluation = evaluateCompoundResponse(key, 'benefit', dose, userProfile);
-        if (!evaluation?.meta?.missing) {
-          const previous = lastBenefitByCompound[key];
-          const ci = evaluation.ci ?? 0;
-          const meta = evaluation.meta || {};
-          point[`${key}_benefit`] = evaluation.value;
-          point[`${key}_benefit_lower`] = Math.max(0, evaluation.value - ci);
-          point[`${key}_benefit_upper`] = evaluation.value + ci;
-          point[`${key}-benefit-value`] = evaluation.value;
-          point[`${key}-benefit-upper`] = evaluation.value + ci;
-          point[`${key}-benefit-lower`] = Math.max(0, evaluation.value - ci);
-          point[`${key}-benefit-prevDose`] = previous?.dose ?? null;
-          point[`${key}-benefit-delta`] = previous ? evaluation.value - previous.value : null;
-          point[`${key}-benefit-meta`] = meta;
-          point[`${key}-benefit-pre`] = meta.nearingPlateau ? null : evaluation.value;
-          point[`${key}-benefit-post`] = meta.nearingPlateau ? evaluation.value : null;
-          point[`${key}-benefit-beyond`] = meta.beyondEvidence ? evaluation.value : null;
-          lastBenefitByCompound[key] = { dose, value: evaluation.value };
-        }
+      const benefitEval = evaluateCompoundResponse(key, 'benefit', dose, userProfile);
+      if (!benefitEval?.meta?.missing) {
+        const previous = lastBenefitByCompound[key];
+        const ci = benefitEval.ci ?? 0;
+        const meta = benefitEval.meta || {};
+        point[`${key}-benefit-value`] = benefitEval.value;
+        point[`${key}-benefit-upper`] = benefitEval.value + ci;
+        point[`${key}-benefit-lower`] = Math.max(0, benefitEval.value - ci);
+        point[`${key}-benefit-prevDose`] = previous?.dose ?? null;
+        point[`${key}-benefit-delta`] = previous ? benefitEval.value - previous.value : null;
+        point[`${key}-benefit-meta`] = meta;
+        point[`${key}-benefit-pre`] = meta.nearingPlateau ? null : benefitEval.value;
+        point[`${key}-benefit-post`] = meta.nearingPlateau ? benefitEval.value : null;
+        point[`${key}-benefit-beyond`] = meta.beyondEvidence ? benefitEval.value : null;
+        lastBenefitByCompound[key] = { dose, value: benefitEval.value };
       }
-      
-      if (viewMode === 'risk' || viewMode === 'integrated') {
-        const evaluation = evaluateCompoundResponse(key, 'risk', dose, userProfile);
-        if (!evaluation?.meta?.missing) {
-          const previous = lastRiskByCompound[key];
-          const ci = evaluation.ci ?? 0;
-          const meta = evaluation.meta || {};
-          point[`${key}_risk`] = evaluation.value;
-          point[`${key}_risk_lower`] = Math.max(0, evaluation.value - ci);
-          point[`${key}_risk_upper`] = evaluation.value + ci;
-          point[`${key}-risk-value`] = evaluation.value;
-          point[`${key}-risk-upper`] = evaluation.value + ci;
-          point[`${key}-risk-lower`] = Math.max(0, evaluation.value - ci);
-          point[`${key}-risk-prevDose`] = previous?.dose ?? null;
-          point[`${key}-risk-delta`] = previous ? evaluation.value - previous.value : null;
-          point[`${key}-risk-meta`] = meta;
-          point[`${key}-risk-pre`] = meta.nearingPlateau ? null : evaluation.value;
-          point[`${key}-risk-post`] = meta.nearingPlateau ? evaluation.value : null;
-          point[`${key}-risk-beyond`] = meta.beyondEvidence ? evaluation.value : null;
-          lastRiskByCompound[key] = { dose, value: evaluation.value };
-        }
+
+      const riskEval = evaluateCompoundResponse(key, 'risk', dose, userProfile);
+      if (!riskEval?.meta?.missing) {
+        const previous = lastRiskByCompound[key];
+        const ci = riskEval.ci ?? 0;
+        const meta = riskEval.meta || {};
+        point[`${key}-risk-value`] = riskEval.value;
+        point[`${key}-risk-upper`] = riskEval.value + ci;
+        point[`${key}-risk-lower`] = Math.max(0, riskEval.value - ci);
+        point[`${key}-risk-prevDose`] = previous?.dose ?? null;
+        point[`${key}-risk-delta`] = previous ? riskEval.value - previous.value : null;
+        point[`${key}-risk-meta`] = meta;
+        point[`${key}-risk-pre`] = meta.nearingPlateau ? null : riskEval.value;
+        point[`${key}-risk-post`] = meta.nearingPlateau ? riskEval.value : null;
+        point[`${key}-risk-beyond`] = meta.beyondEvidence ? riskEval.value : null;
+        lastRiskByCompound[key] = { dose, value: riskEval.value };
+      }
+
+      const benefitValue = point[`${key}-benefit-value`];
+      const riskValue = point[`${key}-risk-value`];
+      if (benefitValue !== undefined && riskValue !== undefined) {
+        const eff = riskValue > 0.1 ? benefitValue / riskValue : benefitValue;
+        point[`${key}-efficiency-value`] = Number(eff.toFixed(3));
       }
     });
     
     return point;
   });
   
+  const mode = viewMode || 'benefit';
+  const showBenefit = mode === 'benefit';
+  const showRisk = mode === 'risk';
+  const showEfficiency = mode === 'efficiency';
+  const showUncertainty = mode === 'uncertainty';
+  const showPlateau = showBenefit || showEfficiency;
+  const headerCopy =
+    mode === 'benefit'
+      ? 'Benefit curve spotlight'
+      : mode === 'risk'
+      ? 'Risk burden spotlight'
+      : mode === 'efficiency'
+      ? 'Benefit ÷ risk ratios'
+      : 'Uncertainty mist (CI only)';
+
   return (
     <div className="bg-physio-bg-secondary p-6 rounded-lg shadow-lg border-2 border-physio-bg-border">
       <div className="mb-4">
-        <h3 className="text-xl font-bold text-physio-text-primary">Oral Compounds Dose-Response</h3>
+        <h3 className="text-xl font-bold text-physio-text-primary">
+          Oral Spotlight · {headerCopy}
+        </h3>
         <p className="text-sm text-physio-warning bg-physio-bg-tertiary border-2 border-physio-warning p-3 rounded-lg mt-2">
           <strong>Note:</strong> Orals are typically used for 4-8 weeks as cycle additions (kickstart/finisher), not full cycles. 
           Scale is mg/day, not mg/week.
@@ -134,6 +148,7 @@ const OralDoseChart = ({
                 {...tooltipProps}
                 visibleCompounds={visibleCompounds}
                 unit=" mg/day"
+                mode={mode}
               />
             )}
             cursor={{ stroke: 'var(--physio-accent-cyan)', strokeDasharray: '4 4' }}
@@ -153,7 +168,7 @@ const OralDoseChart = ({
             
             return (
               <React.Fragment key={key}>
-                {(viewMode === 'benefit' || viewMode === 'integrated') && plateauDose && plateauDose < plateauEnd && (
+                {showPlateau && plateauDose && plateauDose < plateauEnd && (
                   <ReferenceArea
                     x1={plateauDose}
                     x2={plateauEnd}
@@ -162,7 +177,7 @@ const OralDoseChart = ({
                     strokeOpacity={0}
                   />
                 )}
-                {(viewMode === 'benefit' || viewMode === 'integrated') && hardMax && (
+                {showPlateau && hardMax && (
                   <ReferenceLine
                     x={hardMax}
                     stroke="var(--physio-error)"
@@ -178,11 +193,11 @@ const OralDoseChart = ({
                   />
                 )}
 
-                {(viewMode === 'benefit' || viewMode === 'integrated') && (
+                {showBenefit && (
                   <>
                     <Area
                       type="monotone"
-                      dataKey={`${key}_benefit_upper`}
+                      dataKey={`${key}-benefit-upper`}
                       stroke="none"
                       fill={compound.color}
                       fillOpacity={0.35}
@@ -190,7 +205,7 @@ const OralDoseChart = ({
                     />
                     <Area
                       type="monotone"
-                      dataKey={`${key}_benefit_lower`}
+                      dataKey={`${key}-benefit-lower`}
                       stroke="none"
                       fill={compound.color}
                       fillOpacity={0.35}
@@ -234,11 +249,11 @@ const OralDoseChart = ({
                   </>
                 )}
                 
-                {(viewMode === 'risk' || viewMode === 'integrated') && (
+                {showRisk && (
                   <>
                     <Area
                       type="monotone"
-                      dataKey={`${key}_risk_upper`}
+                      dataKey={`${key}-risk-upper`}
                       stroke="none"
                       fill={compound.color}
                       fillOpacity={0.4}
@@ -246,7 +261,7 @@ const OralDoseChart = ({
                     />
                     <Area
                       type="monotone"
-                      dataKey={`${key}_risk_lower`}
+                      dataKey={`${key}-risk-lower`}
                       stroke="none"
                       fill={compound.color}
                       fillOpacity={0.4}
@@ -290,6 +305,57 @@ const OralDoseChart = ({
                       connectNulls
                     />
                   </>
+                )}
+
+                {showUncertainty && (
+                  <>
+                    <Area
+                      type="monotone"
+                      dataKey={`${key}-benefit-upper`}
+                      stroke="none"
+                      fill={compound.color}
+                      fillOpacity={0.15}
+                      isAnimationActive={false}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey={`${key}-benefit-lower`}
+                      stroke="none"
+                      fill={compound.color}
+                      fillOpacity={0.15}
+                      isAnimationActive={false}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey={`${key}-risk-upper`}
+                      stroke="none"
+                      fill={compound.color}
+                      fillOpacity={0.15}
+                      isAnimationActive={false}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey={`${key}-risk-lower`}
+                      stroke="none"
+                      fill={compound.color}
+                      fillOpacity={0.15}
+                      isAnimationActive={false}
+                    />
+                  </>
+                )}
+
+                {showEfficiency && (
+                  <Line
+                    type="monotone"
+                    dataKey={`${key}-efficiency-value`}
+                    stroke={compound.color}
+                    strokeWidth={3}
+                    dot={false}
+                    activeDot={false}
+                    isAnimationActive={false}
+                    name={`${compound.abbreviation} Efficiency`}
+                    connectNulls
+                  />
                 )}
               </React.Fragment>
             );

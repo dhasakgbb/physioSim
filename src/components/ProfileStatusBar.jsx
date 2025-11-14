@@ -5,12 +5,10 @@ const ProfileStatusBar = ({
   profile,
   unsaved = false,
   onEditProfile,
-  onToggleLabMode,
   onSaveProfile = () => {}
 }) => {
   const summary = formatProfileSummary(profile);
   const customized = isProfileCustomized(profile);
-  const labEnabled = Boolean(profile?.labMode?.enabled);
 
   return (
     <div className="bg-physio-bg-secondary/80 border border-physio-bg-border rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3 shadow-physio-subtle">
@@ -40,17 +38,6 @@ const ProfileStatusBar = ({
             Save profile
           </button>
         )}
-        <button
-          type="button"
-          onClick={onToggleLabMode}
-          className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition ${
-            labEnabled
-              ? 'border-physio-accent-violet text-physio-accent-violet bg-physio-bg-core'
-              : 'border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary'
-          }`}
-        >
-          {labEnabled ? 'Lab mode on' : 'Lab mode off'}
-        </button>
         <button
           type="button"
           onClick={onEditProfile}

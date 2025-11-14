@@ -1,6 +1,6 @@
 import { compoundData } from '../data/compoundData';
 import { personalizeScore } from './personalization';
-import { interactionDimensions, interactionPairs, goalPresets } from '../data/interactionEngineData';
+import { interactionDimensions, interactionPairs } from '../data/interactionEngineData';
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -274,9 +274,8 @@ export const generatePrimaryCurveSeries = ({
   return data;
 };
 
-const aggregateScore = ({ pairId, doses, profile, sensitivities, evidenceBlend, presetKey }) => {
+const aggregateScore = ({ pairId, doses, profile, sensitivities, evidenceBlend }) => {
   const pair = interactionPairs[pairId];
-  const preset = goalPresets[presetKey] || goalPresets.lean_mass;
   const dimensionKeys = [
     ...Object.keys(pair.synergy || {}),
     ...Object.keys(pair.penalties || {})
@@ -298,9 +297,9 @@ const aggregateScore = ({ pairId, doses, profile, sensitivities, evidenceBlend, 
     });
     if (!res) return;
     if (dimension.type === 'benefit') {
-      benefitScore += (preset.benefitWeights?.[key] ?? 0) * res.total;
+      benefitScore += res.total;
     } else {
-      riskScore += (preset.riskWeights?.[key] ?? 0) * res.total;
+      riskScore += res.total;
     }
   });
 
@@ -316,7 +315,6 @@ export const buildSurfaceData = ({
   profile,
   sensitivities,
   evidenceBlend,
-  presetKey,
   steps = 12
 }) => {
   const pair = interactionPairs[pairId];
@@ -339,8 +337,7 @@ export const buildSurfaceData = ({
         doses,
         profile,
         sensitivities,
-        evidenceBlend,
-        presetKey
+        evidenceBlend
       });
       data.push({
         [compoundA]: Math.round(a),

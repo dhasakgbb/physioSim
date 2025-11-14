@@ -26,7 +26,7 @@ const ContextDrawer = ({
 }) => (
   <div
     data-section={dataSection}
-    className="mt-5 bg-physio-bg-secondary/80 border border-physio-bg-border rounded-2xl p-5 shadow-physio-subtle"
+    className="mt-4 bg-physio-bg-secondary/80 border border-physio-bg-border rounded-2xl p-4 shadow-physio-subtle"
   >
     <button
       type="button"
@@ -37,16 +37,16 @@ const ContextDrawer = ({
         {eyebrowText && (
           <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">{eyebrowText}</p>
         )}
-        <h3 className="text-lg font-bold text-physio-accent-cyan">{title}</h3>
+        <h3 className="text-base md:text-lg font-semibold text-physio-accent-cyan">{title}</h3>
       </div>
       <CollapseChevron open={!collapsed} />
     </button>
     {!collapsed && (
-      <div className="text-sm text-physio-text-primary mt-4 space-y-5">
+      <div className="text-sm text-physio-text-primary mt-3 space-y-4">
         {children}
         {typeof renderEvidence === 'function' && (
-          <section className="bg-physio-bg-core border border-physio-bg-border rounded-xl p-4">
-            <h4 className="font-semibold text-physio-text-secondary mb-2">Evidence & Confidence</h4>
+          <section className="bg-physio-bg-core border border-physio-bg-border rounded-xl p-3">
+            <h4 className="font-semibold text-physio-text-secondary mb-1.5">Evidence & Confidence</h4>
             {renderEvidence()}
           </section>
         )}

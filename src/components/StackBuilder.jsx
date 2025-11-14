@@ -1,12 +1,14 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { compoundData } from '../data/compoundData';
 import { getAncillaryProtocol } from '../data/sideFxAndAncillaries';
-import { goalPresets, interactionPairs } from '../data/interactionEngineData';
+import { interactionPairs } from '../data/interactionEngineData';
 import { defaultProfile } from '../utils/personalization';
 import { evaluateStack } from '../utils/stackEngine';
 import { loadCycles, saveCycle, deleteCycle } from '../utils/cycleStore';
 import PDFExport from './PDFExport';
 import GuardrailChip from './GuardrailChip';
+
+const stackScoringLabel = 'Net benefit − risk';
 
 const OrientationBar = ({ items, tone = 'default' }) => {
   const toneClasses = tone === 'accent'
@@ -14,12 +16,12 @@ const OrientationBar = ({ items, tone = 'default' }) => {
     : 'bg-physio-bg-core/95 border-physio-bg-border';
 
   return (
-    <div className="sticky top-4 z-30">
-      <div className={`${toneClasses} rounded-2xl px-4 py-2 flex flex-wrap items-center gap-4 text-[11px] tracking-wide uppercase text-physio-text-tertiary shadow-physio-subtle`}>
+    <div className="sticky top-3 z-30">
+      <div className={`${toneClasses} rounded-2xl px-3.5 py-1.5 flex flex-wrap items-center gap-3 text-[10px] tracking-wide uppercase text-physio-text-tertiary shadow-physio-subtle`}>
         {items.map(({ label, value }, index) => (
           <div key={`${label}-${index}`} className="flex items-center gap-2">
             <span>{label}</span>
-            <span className="text-physio-text-primary text-sm font-semibold normal-case">
+            <span className="text-physio-text-primary text-[13px] font-semibold normal-case">
               {value}
             </span>
           </div>
@@ -225,11 +227,10 @@ const formatTimestamp = isoString => {
  * Stack Builder Component
  * Interactive tool for building compound stacks with metrics and ancillary calculations
  */
-const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mass', uiMode = 'simple' }) => {
+const StackBuilder = ({ prefillStack, userProfile }) => {
   const [stack, setStack] = useState([]);
   const [selectedCompound, setSelectedCompound] = useState('');
   const [dose, setDose] = useState('');
-  const [goalPreset, setGoalPreset] = useState(initialGoalPreset);
   const [savedCycles, setSavedCycles] = useState(() => loadCycles());
   const [activeCycleId, setActiveCycleId] = useState(null);
   const [cycleModalOpen, setCycleModalOpen] = useState(false);
@@ -239,7 +240,6 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
   const stackRef = useRef(null);
   const compoundSelectId = 'stack-builder-compound';
   const doseInputId = 'stack-builder-dose';
-  const goalSelectId = 'stack-builder-goal';
 
   const refreshCycles = useCallback(() => {
     setSavedCycles(loadCycles());
@@ -253,9 +253,6 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
         dose: item.dose
       }))
     );
-    if (prefillStack.goalPreset) {
-      setGoalPreset(prefillStack.goalPreset);
-    }
   }, [prefillStack]);
   
   const stackEvaluation = useMemo(() => {
@@ -263,10 +260,9 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
     const profile = userProfile || defaultProfile;
     return evaluateStack({
       stackInput: stack,
-      profile,
-      goalKey: goalPreset
+      profile
     });
-  }, [stack, userProfile, goalPreset]);
+  }, [stack, userProfile]);
 
   const stackTotals = stackEvaluation?.totals;
   const baseBenefit = stackTotals?.baseBenefit ?? 0;
@@ -291,7 +287,7 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
         adjustedBenefit,
         adjustedRisk,
         adjustedRatio,
-        goalScore: stackTotals?.netScore ?? 0
+        netScore: stackTotals?.netScore ?? 0
       }
     : {
         totalBenefit: 0,
@@ -304,7 +300,7 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
         adjustedBenefit: 0,
         adjustedRisk: 0,
         adjustedRatio: 0,
-      goalScore: 0
+        netScore: 0
       };
   const formatMetric = (value, digits = 2) => Number(value ?? 0).toFixed(digits);
 
@@ -334,14 +330,14 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
   const stackChipContext = useMemo(() => {
     const chips = [];
     chips.push({
-      label: 'Goal',
-      value: goalPresets[goalPreset]?.label || 'Custom',
+      label: 'Scoring',
+      value: stackScoringLabel,
       tone: 'muted'
     });
-    const netTone = stackMetrics.goalScore >= 0 ? 'success' : 'error';
+    const netTone = stackMetrics.netScore >= 0 ? 'success' : 'error';
     chips.push({
       label: netTone === 'success' ? 'Favorable' : 'Caution',
-      value: `Net ${formatMetric(stackMetrics.goalScore)}`,
+      value: `Net ${formatMetric(stackMetrics.netScore)}`,
       tone: netTone
     });
     chips.push({
@@ -358,7 +354,7 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
       });
     }
     return chips;
-  }, [goalPreset, stackMetrics, guardrailNotices, compoundData]);
+  }, [stackMetrics, guardrailNotices, compoundData]);
 
   const savedCycleMeta = useMemo(() => {
     const meta = {};
@@ -367,8 +363,7 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
       const profile = cycle.profile || userProfile || defaultProfile;
       const evaluation = evaluateStack({
         stackInput: cycle.stack,
-        profile,
-        goalKey: cycle.goalPreset || 'lean_mass'
+        profile
       });
       const totals = evaluation?.totals;
       if (!totals) return;
@@ -389,7 +384,6 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
     const record = savedCycles.find(cycle => cycle.id === cycleId);
     if (!record) return;
     setStack(record.stack || []);
-    setGoalPreset(record.goalPreset || 'lean_mass');
     setActiveCycleId(record.id);
   };
 
@@ -407,7 +401,6 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
       id: cycleDraft.id || activeCycleId,
       name: cycleDraft.name?.trim() || `Cycle ${new Date().toLocaleDateString()}`,
       notes: cycleDraft.notes,
-      goalPreset,
       stack,
       profile: userProfile || defaultProfile
     });
@@ -421,7 +414,7 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
     if (!stack.length) return;
     const activeCycle = savedCycles.find(cycle => cycle.id === activeCycleId);
     setCycleDraft({
-      name: activeCycle?.name || `Cycle (${goalPresets[goalPreset]?.label || 'Custom'})`,
+      name: activeCycle?.name || `Cycle (${stackScoringLabel})`,
       notes: ''
     });
     setCycleModalOpen(true);
@@ -433,13 +426,11 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
     if (!baseline || !contender) return null;
     const baselineEval = evaluateStack({
       stackInput: baseline.stack,
-      profile: baseline.profile || userProfile || defaultProfile,
-      goalKey: baseline.goalPreset || goalPreset
+      profile: baseline.profile || userProfile || defaultProfile
     });
     const contenderEval = evaluateStack({
       stackInput: contender.stack,
-      profile: contender.profile || userProfile || defaultProfile,
-      goalKey: contender.goalPreset || goalPreset
+      profile: contender.profile || userProfile || defaultProfile
     });
     const baselineAncillary = getAncillaryProtocol(formatStackForProtocol(baseline.stack));
     const contenderAncillary = getAncillaryProtocol(formatStackForProtocol(contender.stack));
@@ -452,7 +443,7 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
         net: contenderEval.totals.netScore - baselineEval.totals.netScore
       }
     };
-  }, [compareSelection, savedCycles, userProfile, goalPreset]);
+  }, [compareSelection, savedCycles, userProfile]);
   const comparisonNarrative = useMemo(() => {
     if (!comparisonResult) return null;
     return summarizeCycleDelta({
@@ -524,8 +515,6 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
   // Separate injectables and orals
   const injectables = availableCompounds.filter(key => compoundData[key].type === 'injectable');
   const orals = availableCompounds.filter(key => compoundData[key].type === 'oral');
-  const goalLabel = goalPresets[goalPreset]?.label || 'Custom goal';
-  const labViewEnabled = uiMode === 'lab' || Boolean(userProfile?.labMode?.enabled);
   const hasStack = stack.length > 0;
   const activeCycle = savedCycles.find(cycle => cycle.id === activeCycleId) || null;
 
@@ -533,18 +522,14 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
     ...(activeCycle
       ? [
           { label: 'Editing', value: activeCycle.name },
-          {
-            label: 'Cycle goal',
-            value: goalPresets[activeCycle.goalPreset]?.label || 'Custom'
-          },
           { label: 'Updated', value: formatTimestamp(activeCycle.updatedAt) },
-          { label: 'Preset', value: (activeCycle.goalPreset || 'custom').toUpperCase() }
+          { label: 'Net score', value: formatMetric(savedCycleMeta[activeCycle.id]?.net ?? 0) }
         ]
       : []),
-    { label: 'Active goal', value: goalLabel },
+    { label: 'Scoring', value: stackScoringLabel },
     { label: 'Compounds', value: hasStack ? stack.length : 0 },
     { label: 'Final ratio', value: hasStack ? formatMetric(stackMetrics.adjustedRatio) : '—' },
-    { label: 'Goal score', value: hasStack ? formatMetric(stackMetrics.goalScore) : '—' }
+    { label: 'Net score', value: hasStack ? formatMetric(stackMetrics.netScore) : '—' }
   ];
 
   const ancillaryOrientationItems = ancillaryProtocol
@@ -565,17 +550,17 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
     : [];
   
   return (
-    <div className="w-full space-y-8">
-      <div className="space-y-6">
+    <div className="w-full space-y-6">
+      <div className="space-y-5">
         <OrientationBar items={builderOrientationItems} />
 
         {/* Add Compound Section */}
-        <div className="bg-physio-bg-secondary p-6 rounded-lg shadow-sm border border-physio-bg-border">
-          <h2 className="text-2xl font-bold mb-4 text-physio-text-primary">Build Your Stack</h2>
+        <div className="bg-physio-bg-secondary p-5 rounded-xl shadow-sm border border-physio-bg-border">
+          <h2 className="text-xl font-semibold mb-3 text-physio-text-primary">Build Your Stack</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
             <div>
-              <label className="block text-sm font-medium text-physio-text-secondary mb-2" htmlFor={compoundSelectId}>
+              <label className="block text-sm font-medium text-physio-text-secondary mb-1.5" htmlFor={compoundSelectId}>
                 Select Compound
               </label>
               <select
@@ -603,7 +588,7 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-physio-text-secondary mb-2" htmlFor={doseInputId}>
+              <label className="block text-sm font-medium text-physio-text-secondary mb-1.5" htmlFor={doseInputId}>
                 Dose ({selectedCompound && compoundData[selectedCompound]?.type === 'oral' ? 'mg/day' : 'mg/week'})
               </label>
               <input
@@ -620,7 +605,7 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
               <button
                 onClick={handleAddCompound}
                 disabled={!selectedCompound || !dose}
-                className="w-full px-4 py-2 bg-physio-accent-cyan text-white rounded-md hover:bg-physio-accent-cyan disabled:bg-physio-bg-border disabled:cursor-not-allowed transition-colors"
+                className="w-full px-3.5 py-2 bg-physio-accent-cyan text-white rounded-md hover:bg-physio-accent-cyan disabled:bg-physio-bg-border disabled:cursor-not-allowed transition-colors"
               >
                 Add to Stack
               </button>
@@ -629,11 +614,11 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
         </div>
         
         {/* Current Stack */}
-        <div className="bg-physio-bg-secondary p-6 rounded-lg shadow-sm border border-physio-bg-border">
-          <h3 className="text-xl font-semibold mb-4 text-physio-text-primary">Current Stack</h3>
+        <div className="bg-physio-bg-secondary p-5 rounded-xl shadow-sm border border-physio-bg-border">
+          <h3 className="text-lg font-semibold mb-3 text-physio-text-primary">Current Stack</h3>
           
           {stack.length === 0 ? (
-            <p className="text-physio-text-tertiary text-center py-8">No compounds in stack. Add compounds above to get started.</p>
+            <p className="text-physio-text-tertiary text-center py-6 text-sm">No compounds in stack. Add compounds above to get started.</p>
           ) : (
             <div className="space-y-3">
               {stack.map(item => {
@@ -647,9 +632,9 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
                 return (
                   <div
                     key={item.compound}
-                    className={`flex items-center justify-between p-4 bg-physio-bg-core rounded-lg border ${guardrailTone}`}
+                    className={`flex items-center justify-between p-3.5 bg-physio-bg-core rounded-lg border ${guardrailTone}`}
                   >
-                    <div className="flex items-center gap-4 flex-1">
+                    <div className="flex items-center gap-3.5 flex-1">
                       <div
                         className="w-4 h-4 rounded-full"
                         style={{ backgroundColor: compound.color }}
@@ -674,7 +659,7 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <input
                           type="number"
                           value={item.dose}
@@ -688,7 +673,7 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
                     </div>
                     <button
                       onClick={() => handleRemoveCompound(item.compound)}
-                      className="ml-4 px-3 py-1 bg-physio-error text-physio-bg-core rounded hover:bg-physio-error/80 transition-standard text-sm font-medium"
+                      className="ml-3 px-3 py-1 bg-physio-error text-physio-bg-core rounded hover:bg-physio-error/80 transition-standard text-sm font-medium"
                     >
                       Remove
                     </button>
@@ -696,8 +681,8 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
                 );
               })}
               {guardrailNotices.length > 0 && (
-                <div className="mt-4 bg-physio-bg-core border border-physio-warning/40 rounded-lg p-4 text-sm text-physio-text-secondary">
-                  <p className="font-semibold text-physio-warning mb-2">Dose guardrails</p>
+                <div className="mt-3 bg-physio-bg-core border border-physio-warning/40 rounded-lg p-3 text-sm text-physio-text-secondary">
+                  <p className="font-semibold text-physio-warning mb-1.5">Dose guardrails</p>
                   <ul className="space-y-1">
                     {guardrailNotices.map(notice => (
                       <li key={notice.compound} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
@@ -720,27 +705,19 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
         
         {/* Stack Metrics */}
         {stack.length > 0 && (
-          <div className="bg-physio-bg-secondary p-6 rounded-lg shadow-sm border border-physio-bg-border">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-              <h3 className="text-xl font-semibold text-physio-text-primary">Stack Metrics</h3>
-              <label htmlFor={goalSelectId} className="text-sm text-physio-text-secondary flex flex-col md:flex-row md:items-center gap-2">
-                Goal preset
-                <select
-                  id={goalSelectId}
-                  value={goalPreset}
-                  onChange={e => setGoalPreset(e.target.value)}
-                  className="px-3 py-1.5 bg-physio-bg-tertiary border border-physio-bg-border rounded-md text-physio-text-primary"
-                >
-                  {Object.entries(goalPresets).map(([key, preset]) => (
-                    <option key={key} value={key}>
-                      {preset.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+          <div className="bg-physio-bg-secondary p-5 rounded-xl shadow-sm border border-physio-bg-border">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+              <h3 className="text-lg font-semibold text-physio-text-primary">Stack Metrics</h3>
+              <div className="text-sm text-physio-text-secondary flex flex-col md:items-end">
+                <span className="uppercase text-[11px] tracking-wide text-physio-text-tertiary">Scoring model</span>
+                <span className="font-semibold text-physio-text-primary">{stackScoringLabel}</span>
+                <span className="text-xs text-physio-text-tertiary">
+                  Net score {formatMetric(stackMetrics.netScore)}
+                </span>
+              </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Base Metrics */}
             <div className="space-y-3">
               <h4 className="font-semibold text-physio-text-secondary mb-2">Base Scores (Without Synergy)</h4>
@@ -795,13 +772,13 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
           <div className="mt-4 p-4 bg-physio-bg-tertiary rounded-lg border border-physio-bg-border">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-physio-text-secondary">Net goal score</p>
+                <p className="text-sm text-physio-text-secondary">Net score</p>
                 <p className="text-xs text-physio-text-tertiary">
-                  Weighted by {goalPresets[goalPreset]?.label || 'selected goal'} preference curve
+                  Modeled via {stackScoringLabel}
                 </p>
               </div>
-              <span className={`text-2xl font-bold ${parseFloat(stackMetrics.goalScore) >= 0 ? 'text-physio-accent-cyan' : 'text-physio-error'}`}>
-                {formatMetric(stackMetrics.goalScore)}
+              <span className={`text-2xl font-bold ${parseFloat(stackMetrics.netScore) >= 0 ? 'text-physio-accent-cyan' : 'text-physio-error'}`}>
+                {formatMetric(stackMetrics.netScore)}
               </span>
             </div>
           </div>
@@ -859,10 +836,10 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
             contextSummary={{
               title: 'Stack Orientation',
               items: [
-                { label: 'Goal preset', value: goalPresets[goalPreset]?.label || 'Selected goal' },
+                { label: 'Scoring', value: stackScoringLabel },
                 { label: 'Compounds', value: stack.length },
                 { label: 'Adjusted ratio', value: stackMetrics.adjustedRatio },
-                { label: 'Goal score', value: stackMetrics.goalScore }
+                { label: 'Net score', value: stackMetrics.netScore }
               ]
             }}
             badgeContext={stackChipContext}
@@ -927,14 +904,14 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
                     <div>
                       <p className="font-semibold text-physio-text-primary">{cycle.name}</p>
                       <p className="text-xs text-physio-text-tertiary">
-                        Goal: {goalPresets[cycle.goalPreset]?.label || 'Custom'} · Updated {formatTimestamp(cycle.updatedAt)}
+                        Updated {formatTimestamp(cycle.updatedAt)} · Net {meta ? formatMetric(meta.net) : '—'}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-1">
                         <GuardrailChip
                           size="sm"
                           tone="muted"
-                          label="Preset"
-                          detail={goalPresets[cycle.goalPreset]?.label || 'Custom'}
+                          label="Scoring"
+                          detail={stackScoringLabel}
                         />
                         {meta && (
                           <>
@@ -976,7 +953,6 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
               })}
             </div>
 
-            {labViewEnabled && (
             <div className="pt-4 border-t border-physio-bg-border space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
@@ -1031,7 +1007,7 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
                     </div>
                   </div>
                   <div className="text-sm text-physio-text-secondary">
-                    {comparisonResult.deltas.net >= 0 ? 'Adds' : 'Drops'} {formatMetric(Math.abs(comparisonResult.deltas.net))} goal score,
+                    {comparisonResult.deltas.net >= 0 ? 'Adds' : 'Drops'} {formatMetric(Math.abs(comparisonResult.deltas.net))} net score,
                     with ΔBenefit {comparisonResult.deltas.benefit >= 0 ? '+' : '-'}
                     {formatMetric(Math.abs(comparisonResult.deltas.benefit))} and ΔRisk{' '}
                     {comparisonResult.deltas.risk >= 0 ? '+' : '-'}
@@ -1043,7 +1019,6 @@ const StackBuilder = ({ prefillStack, userProfile, initialGoalPreset = 'lean_mas
                 </div>
               )}
             </div>
-            )}
           </>
         )}
       </div>

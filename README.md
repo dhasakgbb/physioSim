@@ -47,15 +47,19 @@ This interactive visualization tool presents dose-response relationships for **1
 - 🧪 **Stack Builder**: Build multi-compound stacks with automated synergy calculations
 - ⚠️ **Side Effect Profiles**: Comprehensive side effect data for all 11 compounds
 - 💊 **Ancillary Calculator**: Automated protocol generation with cost estimates and blood work schedules
+- 🧠 **Unified Advanced Workflow**: Dense analytics (dimension chips, dose sweeps, surfaces, optimizers, sensitivity sliders) stay active for every user, with persistent scoring/evidence chips replacing legacy presets or lab-only gating.
 
 ---
 
 ## ✨ Features
 
-### 📊 Dual-View Toggle
-- **Benefit View**: Solid lines showing anabolic gains
-- **Risk View**: Dotted lines showing side burden  
-- **Integrated View**: Both curves overlaid for risk/benefit comparison
+### 📊 Spotlight View Modes
+- **Benefit**: Highlight the pure anabolic signal with thin bezier lines and plateau guardrails.
+- **Risk**: Under-curve fills expose cumulative burden (lipids, cardio, hepatic, neuro) per compound.
+- **Efficiency**: Live benefit ÷ risk ratios identify the sweet spot for each dose.
+- **Uncertainty**: Mist overlays isolate confidence bands so you can inspect data quality without distraction.
+
+The `ChartControlBar` pins this segmented control to the top of every hero chart, doubles as the hub for guardrail chips, and reports non-default selections to the global filter state.
 
 ### 📈 Interactive Chart
 - All 6 compounds rendered with color-coded curves
@@ -63,6 +67,7 @@ This interactive visualization tool presents dose-response relationships for **1
 - Hover tooltips showing Tier, Source, Caveat, CI
 - Zoom/pan functionality (scroll to zoom, drag to pan, double-click to reset)
 - Responsive design (mobile, tablet, desktop)
+- Obsidian Pro polish: benefit curves glow inside mist gradients, risk curves use under-curve fills that warm as burden climbs, uncertainty mode isolates a mint veil, and legend hover states dim non-focused compounds so each curve gets a true spotlight moment.
 
 ### 📚 Expandable Methodology Cards
 Click any compound name to view:
@@ -76,12 +81,13 @@ Click any compound name to view:
 
 ![Injectables tab flow](docs/injectables-tab-flow.svg)
 
-- **ProfileStatusBar** now surfaces persona summary, the new unsaved-profile warning badge, and quick actions (Save profile, Lab toggle, Edit profile).
-- **ChartControlBar** is a sticky rail for view toggles, legend warnings, and PDF/Sweet-Spot utilities so controls stay visible while scrolling.
-- **Hero card** unifies the injectable/oral dose-response chart with the hover-aware legend so plateau highlights and guardrail chips are co-located.
-- **Context drawer** (“Need context?”) lazily loads the evidence deck (EvidencePanel mounts only after the drawer expands) alongside the Quick Guide + scenarios.
-- **Compressed mode toggle** below the status bar tightens spacing/line-height across cards for dense reviews and participates in the global “Filters active” signal so users know when the layout deviates from default.
-- **Lazy loading guardrails** ensure heavy evidence cards only hydrate after the user expands the drawer, keeping first paint lean even on lower-power devices.
+- **ProfileContextBar** condenses personalization (age, weight, SHBG, aromatase, anxiety, experience) into a single strip with Edit/Save/Reset actions plus the new filter badge cluster.
+- **NavigationRail + CompoundChipRail** replace the legacy tab buttons, keeping tab switching, keyboard focus, and compound visibility controls in one matte belt directly under the profile strip.
+- **Hero surface** pairs the spotlight chart with a vertical legend + `CompoundInsightCard` stack so hover, dimming, and personalized guardrails live together; everything sits inside a rounded “Zone B” shell shared by injectables and orals.
+- **UtilityCardRow** introduces the Sweet Spot Finder, PDF Export, and Model Settings cards as the permanent CTA trio under every hero section.
+- **Context drawer** (“Need context?”) still lazy-loads the evidence deck but now carries refreshed guardrail copy (e.g., oral hepatic risk) and scenario tiles tuned to the new layout.
+- **Compressed mode toggle** remains below the nav rail, tracks with the global filters badge, and tightens spacing across all cards when dense layout is preferred.
+- **Lazy loading guardrails** continue to keep EvidencePanel off the main bundle until a drawer opens, protecting first paint on lower-power devices.
 
 ### 📄 PDF Export
 Download complete report including:
@@ -111,6 +117,9 @@ Comprehensive interaction analysis for all compound pairs:
   - Recommended protocols and dosing ratios
   - Stack benefits and risks
   - Safety cautions and expert recommendations
+- **Always-On Analytics**: Evidence blending slider, dimension chips, dose sweep, dose surface, optimizers, and sensitivity controls stay visible—no lab toggle required.
+- **Template + Custom Optimizers**: Built-in three-compound templates sample dozens of dose permutations, while the custom optimizer sweeps up to four compounds; both pipelines can pre-fill Stack Builder.
+- **Net Scoring Chips**: Sticky headers and recommendation cards display the Net benefit − risk score plus evidence mix so you immediately know why a pair ranked the way it did (and the selections persist via local storage).
 
 **Usage:**
 1. Navigate to "🔗 Interaction Matrix" tab
@@ -125,6 +134,12 @@ Comprehensive interaction analysis for all compound pairs:
 - **⚠️ Caution**: High risk or conflicting goals, advanced only (e.g., Tren + Dbol)
 - **❌ Dangerous**: Extreme risk elevation (e.g., Tren + Anadrol)
 - **✗ Forbidden**: Never recommended (e.g., stacking two orals)
+
+#### Unified Advanced Workflow
+
+- The legacy simple vs. lab split is gone—everyone lands in the dense layout with the full analytics stack (dimension chips, dose sweep, surface grid, optimizers, sensitivity sliders) ready to go.
+- The heatmap control strip pins the Net benefit − risk scoring model and evidence mix slider, and both preferences persist via local storage so investigations pick up where you left off.
+- Template and custom optimizer outputs pre-fill Stack Builder, which mirrors the same scoring/evidence chips for saved cycles and PDF exports so there’s zero preset juggling between surfaces.
 
 ### 🧪 Stack Builder
 
@@ -141,6 +156,8 @@ Interactive tool for building multi-compound stacks with automated analysis:
 - **Ancillary Protocol Generation**: Automatic calculation of required ancillaries based on stack composition
 - **Cost Estimation**: Total weekly cost for all ancillary medications
 - **Blood Work Schedule**: Required monitoring frequency and target values
+- **Net Benefit − Risk Orientation**: Sticky orientation bar, saved cycles, and exports now highlight the Net benefit − risk chip, ratios, and guardrail status instead of goal presets.
+- **Optimizer Prefills**: One click loads template/custom optimizer outputs (and their evidence mix) directly from InteractionHeatmap into Stack Builder for deeper iteration.
 
 **Usage:**
 1. Navigate to "🧪 Stack Builder" tab
@@ -286,7 +303,7 @@ The app will be available at `http://localhost:5173`
 
 ### Basic Navigation
 
-1. **Select View Mode**: Toggle between Benefit, Risk, or Integrated views
+1. **Select View Mode**: Toggle between Benefit, Risk, Efficiency, or Uncertainty spotlight lenses
 2. **Explore Compounds**: Hover over data points to see detailed tooltips
 3. **Toggle Visibility**: Click compound names in legend to show/hide curves
 4. **View Methodology**: Click "Methodology" buttons to see evidence breakdown

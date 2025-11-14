@@ -5,10 +5,12 @@ import CustomLegend from './CustomLegend';
 import MethodologyModal from './MethodologyModal';
 import InteractionHeatmap from './InteractionHeatmap';
 import StackBuilder from './StackBuilder';
-import SideEffectProfile from './SideEffectProfile';
-import AncillaryCalculator from './AncillaryCalculator';
 import PersonalizationPanel from './PersonalizationPanel.jsx';
-import ProfileStatusBar from './ProfileStatusBar.jsx';
+import ProfileContextBar from './ProfileContextBar.jsx';
+import NavigationRail from './NavigationRail.jsx';
+import CompoundChipRail from './CompoundChipRail.jsx';
+import UtilityCardRow from './UtilityCardRow.jsx';
+import CompoundInsightCard from './CompoundInsightCard.jsx';
 import ChartControlBar from './ChartControlBar';
 import ContextDrawer from './ContextDrawer';
 import { compoundData } from '../data/compoundData';
@@ -70,6 +72,13 @@ const FILTER_TRACKING_OPTIONS = [
   }
 ];
 
+const NAV_TABS = [
+  { key: 'injectables', label: 'Injectables' },
+  { key: 'orals', label: 'Orals' },
+  { key: 'interactions', label: 'Interactions' },
+  { key: 'stack', label: 'Stack Builder' }
+];
+
 const defaultFilterPrefs = FILTER_TRACKING_OPTIONS.reduce((acc, option) => {
   acc[option.key] = option.key === 'legend' ? false : true;
   return acc;
@@ -85,15 +94,11 @@ const AASVisualization = () => {
   // Active tab: 'injectables', 'orals', 'interactions', 'stack'
   const [activeTab, setActiveTab] = useState('injectables');
   
-  // View mode: 'benefit', 'risk', or 'integrated'
-  const [viewMode, setViewMode] = useState('integrated');
+  // View mode: 'benefit', 'risk', 'efficiency', or 'uncertainty'
+  const [viewMode, setViewMode] = useState('benefit');
   
   // Visible compounds (all visible by default)
   const [visibleCompounds, setVisibleCompounds] = useState(() => buildDefaultVisibilityMap());
-  const legendDirty = useMemo(
-    () => Object.values(visibleCompounds || {}).some(value => !value),
-    [visibleCompounds]
-  );
   const [hoveredCompound, setHoveredCompound] = useState(null);
   
   // Methodology modal state
@@ -174,6 +179,52 @@ const AASVisualization = () => {
   const [interactionResetKey, setInteractionResetKey] = useState(0);
   const [filterPrefsOpen, setFilterPrefsOpen] = useState(false);
 
+  const activeCompoundType = useMemo(() => {
+    if (activeTab === 'injectables') return 'injectable';
+    if (activeTab === 'orals') return 'oral';
+    return null;
+  }, [activeTab]);
+
+  const activeCompoundKeys = useMemo(() => {
+    if (!activeCompoundType) return [];
+    return Object.keys(compoundData).filter(key => compoundData[key]?.type === activeCompoundType);
+  }, [activeCompoundType]);
+
+  const legendHiddenCount = useMemo(() => {
+    if (!activeCompoundKeys.length) return 0;
+    return activeCompoundKeys.filter(key => !visibleCompounds[key]).length;
+  }, [activeCompoundKeys, visibleCompounds]);
+
+  const filterStatusItems = useMemo(() => {
+    const items = [];
+    if (filterPrefs.viewMode && viewMode !== 'benefit') {
+      items.push({
+        key: 'viewMode',
+        label: 'View mode',
+        description:
+          viewMode === 'risk'
+            ? 'Risk lens active'
+            : viewMode === 'efficiency'
+            ? 'Efficiency ratio view'
+            : 'Uncertainty spotlight'
+      });
+    }
+    if (filterPrefs.density && compressedMode) {
+      items.push({ key: 'density', label: 'Layout density', description: 'Compressed spacing enabled' });
+    }
+    if (filterPrefs.legend && legendHiddenCount > 0) {
+      items.push({
+        key: 'legend',
+        label: 'Legend filters',
+        description: `${legendHiddenCount} hidden ${legendHiddenCount === 1 ? 'compound' : 'compounds'}`
+      });
+    }
+    if (filterPrefs.interaction && interactionFiltersDirty) {
+      items.push({ key: 'interaction', label: 'Interaction focus', description: 'Custom heatmap filters' });
+    }
+    return items;
+  }, [filterPrefs, viewMode, compressedMode, legendHiddenCount, interactionFiltersDirty]);
+
   useEffect(() => {
     const stored = readJSONStorage(LAYOUT_FILTER_PREFS_KEY, null);
     if (stored) {
@@ -207,21 +258,19 @@ const AASVisualization = () => {
     });
   };
 
-  const handleToggleLabMode = () => {
-    applyProfileUpdate(prev => {
-      const nextEnabled = !prev?.labMode?.enabled;
-      if (nextEnabled) {
-        setUIMode('lab');
-      }
-      return {
+  const handleInterfaceModeChange = useCallback((mode) => {
+    setUIMode(mode);
+    applyProfileUpdate(
+      prev => ({
         ...prev,
         labMode: {
           ...(prev?.labMode || defaultProfile.labMode),
-          enabled: nextEnabled
+          enabled: mode === 'lab'
         }
-      };
-    });
-  };
+      }),
+      { markUnsaved: false }
+    );
+  }, [applyProfileUpdate]);
 
   const handlePrefillStack = (compounds) => {
     setStackPrefill({ id: Date.now(), compounds });
@@ -229,27 +278,20 @@ const AASVisualization = () => {
   };
 
   useEffect(() => {
-    const viewDirty = viewMode !== 'integrated';
-    const densityDirty = compressedMode;
-    const interactionDirty = interactionFiltersDirty;
-    const dirty =
-      (filterPrefs.viewMode && viewDirty) ||
-      (filterPrefs.density && densityDirty) ||
-      (filterPrefs.interaction && interactionDirty) ||
-      (filterPrefs.legend && legendDirty);
-    setFiltersDirty(dirty);
-  }, [viewMode, compressedMode, interactionFiltersDirty, legendDirty, filterPrefs]);
+    setFiltersDirty(filterStatusItems.length > 0);
+  }, [filterStatusItems]);
 
   const handleInteractionFiltersDirty = useCallback((dirty) => {
     setInteractionFiltersDirty(dirty);
   }, []);
 
   const resetAllFilters = useCallback(() => {
-    setViewMode('integrated');
+    setViewMode('benefit');
     setCompressedMode(false);
     setVisibleCompounds(buildDefaultVisibilityMap());
     setInteractionResetKey(prev => prev + 1);
     setInteractionFiltersDirty(false);
+    setHoveredCompound(null);
   }, []);
 
   // Reference for chart (for PDF export)
@@ -285,7 +327,7 @@ const AASVisualization = () => {
             <span className="text-sm text-physio-text-secondary">Interface mode</span>
             <div className="inline-flex rounded-full border border-physio-bg-border bg-physio-bg-core">
               <button
-                onClick={() => setUIMode('simple')}
+                onClick={() => handleInterfaceModeChange('simple')}
                 className={`px-4 py-1.5 text-xs font-semibold rounded-full transition ${
                   uiMode === 'simple'
                     ? 'bg-physio-accent-cyan text-white shadow-physio-strong'
@@ -295,7 +337,7 @@ const AASVisualization = () => {
                 Simple
               </button>
               <button
-                onClick={() => setUIMode('lab')}
+                onClick={() => handleInterfaceModeChange('lab')}
                 className={`px-4 py-1.5 text-xs font-semibold rounded-full transition ${
                   uiMode === 'lab'
                     ? 'bg-physio-accent-violet text-white shadow-physio-strong'
@@ -327,132 +369,97 @@ const AASVisualization = () => {
           </button>
         </div>
 
-        <div className="mb-6">
-          <ProfileStatusBar
+        <div className="space-y-5 mb-8">
+          <ProfileContextBar
             profile={userProfile}
             unsaved={profileUnsaved}
             onEditProfile={() => setProfileModalOpen(true)}
-            onToggleLabMode={handleToggleLabMode}
             onSaveProfile={handleSaveProfile}
+            onResetProfile={handleClearProfile}
+            filterItems={filterStatusItems}
+            onResetFilters={resetAllFilters}
+            onManageFilters={() => setFilterPrefsOpen(true)}
           />
-        </div>
 
-        {/* Tab Navigation - Underline Style */}
-        <div className="mb-8 border-b border-physio-bg-border relative">
-          <div className="flex gap-6">
-            <button
-              onClick={() => setActiveTab('injectables')}
-              className={`px-4 py-3 font-medium transition-standard relative ${
-                activeTab === 'injectables'
-                  ? 'text-physio-accent-cyan'
-                  : 'text-physio-text-secondary hover:text-physio-text-primary'
-              }`}
-            >
-              Injectables
-              {activeTab === 'injectables' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-physio-accent-cyan"></div>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('orals')}
-              className={`px-4 py-3 font-medium transition-standard relative ${
-                activeTab === 'orals'
-                  ? 'text-physio-accent-cyan'
-                  : 'text-physio-text-secondary hover:text-physio-text-primary'
-              }`}
-            >
-              Orals
-              {activeTab === 'orals' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-physio-accent-cyan"></div>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('interactions')}
-              className={`px-4 py-3 font-medium transition-standard relative ${
-                activeTab === 'interactions'
-                  ? 'text-physio-accent-cyan'
-                  : 'text-physio-text-secondary hover:text-physio-text-primary'
-              }`}
-            >
-              Interactions
-              {activeTab === 'interactions' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-physio-accent-cyan"></div>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('stack')}
-              className={`px-4 py-3 font-medium transition-standard relative ${
-                activeTab === 'stack'
-                  ? 'text-physio-accent-cyan'
-                  : 'text-physio-text-secondary hover:text-physio-text-primary'
-              }`}
-            >
-              Stack Builder
-              {activeTab === 'stack' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-physio-accent-cyan"></div>
-              )}
-            </button>
-          </div>
-          <div className="flex flex-wrap justify-between items-center gap-3 mt-4 text-sm">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setFilterPrefsOpen(prev => !prev)}
-                className="px-3 py-1.5 rounded-full border border-physio-bg-border text-physio-text-secondary hover:text-physio-text-primary hover:border-physio-accent-cyan transition"
-              >
-                Manage filter tracking
-              </button>
-            </div>
-            {filtersDirty && (
-              <div className="flex items-center gap-3">
-                <span className="px-3 py-1.5 rounded-full border border-physio-accent-cyan text-physio-accent-cyan bg-physio-bg-secondary">
-                  Filters active
-                </span>
+          <div className="space-y-3">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+              <NavigationRail tabs={NAV_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+              <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
                 <button
-                  onClick={resetAllFilters}
-                  className="px-3 py-1.5 rounded-full border border-physio-bg-border text-physio-text-secondary hover:text-physio-text-primary hover:border-physio-accent-cyan transition"
+                  onClick={() => setFilterPrefsOpen(prev => !prev)}
+                  className="px-3 py-1.5 rounded-full border border-physio-bg-border text-xs font-semibold text-physio-text-secondary hover:text-physio-text-primary hover:border-physio-accent-cyan transition"
                 >
-                  Reset
+                  Filter tracking
                 </button>
+                {filtersDirty && (
+                  <button
+                    onClick={resetAllFilters}
+                    className="px-3 py-1.5 rounded-full border border-physio-accent-cyan text-xs font-semibold text-physio-accent-cyan hover:bg-physio-accent-cyan/10 transition"
+                  >
+                    Reset filters
+                  </button>
+                )}
+                <button
+                  onClick={() => setCompressedMode(prev => !prev)}
+                  className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition ${
+                    compressedMode
+                      ? 'border-physio-accent-cyan text-physio-accent-cyan'
+                      : 'border-physio-bg-border text-physio-text-secondary hover:text-physio-text-primary'
+                  }`}
+                >
+                  {compressedMode ? 'Dense layout' : 'Comfort layout'}
+                </button>
+              </div>
+            </div>
+
+            {filterPrefsOpen && (
+              <div className="p-4 border border-physio-bg-border rounded-2xl bg-physio-bg-secondary shadow-physio-subtle">
+                <p className="text-xs uppercase tracking-wide text-physio-text-tertiary mb-2">Filters counted</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-physio-text-secondary">
+                  {FILTER_TRACKING_OPTIONS.map(pref => (
+                    <label
+                      key={pref.key}
+                      className="flex items-start gap-2 bg-physio-bg-core border border-physio-bg-border rounded-xl p-3 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={filterPrefs[pref.key]}
+                        onChange={() =>
+                          setFilterPrefs(prev => ({
+                            ...prev,
+                            [pref.key]: !prev[pref.key]
+                          }))
+                        }
+                        className="mt-1"
+                      />
+                      <span>
+                        <span className="block font-semibold text-physio-text-primary">{pref.label}</span>
+                        <span className="text-xs text-physio-text-secondary">{pref.helper}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <div className="flex justify-end mt-3">
+                  <button
+                    onClick={() => setFilterPrefsOpen(false)}
+                    className="px-3 py-1.5 rounded-full border border-physio-bg-border text-physio-text-secondary hover:text-physio-text-primary"
+                  >
+                    Done
+                  </button>
+                </div>
               </div>
             )}
+
+            {activeCompoundType && (
+              <CompoundChipRail
+                compoundType={activeCompoundType}
+                visibleCompounds={visibleCompounds}
+                toggleCompound={toggleCompound}
+                onHover={setHoveredCompound}
+                highlightedCompound={hoveredCompound}
+              />
+            )}
           </div>
-          {filterPrefsOpen && (
-            <div className="mt-3 p-4 border border-physio-bg-border rounded-xl bg-physio-bg-secondary max-w-xl">
-              <p className="text-xs uppercase tracking-wide text-physio-text-tertiary mb-2">Filters counted</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-physio-text-secondary">
-                {FILTER_TRACKING_OPTIONS.map(pref => (
-                  <label
-                    key={pref.key}
-                    className="flex items-start gap-2 bg-physio-bg-core border border-physio-bg-border rounded-lg p-3 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={filterPrefs[pref.key]}
-                      onChange={() =>
-                        setFilterPrefs(prev => ({
-                          ...prev,
-                          [pref.key]: !prev[pref.key]
-                        }))
-                      }
-                      className="mt-1"
-                    />
-                    <span>
-                      <span className="block font-semibold text-physio-text-primary">{pref.label}</span>
-                      <span className="text-xs text-physio-text-secondary">{pref.helper}</span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-              <div className="flex justify-end mt-3">
-                <button
-                  onClick={() => setFilterPrefsOpen(false)}
-                  className="px-3 py-1.5 rounded-full border border-physio-bg-border text-physio-text-secondary hover:text-physio-text-primary"
-                >
-                  Done
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Injectable Compounds Tab */}
@@ -462,27 +469,21 @@ const AASVisualization = () => {
               <h2 className="text-2xl font-bold text-physio-text-primary">Injectable Compounds</h2>
               <p className="text-sm text-physio-text-secondary">Dose scale: mg/week (0-1200mg)</p>
             </div>
-            
-            <ChartControlBar
-              viewMode={viewMode}
-              setViewMode={setViewMode}
-              compoundType="injectable"
-              visibleCompounds={visibleCompounds}
-              userProfile={userProfile}
-              chartRef={chartRef}
-            />
-
-            <section className="bg-physio-bg-secondary/70 border border-physio-bg-border rounded-3xl p-4 lg:p-6 shadow-physio-subtle">
-              <div className="flex flex-col lg:flex-row gap-6">
-                <div className="flex-1" ref={chartRef}>
-                  <DoseResponseChart
-                    viewMode={viewMode}
-                    visibleCompounds={visibleCompounds}
-                    userProfile={userProfile}
-                    highlightedCompound={hoveredCompound}
-                  />
+            <section className="bg-physio-bg-secondary/80 border border-physio-bg-border rounded-4xl p-4 sm:p-6 shadow-physio-subtle space-y-6">
+              <div className="flex flex-col xl:flex-row gap-6">
+                <div className="flex-1 space-y-4">
+                  <ChartControlBar viewMode={viewMode} setViewMode={setViewMode} />
+                  <div className="bg-physio-bg-core/80 border border-physio-bg-border rounded-3xl p-3 sm:p-4" ref={chartRef}>
+                    <DoseResponseChart
+                      viewMode={viewMode}
+                      visibleCompounds={visibleCompounds}
+                      userProfile={userProfile}
+                      highlightedCompound={hoveredCompound}
+                    />
+                  </div>
                 </div>
-                <div className="lg:w-80">
+
+                <aside className="xl:w-80 space-y-4">
                   <CustomLegend
                     visibleCompounds={visibleCompounds}
                     toggleCompound={toggleCompound}
@@ -490,7 +491,7 @@ const AASVisualization = () => {
                     onToggleAll={(action, keys) => {
                       setVisibleCompounds(prev => {
                         const next = { ...prev };
-                        keys.forEach(key => {
+                        (keys || activeCompoundKeys).forEach(key => {
                           if (action === 'all-on') next[key] = true;
                           if (action === 'all-off') next[key] = false;
                         });
@@ -501,8 +502,37 @@ const AASVisualization = () => {
                     onCompoundHover={setHoveredCompound}
                     highlightedCompound={hoveredCompound}
                   />
-                </div>
+
+                  <div className="bg-physio-bg-core/60 border border-physio-bg-border rounded-3xl p-3 space-y-3 max-h-[520px] overflow-auto">
+                    <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Compound insights</p>
+                    <div className="grid gap-3">
+                      {activeCompoundKeys.length ? (
+                        activeCompoundKeys.map(compoundKey => (
+                          <CompoundInsightCard
+                            key={compoundKey}
+                            compoundKey={compoundKey}
+                            profile={userProfile}
+                            onHover={setHoveredCompound}
+                            onToggle={toggleCompound}
+                            visible={visibleCompounds[compoundKey]}
+                            isHighlighted={hoveredCompound === compoundKey}
+                          />
+                        ))
+                      ) : (
+                        <p className="text-xs text-physio-text-secondary">No injectables available.</p>
+                      )}
+                    </div>
+                  </div>
+                </aside>
               </div>
+
+              <UtilityCardRow
+                compoundType="injectable"
+                visibleCompounds={visibleCompounds}
+                userProfile={userProfile}
+                chartRef={chartRef}
+                onOpenProfile={() => setProfileModalOpen(true)}
+              />
             </section>
 
             <ContextDrawer
@@ -580,27 +610,21 @@ const AASVisualization = () => {
               <h2 className="text-2xl font-bold text-physio-text-primary">Oral Compounds</h2>
               <p className="text-sm text-physio-text-secondary">Dose scale: mg/day (0-100mg)</p>
             </div>
-            
-            <ChartControlBar
-              viewMode={viewMode}
-              setViewMode={setViewMode}
-              compoundType="oral"
-              visibleCompounds={visibleCompounds}
-              userProfile={userProfile}
-              chartRef={chartRef}
-            />
-
-            <section className="bg-physio-bg-secondary/70 border border-physio-bg-border rounded-3xl p-4 lg:p-6 shadow-physio-subtle">
-              <div className="flex flex-col lg:flex-row gap-6">
-                <div className="flex-1" ref={chartRef}>
-                  <OralDoseChart
-                    viewMode={viewMode}
-                    visibleCompounds={visibleCompounds}
-                    userProfile={userProfile}
-                    highlightedCompound={hoveredCompound}
-                  />
+            <section className="bg-physio-bg-secondary/80 border border-physio-bg-border rounded-4xl p-4 sm:p-6 shadow-physio-subtle space-y-6">
+              <div className="flex flex-col xl:flex-row gap-6">
+                <div className="flex-1 space-y-4">
+                  <ChartControlBar viewMode={viewMode} setViewMode={setViewMode} />
+                  <div className="bg-physio-bg-core/80 border border-physio-bg-border rounded-3xl p-3 sm:p-4" ref={chartRef}>
+                    <OralDoseChart
+                      viewMode={viewMode}
+                      visibleCompounds={visibleCompounds}
+                      userProfile={userProfile}
+                      highlightedCompound={hoveredCompound}
+                    />
+                  </div>
                 </div>
-                <div className="lg:w-80">
+
+                <aside className="xl:w-80 space-y-4">
                   <CustomLegend
                     visibleCompounds={visibleCompounds}
                     toggleCompound={toggleCompound}
@@ -608,7 +632,7 @@ const AASVisualization = () => {
                     onToggleAll={(action, keys) => {
                       setVisibleCompounds(prev => {
                         const next = { ...prev };
-                        keys.forEach(key => {
+                        (keys || activeCompoundKeys).forEach(key => {
                           if (action === 'all-on') next[key] = true;
                           if (action === 'all-off') next[key] = false;
                         });
@@ -619,12 +643,41 @@ const AASVisualization = () => {
                     onCompoundHover={setHoveredCompound}
                     highlightedCompound={hoveredCompound}
                   />
-                </div>
+
+                  <div className="bg-physio-bg-core/60 border border-physio-bg-border rounded-3xl p-3 space-y-3 max-h-[520px] overflow-auto">
+                    <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Compound insights</p>
+                    <div className="grid gap-3">
+                      {activeCompoundKeys.length ? (
+                        activeCompoundKeys.map(compoundKey => (
+                          <CompoundInsightCard
+                            key={compoundKey}
+                            compoundKey={compoundKey}
+                            profile={userProfile}
+                            onHover={setHoveredCompound}
+                            onToggle={toggleCompound}
+                            visible={visibleCompounds[compoundKey]}
+                            isHighlighted={hoveredCompound === compoundKey}
+                          />
+                        ))
+                      ) : (
+                        <p className="text-xs text-physio-text-secondary">No oral compounds available.</p>
+                      )}
+                    </div>
+                  </div>
+                </aside>
               </div>
+
+              <UtilityCardRow
+                compoundType="oral"
+                visibleCompounds={visibleCompounds}
+                userProfile={userProfile}
+                chartRef={chartRef}
+                onOpenProfile={() => setProfileModalOpen(true)}
+              />
             </section>
 
             <ContextDrawer
-              dataSection="context-drawer"
+              dataSection="context-drawer-orals"
               collapsed={contextCollapsed.orals}
               onToggle={() => toggleContextDrawer('orals')}
               renderEvidence={() =>
@@ -638,52 +691,48 @@ const AASVisualization = () => {
               }
             >
               <section>
-                <h4 className="font-semibold text-physio-text-secondary mb-2">Quick Guide</h4>
+                <h4 className="font-semibold text-physio-text-secondary mb-2">Risk Guardrails</h4>
                 <ul className="space-y-1.5">
-                  <li><strong>Solid lines = Benefit</strong> • Dotted lines = Risk</li>
-                  <li><strong>Shaded bands = Uncertainty</strong> • Wider = less confident data</li>
-                  <li><strong>Legend:</strong> Click compounds to show/hide • Tap ⓘ for methodology</li>
+                  <li><strong>Liver Stress:</strong> Keep Alk-Phos/ALT bloodwork within 1.3x baseline every 6 weeks.</li>
+                  <li><strong>Blood Pressure:</strong> Above 140/90? Pause orals immediately.</li>
+                  <li><strong>Cycle Length:</strong> 6-8 weeks max for 17aa orals. Longer = +hepatic risk.</li>
                 </ul>
               </section>
               <section>
-                <h4 className="font-semibold text-physio-text-secondary mb-2">Common Scenarios</h4>
+                <h4 className="font-semibold text-physio-text-secondary mb-2">Stack Patterns</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-mint">
-                    <div className="font-bold text-physio-accent-mint mb-2">🔰 First Oral Run</div>
-                    <p>Start conservative (Anavar or Tbol 30-40mg). Pair with a TRT-level Test base to manage hormonal balance.</p>
-                  </div>
                   <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-cyan">
-                    <div className="font-bold text-physio-accent-cyan mb-2">📈 Photo/Stage Finish</div>
-                    <p>Lean Test base + Anavar or Winstrol for 4–6 weeks. Layer cardio + hydration management.</p>
+                    <div className="font-bold text-physio-accent-cyan mb-2">⚡ Kickstart</div>
+                    <p>Dbol 30mg (Weeks 1-4) layered onto Test E base. Watch BP + hematocrit.</p>
                   </div>
                   <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-violet">
-                    <div className="font-bold text-physio-accent-violet mb-2">⚙️ Power Boost</div>
-                    <p>Dbol 20-30mg (short bursts) to spike neural drive, but manage BP and hematocrit tightly.</p>
+                    <div className="font-bold text-physio-accent-violet mb-2">✨ Hardening</div>
+                    <p>Anavar 40-60mg with Test 300mg. Add Masteron if bodyfat &lt;12%.</p>
+                  </div>
+                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-mint">
+                    <div className="font-bold text-physio-accent-mint mb-2">🧱 Recomp</div>
+                    <p>Turinabol 50mg with NPP 300mg offers dry gain profile + manageable BP.</p>
                   </div>
                   <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-error">
-                    <div className="font-bold text-physio-error mb-2">⚠️ Don’t Stack Orals</div>
-                    <p>Doubling up (e.g., Anadrol + Winstrol) cuts into hepatic budget fast. Keep liver support + labs front and center.</p>
+                    <div className="font-bold text-physio-error mb-2">⚠️ Guardrails</div>
+                    <p>Never stack two 17aa orals together. Avoid alcohol/NSAIDs during oral cycles.</p>
                   </div>
                 </div>
               </section>
               <section>
-                <h4 className="font-semibold text-physio-text-secondary mb-2">Evidence Tier System</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border-l-4 border-physio-tier-1 pl-4">
-                    <div className="font-bold text-physio-tier-1">Tier 1 · Highest confidence</div>
-                    <p className="text-physio-text-secondary">Randomized controlled trials in humans at specific doses.</p>
+                <h4 className="font-semibold text-physio-text-secondary mb-2">Bloodwork Monitoring</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-physio-text-secondary">
+                  <div>
+                    <p className="font-semibold text-physio-text-primary">Baseline</p>
+                    <p>AST/ALT, Alk Phos, Bilirubin, Lipids, BP</p>
                   </div>
-                  <div className="border-l-4 border-physio-tier-2 pl-4">
-                    <div className="font-bold text-physio-tier-2">Tier 2 · High confidence</div>
-                    <p className="text-physio-text-secondary">Clinical/therapeutic human data extrapolated to supra levels.</p>
+                  <div>
+                    <p className="font-semibold text-physio-text-primary">Mid-cycle</p>
+                    <p>Repeat hepatic panel + BP weekly</p>
                   </div>
-                  <div className="border-l-4 border-physio-tier-3 pl-4">
-                    <div className="font-bold text-physio-tier-3">Tier 3 · Medium confidence</div>
-                    <p className="text-physio-text-secondary">Animal studies converted to human equivalent dose (HED).</p>
-                  </div>
-                  <div className="border-l-4 border-physio-tier-4 pl-4">
-                    <div className="font-bold text-physio-tier-4">Tier 4 · Low confidence</div>
-                    <p className="text-physio-text-secondary">Mechanistic models + aggregated community reports.</p>
+                  <div>
+                    <p className="font-semibold text-physio-text-primary">Post-cycle</p>
+                    <p>Ensure enzymes normalize before next cycle</p>
                   </div>
                 </div>
               </section>

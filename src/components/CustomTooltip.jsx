@@ -34,8 +34,8 @@ const CustomTooltip = ({ active, payload, viewMode }) => {
         
         if (!point) return null;
 
-        const showBenefit = viewMode === 'benefit' || viewMode === 'integrated';
-        const showRisk = viewMode === 'risk' || viewMode === 'integrated';
+        const showBenefit = viewMode === 'benefit' || viewMode === 'efficiency' || viewMode === 'uncertainty';
+        const showRisk = viewMode === 'risk' || viewMode === 'efficiency' || viewMode === 'uncertainty';
         const shouldShow = (type === 'benefit' && showBenefit) || (type === 'risk' && showRisk);
         
         if (!shouldShow) return null;

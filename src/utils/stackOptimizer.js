@@ -30,10 +30,9 @@ const cartesianProduct = (arrays) =>
     return res;
   }, [[]]);
 
-const optimizeCombo = ({ combo, profile, goalOverride }) => {
-  const { compounds, doseRanges, defaultDoses = {}, steps = 3, id, label, narrative, goal } = combo;
+const optimizeCombo = ({ combo, profile }) => {
+  const { compounds, doseRanges, defaultDoses = {}, steps = 3, id, label, narrative } = combo;
   if (!compounds?.length) return [];
-  const presetKey = goalOverride || goal || 'lean_mass';
 
   const samples = compounds.map(compoundKey => {
     const [min, max] = doseRanges?.[compoundKey] || [0, 1000];
@@ -50,8 +49,7 @@ const optimizeCombo = ({ combo, profile, goalOverride }) => {
 
     const evaluation = evaluateStack({
       stackInput: stackEntries,
-      profile,
-      goalKey: presetKey
+      profile
     });
     const totals = evaluation.totals;
 
@@ -70,24 +68,23 @@ const optimizeCombo = ({ combo, profile, goalOverride }) => {
       adjustedBenefit: totals.totalBenefit,
       adjustedRisk: totals.totalRisk,
       score: totals.netScore,
-      ratio: totals.brRatio,
-      presetKey
+      ratio: totals.brRatio
     };
   });
 };
 
-export const runStackOptimizer = ({ combos, profile, goalOverride }) => {
+export const runStackOptimizer = ({ combos, profile }) => {
   const results = [];
   combos.forEach(combo => {
-    results.push(...optimizeCombo({ combo, profile, goalOverride }));
+    results.push(...optimizeCombo({ combo, profile }));
   });
   return results
     .sort((a, b) => b.score - a.score)
     .slice(0, 4);
 };
 
-export const generateStackOptimizerResults = ({ profile, goalOverride }) =>
-  runStackOptimizer({ combos: stackOptimizerCombos, profile, goalOverride });
+export const generateStackOptimizerResults = ({ profile }) =>
+  runStackOptimizer({ combos: stackOptimizerCombos, profile });
 
-export const generateCustomStackResults = ({ combo, profile, goalOverride }) =>
-  runStackOptimizer({ combos: [combo], profile, goalOverride }).slice(0, 3);
+export const generateCustomStackResults = ({ combo, profile }) =>
+  runStackOptimizer({ combos: [combo], profile }).slice(0, 3);

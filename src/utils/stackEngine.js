@@ -2,13 +2,10 @@ import { evaluateCompoundResponse, evaluatePairDimension } from './interactionEn
 import {
   interactionDimensions,
   interactionPairs,
-  goalPresets,
   defaultSensitivities
 } from '../data/interactionEngineData';
 import { normalizeStackInput, resolvePairKey } from '../data/interactionMatrix';
 import { defaultProfile } from './personalization';
-
-const sumWeights = weights => Object.values(weights || {}).reduce((acc, val) => acc + val, 0);
 
 const baseResult = () => ({
   byCompound: {},
@@ -30,12 +27,10 @@ const baseResult = () => ({
 export const evaluateStack = ({
   stackInput = [],
   profile = defaultProfile,
-  goalKey = 'lean_mass',
   sensitivities = defaultSensitivities,
   evidenceBlend = 0.4,
   disableInteractions = false
 } = {}) => {
-  const preset = goalPresets[goalKey] || goalPresets.lean_mass;
   const { compounds, doses } = normalizeStackInput(stackInput);
   if (!compounds.length) {
     return baseResult();
@@ -113,9 +108,6 @@ export const evaluateStack = ({
     });
   }
 
-  const benefitWeightSum = sumWeights(preset?.benefitWeights);
-  const riskWeightSum = sumWeights(preset?.riskWeights);
-
   const synergyBenefitSum = Object.entries(benefitDims)
     .filter(([key]) => key !== 'base')
     .reduce((acc, [, value]) => acc + value, 0);
@@ -128,15 +120,8 @@ export const evaluateStack = ({
   const totalBenefit = baseBenefit + synergyBenefitSum;
   const totalRisk = baseRisk + synergyRiskSum;
 
-  let weightedBenefit = baseBenefit * (benefitWeightSum || 1);
-  let weightedRisk = baseRisk * (riskWeightSum || 1);
-
-  Object.entries(preset?.benefitWeights || {}).forEach(([dimensionKey, weight]) => {
-    weightedBenefit += (benefitDims[dimensionKey] || 0) * weight;
-  });
-  Object.entries(preset?.riskWeights || {}).forEach(([dimensionKey, weight]) => {
-    weightedRisk += (riskDims[dimensionKey] || 0) * weight;
-  });
+  const weightedBenefit = totalBenefit;
+  const weightedRisk = totalRisk;
 
   const netScore = weightedBenefit - weightedRisk;
   const brRatio = totalRisk > 0 ? totalBenefit / totalRisk : totalBenefit;

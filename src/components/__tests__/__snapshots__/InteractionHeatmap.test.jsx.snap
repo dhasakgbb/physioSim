@@ -3,10 +3,10 @@
 exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`] = `
 <DocumentFragment>
   <div
-    class="space-y-8"
+    class="space-y-6"
   >
     <section
-      class="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl shadow-lg lg:sticky lg:top-4 lg:z-20 transition-all duration-200 p-4 space-y-4"
+      class="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl shadow-lg lg:sticky lg:top-3 lg:z-20 transition-all duration-200 p-3.5 space-y-3.5"
     >
       <div
         class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-sm"
@@ -36,7 +36,7 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
         <span
           class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border"
         >
-          Lean Mass Engine
+          Net benefit − risk
         </span>
         <span
           class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border"
@@ -55,10 +55,10 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
         </span>
       </div>
       <div
-        class="flex flex-wrap items-center gap-4 text-xs text-physio-text-secondary"
+        class="flex flex-wrap items-center gap-3 text-xs text-physio-text-secondary"
       >
         <div
-          class="flex flex-wrap gap-4"
+          class="flex flex-wrap gap-3"
         >
           <div
             class="flex items-center gap-2"
@@ -146,10 +146,10 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
         </div>
       </div>
       <div
-        class="bg-physio-bg-core/70 border border-physio-bg-border rounded-2xl flex flex-col p-3 gap-3"
+        class="bg-physio-bg-core/70 border border-physio-bg-border rounded-2xl flex flex-col p-2.5 gap-2.5"
       >
         <div
-          class="flex flex-wrap items-center gap-3 text-[11px]"
+          class="flex flex-wrap items-center gap-2.5 text-[11px]"
         >
           <div
             class="flex items-center gap-2"
@@ -161,7 +161,7 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
             </p>
             <button
               aria-pressed="false"
-              class="px-2 py-1 rounded-full border text-[11px] font-semibold uppercase tracking-wide transition border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
+              class="px-2 py-0.5 rounded-full border text-[11px] font-semibold uppercase tracking-wide transition border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
               title="Pin your preferred focus"
               type="button"
             >
@@ -169,57 +169,28 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
             </button>
           </div>
           <div
-            class="flex flex-wrap gap-2"
+            class="flex flex-wrap gap-1.5"
           >
             <button
-              class="px-3 py-1.5 text-xs rounded-full border transition border-physio-accent-cyan text-physio-accent-cyan bg-physio-bg-secondary"
+              class="px-2.5 py-1.25 text-[11px] rounded-full border transition border-physio-accent-cyan text-physio-accent-cyan bg-physio-bg-secondary"
             >
               Benefit Focus
             </button>
             <button
-              class="px-3 py-1.5 text-xs rounded-full border transition border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
+              class="px-2.5 py-1.25 text-[11px] rounded-full border transition border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
             >
               Risk Focus
             </button>
             <button
-              class="px-3 py-1.5 text-xs rounded-full border transition border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
+              class="px-2.5 py-1.25 text-[11px] rounded-full border transition border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
             >
               Volatility
             </button>
           </div>
         </div>
         <div
-          class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2"
+          class="flex flex-col gap-2"
         >
-          <label
-            class="flex items-center gap-2 text-sm text-physio-text-secondary"
-          >
-            Goal preset
-            <select
-              class="px-3 py-1.5 rounded-lg border border-physio-bg-border bg-physio-bg-core text-physio-text-primary text-sm"
-            >
-              <option
-                value="lean_mass"
-              >
-                Lean Mass Engine
-              </option>
-              <option
-                value="dry_cosmetic"
-              >
-                Photoshoot Dryness
-              </option>
-              <option
-                value="joint_friendly"
-              >
-                Joint-Friendly Recomp
-              </option>
-              <option
-                value="neuro_safe"
-              >
-                Neuro-Stable Stack
-              </option>
-            </select>
-          </label>
           <label
             class="flex-1 text-sm text-physio-text-secondary"
           >
@@ -233,8 +204,7 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
                 Clinical 65%
               </span>
               <input
-                class="flex-1 opacity-40 cursor-not-allowed"
-                disabled=""
+                class="flex-1"
                 max="1"
                 min="0"
                 step="0.05"
@@ -247,11 +217,6 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
                 Anecdote 35%
               </span>
             </div>
-            <p
-              class="mt-1 text-[11px] font-semibold text-physio-text-tertiary"
-            >
-              Lab mode unlocks custom evidence weighting.
-            </p>
           </label>
         </div>
       </div>
@@ -1130,28 +1095,25 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
           Controls
         </button>
         <button
-          class="px-3 py-1.5 rounded-full border transition bg-physio-accent-cyan/10 border-physio-accent-cyan text-physio-accent-cyan"
+          class="px-3 py-1.5 rounded-full border transition text-physio-text-secondary border-physio-bg-border hover:border-physio-accent-cyan hover:text-physio-accent-cyan"
           type="button"
         >
           Metrics
         </button>
         <button
-          class="px-3 py-1.5 rounded-full border transition text-physio-text-tertiary/60 border-dashed border-physio-bg-border/70 cursor-not-allowed"
-          disabled=""
+          class="px-3 py-1.5 rounded-full border transition text-physio-text-secondary border-physio-bg-border hover:border-physio-accent-cyan hover:text-physio-accent-cyan"
           type="button"
         >
           Charts
         </button>
         <button
-          class="px-3 py-1.5 rounded-full border transition text-physio-text-tertiary/60 border-dashed border-physio-bg-border/70 cursor-not-allowed"
-          disabled=""
+          class="px-3 py-1.5 rounded-full border transition text-physio-text-secondary border-physio-bg-border hover:border-physio-accent-cyan hover:text-physio-accent-cyan"
           type="button"
         >
           Surfaces
         </button>
         <button
-          class="px-3 py-1.5 rounded-full border transition text-physio-text-tertiary/60 border-dashed border-physio-bg-border/70 cursor-not-allowed"
-          disabled=""
+          class="px-3 py-1.5 rounded-full border transition bg-physio-accent-cyan/10 border-physio-accent-cyan text-physio-accent-cyan"
           type="button"
         >
           Optimizers
@@ -1181,7 +1143,7 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
               •
             </span>
             <span>
-              Goal: Lean Mass Engine
+              Scoring: Net benefit − risk
             </span>
             <span
               class="text-physio-text-tertiary"
@@ -1251,7 +1213,7 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
             <div
               class="px-3 py-1 rounded-lg bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
             >
-              Goal preset: Lean Mass Engine
+              Scoring model: Net benefit − risk
             </div>
             <button
               class="px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan font-semibold hover:bg-physio-accent-cyan/10 transition"
@@ -1385,6 +1347,40 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
             class="space-y-4"
           >
             <div
+              class="flex flex-wrap gap-2"
+            >
+              <button
+                class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-physio-accent-cyan text-physio-accent-cyan"
+              >
+                Lean Mass
+              </button>
+              <button
+                class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
+              >
+                Joint Comfort
+              </button>
+              <button
+                class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
+              >
+                Strength Output
+              </button>
+              <button
+                class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
+              >
+                Estrogenic / Bloat
+              </button>
+              <button
+                class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
+              >
+                Estrogen Deficit
+              </button>
+              <button
+                class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
+              >
+                Neuro / Psychological
+              </button>
+            </div>
+            <div
               class="space-y-4"
             >
               <label
@@ -1496,12 +1492,12 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
                   <p
                     class="text-xs uppercase tracking-wide text-physio-text-tertiary"
                   >
-                    Goal focus
+                    Scoring model
                   </p>
                   <p
                     class="text-sm font-semibold text-physio-text-primary"
                   >
-                    Lean Mass Engine
+                    Net benefit − risk
                   </p>
                 </div>
                 <div
@@ -1529,74 +1525,74 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
                 <div
                   class="text-xs text-physio-text-tertiary"
                 >
-                  Base benefit
-                </div>
-                <div
-                  class="text-2xl font-bold text-physio-accent-cyan"
-                >
-                  8.46
-                </div>
-                <p
-                  class="text-xs text-physio-text-secondary mt-1"
-                >
-                  Current slider impact before synergy.
-                </p>
-              </div>
-              <div
-                class="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4"
-              >
-                <div
-                  class="text-xs text-physio-text-tertiary"
-                >
-                  Base risk
-                </div>
-                <div
-                  class="text-2xl font-bold text-physio-error"
-                >
-                  3.54
-                </div>
-                <p
-                  class="text-xs text-physio-text-secondary mt-1"
-                >
-                  Modeled risk from the same doses.
-                </p>
-              </div>
-              <div
-                class="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4"
-              >
-                <div
-                  class="text-xs text-physio-text-tertiary"
-                >
-                  Net benefit
-                </div>
-                <div
-                  class="text-2xl font-bold text-physio-accent-mint"
-                >
-                  8.65
-                </div>
-                <p
-                  class="text-xs text-physio-text-secondary mt-1"
-                >
-                  After applying current synergy assumptions.
-                </p>
-              </div>
-              <div
-                class="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4"
-              >
-                <div
-                  class="text-xs text-physio-text-tertiary"
-                >
-                  Benefit : Risk
+                  Naïve sum
                 </div>
                 <div
                   class="text-2xl font-bold text-physio-text-primary"
                 >
-                  2.37
+                  7.75
                 </div>
                 <p
                   class="text-xs text-physio-text-secondary mt-1"
                 >
-                  Higher = more efficient stack.
+                  Base contributions without interaction.
+                </p>
+              </div>
+              <div
+                class="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4"
+              >
+                <div
+                  class="text-xs text-physio-text-tertiary"
+                >
+                  Interaction delta
+                </div>
+                <div
+                  class="text-2xl font-bold text-physio-accent-mint"
+                >
+                  +0.06
+                </div>
+                <p
+                  class="text-xs text-physio-text-secondary mt-1"
+                >
+                  Correction applied via synergy/penalty layer.
+                </p>
+              </div>
+              <div
+                class="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4"
+              >
+                <div
+                  class="text-xs text-physio-text-tertiary"
+                >
+                  Total modeled
+                </div>
+                <div
+                  class="text-2xl font-bold text-physio-accent-cyan"
+                >
+                  6.00
+                </div>
+                <p
+                  class="text-xs text-physio-text-secondary mt-1"
+                >
+                  Final value for Lean Mass.
+                </p>
+              </div>
+              <div
+                class="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4"
+              >
+                <div
+                  class="text-xs text-physio-text-tertiary"
+                >
+                  Shape saturation
+                </div>
+                <div
+                  class="text-2xl font-bold text-physio-text-primary"
+                >
+                  40%
+                </div>
+                <p
+                  class="text-xs text-physio-text-secondary mt-1"
+                >
+                  How deep into the interaction well you are.
                 </p>
               </div>
             </div>
@@ -1646,170 +1642,1816 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
           role="presentation"
         />
         <div
+          aria-hidden="true"
+          class="h-0"
+        />
+        <div
+          aria-hidden="true"
+          class="h-px bg-physio-bg-border/60 w-full my-2"
+          role="presentation"
+        />
+        <div
           class="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4"
         >
           <div
             class="flex items-center justify-between mb-3"
           >
-            <h3
-              class="text-lg font-semibold text-physio-text-primary"
-            >
-              Smart dose suggestions
-            </h3>
-            <span
-              class="text-xs text-physio-text-tertiary"
-            >
-              Top 2 picks
-            </span>
+            <div>
+              <h3
+                class="text-lg font-semibold text-physio-text-primary"
+              >
+                Primary Dose Sweep
+              </h3>
+              <p
+                class="text-xs text-physio-text-tertiary"
+              >
+                Sweeping Test while NPP fixed @ 300mg
+              </p>
+            </div>
           </div>
           <div
-            class="grid grid-cols-1 lg:grid-cols-2 gap-3"
+            class="recharts-responsive-container"
+            style="width: 100%; height: 320px; min-width: 0;"
+          />
+        </div>
+        <div
+          aria-hidden="true"
+          class="h-0"
+        />
+        <div
+          aria-hidden="true"
+          class="h-px bg-physio-bg-border/60 w-full my-2"
+          role="presentation"
+        />
+        <div
+          class="grid gap-4 lg:grid-cols-2"
+        >
+          <div
+            class="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4"
           >
             <div
-              class="border border-physio-bg-border rounded-lg p-3 bg-physio-bg-secondary text-sm space-y-1"
-              role="button"
-              tabindex="0"
+              class="flex flex-col md:flex-row md:items-center md:justify-between mb-4"
             >
-              <div
-                class="flex items-center justify-between text-xs text-physio-text-tertiary gap-2"
-              >
-                <div
-                  class="flex items-center gap-2"
+              <div>
+                <h3
+                  class="text-lg font-semibold text-physio-text-primary"
                 >
-                  <span
-                    class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
-                  >
-                    Rec #1
-                  </span>
-                  <span
-                    class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
-                  >
-                    Lean Mass Engine
-                  </span>
-                </div>
-                <div
-                  class="flex items-center gap-2"
+                  Dose Surface — Net Score
+                </h3>
+                <p
+                  class="text-xs text-physio-text-tertiary"
                 >
-                  <span
-                    class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
-                  >
-                    45% clinical
-                  </span>
-                  <span
-                    class="font-semibold text-physio-accent-cyan"
-                  >
-                    Net 7.61
-                  </span>
-                </div>
+                  Colored by benefit − risk using Net benefit − risk.
+                </p>
               </div>
               <div
-                class="text-physio-text-primary"
+                class="flex flex-wrap gap-2 text-xs text-physio-text-secondary"
               >
-                Test: 
-                <strong>
-                  583 mg
-                </strong>
-                 · NPP: 
-                <strong>
-                  200 mg
-                </strong>
-              </div>
-              <div
-                class="text-xs text-physio-text-tertiary flex gap-3"
-              >
-                <span>
-                  Benefit 8.03
+                <span
+                  class="px-2 py-1 rounded-lg bg-physio-bg-tertiary border border-physio-bg-border"
+                >
+                  Net benefit − risk
                 </span>
-                <span>
-                  Risk 0.43
-                </span>
-                <span>
-                  Ratio 18.77
+                <span
+                  class="px-2 py-1 rounded-lg bg-physio-bg-tertiary border border-physio-bg-border"
+                >
+                  65% clinical · 35% anecdotal
                 </span>
               </div>
-              <button
-                class="mt-2 px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
-              >
-                Load in Stack Builder
-              </button>
             </div>
             <div
-              class="border border-physio-bg-border rounded-lg p-3 bg-physio-bg-secondary text-sm space-y-1"
-              role="button"
-              tabindex="0"
+              class="overflow-x-auto"
             >
               <div
-                class="flex items-center justify-between text-xs text-physio-text-tertiary gap-2"
+                class="flex items-start gap-3"
               >
                 <div
-                  class="flex items-center gap-2"
+                  class="text-xs text-physio-text-tertiary"
+                  style="writing-mode: vertical-rl; transform: rotate(180deg);"
                 >
-                  <span
-                    class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
-                  >
-                    Rec #2
-                  </span>
-                  <span
-                    class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
-                  >
-                    Lean Mass Engine
-                  </span>
+                  NPP dose (mg)
                 </div>
                 <div
-                  class="flex items-center gap-2"
+                  class="inline-flex flex-col gap-1"
                 >
-                  <span
-                    class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
+                  <div
+                    class="flex gap-1"
                   >
-                    45% clinical
-                  </span>
-                  <span
-                    class="font-semibold text-physio-accent-cyan"
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.694);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.703);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.567);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.455);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.36);"
+                    />
+                  </div>
+                  <div
+                    class="flex gap-1"
                   >
-                    Net 7.61
-                  </span>
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.726);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.742);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.606);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.494);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.386);"
+                    />
+                  </div>
+                  <div
+                    class="flex gap-1"
+                  >
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.759);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.781);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.645);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.533);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.422);"
+                    />
+                  </div>
+                  <div
+                    class="flex gap-1"
+                  >
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.791);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.684);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.572);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.462);"
+                    />
+                  </div>
+                  <div
+                    class="flex gap-1"
+                  >
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.724);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.612);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.501);"
+                    />
+                  </div>
+                  <div
+                    class="flex gap-1"
+                  >
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.79);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.678);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.568);"
+                    />
+                  </div>
+                  <div
+                    class="flex gap-1"
+                  >
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.746);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.635);"
+                    />
+                  </div>
+                  <div
+                    class="flex gap-1"
+                  >
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.693);"
+                    />
+                  </div>
+                  <div
+                    class="flex gap-1"
+                  >
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    >
+                      <span
+                        class="text-[10px] font-semibold text-white drop-shadow"
+                      >
+                        2
+                      </span>
+                    </div>
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.752);"
+                    />
+                  </div>
+                  <div
+                    class="flex gap-1"
+                  >
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    >
+                      <span
+                        class="text-[10px] font-semibold text-white drop-shadow"
+                      >
+                        1
+                      </span>
+                    </div>
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.777);"
+                    />
+                  </div>
+                  <div
+                    class="flex gap-1"
+                  >
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.715);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    >
+                      <span
+                        class="text-[10px] font-semibold text-white drop-shadow"
+                      >
+                        3
+                      </span>
+                    </div>
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    >
+                      <span
+                        class="text-[10px] font-semibold text-white drop-shadow"
+                      >
+                        4
+                      </span>
+                    </div>
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                  </div>
+                  <div
+                    class="flex gap-1"
+                  >
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.523);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.718);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.794);"
+                    />
+                  </div>
+                  <div
+                    class="flex gap-1"
+                  >
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.332);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.526);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.691);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.8);"
+                    />
+                    <div
+                      class="relative w-6 h-6 rounded-sm"
+                      style="background-color: rgba(71, 207, 235, 0.713);"
+                    />
+                  </div>
                 </div>
               </div>
-              <div
-                class="text-physio-text-primary"
+              <p
+                class="text-xs text-physio-text-tertiary text-center mt-2"
               >
-                Test: 
-                <strong>
-                  583 mg
-                </strong>
-                 · NPP: 
-                <strong>
-                  250 mg
-                </strong>
+                Test dose (mg)
+              </p>
+            </div>
+          </div>
+          <div
+            class="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4"
+          >
+            <div
+              class="flex items-center justify-between mb-3"
+            >
+              <div>
+                <h3
+                  class="text-lg font-semibold text-physio-text-primary"
+                >
+                  Stack suggestions
+                </h3>
+                <p
+                  class="text-xs text-physio-text-tertiary"
+                >
+                  Top interaction waypoints (benefit − risk score)
+                </p>
+              </div>
+              <span
+                class="text-xs text-physio-text-tertiary"
+              >
+                4 options
+              </span>
+            </div>
+            <div
+              class="space-y-3"
+            >
+              <div
+                class="border border-physio-bg-border rounded-lg p-3 bg-physio-bg-secondary text-sm space-y-1"
+                role="button"
+                tabindex="0"
+              >
+                <div
+                  class="flex items-center justify-between text-xs text-physio-text-tertiary gap-2"
+                >
+                  <div
+                    class="flex items-center gap-2"
+                  >
+                    <span
+                      class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
+                    >
+                      Rec #1
+                    </span>
+                    <span
+                      class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
+                    >
+                      Favorable
+                    </span>
+                  </div>
+                  <div
+                    class="flex items-center gap-2"
+                  >
+                    <span
+                      class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
+                    >
+                      45% clinical
+                    </span>
+                    <span
+                      class="font-semibold text-physio-accent-cyan"
+                    >
+                      Net 11.14
+                    </span>
+                  </div>
+                </div>
+                <div
+                  class="text-physio-text-primary"
+                >
+                  Test: 
+                  <strong>
+                    417 mg
+                  </strong>
+                   · NPP: 
+                  <strong>
+                    150 mg
+                  </strong>
+                </div>
+                <div
+                  class="text-xs text-physio-text-tertiary flex gap-3"
+                >
+                  <span>
+                    Benefit 15.88
+                  </span>
+                  <span>
+                    Risk 4.74
+                  </span>
+                  <span>
+                    Ratio 3.35
+                  </span>
+                </div>
+                <button
+                  class="mt-2 px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
+                >
+                  Load in Stack Builder
+                </button>
               </div>
               <div
-                class="text-xs text-physio-text-tertiary flex gap-3"
+                class="border border-physio-bg-border rounded-lg p-3 bg-physio-bg-secondary text-sm space-y-1"
+                role="button"
+                tabindex="0"
               >
-                <span>
-                  Benefit 8.08
-                </span>
-                <span>
-                  Risk 0.48
-                </span>
-                <span>
-                  Ratio 16.96
-                </span>
+                <div
+                  class="flex items-center justify-between text-xs text-physio-text-tertiary gap-2"
+                >
+                  <div
+                    class="flex items-center gap-2"
+                  >
+                    <span
+                      class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
+                    >
+                      Rec #2
+                    </span>
+                    <span
+                      class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
+                    >
+                      Favorable
+                    </span>
+                  </div>
+                  <div
+                    class="flex items-center gap-2"
+                  >
+                    <span
+                      class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
+                    >
+                      45% clinical
+                    </span>
+                    <span
+                      class="font-semibold text-physio-accent-cyan"
+                    >
+                      Net 11.09
+                    </span>
+                  </div>
+                </div>
+                <div
+                  class="text-physio-text-primary"
+                >
+                  Test: 
+                  <strong>
+                    333 mg
+                  </strong>
+                   · NPP: 
+                  <strong>
+                    200 mg
+                  </strong>
+                </div>
+                <div
+                  class="text-xs text-physio-text-tertiary flex gap-3"
+                >
+                  <span>
+                    Benefit 15.33
+                  </span>
+                  <span>
+                    Risk 4.23
+                  </span>
+                  <span>
+                    Ratio 3.62
+                  </span>
+                </div>
+                <button
+                  class="mt-2 px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
+                >
+                  Load in Stack Builder
+                </button>
               </div>
-              <button
-                class="mt-2 px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
+              <div
+                class="border border-physio-bg-border rounded-lg p-3 bg-physio-bg-secondary text-sm space-y-1"
+                role="button"
+                tabindex="0"
               >
-                Load in Stack Builder
-              </button>
+                <div
+                  class="flex items-center justify-between text-xs text-physio-text-tertiary gap-2"
+                >
+                  <div
+                    class="flex items-center gap-2"
+                  >
+                    <span
+                      class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
+                    >
+                      Rec #3
+                    </span>
+                    <span
+                      class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
+                    >
+                      Favorable
+                    </span>
+                  </div>
+                  <div
+                    class="flex items-center gap-2"
+                  >
+                    <span
+                      class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
+                    >
+                      45% clinical
+                    </span>
+                    <span
+                      class="font-semibold text-physio-accent-cyan"
+                    >
+                      Net 10.99
+                    </span>
+                  </div>
+                </div>
+                <div
+                  class="text-physio-text-primary"
+                >
+                  Test: 
+                  <strong>
+                    417 mg
+                  </strong>
+                   · NPP: 
+                  <strong>
+                    100 mg
+                  </strong>
+                </div>
+                <div
+                  class="text-xs text-physio-text-tertiary flex gap-3"
+                >
+                  <span>
+                    Benefit 15.29
+                  </span>
+                  <span>
+                    Risk 4.30
+                  </span>
+                  <span>
+                    Ratio 3.55
+                  </span>
+                </div>
+                <button
+                  class="mt-2 px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
+                >
+                  Load in Stack Builder
+                </button>
+              </div>
+              <div
+                class="border border-physio-bg-border rounded-lg p-3 bg-physio-bg-secondary text-sm space-y-1"
+                role="button"
+                tabindex="0"
+              >
+                <div
+                  class="flex items-center justify-between text-xs text-physio-text-tertiary gap-2"
+                >
+                  <div
+                    class="flex items-center gap-2"
+                  >
+                    <span
+                      class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
+                    >
+                      Rec #4
+                    </span>
+                    <span
+                      class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
+                    >
+                      Favorable
+                    </span>
+                  </div>
+                  <div
+                    class="flex items-center gap-2"
+                  >
+                    <span
+                      class="px-2 py-0.5 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
+                    >
+                      45% clinical
+                    </span>
+                    <span
+                      class="font-semibold text-physio-accent-cyan"
+                    >
+                      Net 10.96
+                    </span>
+                  </div>
+                </div>
+                <div
+                  class="text-physio-text-primary"
+                >
+                  Test: 
+                  <strong>
+                    500 mg
+                  </strong>
+                   · NPP: 
+                  <strong>
+                    100 mg
+                  </strong>
+                </div>
+                <div
+                  class="text-xs text-physio-text-tertiary flex gap-3"
+                >
+                  <span>
+                    Benefit 16.19
+                  </span>
+                  <span>
+                    Risk 5.23
+                  </span>
+                  <span>
+                    Ratio 3.10
+                  </span>
+                </div>
+                <button
+                  class="mt-2 px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
+                >
+                  Load in Stack Builder
+                </button>
+              </div>
             </div>
           </div>
         </div>
-        <p
-          class="text-xs text-physio-text-tertiary"
+        <div
+          aria-hidden="true"
+          class="h-0"
+        />
+        <div
+          aria-hidden="true"
+          class="h-px bg-physio-bg-border/60 w-full my-2"
+          role="presentation"
+        />
+        <section
+          class="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-lg space-y-4"
         >
-          Enable Lab Mode inside the personalization panel to unlock dimension-level analytics, dose surfaces, and the multi-compound optimizer.
-        </p>
+          <div
+            class="flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+          >
+            <div>
+              <h3
+                class="text-xl font-bold text-physio-text-primary"
+              >
+                Multi-Compound Optimizer
+              </h3>
+              <p
+                class="text-sm text-physio-text-secondary"
+              >
+                Sampling predefined three-compound templates using your personalization + synergy model.
+              </p>
+            </div>
+            <div
+              class="flex items-center gap-3"
+            >
+              <span
+                class="text-xs text-physio-text-tertiary hidden sm:block"
+              >
+                Templates: Lean Mass / Vascularity • Aggressive Recomp • Joint-Friendly Strength • Endurance Cut
+              </span>
+              <button
+                class="px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
+              >
+                Collapse
+              </button>
+            </div>
+          </div>
+          <div
+            class="grid grid-cols-1 lg:grid-cols-2 gap-4"
+          >
+            <article
+              class="border border-physio-bg-border rounded-xl p-4 bg-physio-bg-core flex flex-col gap-3"
+            >
+              <div
+                class="flex items-center justify-between text-sm text-physio-text-tertiary"
+              >
+                <span>
+                  Joint-Friendly Strength
+                </span>
+                <span
+                  class="font-semibold text-physio-accent-cyan"
+                >
+                  Net 7.26
+                </span>
+              </div>
+              <p
+                class="text-xs text-physio-text-secondary"
+              >
+                Strength-focused blend where NPP cushions joints and Dbol handles neural drive.
+              </p>
+              <div
+                class="space-y-1 text-sm text-physio-text-primary"
+              >
+                <div>
+                  Test: 
+                  <strong>
+                    550 mg
+                  </strong>
+                  <span
+                    class="text-xs text-physio-text-tertiary"
+                  >
+                     per week
+                  </span>
+                </div>
+                <div>
+                  NPP: 
+                  <strong>
+                    200 mg
+                  </strong>
+                  <span
+                    class="text-xs text-physio-text-tertiary"
+                  >
+                     per week
+                  </span>
+                </div>
+                <div>
+                  Dbol: 
+                  <strong>
+                    20 mg
+                  </strong>
+                  <span
+                    class="text-xs text-physio-text-tertiary"
+                  >
+                     per day
+                  </span>
+                </div>
+              </div>
+              <div
+                class="flex flex-wrap gap-4 text-xs text-physio-text-secondary"
+              >
+                <span>
+                  Benefit 11.42
+                </span>
+                <span>
+                  Risk 4.16
+                </span>
+                <span>
+                  Ratio 2.75
+                </span>
+              </div>
+              <div
+                class="text-xs text-physio-text-tertiary"
+              >
+                Synergy: 2.3% benefit · 7.3% risk
+              </div>
+              <button
+                class="mt-2 px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
+              >
+                Load in Stack Builder
+              </button>
+            </article>
+            <article
+              class="border border-physio-bg-border rounded-xl p-4 bg-physio-bg-core flex flex-col gap-3"
+            >
+              <div
+                class="flex items-center justify-between text-sm text-physio-text-tertiary"
+              >
+                <span>
+                  Joint-Friendly Strength
+                </span>
+                <span
+                  class="font-semibold text-physio-accent-cyan"
+                >
+                  Net 7.22
+                </span>
+              </div>
+              <p
+                class="text-xs text-physio-text-secondary"
+              >
+                Strength-focused blend where NPP cushions joints and Dbol handles neural drive.
+              </p>
+              <div
+                class="space-y-1 text-sm text-physio-text-primary"
+              >
+                <div>
+                  Test: 
+                  <strong>
+                    550 mg
+                  </strong>
+                  <span
+                    class="text-xs text-physio-text-tertiary"
+                  >
+                     per week
+                  </span>
+                </div>
+                <div>
+                  NPP: 
+                  <strong>
+                    200 mg
+                  </strong>
+                  <span
+                    class="text-xs text-physio-text-tertiary"
+                  >
+                     per week
+                  </span>
+                </div>
+                <div>
+                  Dbol: 
+                  <strong>
+                    30 mg
+                  </strong>
+                  <span
+                    class="text-xs text-physio-text-tertiary"
+                  >
+                     per day
+                  </span>
+                </div>
+              </div>
+              <div
+                class="flex flex-wrap gap-4 text-xs text-physio-text-secondary"
+              >
+                <span>
+                  Benefit 12.29
+                </span>
+                <span>
+                  Risk 5.07
+                </span>
+                <span>
+                  Ratio 2.43
+                </span>
+              </div>
+              <div
+                class="text-xs text-physio-text-tertiary"
+              >
+                Synergy: 2.8% benefit · 9.0% risk
+              </div>
+              <button
+                class="mt-2 px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
+              >
+                Load in Stack Builder
+              </button>
+            </article>
+            <article
+              class="border border-physio-bg-border rounded-xl p-4 bg-physio-bg-core flex flex-col gap-3"
+            >
+              <div
+                class="flex items-center justify-between text-sm text-physio-text-tertiary"
+              >
+                <span>
+                  Joint-Friendly Strength
+                </span>
+                <span
+                  class="font-semibold text-physio-accent-cyan"
+                >
+                  Net 7.02
+                </span>
+              </div>
+              <p
+                class="text-xs text-physio-text-secondary"
+              >
+                Strength-focused blend where NPP cushions joints and Dbol handles neural drive.
+              </p>
+              <div
+                class="space-y-1 text-sm text-physio-text-primary"
+              >
+                <div>
+                  Test: 
+                  <strong>
+                    500 mg
+                  </strong>
+                  <span
+                    class="text-xs text-physio-text-tertiary"
+                  >
+                     per week
+                  </span>
+                </div>
+                <div>
+                  NPP: 
+                  <strong>
+                    200 mg
+                  </strong>
+                  <span
+                    class="text-xs text-physio-text-tertiary"
+                  >
+                     per week
+                  </span>
+                </div>
+                <div>
+                  Dbol: 
+                  <strong>
+                    20 mg
+                  </strong>
+                  <span
+                    class="text-xs text-physio-text-tertiary"
+                  >
+                     per day
+                  </span>
+                </div>
+              </div>
+              <div
+                class="flex flex-wrap gap-4 text-xs text-physio-text-secondary"
+              >
+                <span>
+                  Benefit 10.94
+                </span>
+                <span>
+                  Risk 3.92
+                </span>
+                <span>
+                  Ratio 2.79
+                </span>
+              </div>
+              <div
+                class="text-xs text-physio-text-tertiary"
+              >
+                Synergy: 2.2% benefit · 7.3% risk
+              </div>
+              <button
+                class="mt-2 px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
+              >
+                Load in Stack Builder
+              </button>
+            </article>
+            <article
+              class="border border-physio-bg-border rounded-xl p-4 bg-physio-bg-core flex flex-col gap-3"
+            >
+              <div
+                class="flex items-center justify-between text-sm text-physio-text-tertiary"
+              >
+                <span>
+                  Joint-Friendly Strength
+                </span>
+                <span
+                  class="font-semibold text-physio-accent-cyan"
+                >
+                  Net 6.98
+                </span>
+              </div>
+              <p
+                class="text-xs text-physio-text-secondary"
+              >
+                Strength-focused blend where NPP cushions joints and Dbol handles neural drive.
+              </p>
+              <div
+                class="space-y-1 text-sm text-physio-text-primary"
+              >
+                <div>
+                  Test: 
+                  <strong>
+                    500 mg
+                  </strong>
+                  <span
+                    class="text-xs text-physio-text-tertiary"
+                  >
+                     per week
+                  </span>
+                </div>
+                <div>
+                  NPP: 
+                  <strong>
+                    200 mg
+                  </strong>
+                  <span
+                    class="text-xs text-physio-text-tertiary"
+                  >
+                     per week
+                  </span>
+                </div>
+                <div>
+                  Dbol: 
+                  <strong>
+                    30 mg
+                  </strong>
+                  <span
+                    class="text-xs text-physio-text-tertiary"
+                  >
+                     per day
+                  </span>
+                </div>
+              </div>
+              <div
+                class="flex flex-wrap gap-4 text-xs text-physio-text-secondary"
+              >
+                <span>
+                  Benefit 11.80
+                </span>
+                <span>
+                  Risk 4.82
+                </span>
+                <span>
+                  Ratio 2.45
+                </span>
+              </div>
+              <div
+                class="text-xs text-physio-text-tertiary"
+              >
+                Synergy: 2.7% benefit · 8.9% risk
+              </div>
+              <button
+                class="mt-2 px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10"
+              >
+                Load in Stack Builder
+              </button>
+            </article>
+          </div>
+          <div
+            class="border-t border-physio-bg-border pt-6 space-y-4"
+          >
+            <div
+              class="flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+            >
+              <div>
+                <h4
+                  class="text-lg font-semibold text-physio-text-primary"
+                >
+                  Custom Stack Optimizer
+                </h4>
+                <p
+                  class="text-xs text-physio-text-secondary"
+                >
+                  Pick up to four compounds, define dose windows, and let the engine hunt for sweet spots.
+                </p>
+              </div>
+              <div
+                class="flex gap-2 text-xs items-center text-physio-text-secondary"
+              >
+                <span
+                  class="px-2 py-1 rounded-lg bg-physio-bg-tertiary border border-physio-bg-border"
+                >
+                  Scoring: Net benefit − risk
+                </span>
+                <span
+                  class="px-2 py-1 rounded-lg bg-physio-bg-tertiary border border-physio-bg-border"
+                >
+                  Evidence mix: 65% clinical · 35% anecdotal
+                </span>
+              </div>
+            </div>
+            <div
+              class="flex flex-col md:flex-row gap-3"
+            >
+              <select
+                class="flex-1 bg-physio-bg-core border border-physio-bg-border rounded-lg px-3 py-2 text-sm text-physio-text-primary"
+              >
+                <option
+                  value=""
+                >
+                  Add compound…
+                </option>
+                <option
+                  value="testosterone"
+                >
+                  Testosterone
+                </option>
+                <option
+                  value="npp"
+                >
+                  NPP (Nandrolone Phenylpropionate)
+                </option>
+                <option
+                  value="trenbolone"
+                >
+                  Trenbolone
+                </option>
+                <option
+                  value="eq"
+                >
+                  EQ (Equipoise/Boldenone)
+                </option>
+                <option
+                  value="masteron"
+                >
+                  Masteron (Drostanolone)
+                </option>
+                <option
+                  value="primobolan"
+                >
+                  Primobolan (Methenolone)
+                </option>
+                <option
+                  value="dianabol"
+                >
+                  Dianabol (Methandrostenolone)
+                </option>
+                <option
+                  value="anadrol"
+                >
+                  Anadrol (Oxymetholone)
+                </option>
+                <option
+                  value="winstrol"
+                >
+                  Winstrol (Stanozolol)
+                </option>
+                <option
+                  value="anavar"
+                >
+                  Anavar (Oxandrolone)
+                </option>
+                <option
+                  value="halotestin"
+                >
+                  Halotestin (Fluoxymesterone)
+                </option>
+              </select>
+              <button
+                class="px-4 py-2 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan font-semibold hover:bg-physio-accent-cyan/10 disabled:opacity-40"
+                disabled=""
+              >
+                Add
+              </button>
+              <button
+                class="px-4 py-2 rounded-lg border border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
+              >
+                Clear
+              </button>
+            </div>
+            <button
+              class="px-4 py-2 rounded-lg bg-physio-accent-cyan text-physio-bg-core font-semibold hover:bg-physio-accent-cyan/80 disabled:bg-physio-bg-border disabled:text-physio-text-tertiary"
+              disabled=""
+            >
+              Run custom optimizer
+            </button>
+          </div>
+        </section>
       </section>
     </div>
+    <div
+      aria-hidden="true"
+      class="h-px bg-physio-bg-border/60 w-full my-2"
+      role="presentation"
+    />
+    <section
+      class="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-lg space-y-6"
+    >
+      <div
+        class="flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+      >
+        <div>
+          <h3
+            class="text-xl font-bold text-physio-text-primary"
+          >
+            Interaction Penalty Modifiers
+          </h3>
+          <p
+            class="text-sm text-physio-text-secondary"
+          >
+            Tune sensitivities so the model respects your physiology.
+          </p>
+        </div>
+        <div
+          class="text-xs text-physio-text-tertiary"
+        >
+          Evidence blending slider leans toward clinical (left) or anecdote (right).
+        </div>
+      </div>
+      <div
+        class="grid grid-cols-1 md:grid-cols-2 gap-4"
+      >
+        <label
+          class="border border-physio-bg-border rounded-lg p-4 bg-physio-bg-core text-sm space-y-2"
+        >
+          <div
+            class="flex items-center justify-between"
+          >
+            <span
+              class="font-semibold text-physio-text-primary"
+            >
+              Estrogen Sensitivity
+            </span>
+            <span
+              class="text-xs text-physio-accent-cyan"
+            >
+              1.00×
+            </span>
+          </div>
+          <input
+            class="w-full"
+            max="1.5"
+            min="0.5"
+            step="0.05"
+            type="range"
+            value="1"
+          />
+          <p
+            class="text-xs text-physio-text-tertiary"
+          >
+            Higher = gyno/bloat prone. Amplifies estrogenic penalties.
+          </p>
+        </label>
+        <label
+          class="border border-physio-bg-border rounded-lg p-4 bg-physio-bg-core text-sm space-y-2"
+        >
+          <div
+            class="flex items-center justify-between"
+          >
+            <span
+              class="font-semibold text-physio-text-primary"
+            >
+              Water Retention Sensitivity
+            </span>
+            <span
+              class="text-xs text-physio-accent-cyan"
+            >
+              1.00×
+            </span>
+          </div>
+          <input
+            class="w-full"
+            max="1.5"
+            min="0.5"
+            step="0.05"
+            type="range"
+            value="1"
+          />
+          <p
+            class="text-xs text-physio-text-tertiary"
+          >
+            Impacts bloat + cosmetic softness penalties.
+          </p>
+        </label>
+        <label
+          class="border border-physio-bg-border rounded-lg p-4 bg-physio-bg-core text-sm space-y-2"
+        >
+          <div
+            class="flex items-center justify-between"
+          >
+            <span
+              class="font-semibold text-physio-text-primary"
+            >
+              Neuro Sensitivity
+            </span>
+            <span
+              class="text-xs text-physio-accent-cyan"
+            >
+              1.00×
+            </span>
+          </div>
+          <input
+            class="w-full"
+            max="1.5"
+            min="0.5"
+            step="0.05"
+            type="range"
+            value="1"
+          />
+          <p
+            class="text-xs text-physio-text-tertiary"
+          >
+            If Tren/Halo wreck your sleep, slide right.
+          </p>
+        </label>
+        <label
+          class="border border-physio-bg-border rounded-lg p-4 bg-physio-bg-core text-sm space-y-2"
+        >
+          <div
+            class="flex items-center justify-between"
+          >
+            <span
+              class="font-semibold text-physio-text-primary"
+            >
+              Cardio / BP Sensitivity
+            </span>
+            <span
+              class="text-xs text-physio-accent-cyan"
+            >
+              1.00×
+            </span>
+          </div>
+          <input
+            class="w-full"
+            max="1.5"
+            min="0.5"
+            step="0.05"
+            type="range"
+            value="1"
+          />
+          <p
+            class="text-xs text-physio-text-tertiary"
+          >
+            Impacts BP + hematocrit penalties.
+          </p>
+        </label>
+      </div>
+      <div
+        class="border border-physio-bg-border rounded-lg p-4 bg-physio-bg-core text-sm text-physio-text-secondary"
+      >
+        Evidence weighting now lives in the control strip above the matrix so you can re-balance clinical vs anecdote inputs without scrolling.
+      </div>
+    </section>
   </div>
 </DocumentFragment>
 `;

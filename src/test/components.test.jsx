@@ -5,29 +5,30 @@ import CustomLegend from '../components/CustomLegend';
 
 describe('Component Tests', () => {
   describe('ViewToggle', () => {
-    it('should render all three view modes', () => {
+    it('should render all spotlight modes', () => {
       const setViewMode = vi.fn();
-      render(<ViewToggle viewMode="integrated" setViewMode={setViewMode} />);
+      render(<ViewToggle viewMode="benefit" setViewMode={setViewMode} />);
       
-      expect(screen.getByText('Benefit + Risk')).toBeInTheDocument();
-      expect(screen.getByText('Benefit only')).toBeInTheDocument();
-      expect(screen.getByText('Risk only')).toBeInTheDocument();
+      expect(screen.getByText('Benefit Curve')).toBeInTheDocument();
+      expect(screen.getByText('Risk Curve')).toBeInTheDocument();
+      expect(screen.getByText('Efficiency Mode')).toBeInTheDocument();
+      expect(screen.getByText('Uncertainty')).toBeInTheDocument();
     });
 
     it('should call setViewMode when clicked', () => {
       const setViewMode = vi.fn();
-      render(<ViewToggle viewMode="integrated" setViewMode={setViewMode} />);
+      render(<ViewToggle viewMode="benefit" setViewMode={setViewMode} />);
       
-      const benefitRadio = screen.getByLabelText(/Benefit only/i);
-      fireEvent.click(benefitRadio);
-      expect(setViewMode).toHaveBeenCalledWith('benefit');
+      const riskOption = screen.getByText('Risk Curve');
+      fireEvent.click(riskOption);
+      expect(setViewMode).toHaveBeenCalledWith('risk');
     });
 
     it('should check active view mode radio button', () => {
       const setViewMode = vi.fn();
       render(<ViewToggle viewMode="benefit" setViewMode={setViewMode} />);
       
-      const benefitRadio = screen.getByLabelText(/Benefit only/i);
+      const benefitRadio = screen.getByLabelText(/benefit curve/i);
       expect(benefitRadio).toBeChecked();
     });
   });
