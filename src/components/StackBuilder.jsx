@@ -7,6 +7,9 @@ import { evaluateStack } from '../utils/stackEngine';
 import { loadCycles, saveCycle, deleteCycle } from '../utils/cycleStore';
 import PDFExport from './PDFExport';
 import GuardrailChip from './GuardrailChip';
+import NavigationRail from './NavigationRail';
+import DoseSlider from './DoseSlider';
+import { deriveDoseWindow } from '../utils/doseWindows';
 
 const stackScoringLabel = 'Net benefit − risk';
 
@@ -240,6 +243,11 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
   const stackRef = useRef(null);
   const compoundSelectId = 'stack-builder-compound';
   const doseInputId = 'stack-builder-dose';
+  const builderRef = useRef(null);
+  const metricsRef = useRef(null);
+  const cyclesRef = useRef(null);
+  const ancillaryRef = useRef(null);
+  const [stackActiveAnchor, setStackActiveAnchor] = useState('builder');
 
   const refreshCycles = useCallback(() => {
     setSavedCycles(loadCycles());
@@ -461,6 +469,73 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
 
     return getAncillaryProtocol(formatStackForProtocol(stack));
   }, [stack]);
+
+  const stackAnchors = useMemo(
+    () => [
+      { key: 'builder', label: 'Builder', ref: builderRef, available: true },
+      { key: 'metrics', label: 'Metrics', ref: metricsRef, available: stack.length > 0 },
+      { key: 'cycles', label: 'Cycles', ref: cyclesRef, available: savedCycles.length > 0 },
+      { key: 'ancillary', label: 'Ancillary', ref: ancillaryRef, available: Boolean(ancillaryProtocol) }
+    ],
+    [ancillaryProtocol, builderRef, cyclesRef, metricsRef, savedCycles.length, stack.length]
+  );
+
+  const scrollToStackSection = useCallback(
+    (section) => {
+      if (typeof window === 'undefined' || !section?.ref?.current) return;
+      const offset = window.innerWidth < 768 ? 80 : 140;
+      const targetTop = section.ref.current.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+      setStackActiveAnchor(section.key);
+    },
+    [setStackActiveAnchor]
+  );
+
+  const handleStackAnchorChange = useCallback(
+    (key) => {
+      const section = stackAnchors.find(entry => entry.key === key);
+      if (!section || !section.available) return;
+      scrollToStackSection(section);
+    },
+    [scrollToStackSection, stackAnchors]
+  );
+
+  useEffect(() => {
+    const activeSection = stackAnchors.find(section => section.key === stackActiveAnchor && section.available);
+    if (activeSection) return;
+    const fallback = stackAnchors.find(section => section.available);
+    if (fallback) {
+      setStackActiveAnchor(fallback.key);
+    }
+  }, [stackActiveAnchor, stackAnchors]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    let frame = null;
+    const determineAnchor = () => {
+      frame = null;
+      const offset = window.innerWidth < 768 ? 90 : 150;
+      let current = stackAnchors.find(section => section.available)?.key || 'builder';
+      stackAnchors.forEach(section => {
+        if (!section.available || !section.ref?.current) return;
+        const rect = section.ref.current.getBoundingClientRect();
+        if (rect.top - offset <= 0) {
+          current = section.key;
+        }
+      });
+      setStackActiveAnchor(prev => (prev === current ? prev : current));
+    };
+    const handleScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(determineAnchor);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    determineAnchor();
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [stackAnchors]);
   
   // Add compound to stack
   const handleAddCompound = () => {
@@ -491,12 +566,14 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
   
   // Update dose for compound
   const handleUpdateDose = (compoundKey, newDose) => {
-    const doseNum = parseFloat(newDose);
-    if (isNaN(doseNum) || doseNum < 0) return;
-    
-    setStack(stack.map(item =>
-      item.compound === compoundKey ? { ...item, dose: doseNum } : item
-    ));
+    const numericDose = typeof newDose === 'number' ? newDose : parseFloat(newDose);
+    if (!Number.isFinite(numericDose) || numericDose < 0) return;
+    const roundedDose = Math.round(numericDose * 10) / 10;
+    setStack(prevStack =>
+      prevStack.map(item =>
+        item.compound === compoundKey ? { ...item, dose: roundedDose } : item
+      )
+    );
   };
 
   const handleLoadSelectionChange = (value) => {
@@ -551,8 +628,22 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
   
   return (
     <div className="w-full space-y-6">
-      <div className="space-y-5">
-        <OrientationBar items={builderOrientationItems} />
+      <OrientationBar items={builderOrientationItems} />
+      <div className="sticky top-16 z-20">
+        <NavigationRail
+          tabs={stackAnchors.map(section => ({
+            key: section.key,
+            label: section.label,
+            disabled: !section.available
+          }))}
+          activeTab={stackActiveAnchor}
+          onTabChange={handleStackAnchorChange}
+          ariaLabel="Stack builder anchors"
+          size="sm"
+          className="w-full"
+        />
+      </div>
+      <section ref={builderRef} className="space-y-5">
 
         {/* Add Compound Section */}
         <div className="bg-physio-bg-secondary p-5 rounded-xl shadow-sm border border-physio-bg-border">
@@ -629,54 +720,87 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                   : guardrail?.plateau
                   ? 'border-physio-warning/70 bg-physio-warning/10'
                   : 'border-physio-bg-border';
+                const doseWindow = deriveDoseWindow(item.compound);
+                const sliderMarkers = [
+                  doseWindow.base
+                    ? { value: doseWindow.base, label: 'Sweet spot', tone: 'accent' }
+                    : null,
+                  guardrail?.plateauDose
+                    ? { value: guardrail.plateauDose, label: 'Plateau', tone: 'warning' }
+                    : null,
+                  guardrail?.hardMax
+                    ? { value: guardrail.hardMax, label: 'Evidence', tone: 'error' }
+                    : null
+                ].filter(Boolean);
+                const unitLabel = compound.type === 'oral' ? 'mg/day' : 'mg/wk';
                 return (
                   <div
                     key={item.compound}
-                    className={`flex items-center justify-between p-3.5 bg-physio-bg-core rounded-lg border ${guardrailTone}`}
+                    className={`p-3.5 bg-physio-bg-core rounded-lg border ${guardrailTone}`}
                   >
-                    <div className="flex items-center gap-3.5 flex-1">
-                      <div
-                        className="w-4 h-4 rounded-full"
-                        style={{ backgroundColor: compound.color }}
-                      ></div>
-                      <div className="flex-1">
-                        <div className="font-semibold text-physio-text-primary">{compound.name}</div>
-                        <div className="text-sm text-physio-text-tertiary">
-                          {compound.type === 'oral' ? 'Oral' : 'Injectable'} • {compound.abbreviation}
-                        </div>
-                        {guardrail && (
-                          <div className="text-xs font-semibold mt-1 flex items-center gap-2">
-                            {guardrail.plateau && !guardrail.beyond && (
-                              <span className="text-physio-warning">
-                                Plateau near {guardrail.plateauDose ? guardrail.plateauDose + 'mg' : 'this dose'}
-                              </span>
-                            )}
-                            {guardrail.beyond && (
-                              <span className="text-physio-error">
-                                Outside evidence {guardrail.hardMax ? '(modeled <= ' + guardrail.hardMax + 'mg)' : ''}
-                              </span>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div className="flex items-center gap-3.5">
+                          <div
+                            className="w-4 h-4 rounded-full"
+                            style={{ backgroundColor: compound.color }}
+                          ></div>
+                          <div>
+                            <div className="font-semibold text-physio-text-primary">{compound.name}</div>
+                            <div className="text-sm text-physio-text-tertiary">
+                              {compound.type === 'oral' ? 'Oral' : 'Injectable'} • {compound.abbreviation}
+                            </div>
+                            {guardrail && (
+                              <div className="text-xs font-semibold mt-1 flex flex-wrap items-center gap-2">
+                                {guardrail.plateau && !guardrail.beyond && (
+                                  <span className="text-physio-warning">
+                                    Plateau near {guardrail.plateauDose ? guardrail.plateauDose + 'mg' : 'this dose'}
+                                  </span>
+                                )}
+                                {guardrail.beyond && (
+                                  <span className="text-physio-error">
+                                    Outside evidence {guardrail.hardMax ? '(modeled <= ' + guardrail.hardMax + 'mg)' : ''}
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </div>
-                        )}
+                        </div>
+                        <button
+                          onClick={() => handleRemoveCompound(item.compound)}
+                          className="px-3 py-1 bg-physio-error text-physio-bg-core rounded hover:bg-physio-error/80 transition-standard text-sm font-medium"
+                        >
+                          Remove
+                        </button>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
+                      <div className="flex flex-col gap-2">
+                        <DoseSlider
+                          id={`stack-dose-${item.compound}`}
                           value={item.dose}
-                          onChange={(e) => handleUpdateDose(item.compound, e.target.value)}
-                          className="w-24 px-2 py-1 border border-physio-bg-border rounded text-sm"
+                          min={doseWindow.min}
+                          max={doseWindow.max}
+                          step={compound.type === 'oral' ? 2 : 10}
+                          unit={unitLabel}
+                          markers={sliderMarkers}
+                          ariaLabel={`${compound.name} dose`}
+                          onChange={(nextValue) => handleUpdateDose(item.compound, nextValue)}
                         />
-                        <span className="text-sm text-physio-text-secondary">
-                          {compound.type === 'oral' ? 'mg/day' : 'mg/wk'}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-physio-text-secondary">
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              value={item.dose}
+                              onChange={(e) => handleUpdateDose(item.compound, e.target.value)}
+                              className="w-24 px-2 py-1 border border-physio-bg-border rounded text-sm bg-physio-bg-tertiary text-physio-text-primary"
+                            />
+                            <span>{unitLabel}</span>
+                          </div>
+                          <span className="ml-auto text-[11px] uppercase tracking-wide text-physio-text-tertiary">
+                            Window {doseWindow.min}-{doseWindow.max} mg
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleRemoveCompound(item.compound)}
-                      className="ml-3 px-3 py-1 bg-physio-error text-physio-bg-core rounded hover:bg-physio-error/80 transition-standard text-sm font-medium"
-                    >
-                      Remove
-                    </button>
                   </div>
                 );
               })}
@@ -702,7 +826,9 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
             </div>
           )}
         </div>
-        
+      </section>
+
+      <section ref={metricsRef}>
         {/* Stack Metrics */}
         {stack.length > 0 && (
           <div className="bg-physio-bg-secondary p-5 rounded-xl shadow-sm border border-physio-bg-border">
@@ -847,8 +973,9 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
         </div>
         </div>
       )}
+      </section>
 
-      <div className="bg-physio-bg-secondary p-6 rounded-lg shadow-sm border border-physio-bg-border space-y-4">
+      <section ref={cyclesRef} className="bg-physio-bg-secondary p-6 rounded-lg shadow-sm border border-physio-bg-border space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h3 className="text-xl font-semibold text-physio-text-primary">Cycle Workspace</h3>
@@ -1021,7 +1148,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
             </div>
           </>
         )}
-      </div>
+      </section>
 
       {cycleModalOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
@@ -1064,11 +1191,10 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
           </div>
         </div>
       )}
-      </div>
       
       {/* Ancillary Protocol */}
       {ancillaryProtocol && (
-        <div className="space-y-4">
+        <section ref={ancillaryRef} className="space-y-4">
           <OrientationBar items={ancillaryOrientationItems} tone="accent" />
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(260px,0.9fr)]">
             <div className="bg-physio-bg-secondary p-6 rounded-lg shadow-sm border border-physio-bg-border space-y-6">
@@ -1181,7 +1307,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
               )}
             </div>
           </div>
-        </div>
+        </section>
       )}
     </div>
   );

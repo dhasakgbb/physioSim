@@ -48,6 +48,7 @@ This interactive visualization tool presents dose-response relationships for **1
 - ⚠️ **Side Effect Profiles**: Comprehensive side effect data for all 11 compounds
 - 💊 **Ancillary Calculator**: Automated protocol generation with cost estimates and blood work schedules
 - 🧠 **Unified Advanced Workflow**: Dense analytics (dimension chips, dose sweeps, surfaces, optimizers, sensitivity sliders) stay active for every user, with persistent scoring/evidence chips replacing legacy presets or lab-only gating.
+- 🛝 **Obsidian Pro UI System**: The ProfileContextBar, NavigationRail, compound chip belt, spotlight chart shell, and the new premium `DoseSlider` now provide a consistent “Zone A + Zone B” experience across injectables, orals, interactions, and Stack Builder (keyboard roving index, focus rings, and filter chips included).
 
 ---
 
@@ -120,6 +121,7 @@ Comprehensive interaction analysis for all compound pairs:
 - **Always-On Analytics**: Evidence blending slider, dimension chips, dose sweep, dose surface, optimizers, and sensitivity controls stay visible—no lab toggle required.
 - **Template + Custom Optimizers**: Built-in three-compound templates sample dozens of dose permutations, while the custom optimizer sweeps up to four compounds; both pipelines can pre-fill Stack Builder.
 - **Net Scoring Chips**: Sticky headers and recommendation cards display the Net benefit − risk score plus evidence mix so you immediately know why a pair ranked the way it did (and the selections persist via local storage).
+- **Premium Dose Slider Controls**: Pair detail sliders now run on the shared `DoseSlider` kit (mist gradients, plateau/evidence markers, JetBrains mini-tooltips) so Interaction tweaking feels identical to Stack Builder adjustments.
 
 **Usage:**
 1. Navigate to "🔗 Interaction Matrix" tab
@@ -158,6 +160,7 @@ Interactive tool for building multi-compound stacks with automated analysis:
 - **Blood Work Schedule**: Required monitoring frequency and target values
 - **Net Benefit − Risk Orientation**: Sticky orientation bar, saved cycles, and exports now highlight the Net benefit − risk chip, ratios, and guardrail status instead of goal presets.
 - **Optimizer Prefills**: One click loads template/custom optimizer outputs (and their evidence mix) directly from InteractionHeatmap into Stack Builder for deeper iteration.
+- **Premium Dose Slider Kit**: Every compound card now uses the Obsidian Pro `DoseSlider` (mist track, guardrail markers, micro-tooltips) plus numeric inputs so you can drag through inflection points or type precise doses without losing guardrail context.
 
 **Usage:**
 1. Navigate to "🧪 Stack Builder" tab

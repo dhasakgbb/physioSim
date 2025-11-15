@@ -22,6 +22,10 @@
   --physio-accent-cyan: #4BBBF7;
   --physio-accent-violet: #9B6CFF;
   --physio-accent-mint: #45E2AB;
+  --physio-focus-ring: var(--physio-accent-violet);
+  --physio-gradient-inner: #161925;
+  --physio-gradient-mid: #151926;
+  --physio-gradient-outer: #101218;
   
   /* Colors - Evidence Tiers */
   --physio-tier-1: #45E2AB;
@@ -70,9 +74,9 @@ body {
   
   /* Obsidian Pro Canvas */
   background: radial-gradient(circle at 50% 45%,
-    #161925 0%,
-    #151926 55%,
-    #101218 85%) fixed;
+    var(--physio-gradient-inner) 0%,
+    var(--physio-gradient-mid) 55%,
+    var(--physio-gradient-outer) 85%) fixed;
   box-shadow: inset 0 0 200px rgba(0,0,0,0.25),
               inset 0 0 600px rgba(0,0,0,0.18);
 }
@@ -128,8 +132,63 @@ body {
 
 /* Focus states */
 *:focus-visible {
-  outline: 2px solid var(--physio-accent-cyan);
+  outline: 2px solid var(--physio-focus-ring);
   outline-offset: 2px;
+}
+
+/* Premium dose slider */
+.physio-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  background: transparent;
+  height: 2px;
+}
+
+.physio-range:focus-visible {
+  outline: none;
+}
+
+.physio-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--physio-accent-cyan);
+  border: 2px solid #0f172a;
+  box-shadow: 0 0 0 4px rgba(75, 187, 247, 0.2);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.physio-range::-webkit-slider-thumb:active {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 6px rgba(75, 187, 247, 0.3);
+}
+
+.physio-range::-webkit-slider-runnable-track {
+  height: 2px;
+  background: transparent;
+}
+
+.physio-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--physio-accent-cyan);
+  border: 2px solid #0f172a;
+  box-shadow: 0 0 0 4px rgba(75, 187, 247, 0.2);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.physio-range::-moz-range-thumb:active {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 6px rgba(75, 187, 247, 0.3);
+}
+
+.physio-range::-moz-range-track {
+  height: 2px;
+  background: transparent;
 }
 
 /* Reduced motion */

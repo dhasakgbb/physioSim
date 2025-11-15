@@ -1075,51 +1075,74 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
         </svg>
       </button>
     </section>
-    <nav
-      aria-label="Interaction anchors"
-      class="sticky top-16 z-30 bg-physio-bg-secondary/95 border border-physio-bg-border rounded-2xl px-4 py-3 shadow-physio-subtle backdrop-blur"
+    <div
+      class="sticky top-16 z-30 backdrop-blur"
     >
-      <div
-        class="flex flex-wrap gap-2 text-xs font-semibold"
+      <nav
+        aria-label="Interaction anchors"
+        class="bg-physio-bg-secondary/70 border border-physio-bg-border rounded-3xl shadow-physio-subtle overflow-x-auto px-3 py-1.5 w-full"
       >
-        <button
-          class="px-3 py-1.5 rounded-full border transition text-physio-text-secondary border-physio-bg-border hover:border-physio-accent-cyan hover:text-physio-accent-cyan"
-          type="button"
+        <div
+          class="flex items-center min-w-max gap-1.5"
+          role="tablist"
         >
-          Matrix
-        </button>
-        <button
-          class="px-3 py-1.5 rounded-full border transition text-physio-text-secondary border-physio-bg-border hover:border-physio-accent-cyan hover:text-physio-accent-cyan"
-          type="button"
-        >
-          Controls
-        </button>
-        <button
-          class="px-3 py-1.5 rounded-full border transition text-physio-text-secondary border-physio-bg-border hover:border-physio-accent-cyan hover:text-physio-accent-cyan"
-          type="button"
-        >
-          Metrics
-        </button>
-        <button
-          class="px-3 py-1.5 rounded-full border transition text-physio-text-secondary border-physio-bg-border hover:border-physio-accent-cyan hover:text-physio-accent-cyan"
-          type="button"
-        >
-          Charts
-        </button>
-        <button
-          class="px-3 py-1.5 rounded-full border transition text-physio-text-secondary border-physio-bg-border hover:border-physio-accent-cyan hover:text-physio-accent-cyan"
-          type="button"
-        >
-          Surfaces
-        </button>
-        <button
-          class="px-3 py-1.5 rounded-full border transition bg-physio-accent-cyan/10 border-physio-accent-cyan text-physio-accent-cyan"
-          type="button"
-        >
-          Optimizers
-        </button>
-      </div>
-    </nav>
+          <button
+            aria-selected="false"
+            class="rounded-full font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-violet/70 px-3 py-1.5 text-xs text-[13px] text-physio-text-secondary border border-transparent hover:border-physio-bg-border hover:text-physio-text-primary"
+            role="tab"
+            tabindex="-1"
+            type="button"
+          >
+            Matrix
+          </button>
+          <button
+            aria-selected="false"
+            class="rounded-full font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-violet/70 px-3 py-1.5 text-xs text-[13px] text-physio-text-secondary border border-transparent hover:border-physio-bg-border hover:text-physio-text-primary"
+            role="tab"
+            tabindex="-1"
+            type="button"
+          >
+            Controls
+          </button>
+          <button
+            aria-selected="false"
+            class="rounded-full font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-violet/70 px-3 py-1.5 text-xs text-[13px] text-physio-text-secondary border border-transparent hover:border-physio-bg-border hover:text-physio-text-primary"
+            role="tab"
+            tabindex="-1"
+            type="button"
+          >
+            Metrics
+          </button>
+          <button
+            aria-selected="false"
+            class="rounded-full font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-violet/70 px-3 py-1.5 text-xs text-[13px] text-physio-text-secondary border border-transparent hover:border-physio-bg-border hover:text-physio-text-primary"
+            role="tab"
+            tabindex="-1"
+            type="button"
+          >
+            Charts
+          </button>
+          <button
+            aria-selected="false"
+            class="rounded-full font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-violet/70 px-3 py-1.5 text-xs text-[13px] text-physio-text-secondary border border-transparent hover:border-physio-bg-border hover:text-physio-text-primary"
+            role="tab"
+            tabindex="-1"
+            type="button"
+          >
+            Surfaces
+          </button>
+          <button
+            aria-selected="true"
+            class="rounded-full font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-violet/70 px-3 py-1.5 text-xs text-[13px] bg-physio-accent-cyan/15 text-physio-accent-cyan border border-physio-accent-cyan shadow-lg shadow-physio-accent-cyan/20"
+            role="tab"
+            tabindex="0"
+            type="button"
+          >
+            Optimizers
+          </button>
+        </div>
+      </nav>
+    </div>
     <div
       class="space-y-8"
     >
@@ -1162,7 +1185,7 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
               title="Guardrail status · Test, NPP"
             >
               <span>
-                Guardrails nominal
+                All clear
               </span>
               <span
                 class="text-[10px] font-medium tracking-wide uppercase"
@@ -1401,29 +1424,101 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
                   </button>
                 </div>
                 <div
-                  class="flex items-center gap-3"
+                  class="space-y-2"
                 >
-                  <input
-                    class="flex-1"
-                    max="1000"
-                    min="0"
-                    step="10"
-                    type="range"
-                    value="500"
-                  />
                   <div
-                    class="text-right"
+                    class="w-full"
                   >
                     <div
-                      class="text-physio-text-primary font-semibold"
+                      class="relative py-4"
                     >
-                      500 mg
+                      <div
+                        class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-physio-bg-border/40"
+                      >
+                        <div
+                          class="absolute h-full rounded-full bg-gradient-to-r from-physio-accent-cyan via-physio-accent-mint to-physio-accent-violet"
+                          style="width: 50%;"
+                        />
+                        <div
+                          class="absolute top-1/2 -translate-y-1/2"
+                          style="left: 50%;"
+                        >
+                          <span
+                            class="block h-2 w-2 rounded-full bg-physio-bg-border text-physio-text-tertiary"
+                            title="Default"
+                          />
+                          <span
+                            class="mt-1 block text-[10px] font-semibold text-physio-text-tertiary text-center"
+                          >
+                            Default
+                          </span>
+                        </div>
+                        <div
+                          class="absolute top-1/2 -translate-y-1/2"
+                          style="left: 100%;"
+                        >
+                          <span
+                            class="block h-2 w-2 rounded-full bg-physio-warning text-physio-warning"
+                            title="Plateau"
+                          />
+                          <span
+                            class="mt-1 block text-[10px] font-semibold text-physio-text-tertiary text-center"
+                          >
+                            Plateau
+                          </span>
+                        </div>
+                        <div
+                          class="absolute top-1/2 -translate-y-1/2"
+                          style="left: 120%;"
+                        >
+                          <span
+                            class="block h-2 w-2 rounded-full bg-physio-error text-physio-error"
+                            title="Evidence"
+                          />
+                          <span
+                            class="mt-1 block text-[10px] font-semibold text-physio-text-tertiary text-center"
+                          >
+                            Evidence
+                          </span>
+                        </div>
+                      </div>
+                      <input
+                        aria-label="Testosterone dose"
+                        class="physio-range relative z-10 w-full cursor-pointer"
+                        id="pair-dose-testosterone"
+                        max="1000"
+                        min="0"
+                        step="10"
+                        type="range"
+                        value="500"
+                      />
+                      <div
+                        class="pointer-events-none absolute -top-3 rounded-full bg-physio-bg-core px-2 py-0.5 text-[11px] font-semibold text-physio-text-primary shadow-physio-subtle transition-opacity duration-150 opacity-0"
+                        style="left: calc(0% - 16px);"
+                      >
+                        0 mg
+                      </div>
                     </div>
                     <div
-                      class="text-xs text-physio-text-tertiary"
+                      class="flex items-center justify-between text-[11px] uppercase tracking-wide text-physio-text-tertiary"
                     >
-                      Range 0-1000 mg
+                      <span>
+                        0 mg
+                      </span>
+                      <span>
+                        1000 mg
+                      </span>
                     </div>
+                  </div>
+                  <div
+                    class="flex items-center justify-between text-[11px] text-physio-text-tertiary"
+                  >
+                    <span>
+                      Selected 500 mg
+                    </span>
+                    <span>
+                      Range 0-1000 mg
+                    </span>
                   </div>
                 </div>
                 <div
@@ -1448,29 +1543,101 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
                   </button>
                 </div>
                 <div
-                  class="flex items-center gap-3"
+                  class="space-y-2"
                 >
-                  <input
-                    class="flex-1"
-                    max="600"
-                    min="0"
-                    step="10"
-                    type="range"
-                    value="300"
-                  />
                   <div
-                    class="text-right"
+                    class="w-full"
                   >
                     <div
-                      class="text-physio-text-primary font-semibold"
+                      class="relative py-4"
                     >
-                      300 mg
+                      <div
+                        class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-physio-bg-border/40"
+                      >
+                        <div
+                          class="absolute h-full rounded-full bg-gradient-to-r from-physio-accent-cyan via-physio-accent-mint to-physio-accent-violet"
+                          style="width: 50%;"
+                        />
+                        <div
+                          class="absolute top-1/2 -translate-y-1/2"
+                          style="left: 50%;"
+                        >
+                          <span
+                            class="block h-2 w-2 rounded-full bg-physio-bg-border text-physio-text-tertiary"
+                            title="Default"
+                          />
+                          <span
+                            class="mt-1 block text-[10px] font-semibold text-physio-text-tertiary text-center"
+                          >
+                            Default
+                          </span>
+                        </div>
+                        <div
+                          class="absolute top-1/2 -translate-y-1/2"
+                          style="left: 66.66666666666666%;"
+                        >
+                          <span
+                            class="block h-2 w-2 rounded-full bg-physio-warning text-physio-warning"
+                            title="Plateau"
+                          />
+                          <span
+                            class="mt-1 block text-[10px] font-semibold text-physio-text-tertiary text-center"
+                          >
+                            Plateau
+                          </span>
+                        </div>
+                        <div
+                          class="absolute top-1/2 -translate-y-1/2"
+                          style="left: 100%;"
+                        >
+                          <span
+                            class="block h-2 w-2 rounded-full bg-physio-error text-physio-error"
+                            title="Evidence"
+                          />
+                          <span
+                            class="mt-1 block text-[10px] font-semibold text-physio-text-tertiary text-center"
+                          >
+                            Evidence
+                          </span>
+                        </div>
+                      </div>
+                      <input
+                        aria-label="NPP (Nandrolone Phenylpropionate) dose"
+                        class="physio-range relative z-10 w-full cursor-pointer"
+                        id="pair-dose-npp"
+                        max="600"
+                        min="0"
+                        step="10"
+                        type="range"
+                        value="300"
+                      />
+                      <div
+                        class="pointer-events-none absolute -top-3 rounded-full bg-physio-bg-core px-2 py-0.5 text-[11px] font-semibold text-physio-text-primary shadow-physio-subtle transition-opacity duration-150 opacity-0"
+                        style="left: calc(0% - 16px);"
+                      >
+                        0 mg
+                      </div>
                     </div>
                     <div
-                      class="text-xs text-physio-text-tertiary"
+                      class="flex items-center justify-between text-[11px] uppercase tracking-wide text-physio-text-tertiary"
                     >
-                      Range 0-600 mg
+                      <span>
+                        0 mg
+                      </span>
+                      <span>
+                        600 mg
+                      </span>
                     </div>
+                  </div>
+                  <div
+                    class="flex items-center justify-between text-[11px] text-physio-text-tertiary"
+                  >
+                    <span>
+                      Selected 300 mg
+                    </span>
+                    <span>
+                      Range 0-600 mg
+                    </span>
                   </div>
                 </div>
                 <div

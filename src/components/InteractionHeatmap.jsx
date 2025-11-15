@@ -19,6 +19,7 @@ import { compoundData } from '../data/compoundData';
 import { defaultProfile } from '../utils/personalization';
 import { readJSONStorage, writeJSONStorage, removeStorageKey } from '../utils/storage';
 import { INTERACTION_CONTROL_STORAGE_KEY, HEATMAP_FOCUS_PIN_KEY } from '../utils/storageKeys';
+import { deriveDoseWindow } from '../utils/doseWindows';
 import {
   ResponsiveContainer,
   LineChart,
@@ -34,6 +35,8 @@ import {
   ReferenceArea
 } from 'recharts';
 import PDFExport from './PDFExport';
+import NavigationRail from './NavigationRail';
+import DoseSlider from './DoseSlider';
 
 const uniqueCompounds = Array.from(new Set(Object.values(interactionPairs).flatMap(pair => pair.compounds)));
 
@@ -272,28 +275,9 @@ const InteractionHeatmap = ({
 
   const clampValue = (value, min, max) => Math.min(Math.max(value, min), max);
 
-  const deriveDefaultRange = (compoundKey) => {
-    const compound = compoundData[compoundKey];
-    if (!compound) return { min: 0, max: 1000, base: 0 };
-    const curve = compound.benefitCurve || [];
-    const positivePoint = curve.find(point => point.dose > 0);
-    const minDose = positivePoint?.dose ?? curve[0]?.dose ?? 0;
-    const maxDose = curve[curve.length - 1]?.dose ?? (minDose + 500);
-    const baseDose = clampValue(
-      compound.type === 'oral' ? Math.min(maxDose, Math.max(minDose, 40)) : (minDose + maxDose) / 2,
-      minDose,
-      maxDose
-    );
-    return {
-      min: Math.round(minDose),
-      max: Math.round(maxDose),
-      base: Math.round(baseDose)
-    };
-  };
-
   const handleAddCustomCompound = () => {
     if (!customSelection || customCompounds.includes(customSelection) || customCompounds.length >= 4) return;
-    const defaults = deriveDefaultRange(customSelection);
+    const defaults = deriveDoseWindow(customSelection);
     setCustomCompounds(prev => [...prev, customSelection]);
     setCustomRanges(prev => ({
       ...prev,
@@ -312,14 +296,36 @@ const InteractionHeatmap = ({
     setCustomResults([]);
   };
 
-  const handleCustomRangeChange = (compoundKey, field, value) => {
-    setCustomRanges(prev => ({
-      ...prev,
-      [compoundKey]: {
-        ...prev[compoundKey],
-        [field]: Number(value)
-      }
-    }));
+  const updateCustomBounds = (compoundKey, nextMin, nextMax) => {
+    setCustomRanges(prev => {
+      const current = prev[compoundKey] || deriveDoseWindow(compoundKey);
+      const safeMin = Math.max(0, Math.min(nextMin, nextMax));
+      const safeMax = Math.max(safeMin + 1, Math.max(nextMin, nextMax));
+      const safeBase = clampValue(current.base, safeMin, safeMax);
+      return {
+        ...prev,
+        [compoundKey]: {
+          ...current,
+          min: Math.round(safeMin),
+          max: Math.round(safeMax),
+          base: Math.round(safeBase)
+        }
+      };
+    });
+  };
+
+  const updateCustomBase = (compoundKey, nextBase) => {
+    setCustomRanges(prev => {
+      const current = prev[compoundKey] || deriveDoseWindow(compoundKey);
+      const safeValue = clampValue(Math.round(nextBase), current.min, current.max);
+      return {
+        ...prev,
+        [compoundKey]: {
+          ...current,
+          base: safeValue
+        }
+      };
+    });
   };
 
   const handleRunCustomOptimizer = () => {
@@ -330,12 +336,12 @@ const InteractionHeatmap = ({
       narrative: 'User-defined stack blueprint',
       compounds: customCompounds,
       doseRanges: customCompounds.reduce((acc, key) => {
-        const settings = customRanges[key] || deriveDefaultRange(key);
+        const settings = customRanges[key] || deriveDoseWindow(key);
         acc[key] = [settings.min, settings.max];
         return acc;
       }, {}),
       defaultDoses: customCompounds.reduce((acc, key) => {
-        const settings = customRanges[key] || deriveDefaultRange(key);
+        const settings = customRanges[key] || deriveDoseWindow(key);
         acc[key] = settings.base;
         return acc;
       }, {}),
@@ -485,6 +491,15 @@ const InteractionHeatmap = ({
     [primaryCompound, selectedPair]
   );
 
+  const handleAnchorTabChange = useCallback(
+    (key) => {
+      const section = anchorSections.find(entry => entry.key === key);
+      if (!section || !section.available) return;
+      scrollToSection(section.ref, key);
+    },
+    [anchorSections, scrollToSection]
+  );
+
   const handleRecommendationInspect = useCallback(
     (point) => {
       if (!point) return;
@@ -586,7 +601,7 @@ const InteractionHeatmap = ({
     if (beyondKeys.length) {
       return {
         tone: 'error',
-        label: 'Outside evidence',
+        label: 'Evidence breach',
         detail: labelize(beyondKeys)
       };
     }
@@ -594,13 +609,13 @@ const InteractionHeatmap = ({
     if (plateauKeys.length) {
       return {
         tone: 'warning',
-        label: 'Plateau guardrail',
+        label: 'Plateau watch',
         detail: labelize(plateauKeys)
       };
     }
     return {
       tone: 'muted',
-      label: 'Guardrails nominal',
+      label: 'All clear',
       detail: labelize(selectedPair.compounds)
     };
   }, [guardrailByCompound, selectedPair]);
@@ -935,30 +950,20 @@ const InteractionHeatmap = ({
         )}
       </section>
 
-      <nav
-        className="sticky top-16 z-30 bg-physio-bg-secondary/95 border border-physio-bg-border rounded-2xl px-4 py-3 shadow-physio-subtle backdrop-blur"
-        aria-label="Interaction anchors"
-      >
-        <div className="flex flex-wrap gap-2 text-xs font-semibold">
-          {anchorSections.map(section => (
-            <button
-              key={section.key}
-              type="button"
-              onClick={() => scrollToSection(section.ref, section.key)}
-              disabled={!section.available}
-              className={`px-3 py-1.5 rounded-full border transition ${
-                section.available
-                  ? activeAnchor === section.key
-                    ? 'bg-physio-accent-cyan/10 border-physio-accent-cyan text-physio-accent-cyan'
-                    : 'text-physio-text-secondary border-physio-bg-border hover:border-physio-accent-cyan hover:text-physio-accent-cyan'
-                  : 'text-physio-text-tertiary/60 border-dashed border-physio-bg-border/70 cursor-not-allowed'
-              }`}
-            >
-              {section.label}
-            </button>
-          ))}
-        </div>
-      </nav>
+      <div className="sticky top-16 z-30 backdrop-blur">
+        <NavigationRail
+          tabs={anchorSections.map(section => ({
+            key: section.key,
+            label: section.label,
+            disabled: !section.available
+          }))}
+          activeTab={activeAnchor}
+          onTabChange={handleAnchorTabChange}
+          ariaLabel="Interaction anchors"
+          size="sm"
+          className="w-full"
+        />
+      </div>
 
       <div ref={pairDetailRef} className="space-y-8">
       {/* Pair Detail */}
@@ -1090,6 +1095,29 @@ const InteractionHeatmap = ({
                 })();
                 const sliderMax = max;
                 const displayDose = Math.min(doseValue, sliderMax);
+                const sliderMarkers = [
+                  selectedPair?.defaultDoses?.[compoundKey]
+                    ? {
+                        value: selectedPair.defaultDoses[compoundKey],
+                        label: 'Default',
+                        tone: 'muted'
+                      }
+                    : null,
+                  plateauDose
+                    ? {
+                        value: plateauDose,
+                        label: 'Plateau',
+                        tone: 'warning'
+                      }
+                    : null,
+                  hardMax
+                    ? {
+                        value: hardMax,
+                        label: 'Evidence',
+                        tone: 'error'
+                      }
+                    : null
+                ].filter(Boolean);
                 return (
                   <label key={compoundKey} className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4 text-sm space-y-3">
                     <div className="flex items-center justify-between gap-3">
@@ -1103,19 +1131,23 @@ const InteractionHeatmap = ({
                         {primaryCompound === compoundKey ? 'Primary Axis' : 'Set Primary'}
                       </button>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="range"
+                    <div className="space-y-2">
+                      <DoseSlider
+                        id={`pair-dose-${compoundKey}`}
+                        value={displayDose}
                         min={min}
                         max={sliderMax}
-                        step="10"
-                        value={displayDose}
-                        onChange={e => updateDose(compoundKey, e.target.value)}
-                        className="flex-1"
+                        step={compoundData[compoundKey]?.type === 'oral' ? 2 : 10}
+                        unit="mg"
+                        markers={sliderMarkers}
+                        ariaLabel={`${compoundData[compoundKey]?.name || compoundKey} dose`}
+                        onChange={(nextValue) => updateDose(compoundKey, nextValue)}
                       />
-                      <div className="text-right">
-                        <div className="text-physio-text-primary font-semibold">{displayDose} mg</div>
-                        <div className="text-xs text-physio-text-tertiary">Range {min}-{sliderMax} mg</div>
+                      <div className="flex items-center justify-between text-[11px] text-physio-text-tertiary">
+                        <span>Selected {displayDose} mg</span>
+                        <span>
+                          Range {min}-{sliderMax} mg
+                        </span>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 text-[11px] text-physio-text-tertiary">
@@ -1555,11 +1587,20 @@ const InteractionHeatmap = ({
           {customCompounds.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {customCompounds.map(compoundKey => {
-                const settings = customRanges[compoundKey] || deriveDefaultRange(compoundKey);
+                const settings = customRanges[compoundKey] || deriveDoseWindow(compoundKey);
+                const defaults = deriveDoseWindow(compoundKey);
+                const compound = compoundData[compoundKey];
+                const sliderStep = compound?.type === 'oral' ? 1 : 5;
+                const rangeFloor = 0;
+                const typeCeiling = compound?.type === 'oral' ? 200 : 1500;
+                const computedRangeMax = Math.max(defaults.max * 1.6, settings.max, typeCeiling);
+                const rangeMax = Math.max(rangeFloor + sliderStep, Math.round(computedRangeMax));
+                const baseMin = Math.min(settings.min, settings.max);
+                const baseMax = Math.max(settings.min, settings.max);
                 return (
-                  <div key={compoundKey} className="border border-physio-bg-border rounded-lg p-4 bg-physio-bg-core text-sm space-y-2">
+                  <div key={compoundKey} className="border border-physio-bg-border rounded-lg p-4 bg-physio-bg-core text-sm space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-physio-text-primary">{compoundData[compoundKey]?.name}</span>
+                      <span className="font-semibold text-physio-text-primary">{compound?.name}</span>
                       <button
                         onClick={() => handleRemoveCustomCompound(compoundKey)}
                         className="text-xs text-physio-error"
@@ -1567,17 +1608,60 @@ const InteractionHeatmap = ({
                         Remove
                       </button>
                     </div>
-                    {['min', 'max', 'base'].map(field => (
-                      <label key={field} className="text-xs text-physio-text-secondary flex items-center justify-between gap-2">
-                        {field === 'base' ? 'Target' : field === 'min' ? 'Min' : 'Max'} dose (mg)
-                        <input
-                          type="number"
-                          value={settings[field]}
-                          onChange={e => handleCustomRangeChange(compoundKey, field, e.target.value)}
-                          className="w-24 bg-physio-bg-tertiary border border-physio-bg-border rounded px-2 py-1 text-sm text-physio-text-primary"
-                        />
-                      </label>
-                    ))}
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-physio-text-tertiary">
+                        <span>Dose window</span>
+                        <span className="text-physio-text-primary normal-case">{settings.min}-{settings.max} mg</span>
+                      </div>
+                      <DoseSlider
+                        id={`custom-range-${compoundKey}`}
+                        value={[settings.min, settings.max]}
+                        min={rangeFloor}
+                        max={rangeMax}
+                        step={sliderStep}
+                        unit="mg"
+                        ariaLabel={`${compound?.name || compoundKey} optimizer window`}
+                        range
+                        markers={defaults.base ? [{ value: defaults.base, label: 'Default', tone: 'muted' }] : []}
+                        onChange={nextRange => {
+                          if (!Array.isArray(nextRange)) return;
+                          updateCustomBounds(compoundKey, nextRange[0], nextRange[1]);
+                        }}
+                      />
+                      <div className="flex items-center justify-between text-[11px] text-physio-text-secondary">
+                        <span>Min {settings.min} mg</span>
+                        <span>Max {settings.max} mg</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-physio-text-tertiary">
+                        <span>Target</span>
+                        <span className="text-physio-text-primary normal-case">{settings.base} mg</span>
+                      </div>
+                      <DoseSlider
+                        id={`custom-target-${compoundKey}`}
+                        value={settings.base}
+                        min={baseMin}
+                        max={baseMax}
+                        step={sliderStep}
+                        unit="mg"
+                        ariaLabel={`${compound?.name || compoundKey} target dose`}
+                        markers={[
+                          {
+                            value: defaults.base,
+                            label: 'Default',
+                            tone: 'muted'
+                          }
+                        ]}
+                        onChange={nextValue => updateCustomBase(compoundKey, nextValue)}
+                      />
+                      <div className="flex items-center justify-between text-[11px] text-physio-text-secondary">
+                        <span>Window {baseMin}-{baseMax} mg</span>
+                        <span>{sliderStep} mg increments</span>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
