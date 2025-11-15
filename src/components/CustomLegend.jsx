@@ -36,17 +36,17 @@ const CustomLegend = ({
               onClick={() => {
                 onToggleAll?.('all-on', compounds.map(([key]) => key));
               }}
-              className="px-2 py-0.5 text-xs bg-physio-success/20 text-physio-success rounded hover:bg-physio-success/30 transition-standard border border-physio-success/40"
+              className="px-3 py-1 text-[11px] font-semibold rounded-full border border-physio-success/50 text-physio-success/90 bg-physio-success/10 hover:bg-physio-success/20 transition-standard"
             >
-              All ON
+              All on
             </button>
             <button
               onClick={() => {
                 onToggleAll?.('all-off', compounds.map(([key]) => key));
               }}
-              className="px-2 py-0.5 text-xs bg-physio-error/20 text-physio-error rounded hover:bg-physio-error/30 transition-standard border border-physio-error/40"
+              className="px-3 py-1 text-[11px] font-semibold rounded-full border border-physio-error/50 text-physio-error/80 bg-physio-error/10 hover:bg-physio-error/20 transition-standard"
             >
-              All OFF
+              All off
             </button>
           </div>
         </div>
@@ -126,7 +126,7 @@ const CustomLegend = ({
   };
   
   return (
-    <div className="bg-physio-bg-core p-4 rounded-lg shadow-md">
+    <div className="rounded-[28px] border border-physio-bg-border/70 bg-gradient-to-br from-physio-bg-core/90 via-physio-bg-secondary/80 to-physio-bg-core/70 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
       <h3 className="text-lg font-bold text-physio-text-primary mb-4">
         Legend
       </h3>

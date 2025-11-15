@@ -29,9 +29,12 @@ const DoseSlider = ({
   onChange,
   ariaLabel,
   labelFormatter,
-  range = false
+  range = false,
+  orientation = 'horizontal',
+  trackLength = 200
 }) => {
   const isRange = range || Array.isArray(value);
+  const isVertical = orientation === 'vertical';
   const normalizedValue = useMemo(() => {
     if (isRange) {
       const [start = min, end = max] = Array.isArray(value) ? value : [min, max];
@@ -45,7 +48,7 @@ const DoseSlider = ({
   const [tooltip, setTooltip] = useState({ visible: false, percent: 0, value: min });
   const formatter = labelFormatter || (val => `${Math.round(val)} ${unit}`);
 
-  const progress = useMemo(() => {
+  const progressBounds = useMemo(() => {
     if (isRange) {
       const [start, end] = normalizedValue;
       return {
@@ -97,28 +100,36 @@ const DoseSlider = ({
     max,
     step,
     disabled,
-    className: 'physio-range relative z-10 w-full cursor-pointer',
+    className: `physio-range relative z-10 cursor-pointer ${isVertical ? 'physio-range-vertical w-10 h-full' : 'w-full'}`,
     onBlur: hideTooltip,
     onMouseLeave: hideTooltip,
-    name
+    name,
+    style: isVertical ? { height: trackLength } : undefined
   };
 
   const markerElements = markers
     .filter(marker => typeof marker?.value === 'number')
     .map(marker => {
       const percent = getPercent(marker.value, min, max);
+      const markerStyle = isVertical ? { bottom: `${percent}%` } : { left: `${percent}%` };
+      const markerClass = isVertical ? 'absolute left-1/2 -translate-x-1/2' : 'absolute top-1/2 -translate-y-1/2';
       return (
         <div
           key={`${marker.label || 'marker'}-${marker.value}`}
-          className="absolute top-1/2 -translate-y-1/2"
-          style={{ left: `${percent}%` }}
+          className={markerClass}
+          style={markerStyle}
         >
           <span
             className={`block h-2 w-2 rounded-full ${markerToneClasses[marker.tone || DEFAULT_MARKER_TONE]}`}
             title={marker.label || `${marker.value} ${unit}`}
           ></span>
-          {marker.label && (
+          {marker.label && !isVertical && (
             <span className="mt-1 block text-[10px] font-semibold text-physio-text-tertiary text-center">
+              {marker.label}
+            </span>
+          )}
+          {marker.label && isVertical && (
+            <span className="absolute left-full ml-2 text-[10px] font-semibold text-physio-text-tertiary whitespace-nowrap">
               {marker.label}
             </span>
           )}
@@ -126,24 +137,31 @@ const DoseSlider = ({
       );
     });
 
+  const progressStart = Math.min(100, Math.max(0, progressBounds.start));
+  const progressEnd = Math.min(100, Math.max(progressStart, progressBounds.end));
+  const progressSize = Math.max(0, progressEnd - progressStart);
+  const progressStyle = isVertical
+    ? { bottom: `${progressStart}%`, height: `${progressSize}%` }
+    : { left: `${progressStart}%`, width: `${progressSize}%` };
+
+  const tooltipPositionStyle = isVertical
+    ? { left: 'calc(100% + 12px)', bottom: `calc(${tooltip.percent}% - 12px)` }
+    : { left: `calc(${tooltip.percent}% - 16px)` };
+
   return (
-    <div className="w-full">
-      <div className="relative py-4">
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-physio-bg-border/40">
-          {isRange ? (
-            <div
-              className="absolute h-full rounded-full bg-gradient-to-r from-physio-accent-cyan via-physio-accent-mint to-physio-accent-violet"
-              style={{
-                left: `${progress.start}%`,
-                width: `${Math.max(0, progress.end - progress.start)}%`
-              }}
-            />
-          ) : (
-            <div
-              className="absolute h-full rounded-full bg-gradient-to-r from-physio-accent-cyan via-physio-accent-mint to-physio-accent-violet"
-              style={{ width: `${progress.end}%` }}
-            />
-          )}
+    <div className={isVertical ? 'flex flex-col items-center' : 'w-full'}>
+      <div
+        className={`relative ${isVertical ? 'flex justify-center py-2' : 'py-4'}`}
+        style={isVertical ? { minHeight: trackLength + 24 } : undefined}
+      >
+        <div
+          className={`absolute ${isVertical ? 'inset-y-0 left-1/2 -translate-x-1/2 w-1.5' : 'inset-x-0 top-1/2 -translate-y-1/2 h-1.5'} rounded-full bg-physio-bg-border/40`}
+          aria-hidden="true"
+        >
+          <div
+            className={`absolute rounded-full ${isVertical ? 'bg-gradient-to-b' : 'bg-gradient-to-r'} from-physio-accent-cyan via-physio-accent-mint to-physio-accent-violet`}
+            style={progressStyle}
+          />
           {markerElements}
         </div>
 
@@ -195,18 +213,26 @@ const DoseSlider = ({
         )}
 
         <div
-          className={`pointer-events-none absolute -top-3 rounded-full bg-physio-bg-core px-2 py-0.5 text-[11px] font-semibold text-physio-text-primary shadow-physio-subtle transition-opacity duration-150 ${
+          className={`pointer-events-none absolute rounded-full bg-physio-bg-core px-2 py-0.5 text-[11px] font-semibold text-physio-text-primary shadow-physio-subtle transition-opacity duration-150 ${
             tooltip.visible ? 'opacity-100' : 'opacity-0'
-          }`}
-          style={{ left: `calc(${tooltip.percent}% - 16px)` }}
+          } ${isVertical ? '' : '-top-3'}`}
+          style={tooltipPositionStyle}
         >
           {formatter(tooltip.value)}
         </div>
       </div>
-      <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-physio-text-tertiary">
-        <span>{min} {unit}</span>
-        <span>{max} {unit}</span>
-      </div>
+      {isVertical ? (
+        <div className="flex flex-col items-center gap-1 text-[11px] uppercase tracking-wide text-physio-text-tertiary">
+          <span>{max} {unit}</span>
+          <span className="text-xs font-semibold text-physio-text-secondary">Range</span>
+          <span>{min} {unit}</span>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-physio-text-tertiary">
+          <span>{min} {unit}</span>
+          <span>{max} {unit}</span>
+        </div>
+      )}
     </div>
   );
 };

@@ -13,6 +13,7 @@ import UtilityCardRow from './UtilityCardRow.jsx';
 import CompoundInsightCard from './CompoundInsightCard.jsx';
 import ChartControlBar from './ChartControlBar';
 import ContextDrawer from './ContextDrawer';
+import LeanBackInsightRow from './LeanBackInsightRow.jsx';
 import { compoundData } from '../data/compoundData';
 import { defaultProfile, PROFILE_STORAGE_KEY } from '../utils/personalization';
 import { readJSONStorage, writeJSONStorage, removeStorageKey } from '../utils/storage';
@@ -174,6 +175,7 @@ const AASVisualization = () => {
   });
   const [compressedMode, setCompressedMode] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [profileStripExpanded, setProfileStripExpanded] = useState(false);
   const [filtersDirty, setFiltersDirty] = useState(false);
   const [interactionFiltersDirty, setInteractionFiltersDirty] = useState(false);
   const [interactionResetKey, setInteractionResetKey] = useState(0);
@@ -225,6 +227,27 @@ const AASVisualization = () => {
     return items;
   }, [filterPrefs, viewMode, compressedMode, legendHiddenCount, interactionFiltersDirty]);
 
+  const leanBackInsights = useMemo(() => {
+    const items = [];
+    const modeCopy = {
+      benefit: 'Benefit focus',
+      risk: 'Risk focus',
+      efficiency: 'Efficiency view',
+      uncertainty: 'Noise bands'
+    };
+    items.push({ key: 'mode', label: 'Mode', detail: modeCopy[viewMode] || 'Benefit focus', tone: 'info' });
+    if (activeCompoundKeys.length) {
+      const onCount = activeCompoundKeys.filter(key => visibleCompounds[key]).length;
+      items.push({ key: 'compounds', label: 'Compounds', detail: `${onCount}/${activeCompoundKeys.length} on`, tone: 'neutral' });
+    }
+    items.push({ key: 'interface', label: 'Interface', detail: uiMode === 'lab' ? 'Lab mode' : 'Simple mode', tone: uiMode === 'lab' ? 'info' : 'neutral' });
+    items.push({ key: 'filters', label: 'Filters', detail: filtersDirty ? 'Custom mix' : 'Clean deck', tone: filtersDirty ? 'warning' : 'success' });
+    if (profileUnsaved) {
+      items.push({ key: 'profile', label: 'Profile', detail: 'Unsaved edit', tone: 'warning' });
+    }
+    return items;
+  }, [activeCompoundKeys, filtersDirty, profileUnsaved, uiMode, viewMode, visibleCompounds]);
+
   useEffect(() => {
     const stored = readJSONStorage(LAYOUT_FILTER_PREFS_KEY, null);
     if (stored) {
@@ -238,6 +261,16 @@ const AASVisualization = () => {
   useEffect(() => {
     writeJSONStorage(LAYOUT_FILTER_PREFS_KEY, filterPrefs);
   }, [filterPrefs]);
+
+  useEffect(() => {
+    if (profileModalOpen) {
+      setProfileStripExpanded(true);
+      return;
+    }
+    if (!profileStripExpanded) return undefined;
+    const timeout = setTimeout(() => setProfileStripExpanded(false), 3200);
+    return () => clearTimeout(timeout);
+  }, [profileModalOpen, profileStripExpanded]);
 
   const toggleContextDrawer = (tabKey) => {
     setContextCollapsed(prev => {
@@ -356,7 +389,7 @@ const AASVisualization = () => {
         </header>
 
         <div className="flex flex-wrap items-center justify-end gap-2 mb-4">
-          <span className="text-xs uppercase tracking-wide text-physio-text-tertiary">Layout density</span>
+          <span className="text-xs uppercase tracking-wide text-physio-text-tertiary">Layout mode</span>
           <button
             onClick={() => setCompressedMode(prev => !prev)}
             className={`px-4 py-2 rounded-lg border text-sm font-semibold transition-standard ${
@@ -365,21 +398,28 @@ const AASVisualization = () => {
                 : 'border-physio-bg-border text-physio-text-secondary hover:text-physio-text-primary'
             }`}
           >
-            {compressedMode ? 'Compressed mode on' : 'Compressed mode off'}
+            {compressedMode ? 'Compressed on' : 'Compressed off'}
           </button>
         </div>
 
         <div className="space-y-5 mb-8">
-          <ProfileContextBar
-            profile={userProfile}
-            unsaved={profileUnsaved}
-            onEditProfile={() => setProfileModalOpen(true)}
-            onSaveProfile={handleSaveProfile}
-            onResetProfile={handleClearProfile}
-            filterItems={filterStatusItems}
-            onResetFilters={resetAllFilters}
-            onManageFilters={() => setFilterPrefsOpen(true)}
-          />
+          <div className="sticky top-4 z-30">
+            <ProfileContextBar
+              profile={userProfile}
+              unsaved={profileUnsaved}
+              onEditProfile={() => {
+                setProfileStripExpanded(true);
+                setProfileModalOpen(true);
+              }}
+              onSaveProfile={handleSaveProfile}
+              onResetProfile={handleClearProfile}
+              filterItems={filterStatusItems}
+              onResetFilters={resetAllFilters}
+              onManageFilters={() => setFilterPrefsOpen(true)}
+              expanded={profileStripExpanded || profileModalOpen}
+              onToggleExpand={() => setProfileStripExpanded(prev => !prev)}
+            />
+          </div>
 
           <div className="space-y-3">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -459,6 +499,8 @@ const AASVisualization = () => {
                 highlightedCompound={hoveredCompound}
               />
             )}
+
+            <LeanBackInsightRow insights={leanBackInsights} />
           </div>
         </div>
 
@@ -504,7 +546,7 @@ const AASVisualization = () => {
                   />
 
                   <div className="bg-physio-bg-core/60 border border-physio-bg-border rounded-3xl p-3 space-y-3 max-h-[520px] overflow-auto">
-                    <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Compound insights</p>
+                    <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Compound intel</p>
                     <div className="grid gap-3">
                       {activeCompoundKeys.length ? (
                         activeCompoundKeys.map(compoundKey => (
@@ -691,7 +733,7 @@ const AASVisualization = () => {
               }
             >
               <section>
-                <h4 className="font-semibold text-physio-text-secondary mb-2">Risk Guardrails</h4>
+                <h4 className="font-semibold text-physio-text-secondary mb-2">Risk rails</h4>
                 <ul className="space-y-1.5">
                   <li><strong>Liver Stress:</strong> Keep Alk-Phos/ALT bloodwork within 1.3x baseline every 6 weeks.</li>
                   <li><strong>Blood Pressure:</strong> Above 140/90? Pause orals immediately.</li>
@@ -699,7 +741,7 @@ const AASVisualization = () => {
                 </ul>
               </section>
               <section>
-                <h4 className="font-semibold text-physio-text-secondary mb-2">Stack Patterns</h4>
+                <h4 className="font-semibold text-physio-text-secondary mb-2">Stack paths</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-cyan">
                     <div className="font-bold text-physio-accent-cyan mb-2">⚡ Kickstart</div>
@@ -720,7 +762,7 @@ const AASVisualization = () => {
                 </div>
               </section>
               <section>
-                <h4 className="font-semibold text-physio-text-secondary mb-2">Bloodwork Monitoring</h4>
+                <h4 className="font-semibold text-physio-text-secondary mb-2">Lab cadence</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-physio-text-secondary">
                   <div>
                     <p className="font-semibold text-physio-text-primary">Baseline</p>

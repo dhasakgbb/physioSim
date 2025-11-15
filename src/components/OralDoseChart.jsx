@@ -105,19 +105,20 @@ const OralDoseChart = ({
       : 'Uncertainty mist (CI only)';
 
   return (
-    <div className="bg-physio-bg-secondary p-6 rounded-lg shadow-lg border-2 border-physio-bg-border">
-      <div className="mb-4">
+    <div className="relative overflow-hidden rounded-[32px] border border-physio-bg-border/70 bg-gradient-to-bl from-physio-bg-secondary/95 via-physio-bg-core/85 to-physio-bg-secondary/70 p-6 shadow-[0_40px_120px_rgba(0,0,0,0.55)]">
+      <div className="pointer-events-none absolute inset-0 opacity-70 bg-[radial-gradient(circle_at_80%_0%,rgba(155,108,255,0.14),transparent_55%)]" />
+      <div className="relative mb-4">
         <h3 className="text-xl font-bold text-physio-text-primary">
           Oral Spotlight · {headerCopy}
         </h3>
-        <p className="text-sm text-physio-warning bg-physio-bg-tertiary border-2 border-physio-warning p-3 rounded-lg mt-2">
-          <strong>Note:</strong> Orals are typically used for 4-8 weeks as cycle additions (kickstart/finisher), not full cycles. 
-          Scale is mg/day, not mg/week.
+        <p className="mt-2 rounded-2xl border border-physio-warning/40 bg-physio-warning/5 p-3 text-xs text-physio-warning">
+          <strong className="font-semibold">Note:</strong> Orals run 4–8 weeks as cycle accents. Scale is mg/day.
         </p>
       </div>
       
-      <ResponsiveContainer width="100%" height={500}>
-        <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+      <div className="relative">
+        <ResponsiveContainer width="100%" height={500}>
+          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--physio-bg-border)" strokeOpacity={0.2} />
           <XAxis 
             dataKey="dose" 
@@ -360,8 +361,9 @@ const OralDoseChart = ({
               </React.Fragment>
             );
           })}
-        </LineChart>
-      </ResponsiveContainer>
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };

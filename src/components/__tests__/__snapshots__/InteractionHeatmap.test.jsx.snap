@@ -146,899 +146,1079 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
         </div>
       </div>
       <div
-        class="bg-physio-bg-core/70 border border-physio-bg-border rounded-2xl flex flex-col p-2.5 gap-2.5"
+        class="bg-physio-bg-core/70 border border-physio-bg-border rounded-2xl p-2.5"
       >
         <div
-          class="flex flex-wrap items-center gap-2.5 text-[11px]"
+          class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_320px]"
         >
           <div
-            class="flex items-center gap-2"
+            class="flex flex-col gap-3 text-[11px]"
           >
-            <p
-              class="text-xs uppercase tracking-wide text-physio-text-tertiary"
+            <div
+              class="flex flex-wrap items-center gap-2.5"
             >
-              Heatmap focus
-            </p>
+              <div
+                class="flex items-center gap-2"
+              >
+                <p
+                  class="text-xs uppercase tracking-wide text-physio-text-tertiary"
+                >
+                  Heatmap focus
+                </p>
+                <button
+                  aria-pressed="false"
+                  class="px-2 py-0.5 rounded-full border text-[11px] font-semibold uppercase tracking-wide transition border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
+                  title="Pin your preferred focus"
+                  type="button"
+                >
+                  Pin focus
+                </button>
+              </div>
+              <div
+                class="flex flex-wrap gap-1.5"
+              >
+                <button
+                  class="px-2.5 py-1.25 text-[11px] rounded-full border transition border-physio-accent-cyan text-physio-accent-cyan bg-physio-bg-secondary"
+                >
+                  Benefit Focus
+                </button>
+                <button
+                  class="px-2.5 py-1.25 text-[11px] rounded-full border transition border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
+                >
+                  Risk Focus
+                </button>
+                <button
+                  class="px-2.5 py-1.25 text-[11px] rounded-full border transition border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
+                >
+                  Volatility
+                </button>
+              </div>
+              <button
+                class="px-2 py-0.5 rounded-full border text-[11px] font-semibold transition border-physio-accent-mint text-physio-accent-mint bg-physio-bg-core"
+              >
+                Lean-back
+              </button>
+              <button
+                class="px-2 py-0.5 rounded-full border text-[11px] font-semibold transition border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
+              >
+                Lean-in
+              </button>
+            </div>
+            ))}
+            <div
+              class="flex flex-col gap-2"
+            >
+              <label
+                class="flex-1 text-sm text-physio-text-secondary"
+              >
+                Evidence mix
+                <div
+                  class="mt-1 flex items-center gap-3"
+                >
+                  <span
+                    class="text-xs text-physio-text-tertiary whitespace-nowrap"
+                  >
+                    Clinical 65%
+                  </span>
+                  <input
+                    class="flex-1"
+                    max="1"
+                    min="0"
+                    step="0.05"
+                    type="range"
+                    value="0.35"
+                  />
+                  <span
+                    class="text-xs text-physio-text-tertiary whitespace-nowrap"
+                  >
+                    Anecdote 35%
+                  </span>
+                </div>
+              </label>
+            </div>
+            <div
+              class="overflow-x-auto"
+            >
+              <div
+                class="inline-block min-w-full"
+              >
+                <div
+                  class="grid gap-0"
+                  style="grid-template-columns: 140px repeat(11, 100px);"
+                >
+                  <div
+                    class="h-14"
+                  />
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(0, 102, 204);"
+                  >
+                    Test
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(255, 153, 0);"
+                  >
+                    NPP
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(0, 170, 0);"
+                  >
+                    EQ
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(204, 0, 0);"
+                  >
+                    Tren
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(153, 51, 255);"
+                  >
+                    Masteron
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(153, 102, 51);"
+                  >
+                    Primo
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(255, 20, 147);"
+                  >
+                    Dbol
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(220, 20, 60);"
+                  >
+                    Adrol
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(255, 99, 71);"
+                  >
+                    Var
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(65, 105, 225);"
+                  >
+                    Winny
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(139, 0, 0);"
+                  >
+                    Halo
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(0, 102, 204);"
+                  >
+                    Test
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition ring-2 ring-physio-accent-cyan ring-inset bg-physio-accent-cyan/60 text-physio-bg-core"
+                    title="Testosterone + NPP"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      +
+                    </span>
+                  </button>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Testosterone + EQ"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-accent-cyan/60 text-physio-bg-core"
+                    title="Testosterone + Tren"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      +
+                    </span>
+                  </button>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Testosterone + Masteron"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Testosterone + Primo"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Test + Dbol"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Test + Anadrol"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Testosterone + Winstrol"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-accent-cyan/60 text-physio-bg-core"
+                    title="Testosterone + Halo"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      +
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(255, 153, 0);"
+                  >
+                    NPP
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition ring-2 ring-physio-accent-cyan ring-inset bg-physio-accent-cyan/60 text-physio-bg-core"
+                    title="Testosterone + NPP"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      +
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="NPP + Dbol"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(0, 170, 0);"
+                  >
+                    EQ
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Testosterone + EQ"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Tren + EQ"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="EQ + Primo"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="EQ + Anavar"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(204, 0, 0);"
+                  >
+                    Tren
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-accent-cyan/60 text-physio-bg-core"
+                    title="Testosterone + Tren"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      +
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Tren + EQ"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Tren + Masteron"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Tren + Winstrol"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Tren + Halo"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(153, 51, 255);"
+                  >
+                    Masteron
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Testosterone + Masteron"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Tren + Masteron"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Masteron + Primo"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(153, 102, 51);"
+                  >
+                    Primo
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Testosterone + Primo"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="EQ + Primo"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Masteron + Primo"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(255, 20, 147);"
+                  >
+                    Dbol
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Test + Dbol"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="NPP + Dbol"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(220, 20, 60);"
+                  >
+                    Adrol
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Test + Anadrol"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(255, 99, 71);"
+                  >
+                    Var
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="EQ + Anavar"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(65, 105, 225);"
+                  >
+                    Winny
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Testosterone + Winstrol"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Tren + Winstrol"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                    style="color: rgb(139, 0, 0);"
+                  >
+                    Halo
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-accent-cyan/60 text-physio-bg-core"
+                    title="Testosterone + Halo"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      +
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Tren + Halo"
+                  >
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                  <div
+                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  >
+                    —
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <aside
+            class="bg-physio-bg-core border border-physio-bg-border rounded-2xl p-4 flex flex-col gap-3"
+          >
+            <div>
+              <p
+                class="text-xs uppercase tracking-wide text-physio-text-tertiary"
+              >
+                Active pair
+              </p>
+              <h3
+                class="text-lg font-semibold text-physio-text-primary"
+              >
+                Testosterone + NPP
+              </h3>
+              <p
+                class="text-xs text-physio-text-tertiary mt-1"
+              >
+                Classic mass stack: Test base with nandrolone joint relief and fullness.
+              </p>
+            </div>
+            <span
+              class="inline-flex items-center gap-1 px-3 py-1 rounded-full border font-semibold text-xs text-physio-text-tertiary border-physio-bg-border bg-physio-bg-core"
+            >
+              <span>
+                All clear
+              </span>
+              <span
+                class="text-[10px] tracking-wide uppercase"
+              >
+                Test, NPP
+              </span>
+            </span>
+            <div
+              class="text-sm text-physio-text-secondary"
+            >
+              <p>
+                Δ Benefit 
+                <span
+                  class="text-physio-accent-mint font-semibold"
+                >
+                  2.2%
+                </span>
+              </p>
+              <p>
+                Δ Risk 
+                <span
+                  class="text-physio-error font-semibold"
+                >
+                  3.2%
+                </span>
+              </p>
+            </div>
             <button
-              aria-pressed="false"
-              class="px-2 py-0.5 rounded-full border text-[11px] font-semibold uppercase tracking-wide transition border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
-              title="Pin your preferred focus"
+              class="mt-auto px-3 py-2 rounded-xl border border-physio-accent-cyan text-physio-accent-cyan text-sm font-semibold hover:bg-physio-accent-cyan/10"
               type="button"
             >
-              Pin focus
+              Open detail drawer
             </button>
-          </div>
-          <div
-            class="flex flex-wrap gap-1.5"
-          >
-            <button
-              class="px-2.5 py-1.25 text-[11px] rounded-full border transition border-physio-accent-cyan text-physio-accent-cyan bg-physio-bg-secondary"
-            >
-              Benefit Focus
-            </button>
-            <button
-              class="px-2.5 py-1.25 text-[11px] rounded-full border transition border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
-            >
-              Risk Focus
-            </button>
-            <button
-              class="px-2.5 py-1.25 text-[11px] rounded-full border transition border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary"
-            >
-              Volatility
-            </button>
-          </div>
-        </div>
-        <div
-          class="flex flex-col gap-2"
-        >
-          <label
-            class="flex-1 text-sm text-physio-text-secondary"
-          >
-            Evidence weighting
-            <div
-              class="mt-1 flex items-center gap-3"
-            >
-              <span
-                class="text-xs text-physio-text-tertiary whitespace-nowrap"
-              >
-                Clinical 65%
-              </span>
-              <input
-                class="flex-1"
-                max="1"
-                min="0"
-                step="0.05"
-                type="range"
-                value="0.35"
-              />
-              <span
-                class="text-xs text-physio-text-tertiary whitespace-nowrap"
-              >
-                Anecdote 35%
-              </span>
-            </div>
-          </label>
-        </div>
-      </div>
-      <div
-        class="overflow-x-auto"
-      >
-        <div
-          class="inline-block min-w-full"
-        >
-          <div
-            class="grid gap-0"
-            style="grid-template-columns: 140px repeat(11, 100px);"
-          >
-            <div
-              class="h-14"
-            />
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(0, 102, 204);"
-            >
-              Test
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(255, 153, 0);"
-            >
-              NPP
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(0, 170, 0);"
-            >
-              EQ
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(204, 0, 0);"
-            >
-              Tren
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(153, 51, 255);"
-            >
-              Masteron
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(153, 102, 51);"
-            >
-              Primo
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(255, 20, 147);"
-            >
-              Dbol
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(220, 20, 60);"
-            >
-              Adrol
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(255, 99, 71);"
-            >
-              Var
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(65, 105, 225);"
-            >
-              Winny
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(139, 0, 0);"
-            >
-              Halo
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(0, 102, 204);"
-            >
-              Test
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition ring-2 ring-physio-accent-cyan ring-inset"
-              style="background-color: rgba(14, 165, 233, 0.808); color: rgb(15, 23, 42);"
-              title="Testosterone + NPP"
-            >
-              0.19
-            </button>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.622); color: rgb(15, 23, 42);"
-              title="Testosterone + EQ"
-            >
-              0.13
-            </button>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgb(14, 165, 233); color: rgb(15, 23, 42);"
-              title="Testosterone + Tren"
-            >
-              0.24
-            </button>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.586); color: rgb(15, 23, 42);"
-              title="Testosterone + Masteron"
-            >
-              0.12
-            </button>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.42); color: rgb(15, 23, 42);"
-              title="Testosterone + Primo"
-            >
-              0.07
-            </button>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.655); color: rgb(15, 23, 42);"
-              title="Test + Dbol"
-            >
-              0.14
-            </button>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.662); color: rgb(15, 23, 42);"
-              title="Test + Anadrol"
-            >
-              0.14
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.573); color: rgb(15, 23, 42);"
-              title="Testosterone + Winstrol"
-            >
-              0.11
-            </button>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.724); color: rgb(15, 23, 42);"
-              title="Testosterone + Halo"
-            >
-              0.16
-            </button>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(255, 153, 0);"
-            >
-              NPP
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition ring-2 ring-physio-accent-cyan ring-inset"
-              style="background-color: rgba(14, 165, 233, 0.808); color: rgb(15, 23, 42);"
-              title="Testosterone + NPP"
-            >
-              0.19
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.441); color: rgb(15, 23, 42);"
-              title="NPP + Dbol"
-            >
-              0.07
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(0, 170, 0);"
-            >
-              EQ
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.622); color: rgb(15, 23, 42);"
-              title="Testosterone + EQ"
-            >
-              0.13
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.494); color: rgb(15, 23, 42);"
-              title="Tren + EQ"
-            >
-              0.09
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.48); color: rgb(15, 23, 42);"
-              title="EQ + Primo"
-            >
-              0.09
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.505); color: rgb(15, 23, 42);"
-              title="EQ + Anavar"
-            >
-              0.09
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(204, 0, 0);"
-            >
-              Tren
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgb(14, 165, 233); color: rgb(15, 23, 42);"
-              title="Testosterone + Tren"
-            >
-              0.24
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.494); color: rgb(15, 23, 42);"
-              title="Tren + EQ"
-            >
-              0.09
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.635); color: rgb(15, 23, 42);"
-              title="Tren + Masteron"
-            >
-              0.13
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.603); color: rgb(15, 23, 42);"
-              title="Tren + Winstrol"
-            >
-              0.12
-            </button>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.606); color: rgb(15, 23, 42);"
-              title="Tren + Halo"
-            >
-              0.12
-            </button>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(153, 51, 255);"
-            >
-              Masteron
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.586); color: rgb(15, 23, 42);"
-              title="Testosterone + Masteron"
-            >
-              0.12
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.635); color: rgb(15, 23, 42);"
-              title="Tren + Masteron"
-            >
-              0.13
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.549); color: rgb(15, 23, 42);"
-              title="Masteron + Primo"
-            >
-              0.11
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(153, 102, 51);"
-            >
-              Primo
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.42); color: rgb(15, 23, 42);"
-              title="Testosterone + Primo"
-            >
-              0.07
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.48); color: rgb(15, 23, 42);"
-              title="EQ + Primo"
-            >
-              0.09
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.549); color: rgb(15, 23, 42);"
-              title="Masteron + Primo"
-            >
-              0.11
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(255, 20, 147);"
-            >
-              Dbol
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.655); color: rgb(15, 23, 42);"
-              title="Test + Dbol"
-            >
-              0.14
-            </button>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.441); color: rgb(15, 23, 42);"
-              title="NPP + Dbol"
-            >
-              0.07
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(220, 20, 60);"
-            >
-              Adrol
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.662); color: rgb(15, 23, 42);"
-              title="Test + Anadrol"
-            >
-              0.14
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(255, 99, 71);"
-            >
-              Var
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.505); color: rgb(15, 23, 42);"
-              title="EQ + Anavar"
-            >
-              0.09
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(65, 105, 225);"
-            >
-              Winny
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.573); color: rgb(15, 23, 42);"
-              title="Testosterone + Winstrol"
-            >
-              0.11
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.603); color: rgb(15, 23, 42);"
-              title="Tren + Winstrol"
-            >
-              0.12
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-              style="color: rgb(139, 0, 0);"
-            >
-              Halo
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.724); color: rgb(15, 23, 42);"
-              title="Testosterone + Halo"
-            >
-              0.16
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <button
-              class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition "
-              style="background-color: rgba(14, 165, 233, 0.606); color: rgb(15, 23, 42);"
-              title="Tren + Halo"
-            >
-              0.12
-            </button>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-            <div
-              class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
-            >
-              —
-            </div>
-          </div>
+          </aside>
         </div>
       </div>
     </section>
@@ -1076,112 +1256,61 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
       </button>
     </section>
     <div
-      class="sticky top-16 z-30 backdrop-blur"
-    >
-      <nav
-        aria-label="Interaction anchors"
-        class="bg-physio-bg-secondary/70 border border-physio-bg-border rounded-3xl shadow-physio-subtle overflow-x-auto px-3 py-1.5 w-full"
-      >
-        <div
-          class="flex items-center min-w-max gap-1.5"
-          role="tablist"
-        >
-          <button
-            aria-selected="false"
-            class="rounded-full font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-violet/70 px-3 py-1.5 text-xs text-[13px] text-physio-text-secondary border border-transparent hover:border-physio-bg-border hover:text-physio-text-primary"
-            role="tab"
-            tabindex="-1"
-            type="button"
-          >
-            Matrix
-          </button>
-          <button
-            aria-selected="false"
-            class="rounded-full font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-violet/70 px-3 py-1.5 text-xs text-[13px] text-physio-text-secondary border border-transparent hover:border-physio-bg-border hover:text-physio-text-primary"
-            role="tab"
-            tabindex="-1"
-            type="button"
-          >
-            Controls
-          </button>
-          <button
-            aria-selected="false"
-            class="rounded-full font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-violet/70 px-3 py-1.5 text-xs text-[13px] text-physio-text-secondary border border-transparent hover:border-physio-bg-border hover:text-physio-text-primary"
-            role="tab"
-            tabindex="-1"
-            type="button"
-          >
-            Metrics
-          </button>
-          <button
-            aria-selected="false"
-            class="rounded-full font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-violet/70 px-3 py-1.5 text-xs text-[13px] text-physio-text-secondary border border-transparent hover:border-physio-bg-border hover:text-physio-text-primary"
-            role="tab"
-            tabindex="-1"
-            type="button"
-          >
-            Charts
-          </button>
-          <button
-            aria-selected="false"
-            class="rounded-full font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-violet/70 px-3 py-1.5 text-xs text-[13px] text-physio-text-secondary border border-transparent hover:border-physio-bg-border hover:text-physio-text-primary"
-            role="tab"
-            tabindex="-1"
-            type="button"
-          >
-            Surfaces
-          </button>
-          <button
-            aria-selected="true"
-            class="rounded-full font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-violet/70 px-3 py-1.5 text-xs text-[13px] bg-physio-accent-cyan/15 text-physio-accent-cyan border border-physio-accent-cyan shadow-lg shadow-physio-accent-cyan/20"
-            role="tab"
-            tabindex="0"
-            type="button"
-          >
-            Optimizers
-          </button>
-        </div>
-      </nav>
-    </div>
-    <div
       class="space-y-8"
     >
       <section
-        class="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-lg space-y-6"
+        aria-label="Interaction detail drawer"
+        class="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-2xl space-y-6 transition-all duration-300 opacity-100 translate-y-0"
       >
         <div
-          class="sticky top-4 z-20 bg-physio-bg-secondary border border-physio-bg-border rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 shadow-sm"
+          class="rounded-2xl border border-physio-bg-border bg-physio-bg-core p-4 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3"
         >
-          <div
-            class="text-sm text-physio-text-primary flex flex-wrap items-center gap-2"
-          >
-            <span
-              class="font-semibold"
+          <div>
+            <p
+              class="text-xs uppercase tracking-wide text-physio-text-tertiary"
+            >
+              Focused pair
+            </p>
+            <h3
+              class="text-2xl font-bold text-physio-text-primary"
             >
               Testosterone + NPP
-            </span>
-            <span
-              class="text-physio-text-tertiary"
+            </h3>
+            <p
+              class="text-sm text-physio-text-secondary mt-1"
             >
-              •
-            </span>
-            <span>
-              Scoring: Net benefit − risk
-            </span>
-            <span
-              class="text-physio-text-tertiary"
+              Classic mass stack: Test base with nandrolone joint relief and fullness.
+            </p>
+            <div
+              class="flex flex-wrap items-center gap-2 text-xs text-physio-text-tertiary mt-2"
             >
-              •
-            </span>
-            <span>
-              Evidence 45% clinical / 55% anecdote
-            </span>
+              <span
+                class="px-2 py-0.5 rounded-full bg-physio-bg-secondary border border-physio-bg-border"
+              >
+                Net benefit − risk
+              </span>
+              <span
+                class="px-2 py-0.5 rounded-full bg-physio-bg-secondary border border-physio-bg-border"
+              >
+                45% clinical · 55% anecdote
+              </span>
+              <span
+                class="text-physio-accent-mint font-semibold"
+              >
+                Δ Benefit 2.2%
+              </span>
+              <span
+                class="text-physio-error font-semibold"
+              >
+                Δ Risk 3.2%
+              </span>
+            </div>
           </div>
           <div
-            class="text-xs flex flex-wrap items-center gap-3"
+            class="flex flex-wrap items-center gap-3"
           >
             <span
-              class="inline-flex items-center gap-1 px-3 py-1 rounded-full border font-semibold text-physio-text-tertiary border-physio-bg-border bg-physio-bg-core"
+              class="inline-flex items-center gap-1 px-3 py-1 rounded-full border font-semibold text-xs text-physio-text-tertiary border-physio-bg-border bg-physio-bg-core"
               title="Guardrail status · Test, NPP"
             >
               <span>
@@ -1193,61 +1322,21 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
                 Test, NPP
               </span>
             </span>
-            <span
-              class="text-physio-text-tertiary"
-            >
-              Δ Benefit 2.2%
-            </span>
-            <span
-              class="text-physio-text-tertiary"
-            >
-              Δ Risk 3.2%
-            </span>
-          </div>
-        </div>
-        <div
-          class="flex flex-col md:flex-row md:items-center md:justify-between gap-3"
-        >
-          <div>
-            <h2
-              class="text-2xl font-bold text-physio-text-primary"
-            >
-              Testosterone + NPP
-            </h2>
-            <p
-              class="text-sm text-physio-text-secondary"
-            >
-              Classic mass stack: Test base with nandrolone joint relief and fullness.
-            </p>
-            <p
-              class="text-xs text-physio-text-tertiary mt-1"
-            >
-              Interaction model v0.3 • Evidence blend auto-updates (clinical vs anecdote weighting).
-            </p>
-          </div>
-          <div
-            class="flex flex-wrap gap-2 text-xs items-center"
-          >
-            <div
-              class="px-3 py-1 rounded-lg bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
-            >
-              Evidence mix: clinical 65% · anecdote 35%
-            </div>
-            <div
-              class="px-3 py-1 rounded-lg bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary"
-            >
-              Scoring model: Net benefit − risk
-            </div>
             <button
               class="px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan font-semibold hover:bg-physio-accent-cyan/10 transition"
             >
-              Send to Stack Builder
+              Load in Stack Builder
             </button>
             <div
               data-testid="pdf-export-mock"
             />
           </div>
         </div>
+        <p
+          class="text-xs text-physio-text-tertiary"
+        >
+          Interaction model v0.3 — the drawer stays in view so you can fly the matrix without losing the detail workspace.
+        </p>
         <div
           class="flex flex-col md:flex-row gap-4"
         >
@@ -1406,77 +1495,86 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
             <div
               class="space-y-4"
             >
-              <label
-                class="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4 text-sm space-y-3"
+              <div
+                class="bg-physio-bg-core border border-physio-bg-border rounded-xl p-4 text-sm"
               >
                 <div
-                  class="flex items-center justify-between gap-3"
+                  class="flex items-center justify-between gap-3 mb-3"
                 >
-                  <span
-                    class="font-semibold text-physio-text-primary"
-                  >
-                    Testosterone
-                  </span>
+                  <div>
+                    <p
+                      class="text-xs uppercase tracking-wide text-physio-text-tertiary"
+                    >
+                      Test
+                    </p>
+                    <p
+                      class="font-semibold text-physio-text-primary"
+                    >
+                      Testosterone
+                    </p>
+                  </div>
                   <button
                     class="text-xs px-2 py-0.5 rounded border border-physio-accent-cyan text-physio-accent-cyan"
                   >
-                    Primary Axis
+                    Primary axis
                   </button>
                 </div>
                 <div
-                  class="space-y-2"
+                  class="flex items-center gap-4"
                 >
                   <div
-                    class="w-full"
+                    class="flex flex-col items-center"
                   >
                     <div
-                      class="relative py-4"
+                      class="relative flex justify-center py-2"
+                      style="min-height: 244px;"
                     >
                       <div
-                        class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-physio-bg-border/40"
+                        aria-hidden="true"
+                        class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-1.5 rounded-full bg-physio-bg-border/40"
                       >
                         <div
-                          class="absolute h-full rounded-full bg-gradient-to-r from-physio-accent-cyan via-physio-accent-mint to-physio-accent-violet"
-                          style="width: 50%;"
+                          class="absolute rounded-full bg-gradient-to-b from-physio-accent-cyan via-physio-accent-mint to-physio-accent-violet"
+                          style="bottom: 0%; height: 50%;"
                         />
                         <div
-                          class="absolute top-1/2 -translate-y-1/2"
-                          style="left: 50%;"
+                          class="absolute left-1/2 -translate-x-1/2"
+                          style="bottom: 50%;"
                         >
                           <span
                             class="block h-2 w-2 rounded-full bg-physio-bg-border text-physio-text-tertiary"
                             title="Default"
                           />
                           <span
-                            class="mt-1 block text-[10px] font-semibold text-physio-text-tertiary text-center"
+                            class="absolute left-full ml-2 text-[10px] font-semibold text-physio-text-tertiary whitespace-nowrap"
                           >
                             Default
                           </span>
                         </div>
                         <div
-                          class="absolute top-1/2 -translate-y-1/2"
-                          style="left: 100%;"
+                          class="absolute left-1/2 -translate-x-1/2"
+                          style="bottom: 100%;"
                         >
                           <span
                             class="block h-2 w-2 rounded-full bg-physio-warning text-physio-warning"
                             title="Plateau"
                           />
                           <span
-                            class="mt-1 block text-[10px] font-semibold text-physio-text-tertiary text-center"
+                            class="absolute left-full ml-2 text-[10px] font-semibold text-physio-text-tertiary whitespace-nowrap"
                           >
                             Plateau
                           </span>
                         </div>
                         <div
-                          class="absolute top-1/2 -translate-y-1/2"
-                          style="left: 120%;"
+                          class="absolute left-1/2 -translate-x-1/2"
+                          style="bottom: 120%;"
                         >
                           <span
                             class="block h-2 w-2 rounded-full bg-physio-error text-physio-error"
                             title="Evidence"
                           />
                           <span
-                            class="mt-1 block text-[10px] font-semibold text-physio-text-tertiary text-center"
+                            class="absolute left-full ml-2 text-[10px] font-semibold text-physio-text-tertiary whitespace-nowrap"
                           >
                             Evidence
                           </span>
@@ -1484,118 +1582,140 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
                       </div>
                       <input
                         aria-label="Testosterone dose"
-                        class="physio-range relative z-10 w-full cursor-pointer"
+                        class="physio-range relative z-10 cursor-pointer physio-range-vertical w-10 h-full"
                         id="pair-dose-testosterone"
                         max="1000"
                         min="0"
                         step="10"
+                        style="height: 220px;"
                         type="range"
                         value="500"
                       />
                       <div
-                        class="pointer-events-none absolute -top-3 rounded-full bg-physio-bg-core px-2 py-0.5 text-[11px] font-semibold text-physio-text-primary shadow-physio-subtle transition-opacity duration-150 opacity-0"
-                        style="left: calc(0% - 16px);"
+                        class="pointer-events-none absolute rounded-full bg-physio-bg-core px-2 py-0.5 text-[11px] font-semibold text-physio-text-primary shadow-physio-subtle transition-opacity duration-150 opacity-0 "
+                        style="left: calc(100% + 12px); bottom: calc(0% - 12px);"
                       >
                         0 mg
                       </div>
                     </div>
                     <div
-                      class="flex items-center justify-between text-[11px] uppercase tracking-wide text-physio-text-tertiary"
+                      class="flex flex-col items-center gap-1 text-[11px] uppercase tracking-wide text-physio-text-tertiary"
                     >
                       <span>
-                        0 mg
+                        1000 mg
+                      </span>
+                      <span
+                        class="text-xs font-semibold text-physio-text-secondary"
+                      >
+                        Range
                       </span>
                       <span>
-                        1000 mg
+                        0 mg
                       </span>
                     </div>
                   </div>
                   <div
-                    class="flex items-center justify-between text-[11px] text-physio-text-tertiary"
+                    class="flex-1 space-y-2 text-[12px] text-physio-text-secondary"
                   >
-                    <span>
-                      Selected 500 mg
-                    </span>
-                    <span>
-                      Range 0-1000 mg
-                    </span>
+                    <div
+                      class="flex items-center justify-between text-[11px] uppercase tracking-wide text-physio-text-tertiary"
+                    >
+                      <span>
+                        Selected 500 mg
+                      </span>
+                      <span>
+                        0-1000 mg
+                      </span>
+                    </div>
+                    <p>
+                      Slider stays in modeled evidence bounds.
+                    </p>
+                    <div
+                      class="flex flex-wrap gap-2 text-[11px]"
+                    />
                   </div>
                 </div>
-                <div
-                  class="flex flex-wrap gap-2 text-[11px] text-physio-text-tertiary"
-                />
-              </label>
-              <label
-                class="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4 text-sm space-y-3"
+              </div>
+              <div
+                class="bg-physio-bg-core border border-physio-bg-border rounded-xl p-4 text-sm"
               >
                 <div
-                  class="flex items-center justify-between gap-3"
+                  class="flex items-center justify-between gap-3 mb-3"
                 >
-                  <span
-                    class="font-semibold text-physio-text-primary"
-                  >
-                    NPP (Nandrolone Phenylpropionate)
-                  </span>
+                  <div>
+                    <p
+                      class="text-xs uppercase tracking-wide text-physio-text-tertiary"
+                    >
+                      NPP
+                    </p>
+                    <p
+                      class="font-semibold text-physio-text-primary"
+                    >
+                      NPP (Nandrolone Phenylpropionate)
+                    </p>
+                  </div>
                   <button
                     class="text-xs px-2 py-0.5 rounded border border-physio-bg-border text-physio-text-tertiary"
                   >
-                    Set Primary
+                    Track sweep
                   </button>
                 </div>
                 <div
-                  class="space-y-2"
+                  class="flex items-center gap-4"
                 >
                   <div
-                    class="w-full"
+                    class="flex flex-col items-center"
                   >
                     <div
-                      class="relative py-4"
+                      class="relative flex justify-center py-2"
+                      style="min-height: 244px;"
                     >
                       <div
-                        class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-physio-bg-border/40"
+                        aria-hidden="true"
+                        class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-1.5 rounded-full bg-physio-bg-border/40"
                       >
                         <div
-                          class="absolute h-full rounded-full bg-gradient-to-r from-physio-accent-cyan via-physio-accent-mint to-physio-accent-violet"
-                          style="width: 50%;"
+                          class="absolute rounded-full bg-gradient-to-b from-physio-accent-cyan via-physio-accent-mint to-physio-accent-violet"
+                          style="bottom: 0%; height: 50%;"
                         />
                         <div
-                          class="absolute top-1/2 -translate-y-1/2"
-                          style="left: 50%;"
+                          class="absolute left-1/2 -translate-x-1/2"
+                          style="bottom: 50%;"
                         >
                           <span
                             class="block h-2 w-2 rounded-full bg-physio-bg-border text-physio-text-tertiary"
                             title="Default"
                           />
                           <span
-                            class="mt-1 block text-[10px] font-semibold text-physio-text-tertiary text-center"
+                            class="absolute left-full ml-2 text-[10px] font-semibold text-physio-text-tertiary whitespace-nowrap"
                           >
                             Default
                           </span>
                         </div>
                         <div
-                          class="absolute top-1/2 -translate-y-1/2"
-                          style="left: 66.66666666666666%;"
+                          class="absolute left-1/2 -translate-x-1/2"
+                          style="bottom: 66.66666666666666%;"
                         >
                           <span
                             class="block h-2 w-2 rounded-full bg-physio-warning text-physio-warning"
                             title="Plateau"
                           />
                           <span
-                            class="mt-1 block text-[10px] font-semibold text-physio-text-tertiary text-center"
+                            class="absolute left-full ml-2 text-[10px] font-semibold text-physio-text-tertiary whitespace-nowrap"
                           >
                             Plateau
                           </span>
                         </div>
                         <div
-                          class="absolute top-1/2 -translate-y-1/2"
-                          style="left: 100%;"
+                          class="absolute left-1/2 -translate-x-1/2"
+                          style="bottom: 100%;"
                         >
                           <span
                             class="block h-2 w-2 rounded-full bg-physio-error text-physio-error"
                             title="Evidence"
                           />
                           <span
-                            class="mt-1 block text-[10px] font-semibold text-physio-text-tertiary text-center"
+                            class="absolute left-full ml-2 text-[10px] font-semibold text-physio-text-tertiary whitespace-nowrap"
                           >
                             Evidence
                           </span>
@@ -1603,51 +1723,64 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
                       </div>
                       <input
                         aria-label="NPP (Nandrolone Phenylpropionate) dose"
-                        class="physio-range relative z-10 w-full cursor-pointer"
+                        class="physio-range relative z-10 cursor-pointer physio-range-vertical w-10 h-full"
                         id="pair-dose-npp"
                         max="600"
                         min="0"
                         step="10"
+                        style="height: 220px;"
                         type="range"
                         value="300"
                       />
                       <div
-                        class="pointer-events-none absolute -top-3 rounded-full bg-physio-bg-core px-2 py-0.5 text-[11px] font-semibold text-physio-text-primary shadow-physio-subtle transition-opacity duration-150 opacity-0"
-                        style="left: calc(0% - 16px);"
+                        class="pointer-events-none absolute rounded-full bg-physio-bg-core px-2 py-0.5 text-[11px] font-semibold text-physio-text-primary shadow-physio-subtle transition-opacity duration-150 opacity-0 "
+                        style="left: calc(100% + 12px); bottom: calc(0% - 12px);"
                       >
                         0 mg
                       </div>
                     </div>
                     <div
-                      class="flex items-center justify-between text-[11px] uppercase tracking-wide text-physio-text-tertiary"
+                      class="flex flex-col items-center gap-1 text-[11px] uppercase tracking-wide text-physio-text-tertiary"
                     >
                       <span>
-                        0 mg
+                        600 mg
+                      </span>
+                      <span
+                        class="text-xs font-semibold text-physio-text-secondary"
+                      >
+                        Range
                       </span>
                       <span>
-                        600 mg
+                        0 mg
                       </span>
                     </div>
                   </div>
                   <div
-                    class="flex items-center justify-between text-[11px] text-physio-text-tertiary"
+                    class="flex-1 space-y-2 text-[12px] text-physio-text-secondary"
                   >
-                    <span>
-                      Selected 300 mg
-                    </span>
-                    <span>
-                      Range 0-600 mg
-                    </span>
+                    <div
+                      class="flex items-center justify-between text-[11px] uppercase tracking-wide text-physio-text-tertiary"
+                    >
+                      <span>
+                        Selected 300 mg
+                      </span>
+                      <span>
+                        0-600 mg
+                      </span>
+                    </div>
+                    <p>
+                      Slider stays in modeled evidence bounds.
+                    </p>
+                    <div
+                      class="flex flex-wrap gap-2 text-[11px]"
+                    />
                   </div>
                 </div>
-                <div
-                  class="flex flex-wrap gap-2 text-[11px] text-physio-text-tertiary"
-                />
-              </label>
+              </div>
             </div>
           </div>
           <div
-            class="space-y-3 lg:sticky lg:top-4"
+            class="space-y-3"
           >
             <div
               class="bg-physio-bg-core border border-physio-bg-border rounded-xl p-4 text-sm text-physio-text-secondary"
@@ -1766,15 +1899,6 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
           </div>
         </div>
         <div
-          aria-hidden="true"
-          class="h-0"
-        />
-        <div
-          aria-hidden="true"
-          class="h-px bg-physio-bg-border/60 w-full my-2"
-          role="presentation"
-        />
-        <div
           class="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4"
         >
           <div
@@ -1810,10 +1934,6 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
         />
         <div
           aria-hidden="true"
-          class="h-0"
-        />
-        <div
-          aria-hidden="true"
           class="h-px bg-physio-bg-border/60 w-full my-2"
           role="presentation"
         />
@@ -1841,10 +1961,6 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
             style="width: 100%; height: 320px; min-width: 0;"
           />
         </div>
-        <div
-          aria-hidden="true"
-          class="h-0"
-        />
         <div
           aria-hidden="true"
           class="h-px bg-physio-bg-border/60 w-full my-2"
@@ -2966,10 +3082,6 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
         </div>
         <div
           aria-hidden="true"
-          class="h-0"
-        />
-        <div
-          aria-hidden="true"
           class="h-px bg-physio-bg-border/60 w-full my-2"
           role="presentation"
         />
@@ -3505,14 +3617,49 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
               1.00×
             </span>
           </div>
-          <input
+          <div
             class="w-full"
-            max="1.5"
-            min="0.5"
-            step="0.05"
-            type="range"
-            value="1"
-          />
+          >
+            <div
+              class="relative py-4"
+            >
+              <div
+                aria-hidden="true"
+                class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-physio-bg-border/40"
+              >
+                <div
+                  class="absolute rounded-full bg-gradient-to-r from-physio-accent-cyan via-physio-accent-mint to-physio-accent-violet"
+                  style="left: 0%; width: 50%;"
+                />
+              </div>
+              <input
+                aria-label="Estrogen Sensitivity"
+                class="physio-range relative z-10 cursor-pointer w-full"
+                id="penalty-estrogen"
+                max="1.5"
+                min="0.5"
+                step="0.05"
+                type="range"
+                value="1"
+              />
+              <div
+                class="pointer-events-none absolute rounded-full bg-physio-bg-core px-2 py-0.5 text-[11px] font-semibold text-physio-text-primary shadow-physio-subtle transition-opacity duration-150 opacity-0 -top-3"
+                style="left: calc(0% - 16px);"
+              >
+                0.50×
+              </div>
+            </div>
+            <div
+              class="flex items-center justify-between text-[11px] uppercase tracking-wide text-physio-text-tertiary"
+            >
+              <span>
+                0.5 ×
+              </span>
+              <span>
+                1.5 ×
+              </span>
+            </div>
+          </div>
           <p
             class="text-xs text-physio-text-tertiary"
           >
@@ -3536,14 +3683,49 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
               1.00×
             </span>
           </div>
-          <input
+          <div
             class="w-full"
-            max="1.5"
-            min="0.5"
-            step="0.05"
-            type="range"
-            value="1"
-          />
+          >
+            <div
+              class="relative py-4"
+            >
+              <div
+                aria-hidden="true"
+                class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-physio-bg-border/40"
+              >
+                <div
+                  class="absolute rounded-full bg-gradient-to-r from-physio-accent-cyan via-physio-accent-mint to-physio-accent-violet"
+                  style="left: 0%; width: 50%;"
+                />
+              </div>
+              <input
+                aria-label="Water Retention Sensitivity"
+                class="physio-range relative z-10 cursor-pointer w-full"
+                id="penalty-water"
+                max="1.5"
+                min="0.5"
+                step="0.05"
+                type="range"
+                value="1"
+              />
+              <div
+                class="pointer-events-none absolute rounded-full bg-physio-bg-core px-2 py-0.5 text-[11px] font-semibold text-physio-text-primary shadow-physio-subtle transition-opacity duration-150 opacity-0 -top-3"
+                style="left: calc(0% - 16px);"
+              >
+                0.50×
+              </div>
+            </div>
+            <div
+              class="flex items-center justify-between text-[11px] uppercase tracking-wide text-physio-text-tertiary"
+            >
+              <span>
+                0.5 ×
+              </span>
+              <span>
+                1.5 ×
+              </span>
+            </div>
+          </div>
           <p
             class="text-xs text-physio-text-tertiary"
           >
@@ -3567,14 +3749,49 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
               1.00×
             </span>
           </div>
-          <input
+          <div
             class="w-full"
-            max="1.5"
-            min="0.5"
-            step="0.05"
-            type="range"
-            value="1"
-          />
+          >
+            <div
+              class="relative py-4"
+            >
+              <div
+                aria-hidden="true"
+                class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-physio-bg-border/40"
+              >
+                <div
+                  class="absolute rounded-full bg-gradient-to-r from-physio-accent-cyan via-physio-accent-mint to-physio-accent-violet"
+                  style="left: 0%; width: 50%;"
+                />
+              </div>
+              <input
+                aria-label="Neuro Sensitivity"
+                class="physio-range relative z-10 cursor-pointer w-full"
+                id="penalty-neuro"
+                max="1.5"
+                min="0.5"
+                step="0.05"
+                type="range"
+                value="1"
+              />
+              <div
+                class="pointer-events-none absolute rounded-full bg-physio-bg-core px-2 py-0.5 text-[11px] font-semibold text-physio-text-primary shadow-physio-subtle transition-opacity duration-150 opacity-0 -top-3"
+                style="left: calc(0% - 16px);"
+              >
+                0.50×
+              </div>
+            </div>
+            <div
+              class="flex items-center justify-between text-[11px] uppercase tracking-wide text-physio-text-tertiary"
+            >
+              <span>
+                0.5 ×
+              </span>
+              <span>
+                1.5 ×
+              </span>
+            </div>
+          </div>
           <p
             class="text-xs text-physio-text-tertiary"
           >
@@ -3598,14 +3815,49 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
               1.00×
             </span>
           </div>
-          <input
+          <div
             class="w-full"
-            max="1.5"
-            min="0.5"
-            step="0.05"
-            type="range"
-            value="1"
-          />
+          >
+            <div
+              class="relative py-4"
+            >
+              <div
+                aria-hidden="true"
+                class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-physio-bg-border/40"
+              >
+                <div
+                  class="absolute rounded-full bg-gradient-to-r from-physio-accent-cyan via-physio-accent-mint to-physio-accent-violet"
+                  style="left: 0%; width: 50%;"
+                />
+              </div>
+              <input
+                aria-label="Cardio / BP Sensitivity"
+                class="physio-range relative z-10 cursor-pointer w-full"
+                id="penalty-cardio"
+                max="1.5"
+                min="0.5"
+                step="0.05"
+                type="range"
+                value="1"
+              />
+              <div
+                class="pointer-events-none absolute rounded-full bg-physio-bg-core px-2 py-0.5 text-[11px] font-semibold text-physio-text-primary shadow-physio-subtle transition-opacity duration-150 opacity-0 -top-3"
+                style="left: calc(0% - 16px);"
+              >
+                0.50×
+              </div>
+            </div>
+            <div
+              class="flex items-center justify-between text-[11px] uppercase tracking-wide text-physio-text-tertiary"
+            >
+              <span>
+                0.5 ×
+              </span>
+              <span>
+                1.5 ×
+              </span>
+            </div>
+          </div>
           <p
             class="text-xs text-physio-text-tertiary"
           >

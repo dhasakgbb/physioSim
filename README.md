@@ -49,6 +49,7 @@ This interactive visualization tool presents dose-response relationships for **1
 - 💊 **Ancillary Calculator**: Automated protocol generation with cost estimates and blood work schedules
 - 🧠 **Unified Advanced Workflow**: Dense analytics (dimension chips, dose sweeps, surfaces, optimizers, sensitivity sliders) stay active for every user, with persistent scoring/evidence chips replacing legacy presets or lab-only gating.
 - 🛝 **Obsidian Pro UI System**: The ProfileContextBar, NavigationRail, compound chip belt, spotlight chart shell, and the new premium `DoseSlider` now provide a consistent “Zone A + Zone B” experience across injectables, orals, interactions, and Stack Builder (keyboard roving index, focus rings, and filter chips included).
+- 🧮 **Interaction Drawer Reflow**: The matrix is now a zoned viewport with lean-back / lean-in modes, a pinned summary rail, and a slide-up detail drawer that houses the pair summary, vertical dose sliders, modular analytics cards, and optimizers without forcing the user to scroll through disparate sections.
 
 ---
 
@@ -122,6 +123,8 @@ Comprehensive interaction analysis for all compound pairs:
 - **Template + Custom Optimizers**: Built-in three-compound templates sample dozens of dose permutations, while the custom optimizer sweeps up to four compounds; both pipelines can pre-fill Stack Builder.
 - **Net Scoring Chips**: Sticky headers and recommendation cards display the Net benefit − risk score plus evidence mix so you immediately know why a pair ranked the way it did (and the selections persist via local storage).
 - **Premium Dose Slider Controls**: Pair detail sliders now run on the shared `DoseSlider` kit (mist gradients, plateau/evidence markers, JetBrains mini-tooltips) so Interaction tweaking feels identical to Stack Builder adjustments.
+- **Lean-back vs. Lean-in Modes**: Toggle between a minimalist glyph-based palette for a quick scan or the numeric + micro-bar view for deep dives. Lean-back mode color codes synergy/guardrail status; lean-in mode brings back exact values plus micro-trend bars.
+- **Drawer Workspace**: Clicking any matrix cell slides up a consolidated workspace with a summary badge, vertical sliders, modular cards (Benefit vs Risk, Interaction Curve, Dose Surface, Stack Suggestions), and the multi/custom optimizers so everything updates off one shared `selectedPair` state.
 
 **Usage:**
 1. Navigate to "🔗 Interaction Matrix" tab

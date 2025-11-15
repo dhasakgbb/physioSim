@@ -594,6 +594,14 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
   const orals = availableCompounds.filter(key => compoundData[key].type === 'oral');
   const hasStack = stack.length > 0;
   const activeCycle = savedCycles.find(cycle => cycle.id === activeCycleId) || null;
+  const selectedCompoundMeta = selectedCompound ? compoundData[selectedCompound] : null;
+  const selectedDoseWindow = selectedCompound ? deriveDoseWindow(selectedCompound) : null;
+  const selectedUnit = selectedCompoundMeta?.type === 'oral' ? 'mg/day' : 'mg/wk';
+  const sliderValue = selectedCompoundMeta
+    ? (dose === ''
+        ? selectedDoseWindow?.base || selectedDoseWindow?.min || 0
+        : Number(dose))
+    : 0;
 
   const builderOrientationItems = [
     ...(activeCycle
@@ -680,16 +688,46 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
             
             <div>
               <label className="block text-sm font-medium text-physio-text-secondary mb-1.5" htmlFor={doseInputId}>
-                Dose ({selectedCompound && compoundData[selectedCompound]?.type === 'oral' ? 'mg/day' : 'mg/week'})
+                Dose ({selectedCompound ? selectedUnit : 'mg'})
               </label>
-              <input
-                type="number"
-                id={doseInputId}
-                value={dose}
-                onChange={(e) => setDose(e.target.value)}
-                placeholder="Enter dose"
-                className="w-full px-3 py-2 bg-physio-bg-tertiary text-physio-text-primary border border-physio-bg-border rounded-md focus:outline-none focus:ring-2 focus:ring-physio-accent-cyan transition-standard"
-              />
+              {selectedCompoundMeta ? (
+                <div className="bg-physio-bg-tertiary/70 border border-physio-bg-border/70 rounded-2xl px-3 py-2">
+                  <DoseSlider
+                    id={doseInputId}
+                    value={sliderValue}
+                    min={selectedDoseWindow?.min || 0}
+                    max={selectedDoseWindow?.max || 500}
+                    step={selectedCompoundMeta.type === 'oral' ? 2 : 10}
+                    unit={selectedUnit}
+                    markers={[
+                      selectedDoseWindow?.base
+                        ? { value: selectedDoseWindow.base, label: 'Base', tone: 'accent' }
+                        : null,
+                      selectedDoseWindow?.max
+                        ? { value: selectedDoseWindow.max, label: 'Ceil', tone: 'warning' }
+                        : null
+                    ].filter(Boolean)}
+                    ariaLabel="Stack dose selector"
+                    onChange={(value) => setDose(String(value))}
+                  />
+                  <div className="flex items-center gap-2 mt-2 text-[11px] text-physio-text-tertiary uppercase tracking-wide">
+                    <span>
+                      Window {selectedDoseWindow?.min ?? 0}-{selectedDoseWindow?.max ?? 0} {selectedUnit}
+                    </span>
+                    <input
+                      type="number"
+                      value={dose}
+                      onChange={(e) => setDose(e.target.value)}
+                      placeholder="Enter dose"
+                      className="ml-auto w-24 px-2 py-1 rounded border border-physio-bg-border bg-physio-bg-core text-xs text-physio-text-primary"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-physio-text-tertiary py-2">
+                  Select a compound to unlock the slider.
+                </p>
+              )}
             </div>
             
             <div className="flex items-end">

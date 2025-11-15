@@ -35,7 +35,6 @@ import {
   ReferenceArea
 } from 'recharts';
 import PDFExport from './PDFExport';
-import NavigationRail from './NavigationRail';
 import DoseSlider from './DoseSlider';
 
 const uniqueCompounds = Array.from(new Set(Object.values(interactionPairs).flatMap(pair => pair.compounds)));
@@ -102,6 +101,27 @@ const describeEvidenceMix = blend => {
   return `${clinicalShare}% clinical · ${anecdoteShare}% anecdotal`;
 };
 
+const matrixViewOptions = [
+  { key: 'leanBack', label: 'Lean-back' },
+  { key: 'leanIn', label: 'Lean-in' }
+];
+
+const getLeanBackGlyph = (value) => {
+  if (value >= 0.35) return '++';
+  if (value >= 0.15) return '+';
+  if (value <= -0.35) return '⚠';
+  if (value <= -0.15) return '—';
+  return '·';
+};
+
+const getLeanBackPalette = (value) => {
+  if (value >= 0.35) return 'bg-physio-accent-mint/70 text-physio-bg-core';
+  if (value >= 0.15) return 'bg-physio-accent-cyan/60 text-physio-bg-core';
+  if (value <= -0.35) return 'bg-physio-error/70 text-physio-bg-core';
+  if (value <= -0.15) return 'bg-physio-warning/70 text-physio-bg-core';
+  return 'bg-physio-bg-tertiary text-physio-text-secondary';
+};
+
 const InteractionHeatmap = ({
   userProfile,
   onPrefillStack,
@@ -146,14 +166,10 @@ const InteractionHeatmap = ({
   const [optimizerCollapsed, setOptimizerCollapsed] = useState(false);
   const [contextCollapsed, setContextCollapsed] = useState(true);
   const [heatmapCompact, setHeatmapCompact] = useState(false);
-  const [activeAnchor, setActiveAnchor] = useState('matrix');
+  const [matrixViewMode, setMatrixViewMode] = useState('leanBack');
   const pairDetailRef = useRef(null);
   const controlsSectionRef = useRef(null);
   const heatmapRef = useRef(null);
-  const metricsRef = useRef(null);
-  const chartsRef = useRef(null);
-  const surfacesRef = useRef(null);
-  const optimizersRef = useRef(null);
 
   const allCompoundKeys = useMemo(() => Object.keys(compoundData), []);
   useEffect(() => {
@@ -172,24 +188,7 @@ const InteractionHeatmap = ({
     if (typeof window === 'undefined' || !heatmapRef.current) return;
     const top = heatmapRef.current.offsetTop - 24;
     window.scrollTo({ top, behavior: 'smooth' });
-    setActiveAnchor('matrix');
   };
-
-  const scrollToSection = useCallback(
-    (ref, keyOverride = null) => {
-      if (typeof window === 'undefined' || !ref?.current) return;
-      const offset = window.innerWidth < 768 ? 64 : 96;
-      const targetTop = ref.current.getBoundingClientRect().top + window.scrollY - offset;
-      window.scrollTo({
-        top: Math.max(0, targetTop),
-        behavior: 'smooth'
-      });
-      if (keyOverride) {
-        setActiveAnchor(keyOverride);
-      }
-    },
-    []
-  );
 
   const pairOptions = useMemo(
     () =>
@@ -199,50 +198,6 @@ const InteractionHeatmap = ({
       })).sort((a, b) => a.label.localeCompare(b.label)),
     []
   );
-  const anchorSections = useMemo(
-    () => [
-      { key: 'matrix', label: 'Matrix', ref: heatmapRef, available: true },
-      { key: 'controls', label: 'Controls', ref: controlsSectionRef, available: true },
-      { key: 'metrics', label: 'Metrics', ref: metricsRef, available: true },
-      { key: 'charts', label: 'Charts', ref: chartsRef, available: true },
-      { key: 'surfaces', label: 'Surfaces', ref: surfacesRef, available: true },
-      { key: 'optimizers', label: 'Optimizers', ref: optimizersRef, available: true }
-    ],
-    [heatmapRef, controlsSectionRef, metricsRef, chartsRef, surfacesRef, optimizersRef]
-  );
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    let frame = null;
-    const evaluateActiveAnchor = () => {
-      frame = null;
-      const offset = window.innerWidth < 768 ? 80 : 140;
-      let current = null;
-      anchorSections.forEach(section => {
-        if (!section.available || !section.ref?.current) return;
-        const rect = section.ref.current.getBoundingClientRect();
-        if (rect.top - offset <= 0) {
-          current = section.key;
-        }
-      });
-      if (!current) {
-        const fallback = anchorSections.find(section => section.available)?.key || 'matrix';
-        current = fallback;
-      }
-      setActiveAnchor(prev => (prev === current ? prev : current));
-    };
-    const handleScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(evaluateActiveAnchor);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    evaluateActiveAnchor();
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, [anchorSections]);
-
   const selectedPair = interactionPairs[selectedPairId];
   const dimensionKeys = useMemo(() => {
     const keys = new Set();
@@ -268,7 +223,7 @@ const InteractionHeatmap = ({
     setHighlightedBand(null);
     if (controlsSectionRef.current) {
       setTimeout(() => {
-        scrollToSection(controlsSectionRef, 'controls');
+        controlsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 200);
     }
   };
@@ -429,7 +384,7 @@ const InteractionHeatmap = ({
     return activeMode?.label || 'Focus';
   }, [heatmapMode]);
 
-  const maxHeatmapValue = Math.max(...Object.values(heatmapValues));
+  const maxHeatmapValue = Math.max(0.01, ...Object.values(heatmapValues).map(value => Math.abs(value)));
 
   const updateDose = (compoundKey, value) => {
     setDoses(prev => ({
@@ -491,22 +446,15 @@ const InteractionHeatmap = ({
     [primaryCompound, selectedPair]
   );
 
-  const handleAnchorTabChange = useCallback(
-    (key) => {
-      const section = anchorSections.find(entry => entry.key === key);
-      if (!section || !section.available) return;
-      scrollToSection(section.ref, key);
-    },
-    [anchorSections, scrollToSection]
-  );
-
   const handleRecommendationInspect = useCallback(
     (point) => {
       if (!point) return;
       setHighlightFromPoint(point);
-      scrollToSection(controlsSectionRef, 'controls');
+      if (controlsSectionRef.current) {
+        controlsSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     },
-    [controlsSectionRef, scrollToSection, setHighlightFromPoint]
+    [controlsSectionRef, setHighlightFromPoint]
   );
 
   const handleRecommendationKeyDown = (event, point) => {
@@ -785,8 +733,10 @@ const InteractionHeatmap = ({
           </div>
         </div>
 
-        <div className={`bg-physio-bg-core/70 border border-physio-bg-border rounded-2xl flex flex-col ${heatmapCompact ? 'p-2.5 gap-2.5' : 'p-3.5 gap-3.5'}`}>
-          <div className={`flex flex-wrap items-center gap-2.5 ${heatmapCompact ? 'text-[11px]' : ''}`}>
+        <div className={`bg-physio-bg-core/70 border border-physio-bg-border rounded-2xl ${heatmapCompact ? 'p-2.5' : 'p-3.5'}`}>
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className={`flex flex-col gap-3 ${heatmapCompact ? 'text-[11px]' : ''}`}>
+              <div className="flex flex-wrap items-center gap-2.5">
             <div className="flex items-center gap-2">
               <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Heatmap focus</p>
               <button
@@ -803,7 +753,7 @@ const InteractionHeatmap = ({
                 {focusPinned ? `Pinned · ${activeFocusLabel}` : 'Pin focus'}
               </button>
             </div>
-            <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5">
               {interactionHeatmapModes.map(mode => (
                 <button
                   key={mode.key}
@@ -818,85 +768,158 @@ const InteractionHeatmap = ({
                 </button>
               ))}
             </div>
-          </div>
-          <div className={`flex flex-col ${heatmapCompact ? 'gap-2' : 'gap-3'}`}>
-            <label className="flex-1 text-sm text-physio-text-secondary">
-              Evidence weighting
-              <div className="mt-1 flex items-center gap-3">
-                <span className="text-xs text-physio-text-tertiary whitespace-nowrap">
-                  Clinical {(1 - evidenceBlend) * 100 >> 0}%
-                </span>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={evidenceBlend}
-                  onChange={e => setEvidenceBlend(Number(e.target.value))}
-                  className="flex-1"
-                />
-                <span className="text-xs text-physio-text-tertiary whitespace-nowrap">
-                  Anecdote {(evidenceBlend) * 100 >> 0}%
-                </span>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <div className="inline-block min-w-full">
-            <div className="grid gap-0" style={{ gridTemplateColumns: `140px repeat(${uniqueCompounds.length}, 100px)` }}>
-              <div className="h-14"></div>
-              {uniqueCompounds.map(key => (
-                <div
-                  key={key}
-                  className="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-                  style={{ color: compoundData[key]?.color || '#fff' }}
-                >
-                  {compoundData[key]?.abbreviation || key}
-                </div>
-              ))}
-
-              {uniqueCompounds.map(row => (
-                <React.Fragment key={row}>
-                  <div
-                    className="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
-                    style={{ color: compoundData[row]?.color || '#fff' }}
+                {matrixViewOptions.map(option => (
+                  <button
+                    key={option.key}
+                    onClick={() => setMatrixViewMode(option.key)}
+                    className={`px-2 py-0.5 rounded-full border text-[11px] font-semibold transition ${
+                      matrixViewMode === option.key
+                        ? 'border-physio-accent-mint text-physio-accent-mint bg-physio-bg-core'
+                        : 'border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary'
+                    }`}
                   >
-                    {compoundData[row]?.abbreviation || row}
-                  </div>
-                  {uniqueCompounds.map(col => {
-                    const pair = Object.values(interactionPairs).find(p =>
-                      (p.compounds[0] === row && p.compounds[1] === col) ||
-                      (p.compounds[0] === col && p.compounds[1] === row)
-                    );
-                    if (!pair) {
-                      return (
-                        <div key={`${row}-${col}`} className="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary">
-                          —
-                        </div>
-                      );
-                    }
-                    const value = heatmapValues[pair.id] || 0;
-                    const color = heatmapColorScale(value, maxHeatmapValue, heatmapMode);
-                    const isSelected = pair.id === selectedPairId;
-                    return (
-                      <button
-                        key={`${row}-${col}`}
-                        onClick={() => handlePairChange(pair.id)}
-                        className={`h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition ${
-                          isSelected ? 'ring-2 ring-physio-accent-cyan ring-inset' : ''
-                        }`}
-                        style={{ backgroundColor: color, color: '#0F172A' }}
-                        title={pair.label}
-                      >
-                        {value.toFixed(2)}
-                      </button>
-                    );
-                  })}
-                </React.Fragment>
+                    {option.label}
+                  </button>
+                ))}
+              </div>
               ))}
+              <div className={`flex flex-col ${heatmapCompact ? 'gap-2' : 'gap-3'}`}>
+                <label className="flex-1 text-sm text-physio-text-secondary">
+                  Evidence mix
+                  <div className="mt-1 flex items-center gap-3">
+                    <span className="text-xs text-physio-text-tertiary whitespace-nowrap">
+                      Clinical {(1 - evidenceBlend) * 100 >> 0}%
+                    </span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={evidenceBlend}
+                      onChange={e => setEvidenceBlend(Number(e.target.value))}
+                      className="flex-1"
+                    />
+                    <span className="text-xs text-physio-text-tertiary whitespace-nowrap">
+                      Anecdote {(evidenceBlend) * 100 >> 0}%
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              <div className="overflow-x-auto">
+                <div className="inline-block min-w-full">
+                  <div className="grid gap-0" style={{ gridTemplateColumns: `140px repeat(${uniqueCompounds.length}, 100px)` }}>
+                    <div className="h-14"></div>
+                    {uniqueCompounds.map(key => (
+                      <div
+                        key={key}
+                        className="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                        style={{ color: compoundData[key]?.color || '#fff' }}
+                      >
+                        {compoundData[key]?.abbreviation || key}
+                      </div>
+                    ))}
+
+                    {uniqueCompounds.map(row => (
+                      <React.Fragment key={row}>
+                        <div
+                          className="h-14 flex items-center justify-center text-sm font-semibold border border-physio-bg-border bg-physio-bg-core"
+                          style={{ color: compoundData[row]?.color || '#fff' }}
+                        >
+                          {compoundData[row]?.abbreviation || row}
+                        </div>
+                        {uniqueCompounds.map(col => {
+                          const pair = Object.values(interactionPairs).find(p =>
+                            (p.compounds[0] === row && p.compounds[1] === col) ||
+                            (p.compounds[0] === col && p.compounds[1] === row)
+                          );
+                          if (!pair) {
+                            return (
+                              <div key={`${row}-${col}`} className="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary">
+                                —
+                              </div>
+                            );
+                          }
+                          const value = heatmapValues[pair.id] || 0;
+                          const color = heatmapColorScale(value, maxHeatmapValue, heatmapMode);
+                          const isSelected = pair.id === selectedPairId;
+                          const leanBackEnabled = matrixViewMode === 'leanBack';
+                          const glyph = getLeanBackGlyph(value);
+                          const leanBackClass = leanBackEnabled ? getLeanBackPalette(value) : '';
+                          const intensity = maxHeatmapValue === 0 ? 0 : Math.min(Math.abs(value) / maxHeatmapValue, 1);
+                          return (
+                            <button
+                              key={`${row}-${col}`}
+                              onClick={() => handlePairChange(pair.id)}
+                              className={`h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition ${
+                                isSelected ? 'ring-2 ring-physio-accent-cyan ring-inset' : ''
+                              } ${leanBackClass}`}
+                              style={leanBackEnabled ? undefined : { backgroundColor: color, color: '#0F172A' }}
+                              title={pair.label}
+                            >
+                              {leanBackEnabled ? (
+                                <span className="text-base font-bold tracking-wide">{glyph}</span>
+                              ) : (
+                                <div className="flex flex-col items-center gap-1 text-physio-text-primary">
+                                  <span className="text-sm font-semibold text-physio-text-primary">
+                                    {value.toFixed(2)}
+                                  </span>
+                                  <span className="w-12 h-1.5 rounded-full bg-physio-bg-core/50">
+                                    <span
+                                      className="block h-full rounded-full bg-white/80"
+                                      style={{ width: `${Math.min(100, intensity * 100)}%` }}
+                                    ></span>
+                                  </span>
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
+
+            <aside className="bg-physio-bg-core border border-physio-bg-border rounded-2xl p-4 flex flex-col gap-3">
+              {selectedPair ? (
+                <>
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Active pair</p>
+                    <h3 className="text-lg font-semibold text-physio-text-primary">{selectedPair.label}</h3>
+                    <p className="text-xs text-physio-text-tertiary mt-1">{selectedPair.summary}</p>
+                  </div>
+                  {guardrailBadge && (
+                    <span
+                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border font-semibold text-xs ${guardrailToneStyles[guardrailBadge.tone]}`}
+                    >
+                      <span>{guardrailBadge.label}</span>
+                      {guardrailBadge.detail && <span className="text-[10px] tracking-wide uppercase">{guardrailBadge.detail}</span>}
+                    </span>
+                  )}
+                  <div className="text-sm text-physio-text-secondary">
+                    <p>Δ Benefit <span className="text-physio-accent-mint font-semibold">{benefitSynergyPercent.toFixed(1)}%</span></p>
+                    <p>Δ Risk <span className="text-physio-error font-semibold">{riskSynergyPercent.toFixed(1)}%</span></p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!pairDetailRef.current) return;
+                      pairDetailRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
+                    className="mt-auto px-3 py-2 rounded-xl border border-physio-accent-cyan text-physio-accent-cyan text-sm font-semibold hover:bg-physio-accent-cyan/10"
+                  >
+                    Open detail drawer
+                  </button>
+                </>
+              ) : (
+                <div className="text-sm text-physio-text-tertiary">
+                  <p className="font-semibold text-physio-text-secondary">Pick any cell</p>
+                  <p>Select a pair in the matrix to launch the new drawer workspace.</p>
+                </div>
+              )}
+            </aside>
           </div>
         </div>
       </section>
@@ -926,61 +949,59 @@ const InteractionHeatmap = ({
             <section className="bg-physio-bg-core rounded-xl border border-physio-bg-border p-4">
               <h4 className="font-semibold text-physio-text-secondary mb-2">Workspace density</h4>
               <p className="text-physio-text-secondary">
-                Everything is unlocked by default—dimension chips, dose sweeps, surfaces, and optimizers. Use the sticky anchor rail to
-                jump between chunks and keep the summary badge in view as you tweak doses.
+                Everything stays unlocked—dimension chips, dose sweep, surfaces, optimizers, sensitivity sliders. The drawer pins summary and analytics so you never lose the context badge while experimenting.
               </p>
             </section>
             <section className="bg-physio-bg-core rounded-xl border border-physio-bg-border p-4">
               <h4 className="font-semibold text-physio-text-secondary mb-2">Pair workflow</h4>
               <ol className="list-decimal list-inside space-y-1.5 text-physio-text-secondary">
-                <li>Pick the outcome dimension chip you care about most.</li>
-                <li>Drag the compound sliders until the sticky summary sparkline hits your target.</li>
-                <li>Use the net bar chart to confirm whether synergy is worth the risk delta.</li>
+                <li>Pick the outcome dimension chip that matches today’s goal.</li>
+                <li>Use the vertical sliders to nudge ratios until the drawer badge glows green.</li>
+                <li>Confirm with the Net bar + surface cards before loading Stack Builder.</li>
               </ol>
             </section>
             <section className="bg-physio-bg-core rounded-xl border border-physio-bg-border p-4">
               <h4 className="font-semibold text-physio-text-secondary mb-2">Optimizer tips</h4>
               <ul className="space-y-1.5 text-physio-text-secondary">
                 <li>Evidence slider shifts weighting between clinical and anecdotal inputs.</li>
-                <li>Penalty knobs (estrogen, neuro, cardio…) sharpen the optimizer before you run it.</li>
-                <li>Send any recommendation straight to Stack Builder to see whole-stack effects.</li>
+                <li>Penalty knobs (estrogen, neuro, cardio…) sharpen the optimizer before a run.</li>
+                <li>Send any recommendation straight to Stack Builder to stress-test a whole stack.</li>
               </ul>
             </section>
           </div>
         )}
       </section>
 
-      <div className="sticky top-16 z-30 backdrop-blur">
-        <NavigationRail
-          tabs={anchorSections.map(section => ({
-            key: section.key,
-            label: section.label,
-            disabled: !section.available
-          }))}
-          activeTab={activeAnchor}
-          onTabChange={handleAnchorTabChange}
-          ariaLabel="Interaction anchors"
-          size="sm"
-          className="w-full"
-        />
-      </div>
-
       <div ref={pairDetailRef} className="space-y-8">
-      {/* Pair Detail */}
-      <section ref={controlsSectionRef} className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-lg space-y-6">
+      {/* Pair Detail Drawer */}
+      <section
+        ref={controlsSectionRef}
+        className={`bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-2xl space-y-6 transition-all duration-300 ${
+          selectedPair ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4 pointer-events-none'
+        }`}
+        aria-label="Interaction detail drawer"
+      >
         {selectedPair && (
-          <div className="sticky top-4 z-20 bg-physio-bg-secondary border border-physio-bg-border rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 shadow-sm">
-            <div className="text-sm text-physio-text-primary flex flex-wrap items-center gap-2">
-              <span className="font-semibold">{selectedPair.label}</span>
-              <span className="text-physio-text-tertiary">•</span>
-              <span>Scoring: {scoringModelLabel}</span>
-              <span className="text-physio-text-tertiary">•</span>
-              <span>Evidence {clinicalShare}% clinical / {anecdoteShare}% anecdote</span>
+          <div className="rounded-2xl border border-physio-bg-border bg-physio-bg-core p-4 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Focused pair</p>
+              <h3 className="text-2xl font-bold text-physio-text-primary">{selectedPair.label}</h3>
+              <p className="text-sm text-physio-text-secondary mt-1">{selectedPair.summary}</p>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-physio-text-tertiary mt-2">
+                <span className="px-2 py-0.5 rounded-full bg-physio-bg-secondary border border-physio-bg-border">
+                  {scoringModelLabel}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-physio-bg-secondary border border-physio-bg-border">
+                  {clinicalShare}% clinical · {anecdoteShare}% anecdote
+                </span>
+                <span className="text-physio-accent-mint font-semibold">Δ Benefit {benefitSynergyPercent.toFixed(1)}%</span>
+                <span className="text-physio-error font-semibold">Δ Risk {riskSynergyPercent.toFixed(1)}%</span>
+              </div>
             </div>
-            <div className="text-xs flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               {guardrailBadge && (
                 <span
-                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border font-semibold ${guardrailToneStyles[guardrailBadge.tone]}`}
+                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border font-semibold text-xs ${guardrailToneStyles[guardrailBadge.tone]}`}
                   title={`Guardrail status · ${guardrailBadge.detail}`}
                 >
                   <span>{guardrailBadge.label}</span>
@@ -989,52 +1010,36 @@ const InteractionHeatmap = ({
                   )}
                 </span>
               )}
-              <span className="text-physio-text-tertiary">Δ Benefit {benefitSynergyPercent.toFixed(1)}%</span>
-              <span className="text-physio-text-tertiary">Δ Risk {riskSynergyPercent.toFixed(1)}%</span>
+              <button
+                onClick={handleSendCurrentToStack}
+                className="px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan font-semibold hover:bg-physio-accent-cyan/10 transition"
+              >
+                Load in Stack Builder
+              </button>
+              <PDFExport
+                chartRef={pairDetailRef}
+                filename="interaction-report.pdf"
+                contextSummary={{
+                  title: 'Interaction Context',
+                  items: [
+                    { label: 'Scoring model', value: scoringModelLabel },
+                    {
+                      label: 'Heatmap focus',
+                      value: interactionHeatmapModes.find(mode => mode.key === heatmapMode)?.label || 'Benefit focus'
+                    },
+                    { label: 'Evidence mix', value: `${clinicalShare}% clinical / ${anecdoteShare}% anecdote` },
+                    { label: 'Δ Benefit', value: `${benefitSynergyPercent.toFixed(1)}%` },
+                    { label: 'Δ Risk', value: `${riskSynergyPercent.toFixed(1)}%` }
+                  ]
+                }}
+              />
             </div>
           </div>
         )}
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <h2 className="text-2xl font-bold text-physio-text-primary">{selectedPair?.label}</h2>
-            <p className="text-sm text-physio-text-secondary">{selectedPair?.summary}</p>
-            <p className="text-xs text-physio-text-tertiary mt-1">
-              Interaction model v0.3 • Evidence blend auto-updates (clinical vs anecdote weighting).
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2 text-xs items-center">
-            <div className="px-3 py-1 rounded-lg bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary">
-              Evidence mix: clinical {(1 - evidenceBlend) * 100 >> 0}% · anecdote {(evidenceBlend) * 100 >> 0}%
-            </div>
-            <div className="px-3 py-1 rounded-lg bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary">
-              Scoring model: {scoringModelLabel}
-            </div>
-            <button
-              onClick={handleSendCurrentToStack}
-              className="px-3 py-1.5 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan font-semibold hover:bg-physio-accent-cyan/10 transition"
-            >
-              Send to Stack Builder
-            </button>
-            <PDFExport
-              chartRef={pairDetailRef}
-              filename="interaction-report.pdf"
-              contextSummary={{
-                title: 'Interaction Context',
-                items: [
-                  { label: 'Scoring model', value: scoringModelLabel },
-                  {
-                    label: 'Heatmap focus',
-                    value: interactionHeatmapModes.find(mode => mode.key === heatmapMode)?.label || 'Benefit focus'
-                  },
-                  { label: 'Evidence mix', value: `${clinicalShare}% clinical / ${anecdoteShare}% anecdote` },
-                  { label: 'Δ Benefit', value: `${benefitSynergyPercent.toFixed(1)}%` },
-                  { label: 'Δ Risk', value: `${riskSynergyPercent.toFixed(1)}%` }
-                ]
-              }}
-            />
-          </div>
-        </div>
+        <p className="text-xs text-physio-text-tertiary">
+          Interaction model v0.3 — the drawer stays in view so you can fly the matrix without losing the detail workspace.
+        </p>
 
         <div className="flex flex-col md:flex-row gap-4">
           <label className="flex-1 text-xs text-physio-text-secondary">
@@ -1118,20 +1123,28 @@ const InteractionHeatmap = ({
                       }
                     : null
                 ].filter(Boolean);
+                const sliderNarrative = beyondEvidence && hardMax !== null
+                  ? `Evidence wall at ${hardMax} mg`
+                  : nearingPlateau && plateauDose !== null
+                  ? `Plateau approaching ~${plateauDose} mg`
+                  : 'Slider stays in modeled evidence bounds.';
                 return (
-                  <label key={compoundKey} className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4 text-sm space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="font-semibold text-physio-text-primary">{compoundData[compoundKey]?.name}</span>
+                  <div key={compoundKey} className="bg-physio-bg-core border border-physio-bg-border rounded-xl p-4 text-sm">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">{compoundData[compoundKey]?.abbreviation || compoundKey}</p>
+                        <p className="font-semibold text-physio-text-primary">{compoundData[compoundKey]?.name}</p>
+                      </div>
                       <button
                         onClick={() => setPrimaryCompound(compoundKey)}
                         className={`text-xs px-2 py-0.5 rounded border ${
                           primaryCompound === compoundKey ? 'border-physio-accent-cyan text-physio-accent-cyan' : 'border-physio-bg-border text-physio-text-tertiary'
                         }`}
                       >
-                        {primaryCompound === compoundKey ? 'Primary Axis' : 'Set Primary'}
+                        {primaryCompound === compoundKey ? 'Primary axis' : 'Track sweep'}
                       </button>
                     </div>
-                    <div className="space-y-2">
+                    <div className="flex items-center gap-4">
                       <DoseSlider
                         id={`pair-dose-${compoundKey}`}
                         value={displayDose}
@@ -1141,39 +1154,42 @@ const InteractionHeatmap = ({
                         unit="mg"
                         markers={sliderMarkers}
                         ariaLabel={`${compoundData[compoundKey]?.name || compoundKey} dose`}
+                        orientation="vertical"
+                        trackLength={220}
                         onChange={(nextValue) => updateDose(compoundKey, nextValue)}
                       />
-                      <div className="flex items-center justify-between text-[11px] text-physio-text-tertiary">
-                        <span>Selected {displayDose} mg</span>
-                        <span>
-                          Range {min}-{sliderMax} mg
-                        </span>
+                      <div className="flex-1 space-y-2 text-[12px] text-physio-text-secondary">
+                        <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-physio-text-tertiary">
+                          <span>Selected {displayDose} mg</span>
+                          <span>{min}-{sliderMax} mg</span>
+                        </div>
+                        <p>{sliderNarrative}</p>
+                        <div className="flex flex-wrap gap-2 text-[11px]">
+                          {nearingPlateau && plateauDose !== null && (
+                            <span className="px-2 py-0.5 rounded-full bg-physio-warning/10 border border-physio-warning/40 text-physio-warning font-semibold">
+                              Plateau @ {plateauDose} mg
+                            </span>
+                          )}
+                          {beyondEvidence && hardMax !== null && (
+                            <span className="px-2 py-0.5 rounded-full bg-physio-error/10 border border-physio-error/30 text-physio-error font-semibold">
+                              Cap {hardMax} mg
+                            </span>
+                          )}
+                          {clamped && (
+                            <span className="px-2 py-0.5 rounded-full bg-physio-warning/5 border border-physio-warning/30 text-physio-text-primary font-semibold">
+                              Clamped → {benefitMeta?.clampedDose || riskMeta?.clampedDose} mg
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-2 text-[11px] text-physio-text-tertiary">
-                      {nearingPlateau && plateauDose !== null && (
-                        <span className="px-2 py-0.5 rounded-full bg-physio-warning/10 border border-physio-warning/40 text-physio-warning font-semibold">
-                          Plateau @ {plateauDose} mg
-                        </span>
-                      )}
-                      {beyondEvidence && hardMax !== null && (
-                        <span className="px-2 py-0.5 rounded-full bg-physio-error/10 border border-physio-error/30 text-physio-error font-semibold">
-                          Outside evidence &gt; {hardMax} mg
-                        </span>
-                      )}
-                      {clamped && (
-                        <span className="px-2 py-0.5 rounded-full bg-physio-warning/5 border border-physio-warning/30 text-physio-text-primary font-semibold">
-                          Clamped to {benefitMeta?.clampedDose || riskMeta?.clampedDose} mg
-                        </span>
-                      )}
-                    </div>
-                  </label>
+                  </div>
                 );
               })}
             </div>
           </div>
 
-          <div className="space-y-3 lg:sticky lg:top-4">
+          <div className="space-y-3">
             <div className="bg-physio-bg-core border border-physio-bg-border rounded-xl p-4 text-sm text-physio-text-secondary">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -1248,10 +1264,6 @@ const InteractionHeatmap = ({
           </div>
         </div>
 
-        <div ref={metricsRef} className="h-0" aria-hidden="true" />
-
-        <SectionDivider />
-
         {/* Net benefit vs risk chart */}
         <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
@@ -1282,7 +1294,6 @@ const InteractionHeatmap = ({
 
         
         {/* Chart */}
-        <div ref={chartsRef} className="h-0" aria-hidden="true" />
         <SectionDivider />
         <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
@@ -1339,7 +1350,6 @@ const InteractionHeatmap = ({
         </div>
 
         {/* Surface + Recommendations */}
-        <div ref={surfacesRef} className="h-0" aria-hidden="true" />
         <SectionDivider />
         <div className="grid gap-4 lg:grid-cols-2">
             <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4">
@@ -1450,7 +1460,6 @@ const InteractionHeatmap = ({
               </div>
             </div>
         </div>
-      <div ref={optimizersRef} className="h-0" aria-hidden="true" />
           <SectionDivider />
           {/* Multi-Compound Optimizer */}
           <section className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-lg space-y-4">
@@ -1750,14 +1759,16 @@ const InteractionHeatmap = ({
                 <span className="font-semibold text-physio-text-primary">{field.label}</span>
                 <span className="text-xs text-physio-accent-cyan">{sensitivities[field.key].toFixed(2)}×</span>
               </div>
-              <input
-                type="range"
-                min="0.5"
-                max="1.5"
-                step="0.05"
+              <DoseSlider
+                id={`penalty-${field.key}`}
                 value={sensitivities[field.key]}
-                onChange={e => updateSensitivity(field.key, e.target.value)}
-                className="w-full"
+                min={0.5}
+                max={1.5}
+                step={0.05}
+                unit="×"
+                ariaLabel={field.label}
+                labelFormatter={val => `${Number(val).toFixed(2)}×`}
+                onChange={next => updateSensitivity(field.key, Number(next))}
               />
               <p className="text-xs text-physio-text-tertiary">{field.helper}</p>
             </label>

@@ -124,12 +124,14 @@ const DoseResponseChart = ({
   const showPlateau = showBenefit || showEfficiency;
 
   return (
-    <div 
-      ref={chartRef} 
-      className="bg-physio-bg-secondary p-6 rounded-lg shadow-lg"
+    <div
+      ref={chartRef}
+      className="relative overflow-hidden rounded-[32px] border border-physio-bg-border/70 bg-gradient-to-br from-physio-bg-secondary/95 via-physio-bg-core/85 to-physio-bg-secondary/70 p-6 shadow-[0_40px_120px_rgba(0,0,0,0.55)]"
       onDoubleClick={handleDoubleClick}
     >
-      <div className="mb-4">
+      <div className="pointer-events-none absolute inset-0 opacity-80 bg-[radial-gradient(circle_at_20%_20%,rgba(75,187,247,0.12),transparent_60%)]" />
+      <div className="relative z-10">
+        <div className="mb-4">
         <h2 className="text-2xl font-bold text-physio-text-primary">
           AAS Spotlight View · {
             mode === 'benefit'
@@ -147,16 +149,16 @@ const DoseResponseChart = ({
           {mode === 'efficiency' && 'Ratio line highlights the true sweet spot — higher means more benefit per unit of risk.'}
           {mode === 'uncertainty' && 'Only the mist bands render, so you can gauge confidence without signal overload.'}
         </p>
-        <p className="text-xs text-physio-text-tertiary mt-1">
-          Double-click to reset zoom | Scroll to zoom | Drag to pan
-        </p>
-      </div>
+          <p className="text-xs text-physio-text-tertiary mt-1">
+            Double-click to reset zoom | Scroll to zoom | Drag to pan
+          </p>
+        </div>
 
-      <ResponsiveContainer width="100%" height={600}>
-        <LineChart
-          data={chartData}
-          margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-        >
+        <ResponsiveContainer width="100%" height={600}>
+          <LineChart
+            data={chartData}
+            margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+          >
           <defs>
             {injectableCompounds.map(([key, compound]) => (
               <React.Fragment key={`defs-${key}`}>

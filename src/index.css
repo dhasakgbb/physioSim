@@ -145,6 +145,14 @@ body {
   height: 2px;
 }
 
+.physio-range-vertical {
+  writing-mode: bt-lr;
+  -webkit-appearance: slider-vertical;
+  appearance: slider-vertical;
+  width: 24px;
+  height: 100%;
+}
+
 .physio-range:focus-visible {
   outline: none;
 }
@@ -171,6 +179,12 @@ body {
   background: transparent;
 }
 
+.physio-range-vertical::-webkit-slider-runnable-track {
+  width: 2px;
+  height: 100%;
+  background: transparent;
+}
+
 .physio-range::-moz-range-thumb {
   width: 18px;
   height: 18px;
@@ -188,6 +202,11 @@ body {
 
 .physio-range::-moz-range-track {
   height: 2px;
+  background: transparent;
+}
+
+.physio-range-vertical::-moz-range-track {
+  width: 2px;
   background: transparent;
 }
 
