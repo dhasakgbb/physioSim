@@ -486,6 +486,96 @@ export const interactionPairs = {
       caution: 'Bloat and BP skyrocket beyond 30mg Dbol; hepatic strain is the hard stop.'
     }
   },
+  trenbolone_npp: {
+    id: 'trenbolone_npp',
+    compounds: ['trenbolone', 'npp'],
+    label: 'Tren + NPP',
+    summary: 'Hybrid 19-nor stack where Tren provides density/hardness and NPP restores fullness + joint comfort when doses stay sane.',
+    defaultDimension: 'anabolic',
+    doseRanges: {
+      trenbolone: [0, 600],
+      npp: [0, 600]
+    },
+    defaultDoses: {
+      trenbolone: 320,
+      npp: 240
+    },
+    synergy: {
+      anabolic: 0.42,
+      strength: 0.28,
+      joint: 0.35
+    },
+    penalties: {
+      neuro: 0.55,
+      bp: 0.38,
+      hematocrit: 0.3
+    },
+    dimensionWeights: {
+      anabolic: { trenbolone: 1, npp: 0.65 },
+      strength: { trenbolone: 1, npp: 0.25 },
+      joint: { npp: 1 },
+      neuro: { trenbolone: 1 },
+      bp: { trenbolone: 0.75, npp: 0.35 },
+      hematocrit: { trenbolone: 0.45, npp: 0.55 }
+    },
+    doseModel: {
+      type: 'hill',
+      params: { d50A: 280, d50B: 260, n: 2.25 }
+    },
+    evidence: {
+      clinical: 0.18,
+      anecdote: 0.82,
+      updated: '2025-03'
+    },
+    narratives: {
+      highlight: 'Moderate Tren paired with mid-range NPP rides the “synergy ridge” for hardness + pumps while joints stay happy.',
+      caution: 'Dual 19-nor suppression is unforgiving—treat high-dose/high-duration blocks as structurally expensive and monitor BP, HCT, prolactin, and sleep relentlessly.'
+    },
+    phaseAtlas: {
+      subtitle: 'Tren + NPP conceptual atlas',
+      title: 'Phase Map · Benefit vs Risk Surfaces',
+      description: 'Normalized 0–1 dose space using your personalization. Thinking tool only, not medical advice.',
+      benefitCaption: 'Golden mist shows total benefit. Riding from P1 → P3 yields the biggest delta.',
+      riskCaption: 'Orange flare shows cumulative burden. The P4 corner is the cliff—reserve it for short experiments.',
+      phases: [
+        {
+          id: 'P0',
+          a: 0,
+          b: 0,
+          title: 'Cruise / no 19-nors',
+          summary: 'Baseline TRT + support meds. All response comes from lifestyle, not 19-nors.'
+        },
+        {
+          id: 'P1',
+          a: 0.4,
+          b: 0,
+          title: 'Tren-only (moderate)',
+          summary: 'Tren doing the heavy lifting at ~0.4 relative dose. Already near the top of the Tren benefit curve.'
+        },
+        {
+          id: 'P2',
+          a: 0.8,
+          b: 0,
+          title: 'Tren-only (high)',
+          summary: 'Big jump in dose for marginal benefit, sharp risk inflection. Pure “Tren wall climbing”.'
+        },
+        {
+          id: 'P3',
+          a: 0.5,
+          b: 0.3,
+          title: 'Balanced ridge',
+          summary: 'Moderate Tren with moderate NPP. Hardness + pumps + joint comfort. This is the sweet ridge.'
+        },
+        {
+          id: 'P4',
+          a: 0.8,
+          b: 0.8,
+          title: 'Both high',
+          summary: 'Maxed-ish Tren and NPP. Top of the benefit mountain, but hugging the risk cliff.'
+        }
+      ]
+    }
+  },
   testosterone_dianabol: {
     id: 'testosterone_dianabol',
     compounds: ['testosterone', 'dianabol'],

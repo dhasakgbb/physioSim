@@ -447,11 +447,16 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
                   >
                     —
                   </div>
-                  <div
-                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Tren + NPP"
                   >
-                    —
-                  </div>
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
                   <div
                     class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
                   >
@@ -589,11 +594,16 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
                       +
                     </span>
                   </button>
-                  <div
-                    class="h-14 border border-physio-bg-border bg-physio-bg-secondary flex items-center justify-center text-xs text-physio-text-tertiary"
+                  <button
+                    class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
+                    title="Tren + NPP"
                   >
-                    —
-                  </div>
+                    <span
+                      class="text-base font-bold tracking-wide"
+                    >
+                      ·
+                    </span>
+                  </button>
                   <button
                     class="h-14 border border-physio-bg-border flex items-center justify-center text-sm font-semibold transition  bg-physio-bg-tertiary text-physio-text-secondary"
                     title="Tren + EQ"
@@ -1442,6 +1452,12 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
                 value="trenbolone_masteron"
               >
                 Tren + Masteron
+              </option>
+              <option
+                class="bg-physio-bg-core text-physio-text-primary"
+                value="trenbolone_npp"
+              >
+                Tren + NPP
               </option>
               <option
                 class="bg-physio-bg-core text-physio-text-primary"
@@ -3080,6 +3096,1706 @@ exports[`InteractionHeatmap component > renders heatmap and optimizer blocks 1`]
             </div>
           </div>
         </div>
+        <div
+          aria-hidden="true"
+          class="h-px bg-physio-bg-border/60 w-full my-2"
+          role="presentation"
+        />
+        <section
+          class="bg-physio-bg-secondary border border-physio-bg-border rounded-3xl p-5 space-y-4"
+        >
+          <div
+            class="flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+          >
+            <div>
+              <p
+                class="text-xs uppercase tracking-wide text-physio-text-tertiary"
+              >
+                Use the normalized ridge to map your real-world experiments.
+              </p>
+              <h3
+                class="text-xl font-bold text-physio-text-primary"
+              >
+                Test + NPP Phase Map
+              </h3>
+              <p
+                class="text-sm text-physio-text-secondary"
+              >
+                Test vs NPP shown in 0–1 dose space. Map each training block to a phase and log labs accordingly.
+              </p>
+            </div>
+            <div
+              class="text-xs text-physio-text-tertiary bg-physio-bg-core border border-physio-bg-border rounded-full px-3 py-1 text-center"
+            >
+              Test: 0–1000 mg · NPP: 0–600 mg
+            </div>
+          </div>
+          <div
+            class="grid gap-4 md:grid-cols-2"
+          >
+            <div
+              class="bg-physio-bg-core border border-physio-bg-border rounded-2xl p-4 flex flex-col gap-3"
+            >
+              <div>
+                <h4
+                  class="text-sm font-semibold text-physio-text-primary"
+                >
+                  Benefit surface
+                </h4>
+                <p
+                  class="text-xs text-physio-text-tertiary"
+                >
+                  Golden mist = total benefit. Slide along P1 → P3 for the biggest ROI.
+                </p>
+              </div>
+              <div
+                class="relative w-full aspect-square bg-gradient-to-br from-physio-bg-secondary to-physio-bg-tertiary rounded-2xl border border-physio-bg-border overflow-hidden"
+              >
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.219);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.284);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.35);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.394);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.437);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.459);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.481);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.488);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.494);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.496);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.498);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.501);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.503);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.293);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.358);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.424);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.468);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.511);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.533);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.555);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.562);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.568);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.571);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.573);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.575);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.577);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.368);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.433);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.499);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.543);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.587);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.609);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.632);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.638);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.645);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.647);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.65);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.652);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.654);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.442);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.508);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.574);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.618);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.663);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.685);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.701);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.705);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.709);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.71);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.711);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.713);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.714);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.516);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.582);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.648);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.693);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.724);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.736);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.74);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.742);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.743);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.743);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.744);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.744);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.745);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.591);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.657);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.723);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.743);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.752);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.756);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.76);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.761);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.763);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.763);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.764);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.764);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.765);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.666);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.731);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.755);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.763);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.771);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.775);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.779);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.781);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.782);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.783);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.783);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.784);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.784);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.725);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.758);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.77);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.778);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.786);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.791);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.795);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.796);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.798);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.798);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.799);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.799);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.8);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.725);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.758);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.77);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.778);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.786);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.791);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.795);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.796);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.798);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.798);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.799);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.799);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.8);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.725);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.758);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.77);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.778);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.787);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.791);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.795);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.796);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.798);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.798);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.799);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.799);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.8);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.725);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.758);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.77);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.778);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.787);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.791);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.795);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.797);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.798);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.798);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.799);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.799);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.8);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.725);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.758);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.77);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.778);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.787);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.791);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.795);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.797);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.798);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.798);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.799);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.799);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.8);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.725);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.758);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.77);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.778);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.787);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.791);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.795);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.797);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.798);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.799);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.799);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.8);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(251, 191, 36, 0.8);"
+                />
+                <span
+                  class="absolute flex flex-col items-center text-[10px] font-semibold text-white drop-shadow"
+                  style="left: 0%; bottom: 0%; transform: translate(-50%, 50%);"
+                >
+                  <span
+                    class="w-5 h-5 rounded-full bg-physio-error flex items-center justify-center text-[9px] font-bold"
+                  >
+                    P0
+                  </span>
+                </span>
+                <span
+                  class="absolute flex flex-col items-center text-[10px] font-semibold text-white drop-shadow"
+                  style="left: 40%; bottom: 0%; transform: translate(-50%, 50%);"
+                >
+                  <span
+                    class="w-5 h-5 rounded-full bg-physio-error flex items-center justify-center text-[9px] font-bold"
+                  >
+                    P1
+                  </span>
+                </span>
+                <span
+                  class="absolute flex flex-col items-center text-[10px] font-semibold text-white drop-shadow"
+                  style="left: 80%; bottom: 0%; transform: translate(-50%, 50%);"
+                >
+                  <span
+                    class="w-5 h-5 rounded-full bg-physio-error flex items-center justify-center text-[9px] font-bold"
+                  >
+                    P2
+                  </span>
+                </span>
+                <span
+                  class="absolute flex flex-col items-center text-[10px] font-semibold text-white drop-shadow"
+                  style="left: 50%; bottom: 35%; transform: translate(-50%, 50%);"
+                >
+                  <span
+                    class="w-5 h-5 rounded-full bg-physio-error flex items-center justify-center text-[9px] font-bold"
+                  >
+                    P3
+                  </span>
+                </span>
+                <span
+                  class="absolute flex flex-col items-center text-[10px] font-semibold text-white drop-shadow"
+                  style="left: 85%; bottom: 80%; transform: translate(-50%, 50%);"
+                >
+                  <span
+                    class="w-5 h-5 rounded-full bg-physio-error flex items-center justify-center text-[9px] font-bold"
+                  >
+                    P4
+                  </span>
+                </span>
+                <span
+                  class="absolute inset-x-0 bottom-1 text-[10px] text-center text-physio-text-tertiary"
+                >
+                  Test dose (normalized)
+                </span>
+                <span
+                  class="absolute -left-2 top-1/2 -rotate-90 text-[10px] text-physio-text-tertiary"
+                >
+                  NPP dose (normalized)
+                </span>
+              </div>
+            </div>
+            <div
+              class="bg-physio-bg-core border border-physio-bg-border rounded-2xl p-4 flex flex-col gap-3"
+            >
+              <div>
+                <h4
+                  class="text-sm font-semibold text-physio-text-primary"
+                >
+                  Risk surface
+                </h4>
+                <p
+                  class="text-xs text-physio-text-tertiary"
+                >
+                  Orange flare = cumulative risk. The P4 corner is the cliff—treat it as expensive time.
+                </p>
+              </div>
+              <div
+                class="relative w-full aspect-square bg-gradient-to-br from-physio-bg-secondary to-physio-bg-tertiary rounded-2xl border border-physio-bg-border overflow-hidden"
+              >
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.18);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.19);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.199);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.215);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.231);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.253);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.276);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.298);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.32);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.333);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.346);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.359);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 0%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.371);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.198);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.207);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.217);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.233);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.249);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.271);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.294);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.316);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.338);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.351);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.364);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.377);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 8.3%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.39);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.226);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.236);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.246);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.262);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.278);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.301);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.323);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.346);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.368);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.381);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.394);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.406);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 16.7%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.419);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.257);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.267);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.277);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.293);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.31);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.332);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.355);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.378);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.4);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.413);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.426);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.439);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 25%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.452);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.29);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.299);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.31);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.326);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.343);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.366);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.388);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.411);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.434);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.447);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.46);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.473);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 33.300000000000004%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.486);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.325);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.335);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.345);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.362);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.379);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.402);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.425);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.448);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.47);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.483);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.496);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.509);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 41.699999999999996%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.522);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.361);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.371);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.381);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.398);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.415);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.438);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.461);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.484);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.506);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.52);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.533);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.546);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 50%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.558);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.396);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.406);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.416);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.433);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.45);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.473);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.496);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.519);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.542);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.555);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.568);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.581);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 58.3%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.594);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.442);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.452);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.463);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.48);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.497);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.52);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.543);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.566);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.589);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.602);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.615);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.628);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 66.7%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.641);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.491);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.501);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.511);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.528);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.546);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.569);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.592);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.615);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.638);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.651);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.664);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.677);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 75%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.69);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.534);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.544);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.555);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.572);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.589);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.612);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.635);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.659);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.681);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.695);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.708);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.721);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 83.3%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.734);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.57);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.58);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.59);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.608);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.625);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.648);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.671);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.694);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.717);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.731);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.744);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.757);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 91.7%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.77);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 0%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.605);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 8.333333333333332%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.615);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 16.666666666666664%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.626);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 25%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.643);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 33.33333333333333%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.66);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 41.66666666666667%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.684);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 50%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.707);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 58.333333333333336%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.73);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 66.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.753);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 75%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.766);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 83.33333333333334%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.779);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 91.66666666666666%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.791);"
+                />
+                <span
+                  class="absolute block rounded-full"
+                  style="width: 10px; height: 10px; left: 100%; bottom: 100%; transform: translate(-50%, 50%); background-color: rgba(249, 115, 22, 0.8);"
+                />
+                <span
+                  class="absolute flex flex-col items-center text-[10px] font-semibold text-white drop-shadow"
+                  style="left: 0%; bottom: 0%; transform: translate(-50%, 50%);"
+                >
+                  <span
+                    class="w-5 h-5 rounded-full bg-physio-error flex items-center justify-center text-[9px] font-bold"
+                  >
+                    P0
+                  </span>
+                </span>
+                <span
+                  class="absolute flex flex-col items-center text-[10px] font-semibold text-white drop-shadow"
+                  style="left: 40%; bottom: 0%; transform: translate(-50%, 50%);"
+                >
+                  <span
+                    class="w-5 h-5 rounded-full bg-physio-error flex items-center justify-center text-[9px] font-bold"
+                  >
+                    P1
+                  </span>
+                </span>
+                <span
+                  class="absolute flex flex-col items-center text-[10px] font-semibold text-white drop-shadow"
+                  style="left: 80%; bottom: 0%; transform: translate(-50%, 50%);"
+                >
+                  <span
+                    class="w-5 h-5 rounded-full bg-physio-error flex items-center justify-center text-[9px] font-bold"
+                  >
+                    P2
+                  </span>
+                </span>
+                <span
+                  class="absolute flex flex-col items-center text-[10px] font-semibold text-white drop-shadow"
+                  style="left: 50%; bottom: 35%; transform: translate(-50%, 50%);"
+                >
+                  <span
+                    class="w-5 h-5 rounded-full bg-physio-error flex items-center justify-center text-[9px] font-bold"
+                  >
+                    P3
+                  </span>
+                </span>
+                <span
+                  class="absolute flex flex-col items-center text-[10px] font-semibold text-white drop-shadow"
+                  style="left: 85%; bottom: 80%; transform: translate(-50%, 50%);"
+                >
+                  <span
+                    class="w-5 h-5 rounded-full bg-physio-error flex items-center justify-center text-[9px] font-bold"
+                  >
+                    P4
+                  </span>
+                </span>
+                <span
+                  class="absolute inset-x-0 bottom-1 text-[10px] text-center text-physio-text-tertiary"
+                >
+                  Test dose (normalized)
+                </span>
+                <span
+                  class="absolute -left-2 top-1/2 -rotate-90 text-[10px] text-physio-text-tertiary"
+                >
+                  NPP dose (normalized)
+                </span>
+              </div>
+            </div>
+          </div>
+          <div
+            class="grid gap-3 md:grid-cols-2"
+          >
+            <div
+              class="p-4 rounded-2xl border border-physio-bg-border bg-physio-bg-core"
+            >
+              <div
+                class="flex items-center gap-2"
+              >
+                <span
+                  class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-physio-error/10 text-physio-error border border-physio-error/30"
+                >
+                  P0
+                </span>
+                <h4
+                  class="text-sm font-semibold text-physio-text-primary"
+                >
+                  Baseline
+                </h4>
+              </div>
+              <p
+                class="text-xs text-physio-text-secondary mt-2"
+              >
+                No Test/NPP load. Just your TRT, ancillaries, and lifestyle inputs.
+              </p>
+              <p
+                class="text-xs text-physio-text-tertiary mt-1"
+              >
+                Test: 0 mg /week · NPP: 0 mg /week
+              </p>
+            </div>
+            <div
+              class="p-4 rounded-2xl border border-physio-bg-border bg-physio-bg-core"
+            >
+              <div
+                class="flex items-center gap-2"
+              >
+                <span
+                  class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-physio-error/10 text-physio-error border border-physio-error/30"
+                >
+                  P1
+                </span>
+                <h4
+                  class="text-sm font-semibold text-physio-text-primary"
+                >
+                  Test moderate
+                </h4>
+              </div>
+              <p
+                class="text-xs text-physio-text-secondary mt-2"
+              >
+                Test carries the block. This is usually where you already feel most of the benefit.
+              </p>
+              <p
+                class="text-xs text-physio-text-tertiary mt-1"
+              >
+                Test: 400 mg /week · NPP: 0 mg /week
+              </p>
+            </div>
+            <div
+              class="p-4 rounded-2xl border border-physio-bg-border bg-physio-bg-core"
+            >
+              <div
+                class="flex items-center gap-2"
+              >
+                <span
+                  class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-physio-error/10 text-physio-error border border-physio-error/30"
+                >
+                  P2
+                </span>
+                <h4
+                  class="text-sm font-semibold text-physio-text-primary"
+                >
+                  Test high
+                </h4>
+              </div>
+              <p
+                class="text-xs text-physio-text-secondary mt-2"
+              >
+                Large jump in Test dose for marginal benefit. Watch the risk ramp.
+              </p>
+              <p
+                class="text-xs text-physio-text-tertiary mt-1"
+              >
+                Test: 800 mg /week · NPP: 0 mg /week
+              </p>
+            </div>
+            <div
+              class="p-4 rounded-2xl border border-physio-bg-border bg-physio-bg-core"
+            >
+              <div
+                class="flex items-center gap-2"
+              >
+                <span
+                  class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-physio-error/10 text-physio-error border border-physio-error/30"
+                >
+                  P3
+                </span>
+                <h4
+                  class="text-sm font-semibold text-physio-text-primary"
+                >
+                  Balanced ridge
+                </h4>
+              </div>
+              <p
+                class="text-xs text-physio-text-secondary mt-2"
+              >
+                Layer moderate NPP onto mid-Test. Fuller look + better pumps, usually best ROI.
+              </p>
+              <p
+                class="text-xs text-physio-text-tertiary mt-1"
+              >
+                Test: 500 mg /week · NPP: 210 mg /week
+              </p>
+            </div>
+            <div
+              class="p-4 rounded-2xl border border-physio-bg-border bg-physio-bg-core"
+            >
+              <div
+                class="flex items-center gap-2"
+              >
+                <span
+                  class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-physio-error/10 text-physio-error border border-physio-error/30"
+                >
+                  P4
+                </span>
+                <h4
+                  class="text-sm font-semibold text-physio-text-primary"
+                >
+                  Both high
+                </h4>
+              </div>
+              <p
+                class="text-xs text-physio-text-secondary mt-2"
+              >
+                Top of the benefit surface but hugging the risk cliff. Treat as a short, instrumented experiment.
+              </p>
+              <p
+                class="text-xs text-physio-text-tertiary mt-1"
+              >
+                Test: 850 mg /week · NPP: 480 mg /week
+              </p>
+            </div>
+          </div>
+          <p
+            class="text-[11px] text-physio-text-tertiary text-center"
+          >
+            Conceptual only. Normalize your logs into these phases, monitor labs, and treat high-phase time as structurally expensive.
+          </p>
+        </section>
         <div
           aria-hidden="true"
           class="h-px bg-physio-bg-border/60 w-full my-2"

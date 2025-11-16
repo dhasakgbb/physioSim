@@ -268,23 +268,30 @@ export const interactionMatrix = {
   },
 
   // NPP COMBINATIONS
-  npp_trenbolone: {
-    description: 'High-risk 19-nor stack; severe HPTA suppression and side effects',
-    synergy: { benefit: 0.05, risk: 0.6 },
+  trenbolone_npp: {
+    description: 'Conceptual “ridge ride”: Tren provides density while NPP restores fullness and joint comfort when both stay in the mid-bands.',
+    synergy: { benefit: 0.35, risk: 0.45 },
     mechanisms: [
-      'Both 19-nors; cumulative progestogenic effects',
-      'Dual prolactin elevation: NPP direct, Tren indirect',
-      'Psychological unpredictability: NPP libido issues + Tren aggression',
-      'Severe HPTA suppression (both shut down hard; 19-nors metabolize slowly)',
-      'Lipid profile devastated: NPP moderate, Tren severe',
-      'Minimal additive benefit; risk far exceeds reward'
+      'Moderate Tren (0.3–0.5 relative) sits near the top of its benefit curve; adding NPP shifts you onto a higher ridge vs. more Tren alone.',
+      'NPP softens joints and adds cell volume so the combo feels stronger despite similar scale weight.',
+      'Dual 19-nor suppression and prolactin load require disciplined caber + lab cadence.',
+      'BP/HCT rise faster as you approach the P4 corner (both compounds high).',
+      'Psych/sleep resilience dictates how long you can camp past P3 without structural cost.'
     ],
-    recommendedRatio: 'NOT RECOMMENDED - avoid stacking 19-nors',
-    recommendation: '❌ Not recommended; use one OR the other, not both',
-    caution: '⚠️ CRITICAL: Cumulative 19-nor suppression causes 4-6 month recovery; libido crash + aggression = psychological disaster; prolactin management extremely difficult',
-    stackBenefit: 'Minimal over using one compound; not worth the risk',
-    stackRisk: 'Extreme: severe HPTA (6+ month recovery), prolactin crash, psychological instability, lipid devastation',
-    rating: 'forbidden'
+    recommendedRatio: 'Think in phases: P1 (Tren-only), slide toward P3 (Tren 0.5 · NPP 0.3), reserve P4 (0.8/0.8) for short experiments.',
+    recommendedProtocol: {
+      trenDose: '230-360mg/week “working zone”',
+      nppDose: '150-280mg/week layered on once Tren response is known',
+      prolactinMgmt: 'Cabergoline 0.25mg 2x/week (titrate via labs)',
+      bpStack: 'ARB + beta-blocker kept in place before nudging doses',
+      hctMonitoring: 'Every 4-6 weeks; donate if >52%',
+      duration: 'P3 blocks 6-8 weeks, P4 tests ≤4 weeks'
+    },
+    recommendation: 'Advanced experimentation only; build logs by phase instead of blindly escalating dose.',
+    caution: 'Treat high-dose, long-duration blocks as structurally expensive time. Sleep loss, rising BP, or prolactin creep = step back toward P1/P2 immediately.',
+    stackBenefit: 'Noticeable jump in hardness + pumps at P3 without needing Tren mega-doses; P4 is the “all-in” zone for short bursts.',
+    stackRisk: 'Moderate-to-high: neuro strain, BP/HCT, dual prolactin drivers, extended recovery time.',
+    rating: 'caution'
   },
 
   npp_eq: {

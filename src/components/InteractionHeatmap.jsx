@@ -36,6 +36,7 @@ import {
 } from 'recharts';
 import PDFExport from './PDFExport';
 import DoseSlider from './DoseSlider';
+import PairPhaseAtlas from './PairPhaseAtlas.jsx';
 
 const uniqueCompounds = Array.from(new Set(Object.values(interactionPairs).flatMap(pair => pair.compounds)));
 
@@ -1460,6 +1461,18 @@ const InteractionHeatmap = ({
               </div>
             </div>
         </div>
+
+        {selectedPair && (
+          <>
+            <SectionDivider />
+            <PairPhaseAtlas
+              pair={selectedPair}
+              surfaceData={surfaceData}
+              doseRanges={selectedPair?.doseRanges}
+            />
+          </>
+        )}
+
           <SectionDivider />
           {/* Multi-Compound Optimizer */}
           <section className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-lg space-y-4">
