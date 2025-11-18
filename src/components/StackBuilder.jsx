@@ -15,16 +15,16 @@ const stackScoringLabel = 'Net benefit − risk';
 
 const OrientationBar = ({ items, tone = 'default' }) => {
   const toneClasses = tone === 'accent'
-    ? 'bg-physio-bg-tertiary/90 border-physio-accent-cyan/40'
-    : 'bg-physio-bg-core/95 border-physio-bg-border';
+    ? 'bg-physio-bg-tertiary/50 border-physio-accent-cyan/30 backdrop-blur-sm'
+    : 'bg-physio-bg-core/50 border-physio-bg-border/50 backdrop-blur-sm';
 
   return (
     <div className="sticky top-3 z-30">
-      <div className={`${toneClasses} rounded-2xl px-3.5 py-1.5 flex flex-wrap items-center gap-3 text-[10px] tracking-wide uppercase text-physio-text-tertiary shadow-physio-subtle`}>
+      <div className={`${toneClasses} rounded-2xl px-4 py-2 border flex flex-wrap items-center gap-4 text-xs uppercase tracking-wider text-physio-text-tertiary shadow-lg`}>
         {items.map(({ label, value }, index) => (
           <div key={`${label}-${index}`} className="flex items-center gap-2">
-            <span>{label}</span>
-            <span className="text-physio-text-primary text-[13px] font-semibold normal-case">
+            <span className="font-bold">{label}</span>
+            <span className="text-physio-text-primary font-mono normal-case bg-white/5 px-1.5 py-0.5 rounded">
               {value}
             </span>
           </div>
@@ -654,19 +654,22 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
       <section ref={builderRef} className="space-y-5">
 
         {/* Add Compound Section */}
-        <div className="bg-physio-bg-secondary p-5 rounded-xl shadow-sm border border-physio-bg-border">
-          <h2 className="text-xl font-semibold mb-3 text-physio-text-primary">Build Your Stack</h2>
+        <div className="bg-physio-bg-core/30 backdrop-blur-md p-6 rounded-2xl border border-physio-bg-border shadow-lg">
+          <h2 className="text-xl font-semibold mb-4 text-physio-text-primary flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-physio-accent-cyan rounded-full" />
+            Build Your Stack
+          </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-physio-text-secondary mb-1.5" htmlFor={compoundSelectId}>
+              <label className="block text-xs font-bold text-physio-text-tertiary uppercase tracking-wide mb-2" htmlFor={compoundSelectId}>
                 Select Compound
               </label>
               <select
                 id={compoundSelectId}
                 value={selectedCompound}
                 onChange={(e) => setSelectedCompound(e.target.value)}
-                className="w-full px-3 py-2 bg-physio-bg-tertiary text-physio-text-primary border border-physio-bg-border rounded-md focus:outline-none focus:ring-2 focus:ring-physio-accent-cyan transition-standard"
+                className="w-full px-4 py-3 bg-physio-bg-core border border-physio-bg-border rounded-xl text-physio-text-primary focus:outline-none focus:border-physio-accent-cyan transition-colors"
               >
                 <option value="">-- Choose Compound --</option>
                 <optgroup label="Injectable Compounds">
@@ -687,11 +690,11 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-physio-text-secondary mb-1.5" htmlFor={doseInputId}>
+              <label className="block text-xs font-bold text-physio-text-tertiary uppercase tracking-wide mb-2" htmlFor={doseInputId}>
                 Dose ({selectedCompound ? selectedUnit : 'mg'})
               </label>
               {selectedCompoundMeta ? (
-                <div className="bg-physio-bg-tertiary/70 border border-physio-bg-border/70 rounded-2xl px-3 py-2">
+                <div className="bg-physio-bg-secondary/50 border border-physio-bg-border rounded-xl px-4 py-3">
                   <DoseSlider
                     id={doseInputId}
                     value={sliderValue}
@@ -710,7 +713,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                     ariaLabel="Stack dose selector"
                     onChange={(value) => setDose(String(value))}
                   />
-                  <div className="flex items-center gap-2 mt-2 text-[11px] text-physio-text-tertiary uppercase tracking-wide">
+                  <div className="flex items-center gap-2 mt-3 text-[11px] text-physio-text-tertiary uppercase tracking-wide">
                     <span>
                       Window {selectedDoseWindow?.min ?? 0}-{selectedDoseWindow?.max ?? 0} {selectedUnit}
                     </span>
@@ -719,22 +722,22 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                       value={dose}
                       onChange={(e) => setDose(e.target.value)}
                       placeholder="Enter dose"
-                      className="ml-auto w-24 px-2 py-1 rounded border border-physio-bg-border bg-physio-bg-core text-xs text-physio-text-primary"
+                      className="ml-auto w-24 px-2 py-1 rounded border border-physio-bg-border bg-physio-bg-core text-xs text-physio-text-primary text-right"
                     />
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-physio-text-tertiary py-2">
+                <p className="text-xs text-physio-text-tertiary py-3 italic">
                   Select a compound to unlock the slider.
                 </p>
               )}
             </div>
             
-            <div className="flex items-end">
+            <div className="flex items-end pb-1">
               <button
                 onClick={handleAddCompound}
                 disabled={!selectedCompound || !dose}
-                className="w-full px-3.5 py-2 bg-physio-accent-cyan text-white rounded-md hover:bg-physio-accent-cyan disabled:bg-physio-bg-border disabled:cursor-not-allowed transition-colors"
+                className="w-full px-4 py-3 bg-physio-accent-cyan hover:bg-physio-accent-cyan/90 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-physio-accent-cyan/20"
               >
                 Add to Stack
               </button>
@@ -743,21 +746,26 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
         </div>
         
         {/* Current Stack */}
-        <div className="bg-physio-bg-secondary p-5 rounded-xl shadow-sm border border-physio-bg-border">
-          <h3 className="text-lg font-semibold mb-3 text-physio-text-primary">Current Stack</h3>
+        <div className="bg-physio-bg-core/30 backdrop-blur-md p-6 rounded-2xl border border-physio-bg-border shadow-lg">
+          <h3 className="text-xl font-semibold mb-4 text-physio-text-primary flex items-center gap-2">
+             <span className="w-1.5 h-6 bg-physio-accent-violet rounded-full" />
+             Current Stack
+          </h3>
           
           {stack.length === 0 ? (
-            <p className="text-physio-text-tertiary text-center py-6 text-sm">No compounds in stack. Add compounds above to get started.</p>
+            <div className="text-physio-text-tertiary text-center py-12 border-2 border-dashed border-physio-bg-border/50 rounded-xl">
+              No compounds in stack. Add compounds above to get started.
+            </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-3">
               {stack.map(item => {
                 const compound = compoundData[item.compound];
                 const guardrail = guardrailMap[item.compound];
                 const guardrailTone = guardrail?.beyond
-                  ? 'border-physio-error/70 bg-physio-error/10'
+                  ? 'border-physio-error/50 bg-physio-error/5'
                   : guardrail?.plateau
-                  ? 'border-physio-warning/70 bg-physio-warning/10'
-                  : 'border-physio-bg-border';
+                  ? 'border-physio-warning/50 bg-physio-warning/5'
+                  : 'border-physio-bg-border/50 bg-physio-bg-secondary/30';
                 const doseWindow = deriveDoseWindow(item.compound);
                 const sliderMarkers = [
                   doseWindow.base
@@ -774,29 +782,31 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                 return (
                   <div
                     key={item.compound}
-                    className={`p-3.5 bg-physio-bg-core rounded-lg border ${guardrailTone}`}
+                    className={`p-4 rounded-xl border backdrop-blur-sm transition-all hover:border-physio-bg-border ${guardrailTone}`}
                   >
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-4">
                       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                         <div className="flex items-center gap-3.5">
                           <div
-                            className="w-4 h-4 rounded-full"
-                            style={{ backgroundColor: compound.color }}
-                          ></div>
+                            className="w-10 h-10 rounded-full flex items-center justify-center shadow-lg"
+                            style={{ backgroundColor: compound.color, color: '#fff' }}
+                          >
+                            <span className="font-bold text-xs opacity-80">{compound.abbreviation.slice(0,2)}</span>
+                          </div>
                           <div>
-                            <div className="font-semibold text-physio-text-primary">{compound.name}</div>
-                            <div className="text-sm text-physio-text-tertiary">
+                            <div className="font-bold text-lg text-physio-text-primary">{compound.name}</div>
+                            <div className="text-xs text-physio-text-tertiary uppercase tracking-wider">
                               {compound.type === 'oral' ? 'Oral' : 'Injectable'} • {compound.abbreviation}
                             </div>
                             {guardrail && (
-                              <div className="text-xs font-semibold mt-1 flex flex-wrap items-center gap-2">
+                              <div className="text-[10px] font-bold uppercase tracking-wide mt-1 flex flex-wrap items-center gap-2">
                                 {guardrail.plateau && !guardrail.beyond && (
-                                  <span className="text-physio-warning">
+                                  <span className="text-physio-warning bg-physio-warning/10 px-1.5 py-0.5 rounded">
                                     Plateau near {guardrail.plateauDose ? guardrail.plateauDose + 'mg' : 'this dose'}
                                   </span>
                                 )}
                                 {guardrail.beyond && (
-                                  <span className="text-physio-error">
+                                  <span className="text-physio-error bg-physio-error/10 px-1.5 py-0.5 rounded">
                                     Outside evidence {guardrail.hardMax ? '(modeled <= ' + guardrail.hardMax + 'mg)' : ''}
                                   </span>
                                 )}
@@ -806,12 +816,12 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                         </div>
                         <button
                           onClick={() => handleRemoveCompound(item.compound)}
-                          className="px-3 py-1 bg-physio-error text-physio-bg-core rounded hover:bg-physio-error/80 transition-standard text-sm font-medium"
+                          className="px-3 py-1.5 bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary rounded-lg hover:text-physio-error hover:border-physio-error transition-colors text-xs font-medium"
                         >
                           Remove
                         </button>
                       </div>
-                      <div className="flex flex-col gap-2">
+                      <div className="bg-physio-bg-core/40 rounded-lg p-3 border border-physio-bg-border/30">
                         <DoseSlider
                           id={`stack-dose-${item.compound}`}
                           value={item.dose}
@@ -823,44 +833,20 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                           ariaLabel={`${compound.name} dose`}
                           onChange={(nextValue) => handleUpdateDose(item.compound, nextValue)}
                         />
-                        <div className="flex flex-wrap items-center gap-2 text-sm text-physio-text-secondary">
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              type="number"
-                              value={item.dose}
-                              onChange={(e) => handleUpdateDose(item.compound, e.target.value)}
-                              className="w-24 px-2 py-1 border border-physio-bg-border rounded text-sm bg-physio-bg-tertiary text-physio-text-primary"
-                            />
-                            <span>{unitLabel}</span>
-                          </div>
-                          <span className="ml-auto text-[11px] uppercase tracking-wide text-physio-text-tertiary">
-                            Window {doseWindow.min}-{doseWindow.max} mg
+                        <div className="flex justify-between items-end mt-2">
+                          <span className="text-[10px] text-physio-text-tertiary uppercase tracking-wide">
+                            Range {doseWindow.min}-{doseWindow.max} mg
                           </span>
+                          <div className="flex items-baseline gap-1">
+                             <span className="text-lg font-bold text-physio-text-primary">{item.dose}</span>
+                             <span className="text-xs text-physio-text-secondary">{unitLabel}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 );
               })}
-              {guardrailNotices.length > 0 && (
-                <div className="mt-3 bg-physio-bg-core border border-physio-warning/40 rounded-lg p-3 text-sm text-physio-text-secondary">
-                  <p className="font-semibold text-physio-warning mb-1.5">Dose guardrails</p>
-                  <ul className="space-y-1">
-                    {guardrailNotices.map(notice => (
-                      <li key={notice.compound} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                        <span className="text-physio-text-primary font-medium">
-                          {compoundData[notice.compound]?.name || notice.compound}
-                        </span>
-                        <span className="text-xs sm:text-sm">
-                          {notice.beyond
-                            ? `Requested dose exceeds modeled evidence${notice.hardMax ? ` (cap ${notice.hardMax}mg)` : ''}.`
-                            : `Diminishing returns beyond ~${notice.plateauDose || 'current'}mg — mostly risk accumulation.`}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -869,96 +855,75 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
       <section ref={metricsRef}>
         {/* Stack Metrics */}
         {stack.length > 0 && (
-          <div className="bg-physio-bg-secondary p-5 rounded-xl shadow-sm border border-physio-bg-border">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
-              <h3 className="text-lg font-semibold text-physio-text-primary">Stack Metrics</h3>
-              <div className="text-sm text-physio-text-secondary flex flex-col md:items-end">
-                <span className="uppercase text-[11px] tracking-wide text-physio-text-tertiary">Scoring model</span>
-                <span className="font-semibold text-physio-text-primary">{stackScoringLabel}</span>
-                <span className="text-xs text-physio-text-tertiary">
-                  Net score {formatMetric(stackMetrics.netScore)}
+          <div className="bg-physio-bg-core/30 backdrop-blur-md p-6 rounded-2xl border border-physio-bg-border shadow-lg">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+              <h3 className="text-xl font-semibold text-physio-text-primary flex items-center gap-2">
+                <span className="w-1.5 h-6 bg-physio-accent-mint rounded-full" />
+                Stack Metrics
+              </h3>
+              <div className="text-right">
+                <span className="block text-[10px] uppercase tracking-wider text-physio-text-tertiary">Net Score</span>
+                <span className={`text-2xl font-bold ${parseFloat(stackMetrics.netScore) >= 0 ? 'text-physio-accent-cyan' : 'text-physio-error'}`}>
+                  {formatMetric(stackMetrics.netScore)}
                 </span>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Base Metrics */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-physio-text-secondary mb-2">Base Scores (Without Synergy)</h4>
-              <div className="flex justify-between items-center py-2 border-b border-physio-bg-border">
-                <span className="text-physio-text-secondary">Total Benefit:</span>
-                <span className="font-semibold text-physio-accent-mint text-lg">{formatMetric(stackMetrics.totalBenefit)}</span>
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold text-physio-text-tertiary uppercase tracking-wider border-b border-physio-bg-border/50 pb-2">Base Scores (No Synergy)</h4>
+              <div className="flex justify-between items-center">
+                <span className="text-physio-text-secondary text-sm">Total Benefit</span>
+                <span className="font-mono text-physio-accent-mint">{formatMetric(stackMetrics.totalBenefit)}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-physio-bg-border">
-                <span className="text-physio-text-secondary">Total Risk:</span>
-                <span className="font-semibold text-physio-error text-lg">{formatMetric(stackMetrics.totalRisk)}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-physio-text-secondary text-sm">Total Risk</span>
+                <span className="font-mono text-physio-error">{formatMetric(stackMetrics.totalRisk)}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-physio-bg-border">
-                <span className="text-physio-text-secondary">Benefit:Risk Ratio:</span>
-                <span className="font-semibold text-physio-accent-cyan text-lg">{formatMetric(stackMetrics.benefitRiskRatio)}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-physio-text-secondary text-sm">Benefit:Risk Ratio</span>
+                <span className="font-mono text-physio-accent-cyan">{formatMetric(stackMetrics.benefitRiskRatio)}</span>
               </div>
             </div>
             
             {/* Synergy-Adjusted Metrics */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-physio-text-secondary mb-2">Synergy-Adjusted Scores</h4>
-              <div className="flex justify-between items-center py-2 border-b border-physio-bg-border">
-                <span className="text-physio-text-secondary">Benefit Synergy:</span>
-                <span className={`font-semibold text-lg ${stackMetrics.benefitSynergyPct >= 0 ? 'text-physio-accent-mint' : 'text-physio-error'}`}>
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold text-physio-text-tertiary uppercase tracking-wider border-b border-physio-bg-border/50 pb-2">With Synergy</h4>
+              <div className="flex justify-between items-center">
+                <span className="text-physio-text-secondary text-sm">Benefit Synergy</span>
+                <span className={`font-mono font-bold ${stackMetrics.benefitSynergyPct >= 0 ? 'text-physio-accent-mint' : 'text-physio-error'}`}>
                   {stackMetrics.benefitSynergyPct >= 0 ? '+' : ''}
                   {stackMetrics.benefitSynergyPct.toFixed(1)}%
                 </span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-physio-bg-border">
-                <span className="text-physio-text-secondary">Risk Synergy:</span>
-                <span className={`font-semibold text-lg ${stackMetrics.riskSynergyPct <= 0 ? 'text-physio-accent-mint' : 'text-physio-error'}`}>
+              <div className="flex justify-between items-center">
+                <span className="text-physio-text-secondary text-sm">Risk Synergy</span>
+                <span className={`font-mono font-bold ${stackMetrics.riskSynergyPct <= 0 ? 'text-physio-accent-mint' : 'text-physio-error'}`}>
                   {stackMetrics.riskSynergyPct >= 0 ? '+' : ''}
                   {stackMetrics.riskSynergyPct.toFixed(1)}%
                 </span>
               </div>
-              <div className="bg-physio-bg-tertiary p-3 rounded mt-2">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-physio-text-secondary font-medium">Adjusted Benefit:</span>
+              
+              <div className="bg-physio-bg-secondary/50 p-4 rounded-xl border border-physio-bg-border/50 mt-2">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs uppercase tracking-wide text-physio-text-secondary">Adj. Benefit</span>
                   <span className="font-bold text-physio-accent-mint">{formatMetric(stackMetrics.adjustedBenefit)}</span>
                 </div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-physio-text-secondary font-medium">Adjusted Risk:</span>
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-xs uppercase tracking-wide text-physio-text-secondary">Adj. Risk</span>
                   <span className="font-bold text-physio-error">{formatMetric(stackMetrics.adjustedRisk)}</span>
                 </div>
-                <div className="flex justify-between items-center pt-2 border-t border-physio-accent-cyan">
-                  <span className="text-physio-text-secondary font-medium">Final Ratio:</span>
-                  <span className="font-bold text-physio-accent-cyan text-lg">{formatMetric(stackMetrics.adjustedRatio)}</span>
+                <div className="flex justify-between items-center pt-3 border-t border-physio-bg-border/50">
+                  <span className="text-sm font-bold text-physio-text-primary">Final Ratio</span>
+                  <span className="font-bold text-xl text-physio-accent-cyan">{formatMetric(stackMetrics.adjustedRatio)}</span>
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="mt-4 p-4 bg-physio-bg-tertiary rounded-lg border border-physio-bg-border">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm text-physio-text-secondary">Net score</p>
-                <p className="text-xs text-physio-text-tertiary">
-                  Modeled via {stackScoringLabel}
-                </p>
-              </div>
-              <span className={`text-2xl font-bold ${parseFloat(stackMetrics.netScore) >= 0 ? 'text-physio-accent-cyan' : 'text-physio-error'}`}>
-                {formatMetric(stackMetrics.netScore)}
-              </span>
-            </div>
-          </div>
-          
-          {/* Interpretation */}
-          <div className="mt-4 p-4 bg-physio-warning/10 rounded-lg border border-physio-warning/40">
-            <p className="text-sm text-physio-text-secondary">
-              <strong>Interpretation:</strong> Higher benefit:risk ratios indicate more efficient stacks. 
-              Positive benefit synergy = compounds amplify each other's benefits. 
-              Positive risk synergy = compounds compound each other's risks. 
-              Aim for positive benefit synergy and low/negative risk synergy.
-            </p>
           </div>
           
           {/* Export Stack Report */}
-          <div className="mt-6 flex justify-end">
+          <div className="mt-6 flex justify-end pt-4 border-t border-physio-bg-border/30">
           <PDFExport 
             chartRef={stackRef}
             stackData={{
@@ -1013,7 +978,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
       )}
       </section>
 
-      <section ref={cyclesRef} className="bg-physio-bg-secondary p-6 rounded-lg shadow-sm border border-physio-bg-border space-y-4">
+      <section ref={cyclesRef} className="bg-physio-bg-core/30 backdrop-blur-md p-6 rounded-2xl border border-physio-bg-border shadow-lg space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h3 className="text-xl font-semibold text-physio-text-primary">Cycle Workspace</h3>
@@ -1030,18 +995,17 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
             <button
               onClick={handleOpenCycleModal}
               disabled={!hasStack}
-              className="px-4 py-2 rounded-md border border-physio-accent-cyan text-physio-accent-cyan font-semibold disabled:border-physio-bg-border disabled:text-physio-text-tertiary"
+              className="px-4 py-2 rounded-lg border border-physio-accent-cyan/50 text-physio-accent-cyan font-semibold hover:bg-physio-accent-cyan/10 transition-colors disabled:border-physio-bg-border disabled:text-physio-text-tertiary disabled:bg-transparent"
             >
               Save current cycle
             </button>
             <div className="flex-1">
-              <label className="text-xs text-physio-text-tertiary uppercase tracking-wide">Load saved cycle</label>
               <select
                 value={loadSelection}
                 onChange={e => handleLoadSelectionChange(e.target.value)}
-                className="mt-1 w-full bg-physio-bg-tertiary border border-physio-bg-border rounded-md px-3 py-2 text-sm text-physio-text-primary"
+                className="w-full bg-physio-bg-secondary border border-physio-bg-border rounded-lg px-3 py-2 text-sm text-physio-text-primary focus:outline-none focus:border-physio-accent-cyan"
               >
-                <option value="">Select cycle…</option>
+                <option value="">Load saved cycle...</option>
                 {savedCycles.map(cycle => (
                   <option key={cycle.id} value={cycle.id}>
                     {cycle.name} — {formatTimestamp(cycle.updatedAt)}
@@ -1053,7 +1017,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
         </div>
 
         {savedCycles.length === 0 ? (
-          <p className="text-sm text-physio-text-tertiary">No saved cycles yet. Start by building a stack and hit “Save current cycle”.</p>
+          <p className="text-sm text-physio-text-tertiary italic border-t border-physio-bg-border/30 pt-4">No saved cycles yet.</p>
         ) : (
           <>
             <div className="grid gap-3 md:grid-cols-2">
@@ -1062,22 +1026,16 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                 return (
                   <div
                     key={cycle.id}
-                    className={`border rounded-lg p-3 flex items-center justify-between gap-3 ${
-                      cycle.id === activeCycleId ? 'border-physio-accent-cyan' : 'border-physio-bg-border'
+                    className={`border rounded-xl p-4 flex items-center justify-between gap-3 bg-physio-bg-secondary/30 ${
+                      cycle.id === activeCycleId ? 'border-physio-accent-cyan shadow-[0_0_15px_rgba(75,187,247,0.15)]' : 'border-physio-bg-border/50'
                     }`}
                   >
                     <div>
-                      <p className="font-semibold text-physio-text-primary">{cycle.name}</p>
-                      <p className="text-xs text-physio-text-tertiary">
-                        Updated {formatTimestamp(cycle.updatedAt)} · Net {meta ? formatMetric(meta.net) : '—'}
+                      <p className="font-semibold text-physio-text-primary text-lg">{cycle.name}</p>
+                      <p className="text-xs text-physio-text-tertiary mb-2">
+                        Updated {formatTimestamp(cycle.updatedAt)}
                       </p>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        <GuardrailChip
-                          size="sm"
-                          tone="muted"
-                          label="Scoring"
-                          detail={stackScoringLabel}
-                        />
+                      <div className="flex flex-wrap gap-1">
                         {meta && (
                           <>
                             <GuardrailChip
@@ -1094,21 +1052,18 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                             />
                           </>
                         )}
-                        {cycle.notes && (
-                          <GuardrailChip size="sm" tone="muted" label="Notes" detail="Saved" />
-                        )}
                       </div>
                     </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleLoadCycle(cycle.id)}
-                      className="text-xs px-2 py-1 rounded border border-physio-accent-mint text-physio-accent-mint font-semibold"
+                      className="text-xs px-3 py-1.5 rounded-lg border border-physio-accent-mint/30 text-physio-accent-mint hover:bg-physio-accent-mint/10 transition-colors font-semibold"
                     >
                       Load
                     </button>
                     <button
                       onClick={() => handleDeleteCycle(cycle.id)}
-                      className="text-xs px-2 py-1 rounded border border-physio-error text-physio-error"
+                      className="text-xs px-3 py-1.5 rounded-lg border border-physio-error/30 text-physio-error hover:bg-physio-error/10 transition-colors"
                     >
                       Delete
                     </button>
@@ -1118,7 +1073,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
               })}
             </div>
 
-            <div className="pt-4 border-t border-physio-bg-border space-y-3">
+            <div className="pt-6 border-t border-physio-bg-border/30 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <h4 className="text-lg font-semibold text-physio-text-primary">Compare cycles</h4>
@@ -1130,7 +1085,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                   <select
                     value={compareSelection.baseline}
                     onChange={e => setCompareSelection(prev => ({ ...prev, baseline: e.target.value }))}
-                    className="flex-1 bg-physio-bg-tertiary border border-physio-bg-border rounded-md px-3 py-2 text-sm text-physio-text-primary"
+                    className="flex-1 bg-physio-bg-secondary border border-physio-bg-border rounded-lg px-3 py-2 text-sm text-physio-text-primary"
                   >
                     <option value="">Baseline cycle…</option>
                     {savedCycles.map(cycle => (
@@ -1142,7 +1097,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                   <select
                     value={compareSelection.contender}
                     onChange={e => setCompareSelection(prev => ({ ...prev, contender: e.target.value }))}
-                    className="flex-1 bg-physio-bg-tertiary border border-physio-bg-border rounded-md px-3 py-2 text-sm text-physio-text-primary"
+                    className="flex-1 bg-physio-bg-secondary border border-physio-bg-border rounded-lg px-3 py-2 text-sm text-physio-text-primary"
                   >
                     <option value="">Contender cycle…</option>
                     {savedCycles.map(cycle => (
@@ -1155,31 +1110,31 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
               </div>
 
               {comparisonResult && (
-                <div className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-4 space-y-2">
+                <div className="bg-physio-bg-secondary/50 border border-physio-bg-border rounded-xl p-5 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                      <p className="text-xs text-physio-text-tertiary uppercase tracking-wide">Baseline</p>
+                      <p className="text-[10px] text-physio-text-tertiary uppercase tracking-wider font-bold">Baseline</p>
                       <p className="text-lg font-semibold text-physio-text-primary">
-                        {comparisonResult.baseline.name} · {formatMetric(comparisonResult.baseline.totals.netScore)} net
+                        {comparisonResult.baseline.name} · <span className="font-mono text-base opacity-80">{formatMetric(comparisonResult.baseline.totals.netScore)} net</span>
                       </p>
                     </div>
-                    <div className="text-center text-sm text-physio-text-tertiary">vs</div>
+                    <div className="text-center text-xs text-physio-text-tertiary font-mono bg-physio-bg-border/30 px-2 py-1 rounded-full">VS</div>
                     <div className="text-right">
-                      <p className="text-xs text-physio-text-tertiary uppercase tracking-wide">Contender</p>
+                      <p className="text-[10px] text-physio-text-tertiary uppercase tracking-wider font-bold">Contender</p>
                       <p className="text-lg font-semibold text-physio-text-primary">
-                        {comparisonResult.contender.name} · {formatMetric(comparisonResult.contender.totals.netScore)} net
+                        {comparisonResult.contender.name} · <span className="font-mono text-base opacity-80">{formatMetric(comparisonResult.contender.totals.netScore)} net</span>
                       </p>
                     </div>
                   </div>
-                  <div className="text-sm text-physio-text-secondary">
-                    {comparisonResult.deltas.net >= 0 ? 'Adds' : 'Drops'} {formatMetric(Math.abs(comparisonResult.deltas.net))} net score,
+                  <div className="text-sm text-physio-text-secondary border-t border-physio-bg-border/30 pt-3">
+                    {comparisonResult.deltas.net >= 0 ? 'Adds' : 'Drops'} <strong className={comparisonResult.deltas.net >= 0 ? 'text-physio-accent-mint' : 'text-physio-error'}>{formatMetric(Math.abs(comparisonResult.deltas.net))}</strong> net score,
                     with ΔBenefit {comparisonResult.deltas.benefit >= 0 ? '+' : '-'}
                     {formatMetric(Math.abs(comparisonResult.deltas.benefit))} and ΔRisk{' '}
                     {comparisonResult.deltas.risk >= 0 ? '+' : '-'}
                     {formatMetric(Math.abs(comparisonResult.deltas.risk))}.
                   </div>
                   {comparisonNarrative && (
-                    <div className="text-xs text-physio-text-tertiary">{comparisonNarrative}</div>
+                    <div className="text-xs text-physio-text-tertiary italic">{comparisonNarrative}</div>
                   )}
                 </div>
               )}
@@ -1189,39 +1144,39 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
       </section>
 
       {cycleModalOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 w-full max-w-md space-y-4">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl">
             <h4 className="text-xl font-semibold text-physio-text-primary">Save cycle</h4>
-            <label className="text-sm text-physio-text-secondary space-y-1">
+            <label className="text-sm text-physio-text-secondary space-y-1 block">
               Name
               <input
                 type="text"
                 value={cycleDraft.name}
                 onChange={e => setCycleDraft(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full bg-physio-bg-tertiary border border-physio-bg-border rounded-md px-3 py-2 text-sm text-physio-text-primary"
+                className="w-full bg-physio-bg-core border border-physio-bg-border rounded-lg px-3 py-2 text-sm text-physio-text-primary"
                 placeholder="e.g., Spring Recomp 2025"
               />
             </label>
-            <label className="text-sm text-physio-text-secondary space-y-1">
+            <label className="text-sm text-physio-text-secondary space-y-1 block">
               Notes
               <textarea
                 value={cycleDraft.notes}
                 onChange={e => setCycleDraft(prev => ({ ...prev, notes: e.target.value }))}
                 rows={3}
-                className="w-full bg-physio-bg-tertiary border border-physio-bg-border rounded-md px-3 py-2 text-sm text-physio-text-primary resize-none"
+                className="w-full bg-physio-bg-core border border-physio-bg-border rounded-lg px-3 py-2 text-sm text-physio-text-primary resize-none"
                 placeholder="Add reminders about labs, diet, or changes."
               />
             </label>
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-3 pt-2">
               <button
                 onClick={() => setCycleModalOpen(false)}
-                className="px-4 py-2 rounded-md border border-physio-bg-border text-physio-text-secondary"
+                className="px-4 py-2 rounded-lg border border-physio-bg-border text-physio-text-secondary hover:text-physio-text-primary transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmSaveCycle}
-                className="px-4 py-2 rounded-md bg-physio-accent-cyan text-white font-semibold"
+                className="px-4 py-2 rounded-lg bg-physio-accent-cyan text-white font-semibold shadow-lg shadow-physio-accent-cyan/20 hover:bg-physio-accent-cyan/90 transition-all"
               >
                 Save
               </button>
@@ -1235,27 +1190,30 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
         <section ref={ancillaryRef} className="space-y-4">
           <OrientationBar items={ancillaryOrientationItems} tone="accent" />
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(260px,0.9fr)]">
-            <div className="bg-physio-bg-secondary p-6 rounded-lg shadow-sm border border-physio-bg-border space-y-6">
-              <h3 className="text-xl font-semibold text-physio-text-primary">Required Ancillary Protocol</h3>
+            <div className="bg-physio-bg-core/30 backdrop-blur-md p-6 rounded-2xl border border-physio-bg-border shadow-lg space-y-6">
+              <h3 className="text-xl font-semibold text-physio-text-primary flex items-center gap-2">
+                <span className="w-1.5 h-6 bg-physio-accent-violet rounded-full" />
+                Required Ancillary Protocol
+              </h3>
               
               {ancillaryProtocol.essential.length > 0 && (
                 <div>
-                  <h4 className="font-semibold text-physio-error mb-3 flex items-center gap-2">
-                    <span className="text-xl">⚠️</span>
+                  <h4 className="font-bold text-physio-error mb-3 flex items-center gap-2 text-sm uppercase tracking-wider">
+                    <span className="text-lg">⚠️</span>
                     Essential (Non-Negotiable)
                   </h4>
                   <div className="space-y-3">
                     {ancillaryProtocol.essential.map((item, idx) => (
-                      <div key={idx} className="p-4 bg-physio-bg-tertiary rounded-lg border-2 border-physio-error">
+                      <div key={idx} className="p-4 bg-physio-bg-secondary/50 rounded-xl border-l-4 border-physio-error">
                         <div className="flex justify-between items-start mb-2">
-                          <span className="font-semibold text-physio-text-primary">{item.drug}</span>
-                          <span className="text-sm text-physio-text-secondary">${item.cost}/week</span>
+                          <span className="font-bold text-physio-text-primary text-lg">{item.drug}</span>
+                          <span className="text-sm font-mono text-physio-text-secondary bg-physio-bg-core px-2 py-1 rounded border border-physio-bg-border/50">${item.cost}/week</span>
                         </div>
-                        <div className="text-sm text-physio-text-secondary space-y-1">
-                          <div><strong>Dosing:</strong> {item.dosing}</div>
-                          <div><strong>Purpose:</strong> {item.purpose}</div>
-                          {item.timing && <div><strong>Timing:</strong> {item.timing}</div>}
-                          {item.note && <div className="text-physio-error mt-2"><strong>Note:</strong> {item.note}</div>}
+                        <div className="text-sm text-physio-text-secondary space-y-1.5">
+                          <div className="flex gap-2"><strong className="text-physio-text-tertiary w-16">Dosing:</strong> <span>{item.dosing}</span></div>
+                          <div className="flex gap-2"><strong className="text-physio-text-tertiary w-16">Purpose:</strong> <span>{item.purpose}</span></div>
+                          {item.timing && <div className="flex gap-2"><strong className="text-physio-text-tertiary w-16">Timing:</strong> <span>{item.timing}</span></div>}
+                          {item.note && <div className="text-physio-error mt-2 bg-physio-error/5 p-2 rounded text-xs border border-physio-error/20"><strong>Note:</strong> {item.note}</div>}
                         </div>
                       </div>
                     ))}
@@ -1265,19 +1223,19 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
               
               {ancillaryProtocol.recommended.length > 0 && (
                 <div>
-                  <h4 className="font-semibold text-physio-accent-cyan mb-3">Strongly Recommended</h4>
+                  <h4 className="font-bold text-physio-accent-cyan mb-3 text-sm uppercase tracking-wider">Strongly Recommended</h4>
                   <div className="space-y-3">
                     {ancillaryProtocol.recommended.map((item, idx) => (
-                      <div key={idx} className="p-4 bg-physio-bg-tertiary rounded-lg border border-physio-accent-cyan">
+                      <div key={idx} className="p-4 bg-physio-bg-secondary/50 rounded-xl border-l-4 border-physio-accent-cyan">
                         <div className="flex justify-between items-start mb-2">
-                          <span className="font-semibold text-physio-text-primary">{item.drug}</span>
-                          <span className="text-sm text-physio-text-secondary">${item.cost}/week</span>
+                          <span className="font-bold text-physio-text-primary text-lg">{item.drug}</span>
+                          <span className="text-sm font-mono text-physio-text-secondary bg-physio-bg-core px-2 py-1 rounded border border-physio-bg-border/50">${item.cost}/week</span>
                         </div>
-                        <div className="text-sm text-physio-text-secondary space-y-1">
-                          <div><strong>Dosing:</strong> {item.dosing}</div>
-                          <div><strong>Purpose:</strong> {item.purpose}</div>
-                          {item.timing && <div><strong>Timing:</strong> {item.timing}</div>}
-                          {item.note && <div className="text-physio-accent-cyan mt-2"><strong>Note:</strong> {item.note}</div>}
+                        <div className="text-sm text-physio-text-secondary space-y-1.5">
+                           <div className="flex gap-2"><strong className="text-physio-text-tertiary w-16">Dosing:</strong> <span>{item.dosing}</span></div>
+                           <div className="flex gap-2"><strong className="text-physio-text-tertiary w-16">Purpose:</strong> <span>{item.purpose}</span></div>
+                          {item.timing && <div className="flex gap-2"><strong className="text-physio-text-tertiary w-16">Timing:</strong> <span>{item.timing}</span></div>}
+                          {item.note && <div className="text-physio-accent-cyan mt-2 bg-physio-accent-cyan/5 p-2 rounded text-xs border border-physio-accent-cyan/20"><strong>Note:</strong> {item.note}</div>}
                         </div>
                       </div>
                     ))}
@@ -1287,19 +1245,19 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
               
               {ancillaryProtocol.optional.length > 0 && (
                 <div>
-                  <h4 className="font-semibold text-physio-accent-mint mb-3">Optional (Context-Dependent)</h4>
+                  <h4 className="font-bold text-physio-accent-mint mb-3 text-sm uppercase tracking-wider">Optional (Context-Dependent)</h4>
                   <div className="space-y-3">
                     {ancillaryProtocol.optional.map((item, idx) => (
-                      <div key={idx} className="p-4 bg-physio-bg-tertiary rounded-lg border border-physio-accent-mint">
+                      <div key={idx} className="p-4 bg-physio-bg-secondary/50 rounded-xl border-l-4 border-physio-accent-mint">
                         <div className="flex justify-between items-start mb-2">
-                          <span className="font-semibold text-physio-text-primary">{item.drug}</span>
-                          <span className="text-sm text-physio-text-secondary">${item.cost}/week</span>
+                          <span className="font-bold text-physio-text-primary text-lg">{item.drug}</span>
+                          <span className="text-sm font-mono text-physio-text-secondary bg-physio-bg-core px-2 py-1 rounded border border-physio-bg-border/50">${item.cost}/week</span>
                         </div>
-                        <div className="text-sm text-physio-text-secondary space-y-1">
-                          <div><strong>Dosing:</strong> {item.dosing}</div>
-                          <div><strong>Purpose:</strong> {item.purpose}</div>
-                          {item.timing && <div><strong>Timing:</strong> {item.timing}</div>}
-                          {item.note && <div className="text-physio-accent-mint mt-2"><strong>Note:</strong> {item.note}</div>}
+                        <div className="text-sm text-physio-text-secondary space-y-1.5">
+                           <div className="flex gap-2"><strong className="text-physio-text-tertiary w-16">Dosing:</strong> <span>{item.dosing}</span></div>
+                           <div className="flex gap-2"><strong className="text-physio-text-tertiary w-16">Purpose:</strong> <span>{item.purpose}</span></div>
+                          {item.timing && <div className="flex gap-2"><strong className="text-physio-text-tertiary w-16">Timing:</strong> <span>{item.timing}</span></div>}
+                          {item.note && <div className="text-physio-accent-mint mt-2 bg-physio-accent-mint/5 p-2 rounded text-xs border border-physio-accent-mint/20"><strong>Note:</strong> {item.note}</div>}
                         </div>
                       </div>
                     ))}
@@ -1308,35 +1266,35 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
               )}
             </div>
 
-            <div className="space-y-4 lg:sticky lg:top-4">
-              <div className="p-4 bg-physio-bg-tertiary rounded-lg border border-physio-bg-border">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-physio-text-primary text-lg">Weekly Ancillary Cost</span>
-                  <span className="font-bold text-physio-text-primary text-xl">${ancillaryProtocol.totalWeeklyCost.toFixed(2)}</span>
+            <div className="space-y-4 lg:sticky lg:top-24 h-fit">
+              <div className="p-5 bg-physio-bg-core/50 backdrop-blur-md rounded-2xl border border-physio-bg-border shadow-lg">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="font-semibold text-physio-text-primary text-sm uppercase tracking-wide">Weekly Cost</span>
+                  <span className="font-bold text-physio-text-primary text-2xl">${ancillaryProtocol.totalWeeklyCost.toFixed(2)}</span>
                 </div>
-                <p className="text-sm text-physio-text-secondary mt-2">
-                  Estimated weekly spend across essential + recommended support. Actual costs vary by source/brand.
+                <p className="text-xs text-physio-text-tertiary mt-2 border-t border-physio-bg-border/50 pt-2">
+                  Estimated weekly spend across essential + recommended support. Actual costs vary.
                 </p>
               </div>
 
               {ancillaryProtocol.monitoring.length > 0 && (
-                <div className="p-4 bg-physio-bg-tertiary rounded-lg border-2 border-physio-accent-violet space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-physio-accent-violet">Monitoring Requirements</h4>
-                    <span className="text-xs text-physio-text-tertiary">
-                      {ancillaryProtocol.monitoring.length} labs
+                <div className="p-5 bg-physio-bg-core/50 backdrop-blur-md rounded-2xl border border-physio-accent-violet/30 space-y-4 shadow-lg">
+                  <div className="flex items-center justify-between border-b border-physio-bg-border/50 pb-3">
+                    <h4 className="font-bold text-physio-accent-violet text-sm uppercase tracking-wider">Monitoring</h4>
+                    <span className="text-xs font-mono bg-physio-accent-violet/10 text-physio-accent-violet px-2 py-1 rounded">
+                      {ancillaryProtocol.monitoring.length} LABS
                     </span>
                   </div>
                   <div className="space-y-3">
                     {ancillaryProtocol.monitoring.map((item, idx) => (
-                      <div key={idx} className="text-sm text-physio-text-secondary border border-physio-bg-border rounded-lg p-3 bg-physio-bg-core">
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="font-semibold text-physio-text-primary">{item.test}</span>
-                          <span className="text-xs text-physio-accent-violet font-medium">{item.frequency}</span>
+                      <div key={idx} className="text-sm text-physio-text-secondary border border-physio-bg-border/50 rounded-xl p-3 bg-physio-bg-secondary/30">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-bold text-physio-text-primary">{item.test}</span>
+                          <span className="text-[10px] font-bold text-physio-accent-violet bg-physio-accent-violet/5 px-1.5 py-0.5 rounded uppercase">{item.frequency}</span>
                         </div>
-                        <div className="space-y-1">
-                          <div><strong>Targets:</strong> {item.targets}</div>
-                          <div><strong>Action if abnormal:</strong> {item.action}</div>
+                        <div className="space-y-1 text-xs mt-2">
+                          <div className="flex gap-1"><span className="text-physio-text-tertiary">Target:</span> {item.targets}</div>
+                          <div className="flex gap-1"><span className="text-physio-text-tertiary">Action:</span> {item.action}</div>
                         </div>
                       </div>
                     ))}

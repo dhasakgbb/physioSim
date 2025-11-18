@@ -7,7 +7,6 @@ import {
   YAxis,
   CartesianGrid,
   ResponsiveContainer,
-  ReferenceArea,
   ReferenceLine,
   Tooltip
 } from 'recharts';
@@ -126,324 +125,307 @@ const DoseResponseChart = ({
   return (
     <div
       ref={chartRef}
-      className="relative overflow-hidden rounded-[32px] border border-physio-bg-border/70 bg-gradient-to-br from-physio-bg-secondary/95 via-physio-bg-core/85 to-physio-bg-secondary/70 p-6 shadow-[0_40px_120px_rgba(0,0,0,0.55)]"
+      className="h-full w-full relative"
       onDoubleClick={handleDoubleClick}
     >
-      <div className="pointer-events-none absolute inset-0 opacity-80 bg-[radial-gradient(circle_at_20%_20%,rgba(75,187,247,0.12),transparent_60%)]" />
-      <div className="relative z-10">
-        <div className="mb-4">
-        <h2 className="text-2xl font-bold text-physio-text-primary">
-          AAS Spotlight View · {
-            mode === 'benefit'
-              ? 'Benefit Curve'
-              : mode === 'risk'
-              ? 'Risk Curve'
-              : mode === 'efficiency'
-              ? 'Efficiency (Benefit ÷ Risk)'
-              : 'Uncertainty Bands'
-          }
-        </h2>
-        <p className="text-sm text-physio-text-secondary mt-1">
-          {mode === 'benefit' && 'Thin bezier lines show personalized anabolic response with plateau shading.'}
-          {mode === 'risk' && 'Under-curve fill visualizes cumulative burden (lipids, cardio, hepatic, neuro).'}
-          {mode === 'efficiency' && 'Ratio line highlights the true sweet spot — higher means more benefit per unit of risk.'}
-          {mode === 'uncertainty' && 'Only the mist bands render, so you can gauge confidence without signal overload.'}
-        </p>
-          <p className="text-xs text-physio-text-tertiary mt-1">
-            Double-click to reset zoom | Scroll to zoom | Drag to pan
-          </p>
-        </div>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={chartData}
+          margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
+        >
+        <defs>
+          {injectableCompounds.map(([key, compound]) => (
+            <React.Fragment key={`defs-${key}`}>
+              <linearGradient id={`inj-benefit-mist-${key}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={hexToRgba(compound.color, 0.2)} />
+                <stop offset="100%" stopColor={hexToRgba(compound.color, 0)} />
+              </linearGradient>
+              <linearGradient id={`inj-risk-fill-${key}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={hexToRgba('#ef4444', 0.35)} />
+                <stop offset="60%" stopColor={hexToRgba(compound.color, 0.1)} />
+                <stop offset="100%" stopColor={hexToRgba(compound.color, 0)} />
+              </linearGradient>
+              <linearGradient id={`inj-uncertainty-mist-${key}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={hexToRgba('#10b981', 0.25)} />
+                <stop offset="100%" stopColor={hexToRgba('#10b981', 0)} />
+              </linearGradient>
+            </React.Fragment>
+          ))}
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--physio-border-subtle)" strokeOpacity={0.4} vertical={false} />
+        
+        <XAxis
+          dataKey="dose"
+          type="number"
+          domain={zoomDomain.x}
+          label={{
+            value: 'Weekly Dose (mg)',
+            position: 'insideBottom',
+            offset: -10,
+            style: { fontSize: 11, fontWeight: 600, fill: 'var(--physio-text-secondary)', fontFamily: 'Inter, sans-serif' }
+          }}
+          tick={{ fontSize: 10, fill: 'var(--physio-text-tertiary)', fontFamily: 'JetBrains Mono, monospace' }}
+          axisLine={{ stroke: 'var(--physio-border-strong)' }}
+          tickLine={false}
+          tickMargin={8}
+        />
+        
+        <YAxis
+          domain={zoomDomain.y}
+          label={{
+            value: 'Score (0-5.5)',
+            angle: -90,
+            position: 'insideLeft',
+            style: { fontSize: 11, fontWeight: 600, fill: 'var(--physio-text-secondary)', fontFamily: 'Inter, sans-serif' }
+          }}
+          tick={{ fontSize: 10, fill: 'var(--physio-text-tertiary)', fontFamily: 'JetBrains Mono, monospace' }}
+          axisLine={{ stroke: 'var(--physio-border-strong)' }}
+          tickLine={false}
+          tickMargin={8}
+        />
 
-        <ResponsiveContainer width="100%" height={600}>
-          <LineChart
-            data={chartData}
-            margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-          >
-          <defs>
-            {injectableCompounds.map(([key, compound]) => (
-              <React.Fragment key={`defs-${key}`}>
-                <linearGradient id={`inj-benefit-mist-${key}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={hexToRgba(compound.color, 0.35)} />
-                  <stop offset="100%" stopColor={hexToRgba(compound.color, 0.05)} />
-                </linearGradient>
-                <linearGradient id={`inj-risk-fill-${key}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={hexToRgba('#ff6b6b', 0.45)} />
-                  <stop offset="60%" stopColor={hexToRgba(compound.color, 0.18)} />
-                  <stop offset="100%" stopColor={hexToRgba(compound.color, 0.02)} />
-                </linearGradient>
-                <linearGradient id={`inj-uncertainty-mist-${key}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={hexToRgba('#45E2AB', 0.35)} />
-                  <stop offset="100%" stopColor={hexToRgba('#45E2AB', 0)} />
-                </linearGradient>
-              </React.Fragment>
-            ))}
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--physio-bg-border)" strokeOpacity={0.2} />
+        <Tooltip
+          content={(tooltipProps) => (
+            <HoverAnalyticsTooltip
+              {...tooltipProps}
+              visibleCompounds={visibleCompounds}
+              unit=" mg/wk"
+              mode={mode}
+            />
+          )}
+          cursor={{ stroke: 'var(--physio-accent-cyan)', strokeDasharray: '4 4', strokeOpacity: 0.5 }}
+        />
+
+        {/* Render uncertainty bands and lines for each compound */}
+        {injectableCompounds.map(([key, compound]) => {
+          if (!visibleCompounds[key]) return null;
+          const plateauDose = getPlateauDose(compound);
+          const hardMax = getHardMax(compound);
+          const guardrailActive = Boolean(highlightedCompound);
+          const isHighlighted = highlightedCompound === key;
           
-          <XAxis
-            dataKey="dose"
-            type="number"
-            domain={zoomDomain.x}
-            label={{
-              value: 'Weekly Dose (mg)',
-              position: 'insideBottom',
-              offset: -10,
-              style: { fontSize: 14, fontWeight: 'bold' }
-            }}
-            tick={{ fontSize: 12 }}
-          />
-          
-          <YAxis
-            domain={zoomDomain.y}
-            label={{
-              value: 'Score (0-5.5)',
-              angle: -90,
-              position: 'insideLeft',
-              style: { fontSize: 14, fontWeight: 'bold' }
-            }}
-            tick={{ fontSize: 12 }}
-          />
+          // Visual tuning for "Obsidian Pro" feel
+          const strokeOpacity = guardrailActive ? (isHighlighted ? 1 : 0.1) : 0.9;
+          const mutedStrokeOpacity = guardrailActive ? (isHighlighted ? 0.6 : 0.08) : 0.5;
+          const mistFillOpacity = guardrailActive ? (isHighlighted ? 0.6 : 0.05) : 0.3;
+          const riskFillOpacity = guardrailActive ? (isHighlighted ? 0.7 : 0.1) : 0.5;
+          const uncertaintyFillOpacity = guardrailActive ? (isHighlighted ? 0.6 : 0.05) : 0.2;
+          const benefitStrokeWidth = isHighlighted ? 2.5 : 2;
+          const riskStrokeWidth = isHighlighted ? 2.2 : 1.5;
+          const efficiencyStrokeWidth = isHighlighted ? 2.5 : 1.8;
+          const beyondStrokeOpacity = guardrailActive ? (isHighlighted ? 0.8 : 0.15) : 0.7;
 
-          <Tooltip
-            content={(tooltipProps) => (
-              <HoverAnalyticsTooltip
-                {...tooltipProps}
-                visibleCompounds={visibleCompounds}
-                unit=" mg/wk"
-                mode={mode}
-              />
-            )}
-            cursor={{ stroke: 'var(--physio-accent-cyan)', strokeDasharray: '4 4' }}
-          />
+          // Fill definitions
+          const benefitMistFill = `url(#inj-benefit-mist-${key})`;
+          const riskGradientFill = `url(#inj-risk-fill-${key})`;
+          const uncertaintyMistFill = `url(#inj-uncertainty-mist-${key})`;
 
-          {/* Render uncertainty bands and lines for each compound */}
-          {injectableCompounds.map(([key, compound]) => {
-            if (!visibleCompounds[key]) return null;
-            const plateauDose = getPlateauDose(compound);
-            const hardMax = getHardMax(compound);
-            const plateauEnd = hardMax || zoomDomain.x[1] || 1200;
-            const guardrailActive = Boolean(highlightedCompound);
-            const isHighlighted = highlightedCompound === key;
-            const plateauOpacity = isHighlighted ? 0.25 : guardrailActive ? 0.03 : 0.08;
-            const capStrokeOpacity = isHighlighted ? 1 : guardrailActive ? 0.2 : 0.8;
-            const capStrokeWidth = isHighlighted ? 3 : 1.5;
-            const capLabelColor = 'var(--physio-error)';
-            const benefitMistFill = `url(#inj-benefit-mist-${key})`;
-            const riskGradientFill = `url(#inj-risk-fill-${key})`;
-            const uncertaintyMistFill = `url(#inj-uncertainty-mist-${key})`;
-            const strokeOpacity = guardrailActive ? (isHighlighted ? 1 : 0.18) : 1;
-            const mutedStrokeOpacity = guardrailActive ? (isHighlighted ? 0.65 : 0.12) : 0.65;
-            const mistFillOpacity = guardrailActive ? (isHighlighted ? 0.85 : 0.12) : 0.5;
-            const riskFillOpacity = guardrailActive ? (isHighlighted ? 0.9 : 0.15) : 0.65;
-            const uncertaintyFillOpacity = guardrailActive ? (isHighlighted ? 0.75 : 0.1) : 0.35;
-            const benefitStrokeWidth = isHighlighted ? 3.2 : 2.4;
-            const riskStrokeWidth = isHighlighted ? 3 : 2.2;
-            const efficiencyStrokeWidth = isHighlighted ? 3.4 : 2.6;
-            const beyondStrokeOpacity = guardrailActive ? (isHighlighted ? 1 : 0.25) : 1;
+          return (
+            <React.Fragment key={key}>
+              {showPlateau && plateauDose && (
+                <ReferenceLine
+                  x={plateauDose}
+                  stroke="var(--physio-accent-amber)"
+                  strokeDasharray="2 2"
+                  strokeOpacity={isHighlighted ? 0.6 : 0}
+                  label={isHighlighted ? {
+                    value: 'Plateau',
+                    position: 'insideTopRight',
+                    fill: 'var(--physio-accent-amber)',
+                    fontSize: 10,
+                    offset: 10,
+                    fontFamily: 'JetBrains Mono, monospace'
+                  } : null}
+                />
+              )}
+              {showPlateau && hardMax && (
+                <ReferenceLine
+                  x={hardMax}
+                  stroke="var(--physio-accent-red)"
+                  strokeDasharray="3 3"
+                  strokeOpacity={isHighlighted ? 0.5 : 0}
+                  label={isHighlighted ? {
+                    value: 'Cap',
+                    position: 'insideTopRight',
+                    fill: 'var(--physio-accent-red)',
+                    fontSize: 10,
+                    offset: 5,
+                    fontFamily: 'JetBrains Mono, monospace'
+                  } : null}
+                />
+              )}
 
-            return (
-              <React.Fragment key={key}>
-                {showPlateau && plateauDose && plateauDose < plateauEnd && (
-                  <ReferenceArea
-                    x1={plateauDose}
-                    x2={plateauEnd}
-                    fill="var(--physio-warning)"
-                    fillOpacity={plateauOpacity}
-                    strokeOpacity={0}
+              {/* BENEFIT CURVES */}
+              {showBenefit && (
+                <>
+                  <Area
+                    dataKey={`${key}-benefit-upper`}
+                    stroke="none"
+                    fill={benefitMistFill}
+                    fillOpacity={mistFillOpacity}
+                    isAnimationActive={false}
                   />
-                )}
-                {showPlateau && hardMax && (
-                  <ReferenceLine
-                    x={hardMax}
-                    stroke="var(--physio-error)"
-                    strokeDasharray={isHighlighted ? '2 2' : '4 4'}
-                    strokeOpacity={capStrokeOpacity}
-                    strokeWidth={capStrokeWidth}
-                    label={{
-                      value: `${compound.abbreviation || key} cap`,
-                      position: 'top',
-                      fill: capLabelColor,
-                      fontSize: 11,
-                      fontWeight: isHighlighted ? 600 : 400
-                    }}
+                  <Area
+                    dataKey={`${key}-benefit-lower`}
+                    stroke="none"
+                    fill={benefitMistFill}
+                    fillOpacity={mistFillOpacity}
+                    isAnimationActive={false}
                   />
-                )}
-
-                {/* BENEFIT CURVES */}
-                {showBenefit && (
-                  <>
-                    <Area
-                      dataKey={`${key}-benefit-upper`}
-                      stroke="none"
-                      fill={benefitMistFill}
-                      fillOpacity={mistFillOpacity}
-                      isAnimationActive={false}
-                    />
-                    <Area
-                      dataKey={`${key}-benefit-lower`}
-                      stroke="none"
-                      fill={benefitMistFill}
-                      fillOpacity={mistFillOpacity}
-                      isAnimationActive={false}
-                    />
-                    
-                    <Line
-                      type="monotone"
-                      dataKey={`${key}-benefit-pre`}
-                      stroke={compound.color}
-                      strokeWidth={benefitStrokeWidth}
-                      strokeOpacity={strokeOpacity}
-                      dot={false}
-                      activeDot={false}
-                      isAnimationActive={false}
-                      connectNulls
-                      name={`${compound.abbreviation} Benefit`}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey={`${key}-benefit-post`}
-                      stroke={compound.color}
-                      strokeWidth={benefitStrokeWidth}
-                      strokeOpacity={mutedStrokeOpacity}
-                      dot={false}
-                      activeDot={false}
-                      isAnimationActive={false}
-                      connectNulls
-                      legendType="none"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey={`${key}-benefit-beyond`}
-                      stroke="var(--physio-error)"
-                      strokeWidth={3}
-                      strokeOpacity={beyondStrokeOpacity}
-                      strokeDasharray="6 4"
-                      dot={false}
-                      activeDot={false}
-                      isAnimationActive={false}
-                      connectNulls
-                      legendType="none"
-                    />
-                  </>
-                )}
-
-                {/* RISK CURVES */}
-                {showRisk && (
-                  <>
-                    <Area
-                      dataKey={`${key}-risk-upper`}
-                      stroke="none"
-                      fill={riskGradientFill}
-                      fillOpacity={riskFillOpacity}
-                      isAnimationActive={false}
-                    />
-                    <Area
-                      dataKey={`${key}-risk-lower`}
-                      stroke="none"
-                      fill={riskGradientFill}
-                      fillOpacity={riskFillOpacity}
-                      isAnimationActive={false}
-                    />
-                    
-                    <Line
-                      type="monotone"
-                      dataKey={`${key}-risk-pre`}
-                      stroke={compound.color}
-                      strokeWidth={riskStrokeWidth}
-                      strokeDasharray="5 5"
-                      strokeOpacity={strokeOpacity}
-                      dot={false}
-                      activeDot={false}
-                      isAnimationActive={false}
-                      connectNulls
-                      name={`${compound.abbreviation} Risk`}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey={`${key}-risk-post`}
-                      stroke={compound.color}
-                      strokeWidth={riskStrokeWidth - 0.4}
-                      strokeDasharray="2 2"
-                      strokeOpacity={mutedStrokeOpacity}
-                      dot={false}
-                      activeDot={false}
-                      isAnimationActive={false}
-                      connectNulls
-                      legendType="none"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey={`${key}-risk-beyond`}
-                      stroke="var(--physio-error)"
-                      strokeWidth={3}
-                      strokeDasharray="4 2"
-                      dot={false}
-                      activeDot={false}
-                      isAnimationActive={false}
-                      connectNulls
-                      legendType="none"
-                    />
-                  </>
-                )}
-
-                {/* UNCERTAINTY-ONLY MODE */}
-                {showUncertainty && (
-                  <>
-                    <Area
-                      dataKey={`${key}-benefit-upper`}
-                      stroke="none"
-                      fill={uncertaintyMistFill}
-                      fillOpacity={uncertaintyFillOpacity}
-                      isAnimationActive={false}
-                    />
-                    <Area
-                      dataKey={`${key}-benefit-lower`}
-                      stroke="none"
-                      fill={uncertaintyMistFill}
-                      fillOpacity={uncertaintyFillOpacity}
-                      isAnimationActive={false}
-                    />
-                    <Area
-                      dataKey={`${key}-risk-upper`}
-                      stroke="none"
-                      fill={uncertaintyMistFill}
-                      fillOpacity={uncertaintyFillOpacity}
-                      isAnimationActive={false}
-                    />
-                    <Area
-                      dataKey={`${key}-risk-lower`}
-                      stroke="none"
-                      fill={uncertaintyMistFill}
-                      fillOpacity={uncertaintyFillOpacity}
-                      isAnimationActive={false}
-                    />
-                  </>
-                )}
-
-                {showEfficiency && (
+                  
                   <Line
                     type="monotone"
-                    dataKey={`${key}-efficiency-value`}
+                    dataKey={`${key}-benefit-pre`}
                     stroke={compound.color}
-                    strokeWidth={efficiencyStrokeWidth}
+                    strokeWidth={benefitStrokeWidth}
                     strokeOpacity={strokeOpacity}
                     dot={false}
+                    activeDot={{ r: 4, strokeWidth: 0, fill: 'white' }}
                     isAnimationActive={false}
-                    name={`${compound.abbreviation} Efficiency`}
+                    connectNulls
+                    name={`${compound.abbreviation} Benefit`}
                   />
-                )}
-              </React.Fragment>
-            );
-          })}
+                  <Line
+                    type="monotone"
+                    dataKey={`${key}-benefit-post`}
+                    stroke={compound.color}
+                    strokeWidth={benefitStrokeWidth}
+                    strokeOpacity={mutedStrokeOpacity}
+                    dot={false}
+                    activeDot={false}
+                    isAnimationActive={false}
+                    connectNulls
+                    legendType="none"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey={`${key}-benefit-beyond`}
+                    stroke="var(--physio-accent-red)"
+                    strokeWidth={2}
+                    strokeOpacity={beyondStrokeOpacity}
+                    strokeDasharray="3 3"
+                    dot={false}
+                    activeDot={false}
+                    isAnimationActive={false}
+                    connectNulls
+                    legendType="none"
+                  />
+                </>
+              )}
 
-          {/* Reference lines for context */}
-          <ReferenceLine y={0} stroke="#666" strokeWidth={1} />
-        </LineChart>
-      </ResponsiveContainer>
+              {/* RISK CURVES */}
+              {showRisk && (
+                <>
+                  <Area
+                    dataKey={`${key}-risk-upper`}
+                    stroke="none"
+                    fill={riskGradientFill}
+                    fillOpacity={riskFillOpacity}
+                    isAnimationActive={false}
+                  />
+                  <Area
+                    dataKey={`${key}-risk-lower`}
+                    stroke="none"
+                    fill={riskGradientFill}
+                    fillOpacity={riskFillOpacity}
+                    isAnimationActive={false}
+                  />
+                  
+                  <Line
+                    type="monotone"
+                    dataKey={`${key}-risk-pre`}
+                    stroke={compound.color}
+                    strokeWidth={riskStrokeWidth}
+                    strokeDasharray="4 4"
+                    strokeOpacity={strokeOpacity}
+                    dot={false}
+                    activeDot={{ r: 4, strokeWidth: 0, fill: 'white' }}
+                    isAnimationActive={false}
+                    connectNulls
+                    name={`${compound.abbreviation} Risk`}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey={`${key}-risk-post`}
+                    stroke={compound.color}
+                    strokeWidth={riskStrokeWidth - 0.4}
+                    strokeDasharray="2 2"
+                    strokeOpacity={mutedStrokeOpacity}
+                    dot={false}
+                    activeDot={false}
+                    isAnimationActive={false}
+                    connectNulls
+                    legendType="none"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey={`${key}-risk-beyond`}
+                    stroke="var(--physio-accent-red)"
+                    strokeWidth={2}
+                    strokeDasharray="2 2"
+                    dot={false}
+                    activeDot={false}
+                    isAnimationActive={false}
+                    connectNulls
+                    legendType="none"
+                  />
+                </>
+              )}
 
-      <div className="mt-4 text-xs text-physio-text-tertiary text-center">
-        Based on: Bhasin et al. (clinical), Yarrow et al. (animal), forum aggregates, pharmacological theory. NOT medical advice. See methodology for limitations.
-      </div>
+              {/* UNCERTAINTY-ONLY MODE */}
+              {showUncertainty && (
+                <>
+                  <Area
+                    dataKey={`${key}-benefit-upper`}
+                    stroke="none"
+                    fill={uncertaintyMistFill}
+                    fillOpacity={uncertaintyFillOpacity}
+                    isAnimationActive={false}
+                  />
+                  <Area
+                    dataKey={`${key}-benefit-lower`}
+                    stroke="none"
+                    fill={uncertaintyMistFill}
+                    fillOpacity={uncertaintyFillOpacity}
+                    isAnimationActive={false}
+                  />
+                  <Area
+                    dataKey={`${key}-risk-upper`}
+                    stroke="none"
+                    fill={uncertaintyMistFill}
+                    fillOpacity={uncertaintyFillOpacity}
+                    isAnimationActive={false}
+                  />
+                  <Area
+                    dataKey={`${key}-risk-lower`}
+                    stroke="none"
+                    fill={uncertaintyMistFill}
+                    fillOpacity={uncertaintyFillOpacity}
+                    isAnimationActive={false}
+                  />
+                </>
+              )}
+
+              {showEfficiency && (
+                <Line
+                  type="monotone"
+                  dataKey={`${key}-efficiency-value`}
+                  stroke={compound.color}
+                  strokeWidth={efficiencyStrokeWidth}
+                  strokeOpacity={strokeOpacity}
+                  dot={false}
+                  isAnimationActive={false}
+                  name={`${compound.abbreviation} Efficiency`}
+                />
+              )}
+            </React.Fragment>
+          );
+        })}
+
+        {/* Reference lines for context */}
+        <ReferenceLine y={0} stroke="var(--physio-border-strong)" strokeWidth={1} />
+      </LineChart>
+    </ResponsiveContainer>
     </div>
   );
 };

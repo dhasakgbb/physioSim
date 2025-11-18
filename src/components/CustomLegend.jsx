@@ -28,25 +28,26 @@ const CustomLegend = ({
   
   const renderCompoundGroup = (compounds, groupName) => {
     return (
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <h4 className="text-sm font-bold text-physio-text-secondary uppercase tracking-wide">{groupName}</h4>
-          <div className="flex gap-2">
+      <div className="mb-6 last:mb-0">
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h4 className="text-[10px] font-bold text-physio-text-tertiary uppercase tracking-wider">{groupName}</h4>
+          <div className="flex gap-1">
             <button
               onClick={() => {
                 onToggleAll?.('all-on', compounds.map(([key]) => key));
               }}
-              className="px-3 py-1 text-[11px] font-semibold rounded-full border border-physio-success/50 text-physio-success/90 bg-physio-success/10 hover:bg-physio-success/20 transition-standard"
+              className="px-2 py-0.5 text-[10px] font-medium rounded text-physio-accent-mint hover:bg-physio-accent-mint/10 transition-colors"
             >
-              All on
+              All
             </button>
+            <div className="w-px h-3 bg-physio-border-subtle self-center mx-1" />
             <button
               onClick={() => {
                 onToggleAll?.('all-off', compounds.map(([key]) => key));
               }}
-              className="px-3 py-1 text-[11px] font-semibold rounded-full border border-physio-error/50 text-physio-error/80 bg-physio-error/10 hover:bg-physio-error/20 transition-standard"
+              className="px-2 py-0.5 text-[10px] font-medium rounded text-physio-text-tertiary hover:text-physio-text-primary hover:bg-physio-bg-subtle transition-colors"
             >
-              All off
+              None
             </button>
           </div>
         </div>
@@ -54,8 +55,6 @@ const CustomLegend = ({
         <div className="space-y-1">
           {compounds.map(([key, compound]) => {
             const isVisible = visibleCompounds[key];
-            const provenance = compound.evidenceProvenance || { human: 0, animal: 0, aggregate: 0 };
-            const tooltip = `${compound.name} • Confidence ${compound.modelConfidence?.toFixed?.(2) ?? 'n/a'} • Citations H:${provenance.human} A:${provenance.animal} Agg:${provenance.aggregate}`;
             const isHovered = highlightedCompound === key;
             const guardrailActive = Boolean(highlightedCompound) && !isHovered;
             const plateauDose = getPlateauDose(compound);
@@ -68,51 +67,60 @@ const CustomLegend = ({
             return (
               <div
                 key={key}
-                className={`flex flex-col gap-1 p-1.5 rounded transition-all ${
-                  isVisible ? 'hover:bg-physio-bg-secondary' : 'opacity-50'
-                } ${guardrailActive ? 'opacity-40' : ''}`}
-                title={tooltip}
+                className={`group flex flex-col gap-1 p-2 rounded-md transition-all border ${
+                  isVisible 
+                    ? 'bg-physio-bg-subtle border-physio-border-subtle hover:border-physio-border-active' 
+                    : 'bg-transparent border-transparent opacity-60 hover:opacity-100 hover:bg-physio-bg-subtle'
+                } ${isHovered ? 'bg-physio-bg-surface border-physio-accent-cyan/30 shadow-sm z-10' : ''} ${guardrailActive ? 'opacity-30 grayscale' : ''}`}
                 onMouseEnter={() => onCompoundHover(key)}
                 onMouseLeave={() => onCompoundHover(null)}
               >
-                <div className="flex items-center">
+                <div className="flex items-center justify-between">
                   <button
                     onClick={() => toggleCompound(key)}
-                    className="flex items-center flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-cyan/60 rounded"
-                    onFocus={() => onCompoundHover(key)}
-                    onBlur={() => onCompoundHover(null)}
+                    className="flex items-center flex-1 text-left focus-visible:outline-none"
                   >
-                    <div
-                      className={`w-3 h-3 rounded mr-2 flex-shrink-0 ${isHovered ? 'ring-2 ring-offset-1 ring-physio-accent-cyan/70 ring-offset-physio-bg-core' : ''}`}
-                      style={{ backgroundColor: compound.color }}
-                    />
+                    <div className="relative mr-3">
+                      <div
+                        className={`w-2.5 h-2.5 rounded-sm transition-all ${isVisible ? 'opacity-100' : 'opacity-50'}`}
+                        style={{ backgroundColor: compound.color }}
+                      />
+                      {!isVisible && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-3 h-px bg-physio-text-tertiary rotate-45" />
+                        </div>
+                      )}
+                    </div>
                     <span
-                      className={`text-sm ${
-                        isVisible ? 'text-physio-text-primary' : 'line-through text-physio-text-tertiary'
-                      } ${isHovered ? 'font-semibold text-physio-accent-cyan' : ''}`}
+                      className={`text-xs font-medium transition-colors ${
+                        isVisible ? 'text-physio-text-primary' : 'text-physio-text-tertiary'
+                      } ${isHovered ? 'text-white' : ''}`}
                     >
                       {compound.abbreviation}
                     </span>
                   </button>
                   
                   <button
-                    onClick={() => onMethodologyClick(key)}
-                    className="ml-2 px-2 py-0.5 text-xs text-physio-accent-cyan hover:text-physio-accent-cyan hover:underline transition-colors flex-shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onMethodologyClick(key);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 ml-2 text-[10px] font-mono text-physio-text-tertiary hover:text-physio-accent-cyan transition-all px-1.5 py-0.5 rounded hover:bg-physio-accent-cyan/10"
                     title="View methodology"
                   >
-                    ⓘ
+                    INFO
                   </button>
                 </div>
                 {showBadges && (
-                  <div className="flex flex-wrap items-center gap-2 ml-5">
+                  <div className="flex flex-wrap items-center gap-1.5 ml-5.5 mt-1 animate-fade-in">
                     {plateauLabel && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold border border-physio-warning/40 text-physio-warning bg-physio-warning/5">
-                        Plateau {plateauLabel} {unitLabel}
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-medium border border-physio-accent-amber/30 text-physio-accent-amber bg-physio-accent-amber/5">
+                        Plateau {plateauLabel}
                       </span>
                     )}
                     {hardCapLabel && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold border border-physio-error/40 text-physio-error bg-physio-error/5">
-                        Evidence cap {hardCapLabel} {unitLabel}
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-medium border border-physio-accent-red/30 text-physio-accent-red bg-physio-accent-red/5">
+                        Cap {hardCapLabel}
                       </span>
                     )}
                   </div>
@@ -126,30 +134,23 @@ const CustomLegend = ({
   };
   
   return (
-    <div className="rounded-[28px] border border-physio-bg-border/70 bg-gradient-to-br from-physio-bg-core/90 via-physio-bg-secondary/80 to-physio-bg-core/70 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
-      <h3 className="text-lg font-bold text-physio-text-primary mb-4">
-        Legend
-      </h3>
-      
+    <div className="bg-physio-bg-core border border-physio-border-subtle rounded-xl p-4 h-full overflow-y-auto">
       {/* Show only relevant compounds based on active tab */}
       {(activeTab === 'injectables' || activeTab === 'interactions' || activeTab === 'stack') && renderCompoundGroup(injectables, "Injectables")}
       {(activeTab === 'orals' || activeTab === 'interactions' || activeTab === 'stack') && renderCompoundGroup(orals, "Orals")}
       
-      <div className="mt-4 pt-4 border-t border-physio-bg-border text-xs text-physio-text-secondary">
-        <div className="mb-2 font-semibold">Legend:</div>
-        <div className="space-y-1">
-          <div className="flex items-center">
-            <div className="w-8 h-0.5 bg-physio-text-secondary mr-2" />
-            <span>Solid line = Benefit</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-8 h-0.5 border-t-2 border-dashed border-physio-text-secondary mr-2" />
-            <span>Dotted line = Risk</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-8 h-3 bg-physio-text-secondary opacity-30 mr-2" />
-            <span>Shaded band = Uncertainty (wider = less confidence)</span>
-          </div>
+      <div className="mt-6 pt-4 border-t border-physio-border-subtle text-[10px] text-physio-text-tertiary space-y-2">
+        <div className="flex items-center">
+          <div className="w-6 h-0.5 bg-physio-text-tertiary mr-2" />
+          <span>Benefit (Anabolic)</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-6 h-0.5 border-t border-dashed border-physio-text-tertiary mr-2" />
+          <span>Risk (Burden)</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-6 h-2 bg-physio-text-tertiary/20 mr-2 rounded-sm" />
+          <span>Uncertainty</span>
         </div>
       </div>
     </div>

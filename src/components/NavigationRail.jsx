@@ -1,30 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-const sizeTokens = {
-  sm: {
-    navPadding: 'px-3 py-1.5',
-    gap: 'gap-1.5',
-    button: 'px-3 py-1.5 text-xs',
-    font: 'text-[13px]'
-  },
-  md: {
-    navPadding: 'px-4 py-2',
-    gap: 'gap-2',
-    button: 'px-4 py-2 text-sm',
-    font: 'text-sm'
-  }
-};
-
 const NavigationRail = ({
   tabs,
   activeTab,
   onTabChange,
   ariaLabel = 'Navigation',
-  size = 'md',
   className = ''
 }) => {
   const buttonRefs = useRef([]);
-  const tokens = sizeTokens[size] || sizeTokens.md;
   const [focusedKey, setFocusedKey] = useState(activeTab);
 
   useEffect(() => {
@@ -62,10 +45,10 @@ const NavigationRail = ({
 
   const handleKeyDown = useCallback(
     (event, tab) => {
-      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      if (event.key === 'ArrowDown') {
         event.preventDefault();
         focusTabByOffset(tab.key, 1);
-      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      } else if (event.key === 'ArrowUp') {
         event.preventDefault();
         focusTabByOffset(tab.key, -1);
       } else if (event.key === 'Home') {
@@ -97,44 +80,47 @@ const NavigationRail = ({
 
   return (
     <nav
-      className={`bg-physio-bg-secondary/70 border border-physio-bg-border rounded-3xl shadow-physio-subtle overflow-x-auto ${tokens.navPadding} ${className}`.trim()}
+      className={`flex flex-col gap-1 w-full ${className}`}
       aria-label={ariaLabel}
+      role="tablist"
+      aria-orientation="vertical"
     >
-      <div className={`flex items-center min-w-max ${tokens.gap}`} role="tablist">
-        {tabs.map((tab, index) => {
-          const isActive = tab.key === activeTab;
-          const isDisabled = Boolean(tab.disabled);
-          const isFocused = tab.key === focusedKey;
-          const controlProps = tab.panelId ? { 'aria-controls': tab.panelId } : {};
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              ref={el => {
-                buttonRefs.current[index] = el;
-              }}
-              disabled={isDisabled}
-              role="tab"
-              aria-selected={isActive}
-              tabIndex={isFocused ? 0 : -1}
-              onClick={() => !isDisabled && onTabChange?.(tab.key)}
-              onKeyDown={event => handleKeyDown(event, tab)}
-              onFocus={() => setFocusedKey(tab.key)}
-              onMouseEnter={() => setFocusedKey(tab.key)}
-              className={`rounded-full font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-violet/70 ${tokens.button} ${tokens.font} ${
-                isActive
-                  ? 'bg-physio-accent-cyan/15 text-physio-accent-cyan border border-physio-accent-cyan shadow-[0_0_20px_rgba(75,187,247,0.35)]'
-                  : isDisabled
-                  ? 'text-physio-text-tertiary/60 border border-dashed border-physio-bg-border/70 cursor-not-allowed'
-                  : 'text-physio-text-secondary border border-transparent hover:border-physio-accent-cyan/50 hover:text-white hover:shadow-[0_0_18px_rgba(75,187,247,0.2)]'
-              } ${isFocused && !isActive ? 'border border-physio-bg-border/70 text-physio-text-primary' : ''}`}
-              {...controlProps}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      {tabs.map((tab, index) => {
+        const isActive = tab.key === activeTab;
+        const isDisabled = Boolean(tab.disabled);
+        const isFocused = tab.key === focusedKey;
+        
+        return (
+          <button
+            key={tab.key}
+            type="button"
+            ref={el => {
+              buttonRefs.current[index] = el;
+            }}
+            disabled={isDisabled}
+            role="tab"
+            aria-selected={isActive}
+            tabIndex={isFocused ? 0 : -1}
+            onClick={() => !isDisabled && onTabChange?.(tab.key)}
+            onKeyDown={event => handleKeyDown(event, tab)}
+            onFocus={() => setFocusedKey(tab.key)}
+            onMouseEnter={() => setFocusedKey(tab.key)}
+            className={`
+              group flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-all duration-200
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-cyan/50
+              ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+              ${isActive 
+                ? 'bg-physio-bg-surface text-physio-text-primary border-l-2 border-physio-accent-cyan' 
+                : 'text-physio-text-secondary hover:bg-physio-bg-subtle hover:text-physio-text-primary border-l-2 border-transparent'}
+            `}
+          >
+            <span className="truncate">{tab.label}</span>
+            {isActive && (
+              <div className="w-1.5 h-1.5 rounded-full bg-physio-accent-cyan shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
+            )}
+          </button>
+        );
+      })}
     </nav>
   );
 };

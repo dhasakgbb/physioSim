@@ -74,9 +74,9 @@ const FILTER_TRACKING_OPTIONS = [
 ];
 
 const NAV_TABS = [
-  { key: 'injectables', label: 'Injectables' },
-  { key: 'orals', label: 'Orals' },
-  { key: 'interactions', label: 'Interactions' },
+  { key: 'injectables', label: 'Injectables Dashboard' },
+  { key: 'orals', label: 'Orals Dashboard' },
+  { key: 'interactions', label: 'Interaction Matrix' },
   { key: 'stack', label: 'Stack Builder' }
 ];
 
@@ -346,64 +346,61 @@ const AASVisualization = () => {
   };
 
   return (
-    <div className="min-h-screen p-6 md:p-8">
-      <div className="max-w-[1400px] mx-auto">
-        {/* Header */}
-        <header className="mb-8">
-          <h1 className="text-h1 text-physio-text-primary mb-2">
-            physioLab — AAS Dose-Response Analyzer
-          </h1>
-          <p className="text-lg text-physio-text-secondary">
-            Evidence-based harm reduction modeling with transparent uncertainty quantification
-          </p>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <span className="text-sm text-physio-text-secondary">Interface mode</span>
-            <div className="inline-flex rounded-full border border-physio-bg-border bg-physio-bg-core">
+    <div className="flex h-screen bg-physio-bg-core text-physio-text-primary overflow-hidden font-sans">
+      {/* Sidebar */}
+      <aside className="w-64 bg-physio-bg-core border-r border-physio-border-subtle flex flex-col flex-shrink-0 z-20">
+        <div className="h-14 flex items-center px-4 border-b border-physio-border-subtle">
+          <h1 className="text-lg font-bold text-physio-text-primary tracking-tight">physioLab</h1>
+          <span className="ml-2 text-[10px] uppercase tracking-wide text-physio-accent-cyan font-mono bg-physio-accent-cyan/10 px-1.5 py-0.5 rounded">Beta</span>
+        </div>
+        
+        <div className="flex-1 py-4 px-2 overflow-y-auto">
+          <div className="mb-6">
+            <p className="px-3 mb-2 text-[10px] uppercase tracking-wider text-physio-text-tertiary font-bold">Modules</p>
+            <NavigationRail tabs={NAV_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+          </div>
+          
+          <div>
+            <p className="px-3 mb-2 text-[10px] uppercase tracking-wider text-physio-text-tertiary font-bold">Interface Mode</p>
+            <div className="px-2 flex gap-1">
               <button
                 onClick={() => handleInterfaceModeChange('simple')}
-                className={`px-4 py-1.5 text-xs font-semibold rounded-full transition ${
-                  uiMode === 'simple'
-                    ? 'bg-physio-accent-cyan text-white shadow-physio-strong'
-                    : 'text-physio-text-secondary'
-                }`}
+                className={`flex-1 py-1.5 text-xs font-medium rounded transition-colors ${uiMode === 'simple' ? 'bg-physio-bg-surface text-physio-text-primary' : 'text-physio-text-secondary hover:text-physio-text-primary'}`}
               >
-                Simple
+                Standard
               </button>
               <button
                 onClick={() => handleInterfaceModeChange('lab')}
-                className={`px-4 py-1.5 text-xs font-semibold rounded-full transition ${
-                  uiMode === 'lab'
-                    ? 'bg-physio-accent-violet text-white shadow-physio-strong'
-                    : 'text-physio-text-secondary'
-                }`}
+                className={`flex-1 py-1.5 text-xs font-medium rounded transition-colors ${uiMode === 'lab' ? 'bg-physio-bg-surface text-physio-accent-violet' : 'text-physio-text-secondary hover:text-physio-text-primary'}`}
               >
-                Lab
+                Lab (Pro)
               </button>
             </div>
-            <span className="text-xs text-physio-text-tertiary">
-              {uiMode === 'simple'
-                ? 'Keeps focus on planning and guardrails.'
-                : 'Shows evidence sliders, interaction surfaces, and optimizers.'}
-            </span>
           </div>
-        </header>
-
-        <div className="flex flex-wrap items-center justify-end gap-2 mb-4">
-          <span className="text-xs uppercase tracking-wide text-physio-text-tertiary">Layout mode</span>
-          <button
-            onClick={() => setCompressedMode(prev => !prev)}
-            className={`px-4 py-2 rounded-lg border text-sm font-semibold transition-standard ${
-              compressedMode
-                ? 'bg-physio-accent-cyan text-white border-physio-accent-cyan'
-                : 'border-physio-bg-border text-physio-text-secondary hover:text-physio-text-primary'
-            }`}
-          >
-            {compressedMode ? 'Compressed on' : 'Compressed off'}
-          </button>
         </div>
 
-        <div className="space-y-5 mb-8">
-          <div className="sticky top-4 z-30">
+        <div className="p-4 border-t border-physio-border-subtle text-[10px] text-physio-text-tertiary">
+          <p>v1.0.4 · Clinical Obsidian</p>
+          <p className="mt-1">Evidence-based harm reduction only.</p>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative bg-physio-bg-core">
+        {/* Top Bar */}
+        <header className="h-14 border-b border-physio-border-subtle flex items-center justify-between px-6 bg-physio-bg-core z-10 shrink-0">
+          <div className="flex items-center gap-4">
+            <h2 className="text-sm font-semibold text-physio-text-primary">
+              {NAV_TABS.find(t => t.key === activeTab)?.label}
+            </h2>
+            {filtersDirty && (
+              <button onClick={resetAllFilters} className="text-xs text-physio-accent-amber hover:underline">
+                Reset Filters
+              </button>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-4">
             <ProfileContextBar
               profile={userProfile}
               unsaved={profileUnsaved}
@@ -413,424 +410,186 @@ const AASVisualization = () => {
               }}
               onSaveProfile={handleSaveProfile}
               onResetProfile={handleClearProfile}
-              filterItems={filterStatusItems}
-              onResetFilters={resetAllFilters}
-              onManageFilters={() => setFilterPrefsOpen(true)}
-              expanded={profileStripExpanded || profileModalOpen}
+              expanded={profileStripExpanded}
               onToggleExpand={() => setProfileStripExpanded(prev => !prev)}
+              className="!border-none !bg-transparent !shadow-none !p-0 !rounded-none"
             />
           </div>
+        </header>
 
-          <div className="space-y-3">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-              <NavigationRail tabs={NAV_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
-              <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
-                <button
-                  onClick={() => setFilterPrefsOpen(prev => !prev)}
-                  className="px-3 py-1.5 rounded-full border border-physio-bg-border text-xs font-semibold text-physio-text-secondary hover:text-physio-text-primary hover:border-physio-accent-cyan transition"
-                >
-                  Filter tracking
-                </button>
-                {filtersDirty && (
-                  <button
-                    onClick={resetAllFilters}
-                    className="px-3 py-1.5 rounded-full border border-physio-accent-cyan text-xs font-semibold text-physio-accent-cyan hover:bg-physio-accent-cyan/10 transition"
-                  >
-                    Reset filters
-                  </button>
-                )}
-                <button
-                  onClick={() => setCompressedMode(prev => !prev)}
-                  className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition ${
-                    compressedMode
-                      ? 'border-physio-accent-cyan text-physio-accent-cyan'
-                      : 'border-physio-bg-border text-physio-text-secondary hover:text-physio-text-primary'
-                  }`}
-                >
-                  {compressedMode ? 'Dense layout' : 'Comfort layout'}
-                </button>
-              </div>
-            </div>
-
-            {filterPrefsOpen && (
-              <div className="p-4 border border-physio-bg-border rounded-2xl bg-physio-bg-secondary shadow-physio-subtle">
-                <p className="text-xs uppercase tracking-wide text-physio-text-tertiary mb-2">Filters counted</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-physio-text-secondary">
-                  {FILTER_TRACKING_OPTIONS.map(pref => (
-                    <label
-                      key={pref.key}
-                      className="flex items-start gap-2 bg-physio-bg-core border border-physio-bg-border rounded-xl p-3 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={filterPrefs[pref.key]}
-                        onChange={() =>
-                          setFilterPrefs(prev => ({
-                            ...prev,
-                            [pref.key]: !prev[pref.key]
-                          }))
-                        }
-                        className="mt-1"
+        {/* Scrollable Viewport */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 scroll-smooth">
+          <div className="max-w-[1600px] mx-auto space-y-6 pb-20">
+            {/* Injectable Compounds Tab */}
+            {activeTab === 'injectables' && (
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 animate-fade-in">
+                <div className="space-y-4 min-w-0">
+                  <ChartControlBar viewMode={viewMode} setViewMode={setViewMode} />
+                  <div className="bg-physio-bg-core border border-physio-border-subtle rounded-xl p-1 overflow-hidden relative group">
+                    <div ref={chartRef} className="h-[500px] w-full">
+                      <DoseResponseChart
+                        viewMode={viewMode}
+                        visibleCompounds={visibleCompounds}
+                        userProfile={userProfile}
+                        highlightedCompound={hoveredCompound}
                       />
-                      <span>
-                        <span className="block font-semibold text-physio-text-primary">{pref.label}</span>
-                        <span className="text-xs text-physio-text-secondary">{pref.helper}</span>
-                      </span>
-                    </label>
-                  ))}
+                    </div>
+                  </div>
+                  
+                  <UtilityCardRow
+                    compoundType="injectable"
+                    visibleCompounds={visibleCompounds}
+                    userProfile={userProfile}
+                    chartRef={chartRef}
+                    onOpenProfile={() => setProfileModalOpen(true)}
+                  />
                 </div>
-                <div className="flex justify-end mt-3">
-                  <button
-                    onClick={() => setFilterPrefsOpen(false)}
-                    className="px-3 py-1.5 rounded-full border border-physio-bg-border text-physio-text-secondary hover:text-physio-text-primary"
-                  >
-                    Done
-                  </button>
+
+                <div className="space-y-4">
+                  <CustomLegend
+                    visibleCompounds={visibleCompounds}
+                    toggleCompound={toggleCompound}
+                    onMethodologyClick={openMethodology}
+                    onToggleAll={(action, keys) => {
+                      setVisibleCompounds(prev => {
+                        const next = { ...prev };
+                        (keys || activeCompoundKeys).forEach(key => {
+                          if (action === 'all-on') next[key] = true;
+                          if (action === 'all-off') next[key] = false;
+                        });
+                        return next;
+                      });
+                    }}
+                    activeTab={activeTab}
+                    onCompoundHover={setHoveredCompound}
+                    highlightedCompound={hoveredCompound}
+                  />
+                  
+                  <div className="bg-physio-bg-core border border-physio-border-subtle rounded-xl p-4 space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-physio-text-tertiary">Intel</p>
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                      {activeCompoundKeys.map(compoundKey => (
+                        <CompoundInsightCard
+                          key={compoundKey}
+                          compoundKey={compoundKey}
+                          profile={userProfile}
+                          onHover={setHoveredCompound}
+                          onToggle={toggleCompound}
+                          visible={visibleCompounds[compoundKey]}
+                          isHighlighted={hoveredCompound === compoundKey}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
-            {activeCompoundType && (
-              <CompoundChipRail
-                compoundType={activeCompoundType}
-                visibleCompounds={visibleCompounds}
-                toggleCompound={toggleCompound}
-                onHover={setHoveredCompound}
-                highlightedCompound={hoveredCompound}
-              />
+            {/* Oral Compounds Tab */}
+            {activeTab === 'orals' && (
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 animate-fade-in">
+                <div className="space-y-4 min-w-0">
+                  <ChartControlBar viewMode={viewMode} setViewMode={setViewMode} />
+                  <div className="bg-physio-bg-core border border-physio-border-subtle rounded-xl p-1 overflow-hidden">
+                    <div ref={chartRef} className="h-[500px] w-full">
+                      <OralDoseChart
+                        viewMode={viewMode}
+                        visibleCompounds={visibleCompounds}
+                        userProfile={userProfile}
+                        highlightedCompound={hoveredCompound}
+                      />
+                    </div>
+                  </div>
+                  
+                  <UtilityCardRow
+                    compoundType="oral"
+                    visibleCompounds={visibleCompounds}
+                    userProfile={userProfile}
+                    chartRef={chartRef}
+                    onOpenProfile={() => setProfileModalOpen(true)}
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <CustomLegend
+                    visibleCompounds={visibleCompounds}
+                    toggleCompound={toggleCompound}
+                    onMethodologyClick={openMethodology}
+                    onToggleAll={(action, keys) => {
+                      setVisibleCompounds(prev => {
+                        const next = { ...prev };
+                        (keys || activeCompoundKeys).forEach(key => {
+                          if (action === 'all-on') next[key] = true;
+                          if (action === 'all-off') next[key] = false;
+                        });
+                        return next;
+                      });
+                    }}
+                    activeTab={activeTab}
+                    onCompoundHover={setHoveredCompound}
+                    highlightedCompound={hoveredCompound}
+                  />
+                  
+                  <div className="bg-physio-bg-core border border-physio-border-subtle rounded-xl p-4 space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-physio-text-tertiary">Insights</p>
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                      {activeCompoundKeys.map(compoundKey => (
+                        <CompoundInsightCard
+                          key={compoundKey}
+                          compoundKey={compoundKey}
+                          profile={userProfile}
+                          onHover={setHoveredCompound}
+                          onToggle={toggleCompound}
+                          visible={visibleCompounds[compoundKey]}
+                          isHighlighted={hoveredCompound === compoundKey}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
 
-            <LeanBackInsightRow insights={leanBackInsights} />
+            {/* Interaction Matrix Tab */}
+            {activeTab === 'interactions' && (
+              <div className="animate-fade-in">
+                <InteractionHeatmap
+                  userProfile={userProfile}
+                  onPrefillStack={handlePrefillStack}
+                  resetSignal={interactionResetKey}
+                  onFiltersDirtyChange={handleInteractionFiltersDirty}
+                  uiMode={uiMode}
+                />
+              </div>
+            )}
+
+            {/* Stack Builder Tab */}
+            {activeTab === 'stack' && (
+              <div className="animate-fade-in">
+                <StackBuilder prefillStack={stackPrefill} userProfile={userProfile} uiMode={uiMode} />
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Injectable Compounds Tab */}
-        {activeTab === 'injectables' && (
-          <>
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold text-physio-text-primary">Injectable Compounds</h2>
-              <p className="text-sm text-physio-text-secondary">Dose scale: mg/week (0-1200mg)</p>
-            </div>
-            <section className="bg-physio-bg-secondary/80 border border-physio-bg-border rounded-4xl p-4 sm:p-6 shadow-physio-subtle space-y-6">
-              <div className="flex flex-col xl:flex-row gap-6">
-                <div className="flex-1 space-y-4">
-                  <ChartControlBar viewMode={viewMode} setViewMode={setViewMode} />
-                  <div className="bg-physio-bg-core/80 border border-physio-bg-border rounded-3xl p-3 sm:p-4" ref={chartRef}>
-                    <DoseResponseChart
-                      viewMode={viewMode}
-                      visibleCompounds={visibleCompounds}
-                      userProfile={userProfile}
-                      highlightedCompound={hoveredCompound}
-                    />
-                  </div>
-                </div>
-
-                <aside className="xl:w-80 space-y-4">
-                  <CustomLegend
-                    visibleCompounds={visibleCompounds}
-                    toggleCompound={toggleCompound}
-                    onMethodologyClick={openMethodology}
-                    onToggleAll={(action, keys) => {
-                      setVisibleCompounds(prev => {
-                        const next = { ...prev };
-                        (keys || activeCompoundKeys).forEach(key => {
-                          if (action === 'all-on') next[key] = true;
-                          if (action === 'all-off') next[key] = false;
-                        });
-                        return next;
-                      });
-                    }}
-                    activeTab={activeTab}
-                    onCompoundHover={setHoveredCompound}
-                    highlightedCompound={hoveredCompound}
-                  />
-
-                  <div className="bg-physio-bg-core/60 border border-physio-bg-border rounded-3xl p-3 space-y-3 max-h-[520px] overflow-auto">
-                    <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Compound intel</p>
-                    <div className="grid gap-3">
-                      {activeCompoundKeys.length ? (
-                        activeCompoundKeys.map(compoundKey => (
-                          <CompoundInsightCard
-                            key={compoundKey}
-                            compoundKey={compoundKey}
-                            profile={userProfile}
-                            onHover={setHoveredCompound}
-                            onToggle={toggleCompound}
-                            visible={visibleCompounds[compoundKey]}
-                            isHighlighted={hoveredCompound === compoundKey}
-                          />
-                        ))
-                      ) : (
-                        <p className="text-xs text-physio-text-secondary">No injectables available.</p>
-                      )}
-                    </div>
-                  </div>
-                </aside>
-              </div>
-
-              <UtilityCardRow
-                compoundType="injectable"
-                visibleCompounds={visibleCompounds}
-                userProfile={userProfile}
-                chartRef={chartRef}
-                onOpenProfile={() => setProfileModalOpen(true)}
-              />
-            </section>
-
-            <ContextDrawer
-              dataSection="context-drawer"
-              collapsed={contextCollapsed.injectables}
-              onToggle={() => toggleContextDrawer('injectables')}
-              renderEvidence={() =>
-                evidenceReady.injectables ? (
-                  <Suspense fallback={<p className="text-xs text-physio-text-tertiary">Loading evidence deck…</p>}>
-                    <EvidencePanel activeTab={activeTab} visibleCompounds={visibleCompounds} />
-                  </Suspense>
-                ) : (
-                  <p className="text-xs text-physio-text-tertiary">Expand the drawer to load the evidence breakdown.</p>
-                )
-              }
-            >
-              <section>
-                <h4 className="font-semibold text-physio-text-secondary mb-2">Quick Guide</h4>
-                <ul className="space-y-1.5">
-                  <li><strong>Solid lines = Benefit</strong> • Dotted lines = Risk</li>
-                  <li><strong>Shaded bands = Uncertainty</strong> • Wider = less confident data</li>
-                  <li><strong>Legend:</strong> Click compounds to show/hide • Tap ⓘ for methodology</li>
-                </ul>
-              </section>
-              <section>
-                <h4 className="font-semibold text-physio-text-secondary mb-2">Common Scenarios</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-mint">
-                    <div className="font-bold text-physio-accent-mint mb-2">🔰 First Cycle?</div>
-                    <p>Start with <strong>Testosterone only</strong> at 300-500mg/week. Observe your baseline response before layering other compounds.</p>
-                  </div>
-                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-cyan">
-                    <div className="font-bold text-physio-accent-cyan mb-2">📈 Mass Building</div>
-                    <p>Test 500mg + NPP 300mg — optional Dbol 20-30mg (weeks 1-4) for kickstart. Monitor E2 closely.</p>
-                  </div>
-                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-violet">
-                    <div className="font-bold text-physio-accent-violet mb-2">✂️ Cutting / Recomp</div>
-                    <p>Test 300-400mg + Masteron 400mg. Optional Anavar 50mg (weeks 8-14) for final hardening. Skip wet compounds.</p>
-                  </div>
-                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-error">
-                    <div className="font-bold text-physio-error mb-2">⚠️ High Risk ≠ High Reward</div>
-                    <p>Tren benefit plateaus ~300mg while risk keeps climbing. Anadrol &gt;75mg pushes hepatic thresholds quickly.</p>
-                  </div>
-                </div>
-              </section>
-              <section>
-                <h4 className="font-semibold text-physio-text-secondary mb-2">Evidence Tier System</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border-l-4 border-physio-tier-1 pl-4">
-                    <div className="font-bold text-physio-tier-1">Tier 1 · Highest confidence</div>
-                    <p className="text-physio-text-secondary">Randomized controlled trials in humans at specific doses.</p>
-                  </div>
-                  <div className="border-l-4 border-physio-tier-2 pl-4">
-                    <div className="font-bold text-physio-tier-2">Tier 2 · High confidence</div>
-                    <p className="text-physio-text-secondary">Clinical/therapeutic human data extrapolated to supra levels.</p>
-                  </div>
-                  <div className="border-l-4 border-physio-tier-3 pl-4">
-                    <div className="font-bold text-physio-tier-3">Tier 3 · Medium confidence</div>
-                    <p className="text-physio-text-secondary">Animal studies converted to human equivalent dose (HED).</p>
-                  </div>
-                  <div className="border-l-4 border-physio-tier-4 pl-4">
-                    <div className="font-bold text-physio-tier-4">Tier 4 · Low confidence</div>
-                    <p className="text-physio-text-secondary">Mechanistic models + aggregated community reports.</p>
-                  </div>
-                </div>
-              </section>
-            </ContextDrawer>
-          </>
-        )}
-
-        {/* Oral Compounds Tab */}
-        {activeTab === 'orals' && (
-          <>
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold text-physio-text-primary">Oral Compounds</h2>
-              <p className="text-sm text-physio-text-secondary">Dose scale: mg/day (0-100mg)</p>
-            </div>
-            <section className="bg-physio-bg-secondary/80 border border-physio-bg-border rounded-4xl p-4 sm:p-6 shadow-physio-subtle space-y-6">
-              <div className="flex flex-col xl:flex-row gap-6">
-                <div className="flex-1 space-y-4">
-                  <ChartControlBar viewMode={viewMode} setViewMode={setViewMode} />
-                  <div className="bg-physio-bg-core/80 border border-physio-bg-border rounded-3xl p-3 sm:p-4" ref={chartRef}>
-                    <OralDoseChart
-                      viewMode={viewMode}
-                      visibleCompounds={visibleCompounds}
-                      userProfile={userProfile}
-                      highlightedCompound={hoveredCompound}
-                    />
-                  </div>
-                </div>
-
-                <aside className="xl:w-80 space-y-4">
-                  <CustomLegend
-                    visibleCompounds={visibleCompounds}
-                    toggleCompound={toggleCompound}
-                    onMethodologyClick={openMethodology}
-                    onToggleAll={(action, keys) => {
-                      setVisibleCompounds(prev => {
-                        const next = { ...prev };
-                        (keys || activeCompoundKeys).forEach(key => {
-                          if (action === 'all-on') next[key] = true;
-                          if (action === 'all-off') next[key] = false;
-                        });
-                        return next;
-                      });
-                    }}
-                    activeTab={activeTab}
-                    onCompoundHover={setHoveredCompound}
-                    highlightedCompound={hoveredCompound}
-                  />
-
-                  <div className="bg-physio-bg-core/60 border border-physio-bg-border rounded-3xl p-3 space-y-3 max-h-[520px] overflow-auto">
-                    <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Compound insights</p>
-                    <div className="grid gap-3">
-                      {activeCompoundKeys.length ? (
-                        activeCompoundKeys.map(compoundKey => (
-                          <CompoundInsightCard
-                            key={compoundKey}
-                            compoundKey={compoundKey}
-                            profile={userProfile}
-                            onHover={setHoveredCompound}
-                            onToggle={toggleCompound}
-                            visible={visibleCompounds[compoundKey]}
-                            isHighlighted={hoveredCompound === compoundKey}
-                          />
-                        ))
-                      ) : (
-                        <p className="text-xs text-physio-text-secondary">No oral compounds available.</p>
-                      )}
-                    </div>
-                  </div>
-                </aside>
-              </div>
-
-              <UtilityCardRow
-                compoundType="oral"
-                visibleCompounds={visibleCompounds}
-                userProfile={userProfile}
-                chartRef={chartRef}
-                onOpenProfile={() => setProfileModalOpen(true)}
-              />
-            </section>
-
-            <ContextDrawer
-              dataSection="context-drawer-orals"
-              collapsed={contextCollapsed.orals}
-              onToggle={() => toggleContextDrawer('orals')}
-              renderEvidence={() =>
-                evidenceReady.orals ? (
-                  <Suspense fallback={<p className="text-xs text-physio-text-tertiary">Loading evidence deck…</p>}>
-                    <EvidencePanel activeTab={activeTab} visibleCompounds={visibleCompounds} />
-                  </Suspense>
-                ) : (
-                  <p className="text-xs text-physio-text-tertiary">Expand the drawer to load the evidence breakdown.</p>
-                )
-              }
-            >
-              <section>
-                <h4 className="font-semibold text-physio-text-secondary mb-2">Risk rails</h4>
-                <ul className="space-y-1.5">
-                  <li><strong>Liver Stress:</strong> Keep Alk-Phos/ALT bloodwork within 1.3x baseline every 6 weeks.</li>
-                  <li><strong>Blood Pressure:</strong> Above 140/90? Pause orals immediately.</li>
-                  <li><strong>Cycle Length:</strong> 6-8 weeks max for 17aa orals. Longer = +hepatic risk.</li>
-                </ul>
-              </section>
-              <section>
-                <h4 className="font-semibold text-physio-text-secondary mb-2">Stack paths</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-cyan">
-                    <div className="font-bold text-physio-accent-cyan mb-2">⚡ Kickstart</div>
-                    <p>Dbol 30mg (Weeks 1-4) layered onto Test E base. Watch BP + hematocrit.</p>
-                  </div>
-                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-violet">
-                    <div className="font-bold text-physio-accent-violet mb-2">✨ Hardening</div>
-                    <p>Anavar 40-60mg with Test 300mg. Add Masteron if bodyfat &lt;12%.</p>
-                  </div>
-                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-accent-mint">
-                    <div className="font-bold text-physio-accent-mint mb-2">🧱 Recomp</div>
-                    <p>Turinabol 50mg with NPP 300mg offers dry gain profile + manageable BP.</p>
-                  </div>
-                  <div className="bg-physio-bg-tertiary rounded-lg p-4 border-2 border-physio-error">
-                    <div className="font-bold text-physio-error mb-2">⚠️ Guardrails</div>
-                    <p>Never stack two 17aa orals together. Avoid alcohol/NSAIDs during oral cycles.</p>
-                  </div>
-                </div>
-              </section>
-              <section>
-                <h4 className="font-semibold text-physio-text-secondary mb-2">Lab cadence</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-physio-text-secondary">
-                  <div>
-                    <p className="font-semibold text-physio-text-primary">Baseline</p>
-                    <p>AST/ALT, Alk Phos, Bilirubin, Lipids, BP</p>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-physio-text-primary">Mid-cycle</p>
-                    <p>Repeat hepatic panel + BP weekly</p>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-physio-text-primary">Post-cycle</p>
-                    <p>Ensure enzymes normalize before next cycle</p>
-                  </div>
-                </div>
-              </section>
-            </ContextDrawer>
-          </>
-        )}
-
-        {/* Interaction Matrix Tab */}
-        {activeTab === 'interactions' && (
-          <div className="mt-6">
-            <InteractionHeatmap
-              userProfile={userProfile}
-              onPrefillStack={handlePrefillStack}
-              resetSignal={interactionResetKey}
-              onFiltersDirtyChange={handleInteractionFiltersDirty}
-              uiMode={uiMode}
-            />
-          </div>
-        )}
-
-        {/* Stack Builder Tab */}
-        {activeTab === 'stack' && (
-          <div className="mt-6">
-            <StackBuilder prefillStack={stackPrefill} userProfile={userProfile} uiMode={uiMode} />
-          </div>
-        )}
-
-        {/* Footer */}
-        <footer className="mt-8 text-center text-sm text-physio-text-tertiary pb-8">
-          <p>Version 1.0 | Last Updated: {new Date().toLocaleDateString()}</p>
-          <p className="mt-2">
-            This tool is for educational purposes only and does not constitute medical advice.
-          </p>
-          <p className="mt-2">
-            Built with React, Recharts, and evidence-based harm reduction principles.
-          </p>
-        </footer>
-      </div>
+      </main>
 
       {profileModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between p-4 border-b border-physio-bg-border">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-physio-bg-surface border border-physio-border-active rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex items-center justify-between p-4 border-b border-physio-border-subtle">
               <div>
-                <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Profile controls</p>
-                <h3 className="text-xl font-semibold text-physio-text-primary">Personalize guidance</h3>
+                <p className="text-xs uppercase tracking-wide text-physio-text-tertiary">Profile</p>
+                <h3 className="text-xl font-bold text-physio-text-primary">Personalize Model</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setProfileModalOpen(false)}
-                className="px-3 py-1.5 rounded-full border border-physio-bg-border text-physio-text-secondary hover:text-physio-text-primary"
+                className="px-3 py-1.5 rounded border border-physio-border-subtle text-physio-text-secondary hover:text-physio-text-primary hover:bg-physio-bg-subtle"
               >
                 Close
               </button>
             </div>
-            <div className="p-4">
+            <div className="p-6">
               <PersonalizationPanel
                 profile={userProfile}
                 onProfileChange={applyProfileUpdate}
