@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const Slider = ({ 
   value, 
@@ -11,7 +11,27 @@ const Slider = ({
   className = '',
   markers = []
 }) => {
-  const percentage = ((value - min) / (max - min)) * 100;
+  const [localValue, setLocalValue] = useState(value);
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  const handleChange = (e) => {
+    const newValue = Number(e.target.value);
+    setLocalValue(newValue);
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      onChange(newValue);
+    }, 50);
+  };
+
+  const percentage = ((localValue - min) / (max - min)) * 100;
 
   return (
     <div className={`w-full ${className}`}>
@@ -22,7 +42,7 @@ const Slider = ({
           </label>
         )}
         <div className="font-mono text-sm text-physio-accent-primary font-bold">
-          {value} <span className="text-physio-text-muted text-xs font-sans font-normal">{unit}</span>
+          {localValue} <span className="text-physio-text-muted text-xs font-sans font-normal">{unit}</span>
         </div>
       </div>
       
@@ -62,8 +82,8 @@ const Slider = ({
           min={min}
           max={max}
           step={step}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
+          value={localValue}
+          onChange={handleChange}
           className="absolute w-full h-full opacity-0 cursor-pointer z-10"
         />
         

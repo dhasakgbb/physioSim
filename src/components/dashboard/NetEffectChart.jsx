@@ -14,6 +14,7 @@ import {
 import { evaluateStack } from '../../utils/stackEngine';
 import { defaultProfile } from '../../utils/personalization';
 import { compoundData } from '../../data/compoundData';
+import { COLORS } from '../../utils/theme';
 
 const CustomTooltip = ({ active, payload, label, crossover }) => {
   if (!active || !payload || !payload.length) return null;
@@ -25,8 +26,8 @@ const CustomTooltip = ({ active, payload, label, crossover }) => {
   const penaltyPct = Math.round((1 - (data.benefit / (data.benefit / (data.saturationPenalty || 1)))) * 100);
 
   return (
-    <div className={`backdrop-blur-md border p-4 rounded-xl shadow-2xl min-w-[220px] transition-colors duration-300 ${isWasted ? 'bg-physio-accent-critical/10 border-physio-accent-critical/50' : 'bg-physio-bg-surface/95 border-physio-border-strong'}`}>
-      <p className="text-[10px] uppercase tracking-widest text-physio-text-tertiary mb-2">
+    <div className={`backdrop-blur-md border p-4 rounded-xl shadow-2xl min-w-[240px] transition-colors duration-300 ${isWasted ? 'bg-physio-accent-critical/10 border-physio-accent-critical/50' : 'bg-physio-bg-surface/95 border-physio-border-strong'}`}>
+      <p className="text-xs uppercase tracking-widest text-physio-text-tertiary mb-2">
         Stack Intensity: <span className="text-physio-text-primary font-bold">{label}%</span>
       </p>
       
@@ -36,7 +37,7 @@ const CustomTooltip = ({ active, payload, label, crossover }) => {
             <span className="text-lg">🛑</span>
             <span className="text-xs font-bold text-physio-accent-critical uppercase tracking-wider">Wasted Zone</span>
           </div>
-          <p className="text-[10px] text-physio-text-primary leading-tight">
+          <p className="text-xs text-physio-text-primary leading-tight">
             Every mg added here reduces net growth. Risk exceeds benefit.
           </p>
         </div>
@@ -50,8 +51,8 @@ const CustomTooltip = ({ active, payload, label, crossover }) => {
           {/* NEW: Show the "Bypass" Bonus if significant */}
           {data.nonGenomicBenefit > 0.5 && (
             <div className="flex justify-between items-center pl-2 border-l-2 border-physio-accent-secondary/30">
-              <span className="text-[9px] text-physio-text-secondary">↳ Pathway Bypass</span>
-              <span className="text-[9px] font-mono text-physio-accent-secondary">+{data.nonGenomicBenefit.toFixed(2)}</span>
+              <span className="text-[10px] text-physio-text-secondary">↳ Pathway Bypass</span>
+              <span className="text-[10px] font-mono text-physio-accent-secondary">+{data.nonGenomicBenefit.toFixed(2)}</span>
             </div>
           )}
           
@@ -70,13 +71,13 @@ const CustomTooltip = ({ active, payload, label, crossover }) => {
       )}
 
       {isSaturated && !isWasted && (
-        <div className="mt-3 py-1.5 px-2 bg-physio-accent-warning/10 border border-physio-accent-warning/20 rounded text-[10px] text-physio-accent-warning flex items-center gap-1.5">
-          <span className="text-xs">⚠️</span> Diminishing Returns (Saturated)
+        <div className="mt-3 py-1.5 px-2 bg-physio-accent-warning/10 border border-physio-accent-warning/20 rounded text-xs text-physio-accent-warning flex items-center gap-1.5">
+          <span className="text-sm">⚠️</span> Diminishing Returns (Saturated)
         </div>
       )}
 
       {data.saturationPenalty < 0.9 && (
-        <div className="mt-1 text-[9px] text-physio-text-tertiary">
+        <div className="mt-1 text-[10px] text-physio-text-tertiary">
           Potential wasted: -{penaltyPct}% (Receptor Saturation)
         </div>
       )}
@@ -152,25 +153,25 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
           <defs>
             {/* Benefit Fill (Green Mist) */}
             <linearGradient id="benefitFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+              <stop offset="5%" stopColor={COLORS.benefit} stopOpacity={0.3}/>
+              <stop offset="95%" stopColor={COLORS.benefit} stopOpacity={0}/>
             </linearGradient>
             
             {/* Risk Fill (Red Mist) */}
             <linearGradient id="riskFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.35}/>
-              <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+              <stop offset="5%" stopColor={COLORS.risk} stopOpacity={0.35}/>
+              <stop offset="95%" stopColor={COLORS.risk} stopOpacity={0}/>
             </linearGradient>
 
             {/* Hatched Pattern for Wasted Zone */}
             <pattern id="wastedPattern" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
-              <rect width="4" height="8" transform="translate(0,0)" fill="#ef4444" opacity="0.1" />
+              <rect width="4" height="8" transform="translate(0,0)" fill={COLORS.risk} opacity="0.1" />
             </pattern>
           </defs>
 
           <CartesianGrid 
             strokeDasharray="3 3" 
-            stroke="#374151" 
+            stroke={COLORS.grid} 
             opacity={0.15} 
             vertical={false} 
           />
@@ -181,7 +182,7 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
             domain={[0, 150]} 
             tickFormatter={(val) => `${val}%`}
             stroke="#4b5563" 
-            fontSize={10} 
+            fontSize={12} 
             tickLine={false} 
             axisLine={false}
             dy={10}
@@ -226,7 +227,7 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
           <Line 
             type="monotone" 
             dataKey="benefit" 
-            stroke="#10b981" 
+            stroke={COLORS.benefit} 
             strokeWidth={3} 
             dot={false}
             name="Benefit"
@@ -235,8 +236,9 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
            <Line 
             type="monotone" 
             dataKey="risk" 
-            stroke="#ef4444" 
+            stroke={COLORS.risk} 
             strokeWidth={3} 
+            strokeDasharray="5 5"
             dot={false}
             name="Risk"
             isAnimationActive={false}
@@ -253,18 +255,18 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
       {/* Floating Labels */}
       <div className="absolute top-4 right-6 flex flex-col items-end gap-1 pointer-events-none">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold text-physio-accent-success uppercase tracking-wider">Anabolic Output</span>
+          <span className="text-xs font-bold text-physio-accent-success uppercase tracking-wider">Anabolic Output</span>
           <div className="w-3 h-1 bg-physio-accent-success rounded-full" />
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold text-physio-accent-critical uppercase tracking-wider">Systemic Load</span>
+          <span className="text-xs font-bold text-physio-accent-critical uppercase tracking-wider">Systemic Load</span>
           <div className="w-3 h-1 bg-physio-accent-critical rounded-full" />
         </div>
       </div>
 
       {/* Current Position Marker */}
       <div className="absolute bottom-0 left-2/3 -translate-x-1/2 mb-1 pointer-events-none">
-         <span className="text-[9px] font-bold text-physio-accent-primary bg-physio-bg-core/80 px-2 py-1 rounded-full border border-physio-accent-primary/30">
+         <span className="text-[10px] font-bold text-physio-accent-primary bg-physio-bg-core/80 px-2 py-1 rounded-full border border-physio-accent-primary/30">
            CURRENT DOSE
          </span>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React from 'react';
 import DashboardLayout from './DashboardLayout';
 import CompoundDock from './CompoundDock';
 import ActiveStackRail from './ActiveStackRail';
@@ -10,65 +10,20 @@ import CompoundInspector from './CompoundInspector';
 import SerumStabilityChart from './SerumStabilityChart';
 import OutcomeRadar from './OutcomeRadar';
 import LabReportCard from './LabReportCard';
-import { compoundData } from '../../data/compoundData';
-import { evaluateStack } from '../../utils/stackEngine';
-import { defaultProfile } from '../../utils/personalization';
+import ErrorBoundary from '../ui/ErrorBoundary';
+import { useStack } from '../../context/StackContext';
 
 const Dashboard = () => {
-  // 1. Unified State
-  const [stack, setStack] = useState([]);
-  const [userProfile] = useState(defaultProfile);
-  const [inspectedCompound, setInspectedCompound] = useState(null);
-  const [viewMode, setViewMode] = useState('net'); // 'net', 'pk', 'radar'
-
-  // 2. The Brain
-  const metrics = useMemo(() => {
-    return evaluateStack({
-      stackInput: stack,
-      profile: userProfile
-    });
-  }, [stack, userProfile]);
-
-  // 3. Actions
-  const handleAddCompound = useCallback((compoundKey) => {
-    if (stack.some(i => i.compound === compoundKey)) return; 
-    const meta = compoundData[compoundKey];
-    const startDose = meta.type === 'oral' ? 20 : 200; 
-    
-    // --- THE GOOGLE "SMART DEFAULT" LOGIC ---
-    let defaultFreq = 3.5; // Default 2x/week
-    if (meta.type === 'oral') defaultFreq = 1; // Daily
-    else if (meta.halfLife < 48) defaultFreq = 2; // EOD for short esters
-    // ----------------------------------------
-
-    setStack(prev => [...prev, { 
-      compound: compoundKey, 
-      dose: startDose,
-      frequency: defaultFreq // Store it here
-    }]);
-  }, [stack]);
-
-  const handleDoseChange = useCallback((compoundKey, newDose) => {
-    setStack(prev => prev.map(item => 
-      item.compound === compoundKey ? { ...item, dose: newDose } : item
-    ));
-  }, []);
-
-  const handleRemove = useCallback((compoundKey) => {
-    setStack(prev => prev.filter(i => i.compound !== compoundKey));
-  }, []);
-
-  const handleEsterChange = useCallback((compoundKey, newEster) => {
-    setStack(prev => prev.map(item => 
-      item.compound === compoundKey ? { ...item, ester: newEster } : item
-    ));
-  }, []);
-
-  const handleFrequencyChange = useCallback((compoundKey, newFreq) => {
-    setStack(prev => prev.map(item => 
-      item.compound === compoundKey ? { ...item, frequency: newFreq } : item
-    ));
-  }, []);
+  const {
+    stack,
+    userProfile,
+    inspectedCompound,
+    setInspectedCompound,
+    viewMode,
+    setViewMode,
+    metrics,
+    handleAddCompound
+  } = useStack();
 
   // 4. Render
   return (
@@ -76,14 +31,7 @@ const Dashboard = () => {
     <DashboardLayout
       // ZONE A: The Active Inputs
       leftRail={
-        <ActiveStackRail 
-          stack={stack} 
-          onDoseChange={handleDoseChange} 
-          onRemove={handleRemove}
-          onInspect={setInspectedCompound}
-          onEsterChange={handleEsterChange}
-          onFrequencyChange={handleFrequencyChange}
-        />
+        <ActiveStackRail />
       }
 
       // ZONE B: The Visualization
@@ -112,13 +60,15 @@ const Dashboard = () => {
           </div>
 
           {/* View Switcher */}
-          {viewMode === 'net' ? (
-            <NetEffectChart stack={stack} userProfile={userProfile} />
-          ) : viewMode === 'pk' ? (
-            <SerumStabilityChart stack={stack} />
-          ) : (
-            <OutcomeRadar metrics={metrics} />
-          )}
+          <ErrorBoundary>
+            {viewMode === 'net' ? (
+              <NetEffectChart stack={stack} userProfile={userProfile} />
+            ) : viewMode === 'pk' ? (
+              <SerumStabilityChart stack={stack} />
+            ) : (
+              <OutcomeRadar metrics={metrics} />
+            )}
+          </ErrorBoundary>
         </>
       }
 
@@ -144,7 +94,7 @@ const Dashboard = () => {
 
       // ZONE D: The Dock
       bottomDock={
-        <CompoundDock onAddCompound={handleAddCompound} />
+        <CompoundDock />
       }
     />
 

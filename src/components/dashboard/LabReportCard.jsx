@@ -70,17 +70,17 @@ const LabReportCard = ({ stack }) => {
   };
 
   return (
-    <div className="bg-physio-bg-surface border border-physio-border-strong rounded-xl p-4 shadow-neo">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs font-bold text-physio-text-primary uppercase tracking-wider">
+    <div className="bg-physio-bg-surface border border-physio-border-strong rounded-xl p-5 shadow-neo">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-sm font-bold text-physio-text-primary uppercase tracking-wider">
           Virtual Phlebotomist
         </h3>
-        <div className="text-[9px] text-physio-text-tertiary uppercase">
+        <div className="text-xs text-physio-text-tertiary uppercase">
           Predicted Lab Values
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {/* HDL */}
         <LabRow 
           label="HDL" 
@@ -136,7 +136,7 @@ const LabReportCard = ({ stack }) => {
         />
       </div>
 
-      <div className="mt-4 pt-3 border-t border-physio-border-subtle text-[9px] text-physio-text-tertiary">
+      <div className="mt-5 pt-3 border-t border-physio-border-subtle text-xs text-physio-text-tertiary">
         💡 Simulated values. Actual labs vary by genetics, diet, and training.
       </div>
     </div>
@@ -145,16 +145,16 @@ const LabReportCard = ({ stack }) => {
 
 const LabRow = ({ label, value, unit, status, reference }) => {
   return (
-    <div className="flex items-center justify-between py-1.5 px-2 rounded bg-physio-bg-core/50">
+    <div className="flex items-center justify-between py-2 px-3 rounded bg-physio-bg-core/50">
       <div className="flex items-center gap-3 flex-1">
-        <span className="text-[10px] font-mono text-physio-text-tertiary uppercase w-16">{label}</span>
+        <span className="text-xs font-mono text-physio-text-tertiary uppercase w-20">{label}</span>
         <span className={`text-sm font-bold font-mono ${status.color}`}>
-          {value} <span className="text-[9px] font-normal">{unit}</span>
+          {value} <span className="text-[10px] font-normal">{unit}</span>
         </span>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-[9px] text-physio-text-tertiary font-mono">{reference}</span>
-        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${status.bg} ${status.color}`}>
+      <div className="flex items-center gap-3">
+        <span className="text-[10px] text-physio-text-tertiary font-mono">{reference}</span>
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${status.bg} ${status.color}`}>
           {status.label}
         </span>
       </div>

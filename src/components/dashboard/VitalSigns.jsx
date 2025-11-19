@@ -99,6 +99,25 @@ const VitalSigns = ({ metrics, stack, showScoreOnly = false, showSafetyOnly = fa
       {/* --- SECTION 2: THE BILL (SAFETY & SUPPORT) --- */}
       {(showAll || showSafetyOnly) && (
         <>
+          {/* NEW: Clinical Warnings (The "Doctor's Note") */}
+          {metrics.warnings && metrics.warnings.length > 0 && (
+            <div className="space-y-2 mb-4">
+               <h4 className="text-[10px] uppercase tracking-widest text-physio-accent-critical font-bold border-b border-physio-accent-critical/30 pb-2 flex items-center gap-2">
+                 <span>⚠️ Clinical Contraindications</span>
+               </h4>
+               {metrics.warnings.map((warn, idx) => (
+                 <div key={idx} className={`p-3 rounded-lg border text-xs ${
+                   warn.level === 'critical' 
+                     ? 'bg-red-950/30 border-red-900/50 text-red-200' 
+                     : 'bg-orange-950/30 border-orange-900/50 text-orange-200'
+                 }`}>
+                   <strong className="block mb-1 uppercase text-[10px] tracking-wider opacity-80">{warn.type} Warning</strong>
+                   {warn.message}
+                 </div>
+               ))}
+            </div>
+          )}
+
           {/* Organ Load Breakdown */}
           <div className="space-y-3">
             <h4 className="text-[10px] uppercase tracking-widest text-physio-text-tertiary font-bold border-b border-physio-border-subtle pb-2">

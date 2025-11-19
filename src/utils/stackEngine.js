@@ -7,6 +7,7 @@ import {
 import { normalizeStackInput, resolvePairKey } from '../data/interactionMatrix';
 import { defaultProfile } from './personalization';
 import { compoundData } from '../data/compoundData';
+import { MAX_PHENOTYPE_SCORE } from '../data/constants';
 
 const baseResult = () => ({
   byCompound: {},
@@ -40,24 +41,13 @@ const calculateGlobalPenalties = (compounds, doses, currentRisk) => {
   }
 
   // 2. Estrogen "Sweet Spot" & Test Base Check
-  // Factors: Test=1, Dbol=2, Ment=3, EQ=0.5, Adrol=0.5 (Paradoxical), Others=0
-  const aromatizationMap = {
-    testosterone: 1.0,
-    dianabol: 2.0,
-    anadrol: 0.5, // Paradoxical
-    eq: 0.5,
-    npp: 0.2,
-    deca: 0.2,
-    ment: 3.0
-  };
-
   let totalEstrogenLoad = 0;
   let totalSuppressives = 0;
 
   activeCompounds.forEach(c => {
-    const factor = aromatizationMap[c.code] || 0;
+    const factor = c.meta.flags?.aromatization || 0;
     totalEstrogenLoad += c.dose * factor;
-    if (['trenbolone', 'npp', 'deca', 'ment', 'rad140', 'lgd4033'].includes(c.code)) {
+    if (c.meta.flags?.isSuppressive) {
       totalSuppressives += c.dose;
     }
   });
@@ -83,15 +73,52 @@ const calculateGlobalPenalties = (compounds, doses, currentRisk) => {
   }
 
   // 3. Renal Stress (Trenbolone + BP Drivers)
-  const hasTren = activeCompounds.some(c => c.code === 'trenbolone');
-  const hasHeavyBP = activeCompounds.some(c => ['anadrol', 'dianabol'].includes(c.code));
+  const hasRenalToxic = activeCompounds.some(c => c.meta.flags?.isRenalToxic);
+  const hasHeavyBP = activeCompounds.some(c => c.meta.flags?.isHeavyBP);
   const hasHighEQ = activeCompounds.some(c => c.code === 'eq' && c.dose > 600);
 
-  if (hasTren && (hasHeavyBP || hasHighEQ)) {
+  if (hasRenalToxic && (hasHeavyBP || hasHighEQ)) {
     penalty += 2.0; // "Kidney Screamer" penalty
   }
 
   return penalty;
+};
+
+// NEW: Metabolite & Interaction Warnings (Scientific Safety)
+const getInteractionWarnings = (compounds) => {
+  const warnings = [];
+  const codes = new Set(compounds);
+
+  // 1. The "Deca Dick" / 5-AR Inhibitor Trap
+  if (codes.has('npp') || codes.has('deca')) {
+    warnings.push({
+      type: 'metabolite',
+      level: 'critical',
+      message: '⚠️ 5-AR Inhibitor Contraindication: Nandrolone converts to DHN (weak androgen) via 5-alpha reductase. Taking Finasteride/Dutasteride blocks this, leaving potent Nandrolone to bind to scalp follicles. This GREATLY INCREASES hair loss risk.'
+    });
+  }
+
+  // 2. The "19-Nor" Prolactin Synergy
+  const nors = compounds.filter(c => ['npp', 'deca', 'trenbolone'].includes(c));
+  if (nors.length > 1) {
+    warnings.push({
+      type: 'synergy',
+      level: 'high',
+      message: '⚠️ 19-Nor Stacking: Combining multiple 19-nor compounds (Tren, Deca, NPP) creates exponential prolactin and HPTA suppression risk. Dopamine agonists (Cabergoline) likely mandatory.'
+    });
+  }
+
+  // 3. Oral Hepatotoxicity Synergy
+  const orals = compounds.filter(c => compoundData[c]?.type === 'oral');
+  if (orals.length > 1) {
+    warnings.push({
+      type: 'toxicity',
+      level: 'high',
+      message: '⚠️ Hepatotoxicity Synergy: Multiple C17-aa orals compete for the same hepatic enzymes. Toxicity is multiplicative, not additive. Ensure TUDCA/NAC doses are doubled.'
+    });
+  }
+
+  return warnings;
 };
 
 export const evaluateStack = ({
@@ -274,13 +301,17 @@ export const evaluateStack = ({
   // We add this directly to risk to make the red line jump visually
   const adjustedRisk = finalRisk + protocolPenalty; 
 
-  // 5. Final Tally
+  // 5. Generate Warnings
+  const warnings = getInteractionWarnings(compounds);
+
+  // 6. Final Tally
   const netScore = finalBenefit - adjustedRisk; // Use adjustedRisk
   const brRatio = adjustedRisk > 0 ? finalBenefit / adjustedRisk : finalBenefit;
 
   return {
     byCompound,
     pairInteractions,
+    warnings, // Export warnings
     totals: {
       baseBenefit: genomicBenefit + nonGenomicBenefit,
       baseRisk: rawRiskSum,
@@ -297,10 +328,10 @@ export const evaluateStack = ({
       nonGenomicBenefit: Number(nonGenomicBenefit.toFixed(2)),
       // Phenotype Profile
       phenotype: {
-        hypertrophy: Number(phenotype.hypertrophy.toFixed(2)),
-        strength: Number(phenotype.strength.toFixed(2)),
-        endurance: Number(phenotype.endurance.toFixed(2)),
-        conditioning: Number(phenotype.conditioning.toFixed(2))
+        hypertrophy: Math.min(Number(phenotype.hypertrophy.toFixed(2)), MAX_PHENOTYPE_SCORE),
+        strength: Math.min(Number(phenotype.strength.toFixed(2)), MAX_PHENOTYPE_SCORE),
+        endurance: Math.min(Number(phenotype.endurance.toFixed(2)), MAX_PHENOTYPE_SCORE),
+        conditioning: Math.min(Number(phenotype.conditioning.toFixed(2)), MAX_PHENOTYPE_SCORE)
       }
     }
   };

@@ -28,13 +28,13 @@ const EsterSelector = ({ compoundKey, selectedEster, onChange, color }) => {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-physio-bg-surface border border-physio-border-subtle hover:border-physio-border-strong transition-all group"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-physio-bg-surface border border-physio-border-subtle hover:border-physio-border-strong transition-all group"
       >
-        <span className="text-[10px] font-bold uppercase tracking-wider text-physio-text-secondary group-hover:text-physio-text-primary">
+        <span className="text-xs font-bold uppercase tracking-wider text-physio-text-secondary group-hover:text-physio-text-primary">
           {currentLabel}
         </span>
         <svg 
-          className={`w-2.5 h-2.5 text-physio-text-tertiary transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          className={`w-3 h-3 text-physio-text-tertiary transition-transform ${isOpen ? 'rotate-180' : ''}`} 
           viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"
         >
           <path d="M6 9l6 6 6-6" />
@@ -42,7 +42,7 @@ const EsterSelector = ({ compoundKey, selectedEster, onChange, color }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1 w-32 bg-physio-bg-core/95 backdrop-blur-xl border border-physio-border-strong rounded-lg shadow-xl z-50 overflow-hidden animate-fade-in">
+        <div className="absolute left-0 top-full mt-1 w-36 bg-physio-bg-core/95 backdrop-blur-xl border border-physio-border-strong rounded-lg shadow-xl z-50 overflow-hidden animate-fade-in">
           {esterOptions.map(([key, details]) => (
             <button
               key={key}
@@ -50,7 +50,7 @@ const EsterSelector = ({ compoundKey, selectedEster, onChange, color }) => {
                 onChange(key);
                 setIsOpen(false);
               }}
-              className={`w-full text-left px-3 py-2 text-[10px] font-medium transition-colors flex justify-between items-center ${
+              className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors flex justify-between items-center ${
                 selectedEster === key 
                   ? 'bg-physio-bg-highlight text-white' 
                   : 'text-physio-text-secondary hover:bg-physio-bg-surface hover:text-physio-text-primary'
@@ -58,7 +58,7 @@ const EsterSelector = ({ compoundKey, selectedEster, onChange, color }) => {
             >
               {details.label}
               {selectedEster === key && (
-                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
               )}
             </button>
           ))}

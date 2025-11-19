@@ -8,19 +8,19 @@ const SaturationGauge = ({ label, value, limit, warning }) => {
   return (
     <div className="mb-4">
       <div className="flex justify-between items-end mb-1.5">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-physio-text-secondary">{label}</span>
-        <span className={`text-xs font-mono ${isOverloaded ? 'text-physio-accent-critical' : 'text-physio-text-primary'}`}>
-          {Math.round(percent)}% <span className="text-[9px] text-physio-text-tertiary">Saturation</span>
+        <span className="text-xs font-bold uppercase tracking-widest text-physio-text-secondary">{label}</span>
+        <span className={`text-sm font-mono ${isOverloaded ? 'text-physio-accent-critical' : 'text-physio-text-primary'}`}>
+          {Math.round(percent)}% <span className="text-[10px] text-physio-text-tertiary">Saturation</span>
         </span>
       </div>
-      <div className="h-1.5 bg-physio-bg-core rounded-full overflow-hidden border border-physio-border-subtle">
+      <div className="h-2 bg-physio-bg-core rounded-full overflow-hidden border border-physio-border-subtle">
         <div 
           className={`h-full transition-all duration-500 ${isOverloaded ? 'bg-physio-accent-critical' : 'bg-physio-accent-primary'}`}
           style={{ width: `${percent}%` }}
         />
       </div>
       {isOverloaded && (
-        <p className="text-[9px] text-physio-accent-critical mt-1 flex items-center gap-1">
+        <p className="text-xs text-physio-accent-critical mt-1.5 flex items-center gap-1.5">
           <span>⚠️</span> {warning}
         </p>
       )}
@@ -67,8 +67,8 @@ const MechanismMonitor = ({ stack }) => {
 
   return (
     <div className="space-y-6">
-      <div className="p-4 bg-physio-bg-highlight/20 rounded-xl border border-physio-border-subtle">
-        <h3 className="text-xs font-bold text-physio-text-primary mb-3 flex items-center gap-2">
+      <div className="p-5 bg-physio-bg-highlight/20 rounded-xl border border-physio-border-subtle">
+        <h3 className="text-sm font-bold text-physio-text-primary mb-4 flex items-center gap-2">
           <span className="w-2 h-2 bg-physio-accent-secondary rounded-full animate-pulse"></span>
           Pathway Saturation Analysis
         </h3>
@@ -97,7 +97,7 @@ const MechanismMonitor = ({ stack }) => {
 
       {/* Dynamic Insight */}
       {loads.arLoad > 1000 && loads.cnsLoad < 50 && (
-        <div className="text-xs text-physio-text-secondary bg-physio-bg-core p-3 rounded-lg border-l-2 border-physio-accent-primary">
+        <div className="text-sm text-physio-text-secondary bg-physio-bg-core p-4 rounded-lg border-l-2 border-physio-accent-primary">
           <strong>Optimization Tip:</strong> Your AR pathway is saturated. Adding more injectables yields little benefit. Consider a small Non-Genomic addition for synergy, rather than more Test/Primo.
         </div>
       )}

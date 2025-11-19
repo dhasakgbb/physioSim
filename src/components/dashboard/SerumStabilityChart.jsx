@@ -2,36 +2,71 @@ import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { compoundData } from '../../data/compoundData';
 
+const getAbsorptionRate = (ester, type) => {
+  // ka (absorption rate constant) approximations
+  if (type === 'oral') return 2.5; // Peaks in ~3-4 hours
+  if (!ester) return 0.5; // Default injectable
+  
+  const slug = ester.toLowerCase();
+  if (slug.includes('prop') || slug.includes('ace')) return 0.8; // Fast esters
+  if (slug.includes('enanth') || slug.includes('cyp')) return 0.4; // Medium esters
+  if (slug.includes('dec') || slug.includes('undec')) return 0.15; // Slow esters
+  if (slug.includes('susp')) return 5.0; // Instant
+  
+  return 0.4;
+};
+
 const simulateSerum = (stack) => {
   const hoursTotal = 28 * 24; 
   const dataPoints = [];
   
   // Track active mg for EACH compound independently
-  let activeLevels = {}; 
-  stack.forEach(c => { activeLevels[c.compound] = 0; });
-
+  // We use a superposition of Bateman functions for each injection
+  
   for (let hour = 0; hour <= hoursTotal; hour += 4) {
     let totalSystemicLoad = 0;
     let point = { hour, day: (hour / 24).toFixed(1) };
     
     stack.forEach(item => {
       const meta = compoundData[item.compound];
+      if (!meta) return;
+
       const hl = meta.halfLife || 24;
+      const ke = Math.log(2) / hl; // Elimination rate
+      const ka = getAbsorptionRate(item.ester, meta.type); // Absorption rate
+      
       const freqDays = item.frequency || 3.5;
       const freqHours = freqDays * 24;
-
-      // Decay
-      activeLevels[item.compound] *= Math.pow(0.5, 4 / hl);
-
-      // Dose Injection
       const dosePerPin = (item.dose / 7) * freqDays;
-      if (hour % Math.round(freqHours) < 4) { 
-        activeLevels[item.compound] += dosePerPin;
+
+      // Calculate concentration from ALL previous injections
+      // C(t) = D * (ka / (ka - ke)) * (exp(-ke * t) - exp(-ka * t))
+      let compoundLevel = 0;
+      
+      // Look back at previous injections (up to 5 half-lives)
+      const lookbackLimit = hl * 5;
+      
+      for (let injectionTime = 0; injectionTime <= hour; injectionTime += freqHours) {
+        const timeSinceInjection = hour - injectionTime;
+        
+        if (timeSinceInjection >= 0 && timeSinceInjection < lookbackLimit) {
+          // Bateman Function
+          // Note: We simplify Volume of Distribution (Vd) to 1 for relative comparison
+          let concentration = 0;
+          
+          if (Math.abs(ka - ke) < 0.0001) {
+            // Special case where ka == ke (rare but possible mathematically)
+            concentration = dosePerPin * ke * timeSinceInjection * Math.exp(-ke * timeSinceInjection);
+          } else {
+            concentration = dosePerPin * (ka / (ka - ke)) * (Math.exp(-ke * timeSinceInjection) - Math.exp(-ka * timeSinceInjection));
+          }
+          
+          compoundLevel += concentration;
+        }
       }
 
-      // Store individual compound level
-      point[item.compound] = activeLevels[item.compound];
-      totalSystemicLoad += activeLevels[item.compound];
+      point[item.compound] = compoundLevel;
+      totalSystemicLoad += compoundLevel;
     });
 
     point.total = totalSystemicLoad;
@@ -56,18 +91,18 @@ const SerumStabilityChart = ({ stack }) => {
 
   return (
     <div className="absolute inset-0 flex flex-col bg-physio-bg-core">
-      <div className="flex items-center justify-between px-6 py-3 border-b border-physio-border-subtle z-10 bg-physio-bg-surface/80 backdrop-blur">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-physio-border-subtle z-10 bg-physio-bg-surface/80 backdrop-blur">
         <div className="flex items-center gap-4">
-          <h3 className="text-xs font-bold text-physio-text-primary uppercase tracking-wider">
+          <h3 className="text-sm font-bold text-physio-text-primary uppercase tracking-wider">
             Serum Stability Simulator
           </h3>
-          <p className="text-[10px] text-physio-text-tertiary">
+          <p className="text-xs text-physio-text-tertiary">
             Visualizing release rates based on half-lives and injection frequency
           </p>
         </div>
         
         <div className="flex items-center gap-3">
-          <span className="text-[10px] uppercase text-physio-text-tertiary">Stability Score</span>
+          <span className="text-xs uppercase text-physio-text-tertiary">Stability Score</span>
           <span className={`text-sm font-mono font-bold ${
             Number(stabilityScore) > 85 ? 'text-physio-accent-success' : 
             Number(stabilityScore) > 60 ? 'text-physio-accent-warning' : 'text-physio-accent-critical'
@@ -84,7 +119,7 @@ const SerumStabilityChart = ({ stack }) => {
             <XAxis 
               dataKey="day" 
               stroke="#4b5563" 
-              fontSize={10} 
+              fontSize={12} 
               tickFormatter={(val) => `Day ${Math.floor(val)}`}
               interval={48} 
               tickLine={false} 
@@ -94,13 +129,13 @@ const SerumStabilityChart = ({ stack }) => {
             
             <Tooltip 
               contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', borderRadius: '0.5rem' }}
-              itemStyle={{ fontSize: '11px' }}
-              labelStyle={{ color: '#9ca3af', fontSize: '10px', marginBottom: '5px' }}
+              itemStyle={{ fontSize: '12px' }}
+              labelStyle={{ color: '#9ca3af', fontSize: '11px', marginBottom: '5px' }}
               formatter={(value) => `${value.toFixed(0)} mg`}
               labelFormatter={(val) => `Day ${val}`}
             />
 
-            <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '10px' }}/>
+            <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px' }}/>
 
             {/* Render a Line for every compound in the stack */}
             {stack.map((item) => {
@@ -136,11 +171,11 @@ const SerumStabilityChart = ({ stack }) => {
       </div>
       
       {/* Educational Footer - Absolute positioned at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 px-6 py-2 bg-physio-bg-surface/90 backdrop-blur border-t border-physio-border-subtle flex gap-4 overflow-x-auto z-10">
+      <div className="absolute bottom-0 left-0 right-0 px-6 py-3 bg-physio-bg-surface/90 backdrop-blur border-t border-physio-border-subtle flex gap-4 overflow-x-auto z-10">
          {stack.map(item => {
              const meta = compoundData[item.compound];
              return (
-                 <div key={item.compound} className="flex items-center gap-2 text-[10px] text-physio-text-secondary whitespace-nowrap">
+                 <div key={item.compound} className="flex items-center gap-2 text-xs text-physio-text-secondary whitespace-nowrap">
                      <div className="w-2 h-2 rounded-full" style={{backgroundColor: meta.color}} />
                      <span>{meta.name}:</span>
                      <span className="font-mono text-physio-text-primary">{item.frequency === 1 ? 'Stable (ED)' : item.frequency === 2 ? 'Variable (EOD)' : 'Fluctuating'}</span>

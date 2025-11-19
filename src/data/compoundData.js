@@ -10,6 +10,7 @@ export const compoundData = {
     color: '#0066CC',
     abbreviation: 'Test',
     type: 'injectable',
+    flags: { aromatization: 1.0, isSuppressive: true },
     defaultEster: 'enanthate',
     esters: {
       propionate: { label: 'Propionate', halfLife: 19, weight: 0.83, slug: 'Prop' },
@@ -133,6 +134,7 @@ export const compoundData = {
     color: '#FF9900',
     abbreviation: 'NPP',
     type: 'injectable',
+    flags: { aromatization: 0.2, isSuppressive: true },
     category: 'progestin',
     pathway: 'ar_genomic', // Strong binder
     bindingAffinity: 'high',
@@ -235,6 +237,7 @@ export const compoundData = {
     color: '#CC0000',
     abbreviation: 'Tren',
     type: 'injectable',
+    flags: { isSuppressive: true, isRenalToxic: true },
     defaultEster: 'acetate',
     esters: {
       acetate: { label: 'Acetate', halfLife: 24, weight: 0.87, slug: 'Ace' },
@@ -362,6 +365,7 @@ export const compoundData = {
     color: '#00AA00',
     abbreviation: 'EQ',
     type: 'injectable',
+    flags: { aromatization: 0.5 },
     category: 'endurance',
     pathway: 'ar_genomic', // Moderate binder
     bindingAffinity: 'low_moderate',
@@ -459,6 +463,7 @@ export const compoundData = {
     color: '#9933FF',
     abbreviation: 'Masteron',
     type: 'injectable',
+    flags: { aromatization: 0, isSuppressive: true },
     defaultEster: 'propionate',
     esters: {
       propionate: { label: 'Propionate', halfLife: 48, weight: 0.80, slug: 'Prop' },
@@ -555,6 +560,7 @@ export const compoundData = {
     color: '#996633',
     abbreviation: 'Primo',
     type: 'injectable',
+    flags: { aromatization: 0, isSuppressive: true },
     defaultEster: 'enanthate',
     esters: {
       enanthate: { label: 'Enanthate', halfLife: 240, weight: 0.70, slug: 'Enanthate' },
@@ -650,6 +656,7 @@ export const compoundData = {
     color: '#FF1493',
     abbreviation: 'Dbol',
     type: 'oral',
+    flags: { aromatization: 2.0, isHeavyBP: true },
     defaultEster: 'oral',
     esters: {
       oral: { label: 'Oral Tablet', halfLife: 4, weight: 1.0, slug: 'Tab' }
@@ -772,6 +779,7 @@ export const compoundData = {
     color: '#DC143C',
     abbreviation: 'Adrol',
     type: 'oral',
+    flags: { aromatization: 0.5, isHeavyBP: true },
     defaultEster: 'oral',
     esters: {
       oral: { label: 'Oral Tablet', halfLife: 9, weight: 1.0, slug: 'Tab' }
@@ -895,6 +903,7 @@ export const compoundData = {
     color: '#4169E1',
     abbreviation: 'Winny',
     type: 'oral',
+    flags: { aromatization: 0, isSuppressive: true },
     defaultEster: 'oral',
     esters: {
       oral: { label: 'Oral Tablet', halfLife: 9, weight: 1.0, slug: 'Tab' }
@@ -1014,6 +1023,7 @@ export const compoundData = {
     color: '#FF6347',
     abbreviation: 'Var',
     type: 'oral',
+    flags: { aromatization: 0, isSuppressive: true },
     defaultEster: 'oral',
     esters: {
       oral: { label: 'Oral Tablet', halfLife: 9, weight: 1.0, slug: 'Tab' }
@@ -1126,6 +1136,7 @@ export const compoundData = {
     color: '#8B0000',
     abbreviation: 'Halo',
     type: 'oral',
+    flags: { aromatization: 0, isSuppressive: true, isLiverToxic: true },
     defaultEster: 'oral',
     esters: {
       oral: { label: 'Oral Tablet', halfLife: 12, weight: 1.0, slug: 'Tab' }
@@ -1258,6 +1269,7 @@ export const compoundData = {
     color: '#60A5FA', // Light Blue
     abbreviation: 'Prov',
     type: 'oral',
+    flags: { aromatization: 0, isSuppressive: true },
     defaultEster: 'oral',
     esters: {
       oral: { label: 'Oral Tablet', halfLife: 9, weight: 1.0, slug: 'Tab' }
@@ -1312,6 +1324,7 @@ export const compoundData = {
     color: '#F472B6', // Pink
     abbreviation: 'Tbol',
     type: 'oral',
+    flags: { aromatization: 0, isSuppressive: true },
     defaultEster: 'oral',
     esters: {
       oral: { label: 'Oral Tablet', halfLife: 8, weight: 1.0, slug: 'Tab' }
@@ -1365,6 +1378,7 @@ export const compoundData = {
     color: '#9F1239', // Deep Rose
     abbreviation: 'Sdrol',
     type: 'oral',
+    flags: { aromatization: 0, isSuppressive: true, isLiverToxic: true },
     defaultEster: 'oral',
     esters: {
       oral: { label: 'Oral Tablet', halfLife: 16, weight: 1.0, slug: 'Tab' }
