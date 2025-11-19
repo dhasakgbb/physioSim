@@ -110,15 +110,17 @@ const StackCard = ({ item, onChange, onRemove, onInspect, onEsterChange, onFrequ
           </button>
         </div>
 
-        <Slider
-          value={item.dose}
-          min={0}
-          max={max}
-          step={isOral ? 5 : 10}
-          unit={unit}
-          onChange={onChange}
-          className="mb-1"
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <Slider
+            value={item.dose}
+            min={0}
+            max={max}
+            step={isOral ? 5 : 10}
+            unit={unit}
+            onChange={onChange}
+            className="mb-1"
+          />
+        </div>
       </div>
     </div>
   );

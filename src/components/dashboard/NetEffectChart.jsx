@@ -46,8 +46,17 @@ const CustomTooltip = ({ active, payload, label, crossover }) => {
             <span className="text-xs text-physio-accent-success font-medium">Anabolic Signal</span>
             <span className="text-sm font-mono font-bold text-physio-text-primary">{data.benefit.toFixed(2)}</span>
           </div>
+          
+          {/* NEW: Show the "Bypass" Bonus if significant */}
+          {data.nonGenomicBenefit > 0.5 && (
+            <div className="flex justify-between items-center pl-2 border-l-2 border-physio-accent-secondary/30">
+              <span className="text-[9px] text-physio-text-secondary">↳ Pathway Bypass</span>
+              <span className="text-[9px] font-mono text-physio-accent-secondary">+{data.nonGenomicBenefit.toFixed(2)}</span>
+            </div>
+          )}
+          
           <div className="flex justify-between items-center">
-            <span className="text-xs text-physio-accent-critical font-medium">Systemic Load</span>
+            <span className="text-xs text-physio-accent-critical font-medium">Systemic Cost</span>
             <span className="text-sm font-mono font-bold text-physio-text-primary">{data.risk.toFixed(2)}</span>
           </div>
           <div className="h-px bg-physio-border-subtle my-1" />

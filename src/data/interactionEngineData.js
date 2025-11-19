@@ -963,5 +963,186 @@ export const interactionPairs = {
       highlight: 'Contest peak for elite strength athletes chasing sheer aggression.',
       caution: 'Stack is neurologically volatile and liver-toxic—should only be used briefly under supervision.'
     }
+  },
+  testosterone_superdrol: {
+    id: 'testosterone_superdrol',
+    compounds: ['testosterone', 'superdrol'],
+    label: 'Test + Superdrol',
+    summary: 'Explosive mass and strength with extreme hepatic burden.',
+    defaultDimension: 'strength',
+    doseRanges: { testosterone: [200, 900], superdrol: [0, 30] },
+    defaultDoses: { testosterone: 500, superdrol: 20 },
+    synergy: { strength: 0.7, anabolic: 0.55 },
+    penalties: { hepatic: 0.75, bp: 0.5, neuro: 0.3 },
+    dimensionWeights: {
+      strength: { superdrol: 1, testosterone: 0.6 },
+      anabolic: { testosterone: 1, superdrol: 0.9 },
+      hepatic: { superdrol: 1 },
+      bp: { superdrol: 0.8, testosterone: 0.5 },
+      neuro: { superdrol: 0.6 }
+    },
+    doseModel: { type: 'hill', params: { d50A: 400, d50B: 15, n: 2.5 } },
+    evidence: { clinical: 0.1, anecdote: 0.9, updated: '2025-03' },
+    narratives: {
+      highlight: 'Superdrol delivers massive strength and fullness in 3-4 weeks when backed by Test.',
+      caution: 'Liver toxicity is extreme—treat >20mg as redline, limit to 4 weeks max.'
+    }
+  },
+  superdrol_anadrol: {
+    id: 'superdrol_anadrol',
+    compounds: ['superdrol', 'anadrol'],
+    label: 'Superdrol + Anadrol',
+    summary: 'DANGEROUS: Dual methylated orals - liver suicide stack.',
+    defaultDimension: 'hepatic',
+    doseRanges: { superdrol: [0, 30], anadrol: [0, 100] },
+    defaultDoses: { superdrol: 10, anadrol: 50 },
+    synergy: { strength: 0.1 },
+    penalties: { hepatic: 1.2, bp: 0.7 },
+    dimensionWeights: {
+      strength: { superdrol: 0.5, anadrol: 0.5 },
+      hepatic: { superdrol: 1, anadrol: 1 },
+      bp: { anadrol: 1, superdrol: 0.6 }
+    },
+    doseModel: { type: 'hill', params: { d50A: 15, d50B: 40, n: 3 } },
+    evidence: { clinical: 0, anecdote: 1, updated: '2025-03' },
+    narratives: {
+      highlight: 'None - this combination is universally discouraged.',
+      caution: 'Dual C17-aa methylation causes exponential liver enzyme elevation. Not recommended.'
+    }
+  },
+  testosterone_turinabol: {
+    id: 'testosterone_turinabol',
+    compounds: ['testosterone', 'turinabol'],
+    label: 'Test + Turinabol',
+    summary: 'Clean performance stack with moderate hepatic burden.',
+    defaultDimension: 'anabolic',
+    doseRanges: { testosterone: [200, 900], turinabol: [0, 80] },
+    defaultDoses: { testosterone: 500, turinabol: 50 },
+    synergy: { anabolic: 0.3, vascularity: 0.25 },
+    penalties: { hepatic: 0.35, bp: 0.2 },
+    dimensionWeights: {
+      anabolic: { testosterone: 1, turinabol: 0.7 },
+      vascularity: { turinabol: 0.8 },
+      hepatic: { turinabol: 1 },
+      bp: { testosterone: 0.5, turinabol: 0.3 }
+    },
+    doseModel: { type: 'hill', params: { d50A: 400, d50B: 45, n: 2.1 } },
+    evidence: { clinical: 0.2, anecdote: 0.8, updated: '2025-03' },
+    narratives: {
+      highlight: 'Tbol adds dry lean gains without aromatization, ideal for athletic performance.',
+      caution: 'Hepatic stress accumulates beyond 60mg or >8 weeks.'
+    }
+  },
+  turinabol_anavar: {
+    id: 'turinabol_anavar',
+    compounds: ['turinabol', 'anavar'],
+    label: 'Turinabol + Anavar',
+    summary: 'Performance-focused dual oral with managed hepatic load.',
+    defaultDimension: 'vascularity',
+    doseRanges: { turinabol: [0, 80], anavar: [0, 80] },
+    defaultDoses: { turinabol: 40, anavar: 50 },
+    synergy: { vascularity: 0.35, anabolic: 0.2 },
+    penalties: { hepatic: 0.5, bp: 0.15 },
+    dimensionWeights: {
+      vascularity: { anavar: 1, turinabol: 0.6 },
+      anabolic: { turinabol: 0.7, anavar: 0.6 },
+      hepatic: { turinabol: 0.8, anavar: 0.7 },
+      bp: { turinabol: 0.3, anavar: 0.2 }
+    },
+    doseModel: { type: 'hill', params: { d50A: 45, d50B: 45, n: 2 } },
+    evidence: { clinical: 0.15, anecdote: 0.85, updated: '2025-03' },
+    narratives: {
+      highlight: 'Two mild orals stack well for athletes seeking lean gains without heavy bloat.',
+      caution: 'Dual oral hepatic load requires liver support and monitoring.'
+    }
+  },
+  testosterone_proviron: {
+    id: 'testosterone_proviron',
+    compounds: ['testosterone', 'proviron'],
+    label: 'Test + Proviron',
+    summary: 'Free Testosterone amplifier; SHBG binding synergy.',
+    defaultDimension: 'vascularity',
+    doseRanges: { testosterone: [200, 900], proviron: [0, 75] },
+    defaultDoses: { testosterone: 500, proviron: 50 },
+    synergy: { vascularity: 0.3, strength: 0.15 },
+    penalties: { estrogenic: -0.1 }, // Negative penalty = benefit (reduces E2 sides)
+    dimensionWeights: {
+      vascularity: { proviron: 1, testosterone: 0.5 },
+      strength: { testosterone: 0.8, proviron: 0.4 },
+      estrogenic: { proviron: -0.5 } // Anti-estrogenic effect
+    },
+    doseModel: { type: 'hill', params: { d50A: 400, d50B: 40, n: 2 } },
+    evidence: { clinical: 0.4, anecdote: 0.6, updated: '2025-03' },
+    narratives: {
+      highlight: 'Proviron binds SHBG, freeing more testosterone. Adds hardness and libido support with minimal toxicity.',
+      caution: 'Excellent addition to any Test base - standard "glue" for advanced stacks.'
+    }
+  },
+  npp_proviron: {
+    id: 'npp_proviron',
+    compounds: ['npp', 'proviron'],
+    label: 'NPP + Proviron',
+    summary: 'Functional synergy; Proviron mitigates "Deca Dick".',
+    defaultDimension: 'joint',
+    doseRanges: { npp: [200, 600], proviron: [0, 75] },
+    defaultDoses: { npp: 350, proviron: 50 },
+    synergy: { joint: 0.1, vascularity: 0.2 },
+    penalties: { neuro: -0.15 }, // Reduces libido/mood issues
+    dimensionWeights: {
+      joint: { npp: 1 },
+      vascularity: { proviron: 0.8 },
+      neuro: { proviron: -0.6 } // Counteracts DHN metabolite issues
+    },
+    doseModel: { type: 'hill', params: { d50A: 300, d50B: 40, n: 2 } },
+    evidence: { clinical: 0.3, anecdote: 0.7, updated: '2025-03' },
+    narratives: {
+      highlight: 'Proviron provides DHT androgenicity that NPP lacks, maintaining libido and mood.',
+      caution: 'Highly recommended to prevent sexual dysfunction from 19-nors.'
+    }
+  },
+  trenbolone_proviron: {
+    id: 'trenbolone_proviron',
+    compounds: ['trenbolone', 'proviron'],
+    label: 'Tren + Proviron',
+    summary: 'Elite cosmetic stack with libido preservation.',
+    defaultDimension: 'vascularity',
+    doseRanges: { trenbolone: [150, 600], proviron: [0, 75] },
+    defaultDoses: { trenbolone: 300, proviron: 50 },
+    synergy: { vascularity: 0.4, strength: 0.2 },
+    penalties: { estrogenic: -0.05 },
+    dimensionWeights: {
+      vascularity: { proviron: 1, trenbolone: 0.6 },
+      strength: { trenbolone: 1, proviron: 0.3 },
+      estrogenic: { proviron: -0.4 }
+    },
+    doseModel: { type: 'hill', params: { d50A: 250, d50B: 40, n: 2.2 } },
+    evidence: { clinical: 0.2, anecdote: 0.8, updated: '2025-03' },
+    narratives: {
+      highlight: 'Proviron enhances Tren\'s cosmetic effects while providing DHT support for libido.',
+      caution: 'Excellent for contest prep - maintains hardness and sex drive.'
+    }
+  },
+  superdrol_turinabol: {
+    id: 'superdrol_turinabol',
+    compounds: ['superdrol', 'turinabol'],
+    label: 'Superdrol + Turinabol',
+    summary: 'Dual oral with extreme hepatic burden.',
+    defaultDimension: 'hepatic',
+    doseRanges: { superdrol: [0, 30], turinabol: [0, 80] },
+    defaultDoses: { superdrol: 10, turinabol: 40 },
+    synergy: { strength: 0.15, anabolic: 0.1 },
+    penalties: { hepatic: 0.8, bp: 0.4 },
+    dimensionWeights: {
+      strength: { superdrol: 0.8, turinabol: 0.5 },
+      anabolic: { superdrol: 0.7, turinabol: 0.6 },
+      hepatic: { superdrol: 1, turinabol: 0.7 },
+      bp: { superdrol: 0.6, turinabol: 0.3 }
+    },
+    doseModel: { type: 'hill', params: { d50A: 15, d50B: 45, n: 2.5 } },
+    evidence: { clinical: 0, anecdote: 1, updated: '2025-03' },
+    narratives: {
+      highlight: 'Minimal - dual methylated stress outweighs marginal synergy.',
+      caution: 'High hepatic burden. Use only at very low doses for short duration.'
+    }
   }
 };

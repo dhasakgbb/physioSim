@@ -8,6 +8,7 @@ import MechanismMonitor from './MechanismMonitor';
 import BiomarkerMatrix from './BiomarkerMatrix';
 import CompoundInspector from './CompoundInspector';
 import SerumStabilityChart from './SerumStabilityChart';
+import LabReportCard from './LabReportCard';
 import { compoundData } from '../../data/compoundData';
 import { evaluateStack } from '../../utils/stackEngine';
 import { defaultProfile } from '../../utils/personalization';
@@ -121,10 +122,13 @@ const Dashboard = () => {
           {/* 2. THE GOVERNOR: Saturation */}
           <MechanismMonitor stack={stack} />
 
-          {/* 3. THE ENGINE: Signaling */}
+          {/* 3. THE VIRTUAL PHLEBOTOMIST: Lab Prediction */}
+          <LabReportCard stack={stack} />
+
+          {/* 4. THE ENGINE: Signaling */}
           <BiomarkerMatrix stack={stack} />
 
-          {/* 4. THE BILL: Safety */}
+          {/* 5. THE BILL: Safety */}
           <VitalSigns metrics={metrics} stack={stack} showSafetyOnly={true} />
         </div>
       }

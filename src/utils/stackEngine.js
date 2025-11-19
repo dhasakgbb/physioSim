@@ -98,14 +98,17 @@ export const evaluateStack = ({
 
   // 1. Calculate Raw Sums (Linear)
   const byCompound = {};
-  let rawBenefitSum = 0;
+  
+  // 1. TRACKING BUCKETS (The "Positive" Upgrade)
+  let genomicBenefit = 0;      // Subject to Saturation
+  let nonGenomicBenefit = 0;   // Bypasses Saturation
   let rawRiskSum = 0;
-  let totalGenomicLoad = 0; // mg of AR agonists
-  let totalSystemicLoad = 0; // Total mg of everything
+  
+  let totalGenomicLoad = 0;    // For calculating Saturation %
+  let totalSystemicLoad = 0;   // For calculating Risk %
 
-  // SHBG Bonus Logic (Proviron/Winstrol/Masteron)
+  // SHBG Bonus Logic
   const shbgCrushers = compounds.filter(c => ['proviron', 'winstrol', 'masteron'].includes(c));
-  // 5% bonus per crusher, max 15%
   const shbgMultiplier = 1 + (Math.min(shbgCrushers.length, 3) * 0.05);
 
   compounds.forEach(code => {
@@ -151,14 +154,20 @@ export const evaluateStack = ({
     const benefitVal = benefitRes?.value ?? 0;
     const riskVal = riskRes?.value ?? 0;
 
+    // --- BUCKET SORTING (The Scientific Fix) ---
+    if (meta.pathway === 'non_genomic') {
+      nonGenomicBenefit += benefitVal; // This is "Free" growth, bypasses AR saturation
+    } else {
+      genomicBenefit += benefitVal;    // This hits the ceiling  
+    }
+    
+    rawRiskSum += riskVal;
+
     byCompound[code] = {
       benefit: benefitVal,
       risk: riskVal,
       meta: { benefit: benefitRes?.meta, risk: riskRes?.meta }
     };
-
-    rawBenefitSum += benefitVal;
-    rawRiskSum += riskVal;
   });
 
   // 2. Calculate Interaction Synergies (Linear)
@@ -200,58 +209,63 @@ export const evaluateStack = ({
   }
 
   // =================================================================================
-  // 3. THE "REALITY CHECK" LAYERS (Non-Linear Modifiers)
+  // 3. THE "PATHWAY BYPASS" LOGIC (Scientific Accuracy)
   // =================================================================================
 
-  // A. The Saturation Ceiling (Benefit Dampener)
-  // If Genomic Load > 1000mg, the "marginal utility" of additional Benefit crashes.
-  // We use a logistic decay curve on the TOTAL benefit.
+  // A. The Saturation Ceiling (ONLY applies to AR/Genomic Pathway)
   const saturationThreshold = 1000;
-  let saturationPenalty = 1.0; // 1.0 = No penalty
+  let saturationPenalty = 1.0;
 
   if (totalGenomicLoad > saturationThreshold) {
     const excess = totalGenomicLoad - saturationThreshold;
-    // Decay factor: For every 500mg over, efficiency drops by 20%
     saturationPenalty = 1 / (1 + (excess / 800)); 
   }
   
-  // Apply Ceiling to Benefit
-  const finalBenefit = (rawBenefitSum + synergyBenefit) * saturationPenalty;
+  // THE FIX: Apply penalty ONLY to Genomic Benefit
+  // Non-Genomic Benefit + Synergy is added ON TOP (The "Positive" Aspect)
+  const finalGenomic = genomicBenefit * saturationPenalty;
+  const finalBenefit = finalGenomic + nonGenomicBenefit + synergyBenefit;
 
-
-  // B. The Toxicity Avalanche (Risk Compounder)
-  // Risk isn't linear; it's exponential relative to total organ load.
-  // If Total Load > 1200mg, risk accelerates.
+  // B. The Toxicity Avalanche (Applies to ALL compounds)
   const toxicityThreshold = 1200;
   let toxicityMultiplier = 1.0;
-
   if (totalSystemicLoad > toxicityThreshold) {
     const excessRisk = totalSystemicLoad - toxicityThreshold;
-    // Exponential ramp: At 2000mg total, Risk is magnified by ~1.5x
     toxicityMultiplier = 1 + Math.pow((excessRisk / 1500), 1.5);
   }
 
   // Apply Avalanche to Risk
   const finalRisk = (rawRiskSum + synergyRisk) * toxicityMultiplier;
 
+  // -------------------------------------------------------
+  // 4. Apply Specific "Protocol Failure" Penalties
+  // -------------------------------------------------------
+  // This catches things like "No Test Base", "Crashed E2", "Kidney Screamer"
+  const protocolPenalty = calculateGlobalPenalties(compounds, doses, finalRisk);
+  // We add this directly to risk to make the red line jump visually
+  const adjustedRisk = finalRisk + protocolPenalty; 
 
-  // 4. Final Tally
-  const netScore = finalBenefit - finalRisk;
-  const brRatio = finalRisk > 0 ? finalBenefit / finalRisk : finalBenefit;
+  // 5. Final Tally
+  const netScore = finalBenefit - adjustedRisk; // Use adjustedRisk
+  const brRatio = adjustedRisk > 0 ? finalBenefit / adjustedRisk : finalBenefit;
 
   return {
     byCompound,
     pairInteractions,
     totals: {
-      baseBenefit: rawBenefitSum,
+      baseBenefit: genomicBenefit + nonGenomicBenefit,
       baseRisk: rawRiskSum,
       totalBenefit: Number(finalBenefit.toFixed(2)),
-      totalRisk: Number(finalRisk.toFixed(2)),
+      totalRisk: Number(adjustedRisk.toFixed(2)), // Export the penalized risk
       netScore: Number(netScore.toFixed(2)),
       brRatio: Number(brRatio.toFixed(2)),
       // Return these for UI debugging/visualization
       saturationPenalty: saturationPenalty, 
-      toxicityMultiplier: toxicityMultiplier 
+      toxicityMultiplier: toxicityMultiplier,
+      protocolPenalty: protocolPenalty, // Expose for debugging
+      // NEW: Export pathway breakdown for chart tooltips
+      genomicBenefit: Number(finalGenomic.toFixed(2)),
+      nonGenomicBenefit: Number(nonGenomicBenefit.toFixed(2))
     }
   };
 };
