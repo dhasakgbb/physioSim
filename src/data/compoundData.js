@@ -571,7 +571,7 @@ export const compoundData = {
       prolactin: 0
     },
     halfLife: 6,
-    phenotype: { hypertrophy: 10, strength: 8, endurance: 5, conditioning: 1 },
+    phenotype: { hypertrophy: 10, strength: 8, endurance: 5, conditioning: 7 },
     modelConfidence: 0.59,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -788,7 +788,7 @@ export const compoundData = {
       estrogenic_activity: +3 // Direct ER activation
     },
     halfLife: 8, // ~8 hours
-    phenotype: { hypertrophy: 9, strength: 9, endurance: 3, conditioning: 6 },
+    phenotype: { hypertrophy: 10, strength: 10, endurance: 4, conditioning: 1 },
     modelConfidence: 0.31,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 5 },
     varianceDrivers: [
@@ -911,7 +911,7 @@ export const compoundData = {
       joints: -3      // The "Dry" penalty
     },
     halfLife: 9, // ~9 hours
-    phenotype: { hypertrophy: 3, strength: 6, endurance: 7, conditioning: 8 },
+    phenotype: { hypertrophy: 5, strength: 8, endurance: 6, conditioning: 9 },
     modelConfidence: 0.4,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -1382,6 +1382,7 @@ export const compoundData = {
       liver_toxicity: +3 // Extreme
     },
     halfLife: 8, // ~8 hours
+    phenotype: { hypertrophy: 10, strength: 9, endurance: 2, conditioning: 6 },
     benefitCurve: [ /* steep rise */
       { dose: 0, value: 0 }, { dose: 10, value: 2.5 }, { dose: 20, value: 4.5 }, { dose: 30, value: 4.8 }
     ],

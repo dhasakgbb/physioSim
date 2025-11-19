@@ -115,6 +115,9 @@ export const evaluateStack = ({
   let totalGenomicLoad = 0;    // For calculating Saturation %
   let totalSystemicLoad = 0;   // For calculating Risk %
 
+  // 1. INITIALIZE TRACKER
+  const phenotype = { hypertrophy: 0, strength: 0, endurance: 0, conditioning: 0 };
+
   // SHBG Bonus Logic
   const shbgCrushers = compounds.filter(c => ['proviron', 'winstrol', 'masteron'].includes(c));
   const shbgMultiplier = 1 + (Math.min(shbgCrushers.length, 3) * 0.05);
@@ -138,6 +141,24 @@ export const evaluateStack = ({
 
     // 2. Calculate ACTIVE Hormone Load (The Real Dose)
     let activeDose = dose * weightFactor;
+
+    // 2. INSERT THIS LOGIC TO CALCULATE SCORES
+    if (meta.phenotype) {
+       // Calculate Intensity (Cap at 120% of "Standard High Dose")
+       const ceiling = meta.type === 'oral' ? 50 : 600; 
+       const intensity = Math.min(activeDose / ceiling, 1.2); 
+
+       phenotype.hypertrophy += meta.phenotype.hypertrophy * intensity;
+       phenotype.strength += meta.phenotype.strength * intensity;
+       phenotype.conditioning += meta.phenotype.conditioning * intensity;
+       
+       // Endurance Logic (Tren Penalty)
+       if (code === 'trenbolone') {
+         phenotype.endurance -= (10 - meta.phenotype.endurance) * intensity;
+       } else {
+         phenotype.endurance += meta.phenotype.endurance * intensity;
+       }
+    }
 
     // Track Loads
     // Systemic Load (Toxicity) = Raw Dose (metabolic burden of the ester + hormone)
@@ -256,34 +277,6 @@ export const evaluateStack = ({
   // 5. Final Tally
   const netScore = finalBenefit - adjustedRisk; // Use adjustedRisk
   const brRatio = adjustedRisk > 0 ? finalBenefit / adjustedRisk : finalBenefit;
-
-  // 6. Calculate Phenotype Profile
-  const phenotype = { hypertrophy: 0, strength: 0, endurance: 0, conditioning: 0 };
-
-  compounds.forEach(code => {
-    const item = stackInput.find(i => i.compound === code);
-    const meta = compoundData[code];
-    const dose = item?.dose || doses[code] || 0;
-    
-    // Skip zero-dose compounds entirely
-    if (!meta?.phenotype || dose === 0) return;
-
-    // Calculate Intensity (0 to 1.0 scale based on max useful dose)
-    const ceiling = meta.type === 'oral' ? 80 : 600; 
-    const intensity = Math.min(dose / ceiling, 1.2); // Cap at 120% intensity
-
-    phenotype.hypertrophy += meta.phenotype.hypertrophy * intensity;
-    phenotype.strength += meta.phenotype.strength * intensity;
-    
-    // Endurance is tricky: Tren actively SUBTRACTS from it
-    if (code === 'trenbolone') {
-      phenotype.endurance -= (10 - meta.phenotype.endurance) * intensity; // Penalize
-    } else {
-      phenotype.endurance += meta.phenotype.endurance * intensity;
-    }
-    
-    phenotype.conditioning += meta.phenotype.conditioning * intensity;
-  });
 
   return {
     byCompound,
