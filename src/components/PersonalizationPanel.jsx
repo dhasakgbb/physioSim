@@ -1,92 +1,163 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { defaultProfile, buildPersonalizationNarrative, defaultCurveScales } from '../utils/personalization';
-import Card from './ui/Card';
-import Button from './ui/Button';
-import Input from './ui/Input';
-import Slider from './ui/Slider';
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  defaultProfile,
+  buildPersonalizationNarrative,
+  defaultCurveScales,
+} from "../utils/personalization";
+import Card from "./ui/Card";
+import Button from "./ui/Button";
+import Input from "./ui/Input";
+import Slider from "./ui/Slider";
 
 const numericFields = [
-  { name: 'age', label: 'Age', min: 18, max: 70, suffix: 'yrs', helper: 'Biological recovery capacity declines with age.' },
-  { name: 'bodyweight', label: 'Bodyweight', min: 50, max: 150, suffix: 'kg', helper: 'Heavy lifters leverage compounds differently.' },
-  { name: 'yearsTraining', label: 'Years Training', min: 0, max: 25, suffix: 'yrs', helper: 'Training age tracks muscle memory + receptor density.' },
-  { name: 'shbg', label: 'SHBG (optional)', min: 5, max: 120, suffix: 'nmol/L', helper: 'High SHBG buffers Test; low SHBG amplifies it.' }
+  {
+    name: "age",
+    label: "Age",
+    min: 18,
+    max: 70,
+    suffix: "yrs",
+    helper: "Biological recovery capacity declines with age.",
+  },
+  {
+    name: "bodyweight",
+    label: "Bodyweight",
+    min: 50,
+    max: 150,
+    suffix: "kg",
+    helper: "Heavy lifters leverage compounds differently.",
+  },
+  {
+    name: "yearsTraining",
+    label: "Years Training",
+    min: 0,
+    max: 25,
+    suffix: "yrs",
+    helper: "Training age tracks muscle memory + receptor density.",
+  },
+  {
+    name: "shbg",
+    label: "SHBG (optional)",
+    min: 5,
+    max: 120,
+    suffix: "nmol/L",
+    helper: "High SHBG buffers Test; low SHBG amplifies it.",
+  },
 ];
 
 const selectFields = [
   {
-    name: 'aromatase',
-    label: 'Aromatase Tendency',
-    helper: 'Self-reported: how easily you convert to estrogen.',
+    name: "aromatase",
+    label: "Aromatase Tendency",
+    helper: "Self-reported: how easily you convert to estrogen.",
     options: [
-      { value: 'low', label: 'Low' },
-      { value: 'moderate', label: 'Moderate' },
-      { value: 'high', label: 'High' }
-    ]
+      { value: "low", label: "Low" },
+      { value: "moderate", label: "Moderate" },
+      { value: "high", label: "High" },
+    ],
   },
   {
-    name: 'anxiety',
-    label: 'Anxiety Sensitivity',
-    helper: 'Important for Tren/Halo neuro-psych sides.',
+    name: "anxiety",
+    label: "Anxiety Sensitivity",
+    helper: "Important for Tren/Halo neuro-psych sides.",
     options: [
-      { value: 'low', label: 'Low' },
-      { value: 'moderate', label: 'Moderate' },
-      { value: 'high', label: 'High' }
-    ]
+      { value: "low", label: "Low" },
+      { value: "moderate", label: "Moderate" },
+      { value: "high", label: "High" },
+    ],
   },
   {
-    name: 'experience',
-    label: 'Prior Compound Experience',
-    helper: 'Impacts desensitization and risk tolerance.',
+    name: "experience",
+    label: "Prior Compound Experience",
+    helper: "Impacts desensitization and risk tolerance.",
     options: [
-      { value: 'none', label: 'None yet' },
-      { value: 'test_only', label: 'Testosterone only' },
-      { value: 'multi_compound', label: 'Multiple compounds' },
-      { value: 'blast_cruise', label: 'Blast/Cruise veteran' }
-    ]
-  }
+      { value: "none", label: "None yet" },
+      { value: "test_only", label: "Testosterone only" },
+      { value: "multi_compound", label: "Multiple compounds" },
+      { value: "blast_cruise", label: "Blast/Cruise veteran" },
+    ],
+  },
 ];
 
 const scaleFields = [
-  { key: 'ageImpact', label: 'Age sensitivity', helper: 'Scales how strongly age drags benefit / inflates risk.' },
-  { key: 'trainingImpact', label: 'Training load boost', helper: 'Controls bonus for heavy lifters and CI tightening.' },
-  { key: 'shbgImpact', label: 'SHBG weighting', helper: 'Amplify or soften SHBG drag on Testosterone.' },
-  { key: 'aromataseImpact', label: 'Aromatase weighting', helper: 'Adjust estrogenic risk acceleration for wet compounds.' },
-  { key: 'anxietyImpact', label: 'Neuro sensitivity', helper: 'Impacts Tren/Halo risk slope for anxiety-prone users.' },
-  { key: 'experienceImpact', label: 'Experience effect', helper: 'Tweak novice boost vs. veteran dampening.' },
-  { key: 'uncertaintyImpact', label: 'Uncertainty width', helper: 'Widen or tighten the confidence bands if data feels too strict or loose.' }
+  {
+    key: "ageImpact",
+    label: "Age sensitivity",
+    helper: "Scales how strongly age drags benefit / inflates risk.",
+  },
+  {
+    key: "trainingImpact",
+    label: "Training load boost",
+    helper: "Controls bonus for heavy lifters and CI tightening.",
+  },
+  {
+    key: "shbgImpact",
+    label: "SHBG weighting",
+    helper: "Amplify or soften SHBG drag on Testosterone.",
+  },
+  {
+    key: "aromataseImpact",
+    label: "Aromatase weighting",
+    helper: "Adjust estrogenic risk acceleration for wet compounds.",
+  },
+  {
+    key: "anxietyImpact",
+    label: "Neuro sensitivity",
+    helper: "Impacts Tren/Halo risk slope for anxiety-prone users.",
+  },
+  {
+    key: "experienceImpact",
+    label: "Experience effect",
+    helper: "Tweak novice boost vs. veteran dampening.",
+  },
+  {
+    key: "uncertaintyImpact",
+    label: "Uncertainty width",
+    helper:
+      "Widen or tighten the confidence bands if data feels too strict or loose.",
+  },
 ];
 
 const experienceLabels = {
-  none: 'No cycle history',
-  test_only: 'Test-only background',
-  multi_compound: 'Multi-compound user',
-  blast_cruise: 'Blast/cruise veteran'
+  none: "No cycle history",
+  test_only: "Test-only background",
+  multi_compound: "Multi-compound user",
+  blast_cruise: "Blast/cruise veteran",
 };
 
 export const isProfileCustomized = (profile = defaultProfile) => {
   if (!profile) return false;
-  const trackedKeys = ['age', 'bodyweight', 'yearsTraining', 'shbg', 'aromatase', 'anxiety', 'experience'];
-  return (
-    trackedKeys.some(key => (profile?.[key] ?? defaultProfile[key]) !== defaultProfile[key])
+  const trackedKeys = [
+    "age",
+    "bodyweight",
+    "yearsTraining",
+    "shbg",
+    "aromatase",
+    "anxiety",
+    "experience",
+  ];
+  return trackedKeys.some(
+    (key) => (profile?.[key] ?? defaultProfile[key]) !== defaultProfile[key],
   );
 };
 
 export const formatProfileSummary = (profile = defaultProfile) => {
-  if (!profile) return 'Using baseline defaults';
+  if (!profile) return "Using baseline defaults";
   const tokens = [];
   if (profile.age) tokens.push(`${profile.age}y`);
-  if (profile.bodyweight) tokens.push(`${Math.round(Number(profile.bodyweight) * 2.2)} lb`);
+  if (profile.bodyweight)
+    tokens.push(`${Math.round(Number(profile.bodyweight) * 2.2)} lb`);
   if (profile.yearsTraining) tokens.push(`${profile.yearsTraining}y training`);
   if (profile.shbg) tokens.push(`SHBG ${profile.shbg}`);
   if (profile.aromatase) tokens.push(`Arom ${profile.aromatase}`);
   if (profile.anxiety) tokens.push(`Anxiety ${profile.anxiety}`);
-  if (profile.experience) tokens.push(experienceLabels[profile.experience] || profile.experience);
-  return tokens.filter(Boolean).join(' • ') || 'Using baseline defaults';
+  if (profile.experience)
+    tokens.push(experienceLabels[profile.experience] || profile.experience);
+  return tokens.filter(Boolean).join(" • ") || "Using baseline defaults";
 };
 
 const ChevronIcon = ({ open }) => (
   <svg
-    className={`w-4 h-4 text-physio-text-tertiary transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+    className={`w-4 h-4 text-physio-text-tertiary transition-transform duration-200 ${open ? "rotate-180" : ""}`}
     viewBox="0 0 20 20"
     fill="currentColor"
     aria-hidden="true"
@@ -99,12 +170,23 @@ const ChevronIcon = ({ open }) => (
   </svg>
 );
 
-const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compressed = false }) => {
+const PersonalizationPanel = ({
+  profile,
+  onProfileChange,
+  onClearProfile,
+  compressed = false,
+}) => {
   const narrative = buildPersonalizationNarrative(profile);
-  const curveScales = { ...defaultCurveScales, ...(profile?.curveScales || {}) };
+  const curveScales = {
+    ...defaultCurveScales,
+    ...(profile?.curveScales || {}),
+  };
   const [collapsed, setCollapsed] = useState(false);
   const [autoCollapsed, setAutoCollapsed] = useState(false);
-  const profileSummary = useMemo(() => formatProfileSummary(profile), [profile]);
+  const profileSummary = useMemo(
+    () => formatProfileSummary(profile),
+    [profile],
+  );
   const customized = useMemo(() => isProfileCustomized(profile), [profile]);
 
   useEffect(() => {
@@ -115,17 +197,17 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compre
   }, [customized, autoCollapsed]);
 
   const handleNumericChange = (field, rawValue) => {
-    const value = rawValue === '' ? '' : Number(rawValue);
-    onProfileChange(prev => ({
+    const value = rawValue === "" ? "" : Number(rawValue);
+    onProfileChange((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const handleSelectChange = (field, value) => {
-    onProfileChange(prev => ({
+    onProfileChange((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -135,43 +217,47 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compre
 
   const updateCurveScale = (key, value) => {
     const numeric = Number(value);
-    onProfileChange(prev => ({
+    onProfileChange((prev) => ({
       ...prev,
       curveScales: {
         ...(prev?.curveScales || {}),
-        [key]: numeric
-      }
+        [key]: numeric,
+      },
     }));
   };
 
   const resetCurveScales = () => {
-    onProfileChange(prev => ({
+    onProfileChange((prev) => ({
       ...prev,
-      curveScales: { ...defaultCurveScales }
+      curveScales: { ...defaultCurveScales },
     }));
   };
 
-  const containerPadding = compressed ? 'p-4' : 'p-6';
-  const headerSpacing = compressed ? 'mb-4' : 'mb-6';
-  const gridGap = compressed ? 'gap-3' : 'gap-4';
-  const blockSpacing = compressed ? 'mt-4' : 'mt-6';
-  const cardPadding = compressed ? 'p-3' : 'p-4';
+  const containerPadding = compressed ? "p-4" : "p-6";
+  const headerSpacing = compressed ? "mb-4" : "mb-6";
+  const gridGap = compressed ? "gap-3" : "gap-4";
+  const blockSpacing = compressed ? "mt-4" : "mt-6";
+  const cardPadding = compressed ? "p-3" : "p-4";
 
   return (
     <Card className={`mb-8 ${containerPadding}`} variant="highlight">
-      <div className={`flex flex-col md:flex-row md:items-center gap-3 ${collapsed ? 'mb-0' : 'mb-4'}`}>
+      <div
+        className={`flex flex-col md:flex-row md:items-center gap-3 ${collapsed ? "mb-0" : "mb-4"}`}
+      >
         <button
           type="button"
-          onClick={() => setCollapsed(prev => !prev)}
+          onClick={() => setCollapsed((prev) => !prev)}
           aria-expanded={!collapsed}
-          className={`flex-1 text-left bg-physio-bg-secondary border border-physio-bg-border rounded-xl ${compressed ? 'px-3 py-2' : 'px-4 py-3'} hover:border-physio-accent-cyan transition-standard`}
+          className={`flex-1 text-left bg-physio-bg-secondary border border-physio-bg-border rounded-xl ${compressed ? "px-3 py-2" : "px-4 py-3"} hover:border-physio-accent-cyan transition-standard`}
         >
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-physio-text-primary">
-                {customized ? 'Profile (custom)' : 'Profile (baseline)'}
+                {customized ? "Profile (custom)" : "Profile (baseline)"}
               </p>
-              <p className="text-xs text-physio-text-secondary truncate">{profileSummary}</p>
+              <p className="text-xs text-physio-text-secondary truncate">
+                {profileSummary}
+              </p>
             </div>
             <ChevronIcon open={!collapsed} />
           </div>
@@ -185,11 +271,7 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compre
             >
               Edit profile
             </Button>
-            <Button
-              onClick={resetProfile}
-              variant="ghost"
-              size="sm"
-            >
+            <Button onClick={resetProfile} variant="ghost" size="sm">
               Reset
             </Button>
             <Button
@@ -205,19 +287,20 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compre
 
       {!collapsed && (
         <>
-          <div className={`flex flex-col md:flex-row md:items-center md:justify-between gap-4 ${headerSpacing}`}>
+          <div
+            className={`flex flex-col md:flex-row md:items-center md:justify-between gap-4 ${headerSpacing}`}
+          >
             <div>
-              <h2 className="text-2xl font-bold text-physio-text-primary">Personalized Dose-Response</h2>
+              <h2 className="text-2xl font-bold text-physio-text-primary">
+                Personalized Dose-Response
+              </h2>
               <p className="text-sm text-physio-text-secondary">
-                Plug in your physiology to morph the benefit vs. risk curves in real time.
+                Plug in your physiology to morph the benefit vs. risk curves in
+                real time.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 self-start md:self-auto">
-              <Button
-                onClick={resetProfile}
-                variant="secondary"
-                size="sm"
-              >
+              <Button onClick={resetProfile} variant="secondary" size="sm">
                 Reset to baseline
               </Button>
               <Button
@@ -230,96 +313,130 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compre
             </div>
           </div>
 
-      <div className={`grid grid-cols-1 md:grid-cols-4 ${gridGap}`}>
-        {numericFields.map(field => (
-          <label key={field.name} className="flex flex-col text-sm">
-            <span className="font-semibold text-physio-text-secondary">{field.label}</span>
-            <div className="mt-1">
-              <Input
-                type="number"
-                min={field.min}
-                max={field.max}
-                value={profile[field.name] ?? ''}
-                placeholder={field.optional ? 'optional' : ''}
-                onChange={e => handleNumericChange(field.name, e.target.value)}
-                label={null}
-              />
-              <div className="text-right text-xs uppercase tracking-wide text-physio-text-tertiary mt-1">
-                {field.suffix}
-              </div>
-            </div>
-            <span className="mt-1 text-xs text-physio-text-tertiary">{field.helper}</span>
-          </label>
-        ))}
-      </div>
-
-      <div className={`grid grid-cols-1 md:grid-cols-3 ${gridGap} ${compressed ? 'mt-4' : 'mt-5'}`}>
-        {selectFields.map(field => (
-          <label key={field.name} className="flex flex-col text-sm">
-            <span className="font-semibold text-physio-text-secondary">{field.label}</span>
-            <select
-              value={profile[field.name]}
-              onChange={e => handleSelectChange(field.name, e.target.value)}
-              className="mt-1 bg-physio-bg-secondary border border-physio-bg-border rounded-lg px-3 py-2 focus:outline-none text-physio-text-primary"
-            >
-              {field.options.map(option => (
-                <option key={option.value} value={option.value} className="bg-physio-bg-core text-physio-text-primary">
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <span className="mt-1 text-xs text-physio-text-tertiary">{field.helper}</span>
-          </label>
-        ))}
-      </div>
-
-      <div className={`${blockSpacing} bg-physio-bg-secondary border border-physio-bg-border rounded-xl ${cardPadding}`}>
-        <div className="flex items-center mb-2 text-sm font-semibold text-physio-accent-cyan">
-          <span className="mr-2">🧠</span>
-          Real-time narrative
-        </div>
-        <ul className="list-disc list-inside text-sm text-physio-text-primary space-y-1">
-          {narrative.map((point, idx) => (
-            <li key={idx}>{point}</li>
-          ))}
-        </ul>
-      </div>
-
-      <div className={`${blockSpacing} border border-physio-bg-border rounded-xl bg-physio-bg-secondary ${cardPadding}`}>
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-physio-text-primary">Response tuning sliders</h3>
-            <p className="text-xs text-physio-text-secondary">Dial the heuristics that tailor benefit/risk curves to your physiology.</p>
+          <div className={`grid grid-cols-1 md:grid-cols-4 ${gridGap}`}>
+            {numericFields.map((field) => (
+              <label key={field.name} className="flex flex-col text-sm">
+                <span className="font-semibold text-physio-text-secondary">
+                  {field.label}
+                </span>
+                <div className="mt-1">
+                  <Input
+                    type="number"
+                    min={field.min}
+                    max={field.max}
+                    value={profile[field.name] ?? ""}
+                    placeholder={field.optional ? "optional" : ""}
+                    onChange={(e) =>
+                      handleNumericChange(field.name, e.target.value)
+                    }
+                    label={null}
+                  />
+                  <div className="text-right text-xs uppercase tracking-wide text-physio-text-tertiary mt-1">
+                    {field.suffix}
+                  </div>
+                </div>
+                <span className="mt-1 text-xs text-physio-text-tertiary">
+                  {field.helper}
+                </span>
+              </label>
+            ))}
           </div>
-          <Button
-            onClick={resetCurveScales}
-            variant="ghost"
-            size="sm"
-            className="text-physio-accent-cyan border-physio-accent-cyan hover:bg-physio-accent-cyan/10"
-          >
-            Reset sliders
-          </Button>
-        </div>
 
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {scaleFields.map(field => (
-            <div key={field.key} className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-3">
-              <div className="flex items-center justify-between text-xs font-semibold text-physio-text-primary mb-1">
-                <span>{field.label}</span>
-                <span className="text-physio-accent-cyan">{curveScales[field.key].toFixed(2)}×</span>
-              </div>
-              <Slider
-                min={0.5}
-                max={1.5}
-                step={0.05}
-                value={curveScales[field.key]}
-                onChange={value => updateCurveScale(field.key, value)}
-              />
-              <p className="text-[11px] text-physio-text-tertiary mt-1">{field.helper}</p>
+          <div
+            className={`grid grid-cols-1 md:grid-cols-3 ${gridGap} ${compressed ? "mt-4" : "mt-5"}`}
+          >
+            {selectFields.map((field) => (
+              <label key={field.name} className="flex flex-col text-sm">
+                <span className="font-semibold text-physio-text-secondary">
+                  {field.label}
+                </span>
+                <select
+                  value={profile[field.name]}
+                  onChange={(e) =>
+                    handleSelectChange(field.name, e.target.value)
+                  }
+                  className="mt-1 bg-physio-bg-secondary border border-physio-bg-border rounded-lg px-3 py-2 focus:outline-none text-physio-text-primary"
+                >
+                  {field.options.map((option) => (
+                    <option
+                      key={option.value}
+                      value={option.value}
+                      className="bg-physio-bg-core text-physio-text-primary"
+                    >
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="mt-1 text-xs text-physio-text-tertiary">
+                  {field.helper}
+                </span>
+              </label>
+            ))}
+          </div>
+
+          <div
+            className={`${blockSpacing} bg-physio-bg-secondary border border-physio-bg-border rounded-xl ${cardPadding}`}
+          >
+            <div className="flex items-center mb-2 text-sm font-semibold text-physio-accent-cyan">
+              <span className="mr-2">🧠</span>
+              Real-time narrative
             </div>
-          ))}
-        </div>
-      </div>
+            <ul className="list-disc list-inside text-sm text-physio-text-primary space-y-1">
+              {narrative.map((point, idx) => (
+                <li key={idx}>{point}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div
+            className={`${blockSpacing} border border-physio-bg-border rounded-xl bg-physio-bg-secondary ${cardPadding}`}
+          >
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-physio-text-primary">
+                  Response tuning sliders
+                </h3>
+                <p className="text-xs text-physio-text-secondary">
+                  Dial the heuristics that tailor benefit/risk curves to your
+                  physiology.
+                </p>
+              </div>
+              <Button
+                onClick={resetCurveScales}
+                variant="ghost"
+                size="sm"
+                className="text-physio-accent-cyan border-physio-accent-cyan hover:bg-physio-accent-cyan/10"
+              >
+                Reset sliders
+              </Button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {scaleFields.map((field) => (
+                <div
+                  key={field.key}
+                  className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-3"
+                >
+                  <div className="flex items-center justify-between text-xs font-semibold text-physio-text-primary mb-1">
+                    <span>{field.label}</span>
+                    <span className="text-physio-accent-cyan">
+                      {curveScales[field.key].toFixed(2)}×
+                    </span>
+                  </div>
+                  <Slider
+                    min={0.5}
+                    max={1.5}
+                    step={0.05}
+                    value={curveScales[field.key]}
+                    onChange={(value) => updateCurveScale(field.key, value)}
+                  />
+                  <p className="text-[11px] text-physio-text-tertiary mt-1">
+                    {field.helper}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
         </>
       )}
     </Card>

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import Card from './ui/Card';
-import Button from './ui/Button';
-import { disclaimerText } from '../data/compoundData';
+import React, { useState } from "react";
+import Card from "./ui/Card";
+import Button from "./ui/Button";
+import { disclaimerText } from "../data/compoundData";
 
 const DisclaimerBanner = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -25,7 +25,7 @@ const DisclaimerBanner = () => {
           size="sm"
           className="ml-4 text-physio-accent-warning hover:bg-physio-accent-warning/10"
         >
-          {isCollapsed ? 'Show' : 'Hide'}
+          {isCollapsed ? "Show" : "Hide"}
         </Button>
       </div>
     </Card>
@@ -33,4 +33,3 @@ const DisclaimerBanner = () => {
 };
 
 export default DisclaimerBanner;
-

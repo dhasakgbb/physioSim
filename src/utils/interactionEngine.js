@@ -1,13 +1,16 @@
-import { compoundData } from '../data/compoundData.js';
-import { personalizeScore } from './personalization.js';
-import { interactionDimensions, interactionPairs } from '../data/interactionEngineData.js';
-import { 
-  DEFAULT_HILL_PARAMS, 
-  MAX_SCORE_CLAMP, 
-  DEFAULT_EVIDENCE_WEIGHT, 
+import { compoundData } from "../data/compoundData.js";
+import { personalizeScore } from "./personalization.js";
+import {
+  interactionDimensions,
+  interactionPairs,
+} from "../data/interactionEngineData.js";
+import {
+  DEFAULT_HILL_PARAMS,
+  MAX_SCORE_CLAMP,
+  DEFAULT_EVIDENCE_WEIGHT,
   DEFAULT_MAX_DOSE,
-  DIMENSION_TYPES
-} from '../data/constants.js';
+  DIMENSION_TYPES,
+} from "../data/constants.js";
 
 /**
  * Clamps a value between a minimum and maximum.
@@ -46,7 +49,7 @@ export const derivePlateauDose = (curve = []) => {
  * @param {Object} compound - The compound object.
  * @returns {number} The plateau dose.
  */
-export const getPlateauDose = compound =>
+export const getPlateauDose = (compound) =>
   derivePlateauDose(compound?.benefitCurve || []);
 
 /**
@@ -54,10 +57,14 @@ export const getPlateauDose = compound =>
  * @param {Object} compound - The compound object.
  * @returns {number} The hard max dose.
  */
-export const getHardMax = compound => {
+export const getHardMax = (compound) => {
   if (!compound) return 0;
   const plateauDose = getPlateauDose(compound);
-  return Math.max(getCurveCap(compound.benefitCurve), getCurveCap(compound.riskCurve), plateauDose);
+  return Math.max(
+    getCurveCap(compound.benefitCurve),
+    getCurveCap(compound.riskCurve),
+    plateauDose,
+  );
 };
 
 /**
@@ -77,7 +84,8 @@ const interpolateCurvePoint = (curve = [], dose) => {
     if (dose >= current.dose && dose <= next.dose) {
       const ratio = (dose - current.dose) / (next.dose - current.dose);
       const value = current.value + ratio * (next.value - current.value);
-      const ci = (current.ci ?? 0) + ratio * ((next.ci ?? 0) - (current.ci ?? 0));
+      const ci =
+        (current.ci ?? 0) + ratio * ((next.ci ?? 0) - (current.ci ?? 0));
       return { dose, value, ci };
     }
   }
@@ -93,12 +101,24 @@ const interpolateCurvePoint = (curve = [], dose) => {
  * @param {Object} profile - The user profile for personalization.
  * @returns {Object} The evaluation result including value, ci, and metadata.
  */
-export const evaluateCompoundResponse = (compoundKey, curveType, dose, profile) => {
+export const evaluateCompoundResponse = (
+  compoundKey,
+  curveType,
+  dose,
+  profile,
+) => {
   const compound = compoundData[compoundKey];
   if (!compound) {
-    return { value: 0, ci: 0, meta: { missing: true, clampedDose: 0, requestedDose: dose } };
+    return {
+      value: 0,
+      ci: 0,
+      meta: { missing: true, clampedDose: 0, requestedDose: dose },
+    };
   }
-  const curve = curveType === DIMENSION_TYPES.RISK ? compound.riskCurve : compound.benefitCurve;
+  const curve =
+    curveType === DIMENSION_TYPES.RISK
+      ? compound.riskCurve
+      : compound.benefitCurve;
   const plateauDose = getPlateauDose(compound);
   const hardMax = getHardMax(compound);
   const clampedDose = Math.min(Math.max(dose, 0), hardMax || dose || 0);
@@ -113,8 +133,8 @@ export const evaluateCompoundResponse = (compoundKey, curveType, dose, profile) 
         plateauDose,
         hardMax,
         nearingPlateau: false,
-        beyondEvidence: dose > hardMax
-      }
+        beyondEvidence: dose > hardMax,
+      },
     };
   }
   const personalized = personalizeScore({
@@ -123,7 +143,7 @@ export const evaluateCompoundResponse = (compoundKey, curveType, dose, profile) 
     dose: clampedDose,
     baseValue: point.value,
     baseCi: point.ci,
-    profile
+    profile,
   });
   const nearingPlateau = plateauDose ? clampedDose >= plateauDose : false;
   const beyondEvidence = hardMax ? dose > hardMax : false;
@@ -136,8 +156,8 @@ export const evaluateCompoundResponse = (compoundKey, curveType, dose, profile) 
       plateauDose,
       hardMax,
       nearingPlateau,
-      beyondEvidence
-    }
+      beyondEvidence,
+    },
   };
 };
 
@@ -148,18 +168,22 @@ export const evaluateCompoundResponse = (compoundKey, curveType, dose, profile) 
  * @param {number} n - The Hill coefficient.
  * @returns {number} The calculated term.
  */
-const hillTerm = (dose, d50 = DEFAULT_HILL_PARAMS.D50, n = DEFAULT_HILL_PARAMS.N) => {
+const hillTerm = (
+  dose,
+  d50 = DEFAULT_HILL_PARAMS.D50,
+  n = DEFAULT_HILL_PARAMS.N,
+) => {
   if (dose <= 0) return 0;
   return Math.pow(dose, n) / (Math.pow(dose, n) + Math.pow(d50, n));
 };
 
 const dimensionSensitivityKey = {
-  bloat: 'water',
-  estrogenic: 'estrogen',
-  bp: 'cardio',
-  hematocrit: 'cardio',
-  neuro: 'neuro',
-  hepatic: 'cardio'
+  bloat: "water",
+  estrogenic: "estrogen",
+  bp: "cardio",
+  hematocrit: "cardio",
+  neuro: "neuro",
+  hepatic: "cardio",
 };
 
 /**
@@ -179,7 +203,7 @@ export const evaluatePairDimension = ({
   doses,
   profile,
   sensitivities,
-  evidenceBlend
+  evidenceBlend,
 }) => {
   const pair = interactionPairs[pairId];
   if (!pair) return null;
@@ -195,23 +219,28 @@ export const evaluatePairDimension = ({
 
   const baseAResponse = evaluateCompoundResponse(
     compoundA,
-    dimension.type === DIMENSION_TYPES.RISK ? DIMENSION_TYPES.RISK : DIMENSION_TYPES.BENEFIT,
+    dimension.type === DIMENSION_TYPES.RISK
+      ? DIMENSION_TYPES.RISK
+      : DIMENSION_TYPES.BENEFIT,
     doseA,
-    profile
+    profile,
   );
   const baseA = (baseAResponse?.value ?? 0) * (weights[compoundA] ?? 1);
 
   const baseBResponse = evaluateCompoundResponse(
     compoundB,
-    dimension.type === DIMENSION_TYPES.RISK ? DIMENSION_TYPES.RISK : DIMENSION_TYPES.BENEFIT,
+    dimension.type === DIMENSION_TYPES.RISK
+      ? DIMENSION_TYPES.RISK
+      : DIMENSION_TYPES.BENEFIT,
     doseB,
-    profile
+    profile,
   );
   const baseB = (baseBResponse?.value ?? 0) * (weights[compoundB] ?? 1);
 
   const naive = baseA + baseB;
 
-  const coeffSource = dimension.type === DIMENSION_TYPES.RISK ? pair.penalties : pair.synergy;
+  const coeffSource =
+    dimension.type === DIMENSION_TYPES.RISK ? pair.penalties : pair.synergy;
   const rawCoeff = coeffSource?.[dimensionKey] ?? 0;
 
   const modelParams = pair.doseModel?.params || {};
@@ -222,18 +251,29 @@ export const evaluatePairDimension = ({
   const doseShape = hillTerm(doseA, d50A, n) * hillTerm(doseB, d50B, n);
 
   const sensitivityKey = dimensionSensitivityKey[dimensionKey];
-  const sensitivityMultiplier = sensitivityKey ? sensitivities[sensitivityKey] ?? 1 : 1;
+  const sensitivityMultiplier = sensitivityKey
+    ? (sensitivities[sensitivityKey] ?? 1)
+    : 1;
 
-  const evidence = pair.evidence || { clinical: DEFAULT_EVIDENCE_WEIGHT, anecdote: DEFAULT_EVIDENCE_WEIGHT };
-  const evidenceTotal = (evidence.clinical ?? 0) + (evidence.anecdote ?? 0) || 1;
+  const evidence = pair.evidence || {
+    clinical: DEFAULT_EVIDENCE_WEIGHT,
+    anecdote: DEFAULT_EVIDENCE_WEIGHT,
+  };
+  const evidenceTotal =
+    (evidence.clinical ?? 0) + (evidence.anecdote ?? 0) || 1;
   const clinicalWeight = clamp(1 - evidenceBlend, 0, 1);
   const anecdoteWeight = clamp(evidenceBlend, 0, 1);
   const evidenceScalar =
-    ((evidence.clinical ?? 0) * clinicalWeight + (evidence.anecdote ?? 0) * anecdoteWeight) / evidenceTotal;
+    ((evidence.clinical ?? 0) * clinicalWeight +
+      (evidence.anecdote ?? 0) * anecdoteWeight) /
+    evidenceTotal;
 
   const delta = rawCoeff * doseShape * sensitivityMultiplier * evidenceScalar;
   // Increased clamp from 6 to 15 to match new high-dose ceiling
-  const total = dimension.type === DIMENSION_TYPES.RISK ? clamp(naive + Math.abs(delta), 0, MAX_SCORE_CLAMP) : clamp(naive + delta, 0, MAX_SCORE_CLAMP);
+  const total =
+    dimension.type === DIMENSION_TYPES.RISK
+      ? clamp(naive + Math.abs(delta), 0, MAX_SCORE_CLAMP)
+      : clamp(naive + delta, 0, MAX_SCORE_CLAMP);
 
   return {
     dimensionKey,
@@ -243,7 +283,7 @@ export const evaluatePairDimension = ({
     naive,
     delta,
     total,
-    doseShape
+    doseShape,
   };
 };
 
@@ -252,7 +292,13 @@ export const evaluatePairDimension = ({
  * @param {Object} params - Parameters.
  * @returns {number} The computed value.
  */
-export const computeHeatmapValue = ({ pairId, mode, profile, sensitivities, evidenceBlend }) => {
+export const computeHeatmapValue = ({
+  pairId,
+  mode,
+  profile,
+  sensitivities,
+  evidenceBlend,
+}) => {
   const pair = interactionPairs[pairId];
   if (!pair) return 0;
   const doses = pair.defaultDoses;
@@ -261,7 +307,7 @@ export const computeHeatmapValue = ({ pairId, mode, profile, sensitivities, evid
   let benefitSum = 0;
   let riskSum = 0;
 
-  keys.forEach(dimKey => {
+  keys.forEach((dimKey) => {
     const dimension = interactionDimensions[dimKey];
     if (!dimension) return;
     if (dimension.type === DIMENSION_TYPES.BENEFIT && pair.synergy?.[dimKey]) {
@@ -271,7 +317,7 @@ export const computeHeatmapValue = ({ pairId, mode, profile, sensitivities, evid
         doses,
         profile,
         sensitivities,
-        evidenceBlend
+        evidenceBlend,
       });
       if (res) benefitSum += Math.abs(res.delta);
     }
@@ -282,7 +328,7 @@ export const computeHeatmapValue = ({ pairId, mode, profile, sensitivities, evid
         doses,
         profile,
         sensitivities,
-        evidenceBlend
+        evidenceBlend,
       });
       if (res) riskSum += Math.abs(res.delta);
     }
@@ -306,12 +352,13 @@ export const generatePrimaryCurveSeries = ({
   profile,
   sensitivities,
   evidenceBlend,
-  sampleCount = 20
+  sampleCount = 20,
 }) => {
   const pair = interactionPairs[pairId];
   if (!pair) return [];
   const [compoundA, compoundB] = pair.compounds;
-  const secondaryCompound = primaryCompound === compoundA ? compoundB : compoundA;
+  const secondaryCompound =
+    primaryCompound === compoundA ? compoundB : compoundA;
   const range = pair.doseRanges?.[primaryCompound] || [0, DEFAULT_MAX_DOSE];
   const [minDose, maxDose] = range;
   const step = (maxDose - minDose) / sampleCount;
@@ -321,7 +368,7 @@ export const generatePrimaryCurveSeries = ({
     const pointDoses = {
       ...doses,
       [primaryCompound]: clamp(dose, minDose, maxDose),
-      [secondaryCompound]: doses[secondaryCompound]
+      [secondaryCompound]: doses[secondaryCompound],
     };
     const res = evaluatePairDimension({
       pairId,
@@ -329,37 +376,46 @@ export const generatePrimaryCurveSeries = ({
       doses: pointDoses,
       profile,
       sensitivities,
-      evidenceBlend
+      evidenceBlend,
     });
     if (!res) continue;
     const dimension = interactionDimensions[dimensionKey];
-    const basePrimary = evaluateCompoundResponse(
-      primaryCompound,
-      dimension?.type === DIMENSION_TYPES.RISK ? DIMENSION_TYPES.RISK : DIMENSION_TYPES.BENEFIT,
-      pointDoses[primaryCompound],
-      profile
-    )?.value ?? 0;
+    const basePrimary =
+      evaluateCompoundResponse(
+        primaryCompound,
+        dimension?.type === DIMENSION_TYPES.RISK
+          ? DIMENSION_TYPES.RISK
+          : DIMENSION_TYPES.BENEFIT,
+        pointDoses[primaryCompound],
+        profile,
+      )?.value ?? 0;
     data.push({
       dose: Math.round(pointDoses[primaryCompound]),
       basePrimary,
       naive: res.naive,
-      total: res.total
+      total: res.total,
     });
   }
   return data;
 };
 
-const aggregateScore = ({ pairId, doses, profile, sensitivities, evidenceBlend }) => {
+const aggregateScore = ({
+  pairId,
+  doses,
+  profile,
+  sensitivities,
+  evidenceBlend,
+}) => {
   const pair = interactionPairs[pairId];
   const dimensionKeys = [
     ...Object.keys(pair.synergy || {}),
-    ...Object.keys(pair.penalties || {})
+    ...Object.keys(pair.penalties || {}),
   ];
 
   let benefitScore = 0;
   let riskScore = 0;
 
-  dimensionKeys.forEach(key => {
+  dimensionKeys.forEach((key) => {
     const dimension = interactionDimensions[key];
     if (!dimension) return;
     const res = evaluatePairDimension({
@@ -368,7 +424,7 @@ const aggregateScore = ({ pairId, doses, profile, sensitivities, evidenceBlend }
       doses,
       profile,
       sensitivities,
-      evidenceBlend
+      evidenceBlend,
     });
     if (!res) return;
     if (dimension.type === DIMENSION_TYPES.BENEFIT) {
@@ -381,7 +437,7 @@ const aggregateScore = ({ pairId, doses, profile, sensitivities, evidenceBlend }
   return {
     score: benefitScore - riskScore,
     benefit: benefitScore,
-    risk: riskScore
+    risk: riskScore,
   };
 };
 
@@ -395,7 +451,7 @@ export const buildSurfaceData = ({
   profile,
   sensitivities,
   evidenceBlend,
-  steps = 12
+  steps = 12,
 }) => {
   const pair = interactionPairs[pairId];
   if (!pair) return [];
@@ -410,24 +466,23 @@ export const buildSurfaceData = ({
     for (let b = minB; b <= maxB + 1; b += stepB) {
       const doses = {
         [compoundA]: Math.round(a),
-        [compoundB]: Math.round(b)
+        [compoundB]: Math.round(b),
       };
       const aggregate = aggregateScore({
         pairId,
         doses,
         profile,
         sensitivities,
-        evidenceBlend
+        evidenceBlend,
       });
       data.push({
         [compoundA]: Math.round(a),
         [compoundB]: Math.round(b),
         score: aggregate.score,
         benefit: aggregate.benefit,
-        risk: aggregate.risk
+        risk: aggregate.risk,
       });
     }
   }
   return data;
 };
-

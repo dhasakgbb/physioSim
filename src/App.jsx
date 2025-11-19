@@ -1,6 +1,6 @@
-import React from 'react';
-import Dashboard from './components/dashboard/Dashboard';
-import { StackProvider } from './context/StackContext';
+import React from "react";
+import Dashboard from "./components/dashboard/Dashboard";
+import { StackProvider } from "./context/StackContext";
 
 function App() {
   return (

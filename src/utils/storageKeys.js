@@ -1,13 +1,14 @@
 export const STORAGE_KEYS = Object.freeze({
-  PROFILE: 'physioSim:userProfile',
-  LAYOUT_FILTER_PREFS: 'layoutFilterPrefs',
-  INTERACTION_CONTROLS: 'interactionControls',
-  INTERACTION_FOCUS_PIN: 'interactionFocusPin',
-  CYCLES: 'physioSim:cycles'
+  PROFILE: "physioSim:userProfile",
+  LAYOUT_FILTER_PREFS: "layoutFilterPrefs",
+  INTERACTION_CONTROLS: "interactionControls",
+  INTERACTION_FOCUS_PIN: "interactionFocusPin",
+  CYCLES: "physioSim:cycles",
 });
 
 export const PROFILE_STORAGE_KEY = STORAGE_KEYS.PROFILE;
 export const LAYOUT_FILTER_PREFS_KEY = STORAGE_KEYS.LAYOUT_FILTER_PREFS;
-export const INTERACTION_CONTROL_STORAGE_KEY = STORAGE_KEYS.INTERACTION_CONTROLS;
+export const INTERACTION_CONTROL_STORAGE_KEY =
+  STORAGE_KEYS.INTERACTION_CONTROLS;
 export const HEATMAP_FOCUS_PIN_KEY = STORAGE_KEYS.INTERACTION_FOCUS_PIN;
 export const CYCLE_STORAGE_KEY = STORAGE_KEYS.CYCLES;

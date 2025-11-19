@@ -2,7 +2,7 @@ let cachedStorage;
 
 const resolveStorage = () => {
   if (cachedStorage !== undefined) return cachedStorage;
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     cachedStorage = null;
     return cachedStorage;
   }
@@ -10,16 +10,16 @@ const resolveStorage = () => {
     const storage = window.localStorage;
     if (
       storage &&
-      typeof storage.getItem === 'function' &&
-      typeof storage.setItem === 'function' &&
-      typeof storage.removeItem === 'function'
+      typeof storage.getItem === "function" &&
+      typeof storage.setItem === "function" &&
+      typeof storage.removeItem === "function"
     ) {
       cachedStorage = storage;
     } else {
       cachedStorage = null;
     }
   } catch (error) {
-    console.warn('Local storage unavailable', error);
+    console.warn("Local storage unavailable", error);
     cachedStorage = null;
   }
   return cachedStorage;
@@ -30,17 +30,18 @@ export const getSafeStorage = () => resolveStorage();
 const runStorageOp = (operation, { fallback = null, errorMessage } = {}) => {
   const storage = resolveStorage();
   if (!storage) {
-    return typeof fallback === 'function' ? fallback() : fallback;
+    return typeof fallback === "function" ? fallback() : fallback;
   }
   try {
     return operation(storage);
   } catch (error) {
-    console.warn(errorMessage || 'Storage operation failed', error);
-    return typeof fallback === 'function' ? fallback(error) : fallback;
+    console.warn(errorMessage || "Storage operation failed", error);
+    return typeof fallback === "function" ? fallback(error) : fallback;
   }
 };
 
-const isOptionsObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+const isOptionsObject = (value) =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
 
 export const readJSONStorage = (key, fallbackOrOptions = null) => {
   const options = isOptionsObject(fallbackOrOptions)
@@ -48,23 +49,23 @@ export const readJSONStorage = (key, fallbackOrOptions = null) => {
     : { fallback: fallbackOrOptions };
   const { fallback = null, reviver, transform } = options;
   return runStorageOp(
-    storage => {
+    (storage) => {
       const raw = storage.getItem(key);
-      if (raw === null || raw === undefined || raw === '') return fallback;
+      if (raw === null || raw === undefined || raw === "") return fallback;
       const parsed = JSON.parse(raw, reviver);
-      return typeof transform === 'function' ? transform(parsed) : parsed;
+      return typeof transform === "function" ? transform(parsed) : parsed;
     },
     {
       fallback,
-      errorMessage: `Failed to read ${key} from storage`
-    }
+      errorMessage: `Failed to read ${key} from storage`,
+    },
   );
 };
 
 export const writeJSONStorage = (key, value, options = {}) => {
   const { replacer, space } = options || {};
   return runStorageOp(
-    storage => {
+    (storage) => {
       if (value === undefined) {
         storage.removeItem(key);
         return true;
@@ -74,21 +75,21 @@ export const writeJSONStorage = (key, value, options = {}) => {
     },
     {
       fallback: false,
-      errorMessage: `Failed to persist ${key} to storage`
-    }
+      errorMessage: `Failed to persist ${key} to storage`,
+    },
   );
 };
 
 export const removeStorageKey = (key) =>
   runStorageOp(
-    storage => {
+    (storage) => {
       storage.removeItem(key);
       return true;
     },
     {
       fallback: false,
-      errorMessage: `Failed to remove ${key} from storage`
-    }
+      errorMessage: `Failed to remove ${key} from storage`,
+    },
   );
 
 export const createJSONStore = (key, { fallback = null } = {}) => {
@@ -98,7 +99,7 @@ export const createJSONStore = (key, { fallback = null } = {}) => {
   };
   const read = (options = undefined) => {
     const normalized = normalize(options);
-    if (!Object.prototype.hasOwnProperty.call(normalized, 'fallback')) {
+    if (!Object.prototype.hasOwnProperty.call(normalized, "fallback")) {
       normalized.fallback = fallback;
     }
     return readJSONStorage(key, normalized);

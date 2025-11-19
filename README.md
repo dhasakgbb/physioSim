@@ -56,6 +56,7 @@ This interactive visualization tool presents dose-response relationships for **1
 ## ✨ Features
 
 ### 📊 Spotlight View Modes
+
 - **Benefit**: Highlight the pure anabolic signal with thin bezier lines and plateau guardrails.
 - **Risk**: Under-curve fills expose cumulative burden (lipids, cardio, hepatic, neuro) per compound.
 - **Efficiency**: Live benefit ÷ risk ratios identify the sweet spot for each dose.
@@ -64,6 +65,7 @@ This interactive visualization tool presents dose-response relationships for **1
 The `ChartControlBar` pins this segmented control to the top of every hero chart, doubles as the hub for guardrail chips, and reports non-default selections to the global filter state.
 
 ### 📈 Interactive Chart
+
 - All 6 compounds rendered with color-coded curves
 - Uncertainty bands (width = confidence level)
 - Hover tooltips showing Tier, Source, Caveat, CI
@@ -72,7 +74,9 @@ The `ChartControlBar` pins this segmented control to the top of every hero chart
 - Obsidian Pro polish: benefit curves glow inside mist gradients, risk curves use under-curve fills that warm as burden climbs, uncertainty mode isolates a mint veil, and legend hover states dim non-focused compounds so each curve gets a true spotlight moment.
 
 ### 📚 Expandable Methodology Cards
+
 Click any compound name to view:
+
 - Evidence hierarchy breakdown
 - Benefit & risk curve rationale
 - Key sources (Bhasin, Yarrow, forum aggregates)
@@ -92,13 +96,16 @@ Click any compound name to view:
 - **Lazy loading guardrails** continue to keep EvidencePanel off the main bundle until a drawer opens, protecting first paint on lower-power devices.
 
 ### 📄 PDF Export
+
 Download complete report including:
+
 - High-resolution chart
 - Full methodology per compound
 - Evidence tier system
 - Disclaimer & sources
 
 ### ⚠️ Disclaimer Banner
+
 Always-visible harm reduction notice with collapsible details.
 
 ---
@@ -110,6 +117,7 @@ Always-visible harm reduction notice with collapsible details.
 Comprehensive interaction analysis for all compound pairs:
 
 **Features:**
+
 - **Visual Heatmap**: Color-coded compatibility matrix (excellent → forbidden)
 - **38 Interaction Pairs**: Injectable-injectable, oral-injectable, and oral-oral combinations
 - **Rating System**: ✓✓ (Excellent) → ✗ (Forbidden) with 6-level scale
@@ -127,12 +135,14 @@ Comprehensive interaction analysis for all compound pairs:
 - **Drawer Workspace**: Clicking any matrix cell slides up a consolidated workspace with a summary badge, vertical sliders, modular cards (Benefit vs Risk, Interaction Curve, Dose Surface, Stack Suggestions), and the multi/custom optimizers so everything updates off one shared `selectedPair` state.
 
 **Usage:**
+
 1. Navigate to "🔗 Interaction Matrix" tab
 2. View three heatmaps: Injectable-Injectable, Oral-Injectable, Oral-Oral
 3. Click any colored cell to open detailed interaction card
 4. Review mechanisms, protocols, and safety guidance
 
 **Rating Guide:**
+
 - **✓✓ Excellent**: Positive synergy, well-tolerated (e.g., Test + Anavar)
 - **✓ Good**: Compatible mechanisms, manageable risks (e.g., Test + Masteron)
 - **~ Compatible**: Additive effects, no major conflicts (e.g., NPP + Primo)
@@ -151,6 +161,7 @@ Comprehensive interaction analysis for all compound pairs:
 Interactive tool for building multi-compound stacks with automated analysis:
 
 **Features:**
+
 - **Compound Selection**: Add any combination of injectables and orals
 - **Dose Inputs**: Specify dose for each compound (mg/week for injectables, mg/day for orals)
 - **Real-Time Metrics**: Instant calculation of:
@@ -166,6 +177,7 @@ Interactive tool for building multi-compound stacks with automated analysis:
 - **Premium Dose Slider Kit**: Every compound card now uses the Obsidian Pro `DoseSlider` (mist track, guardrail markers, micro-tooltips) plus numeric inputs so you can drag through inflection points or type precise doses without losing guardrail context.
 
 **Usage:**
+
 1. Navigate to "🧪 Stack Builder" tab
 2. Select compound from dropdown and enter dose
 3. Click "Add to Stack"
@@ -175,6 +187,7 @@ Interactive tool for building multi-compound stacks with automated analysis:
 7. Check blood work requirements and monitoring frequency
 
 **Example Stack:**
+
 ```
 Testosterone 600mg/week + NPP 300mg/week + Anavar 50mg/day
 
@@ -212,6 +225,7 @@ Blood Work:
 Detailed side effect data for all 11 compounds:
 
 **Features:**
+
 - **Compound-Specific Profiles**: Select any compound to view its complete side effect breakdown
 - **Common Side Effects**: List of frequent sides with severity, onset, dose-dependence, and management
 - **Lipid Impact**: HDL decline, LDL increase, triglyceride changes
@@ -222,6 +236,7 @@ Detailed side effect data for all 11 compounds:
 - **Category Context**: Links to general side effect categories (estrogenic, progestational, androgenic, hepatic, cardiovascular, psychological)
 
 **Usage:**
+
 1. Navigate to "⚠️ Side Effects" tab
 2. Select compound from dropdown
 3. Review all side effect categories
@@ -229,6 +244,7 @@ Detailed side effect data for all 11 compounds:
 5. Compare side effects across different compounds
 
 **Side Effect Categories:**
+
 - **Estrogenic**: Gynecomastia, water retention (Test, Dbol, Anadrol)
 - **Progestational**: Sexual dysfunction, prolactin elevation (NPP, Tren)
 - **Androgenic**: Acne, hair loss, prostate (all compounds, severity varies)
@@ -241,6 +257,7 @@ Detailed side effect data for all 11 compounds:
 Comprehensive database of 15 ancillary medications:
 
 **Features:**
+
 - **Category Filtering**: Filter by drug class (AI, SERM, dopamine agonist, liver support, etc.)
 - **Expandable Drug Cards**: Click any drug for detailed information:
   - Mechanism of action
@@ -252,6 +269,7 @@ Comprehensive database of 15 ancillary medications:
 - **General Guidelines**: Harm reduction best practices for each category
 
 **Included Ancillaries:**
+
 - **Aromatase Inhibitors**: Anastrozole, Letrozole, Exemestane
 - **SERMs**: Tamoxifen, Raloxifene, Clomid
 - **Dopamine Agonists**: Cabergoline, Pramipexole
@@ -261,6 +279,7 @@ Comprehensive database of 15 ancillary medications:
 - **HPTA Support**: HCG
 
 **Usage:**
+
 1. Navigate to "💊 Ancillaries" tab
 2. Browse all ancillaries or filter by category
 3. Click any drug card to expand full details
@@ -268,6 +287,7 @@ Comprehensive database of 15 ancillary medications:
 5. Reference general guidelines for each category
 
 **Key Information:**
+
 - **Cost Estimates**: Weekly cost ranges for budgeting
 - **Dosing Tiers**: Low, moderate, and high dose protocols
 - **Blood Work Targets**: Optimal ranges (e.g., E2: 20-30 pg/mL, Prolactin: <15 ng/mL)
@@ -278,6 +298,7 @@ Comprehensive database of 15 ancillary medications:
 ## 🚀 Installation
 
 ### Prerequisites
+
 - Node.js 18+ and npm/yarn
 - Modern browser (Chrome, Firefox, Safari)
 
@@ -346,11 +367,13 @@ The app will be available at `http://localhost:5173`
 ### Critical Data Points
 
 #### Testosterone
+
 - **Benefit**: Linear 0-600mg (Tier 1), plateau 600-1200mg (Tier 3)
 - **Risk**: Measured lipid decline 0-600mg; extrapolated cardio/hepatic 600+
 - **Confidence**: 85-90% (0-600mg); 60-70% (600+)
 
 #### Trenbolone (CRITICAL)
+
 - **Benefit**: FLAT PLATEAU post-300mg (4.87) - gains stop increasing, not declining
 - **Risk**: Escalates rapidly; psych/neuro sides dominate 200-400mg
 - **Confidence**: 65-70% benefit; 40-50% risk (NO human data at any dose)
@@ -359,12 +382,14 @@ The app will be available at `http://localhost:5173`
 ### Data Sources
 
 Primary literature:
+
 - Bhasin et al. (1996, 2001) - Test supraphysio dose-response, n=43, 6 months
 - Yarrow et al. (2011) - Tren anabolic response in rats, HED-scaled
 - Blaquier et al. (1991) - NPP dose-response in rat protein synthesis
 - Forbes (1985) - LBM plateau meta-analysis
 
 Community aggregates:
+
 - r/steroids wiki - ~3,000 cycle logs (2020-2025)
 - Meso-Rx forums - ~2,000 cycle reports (archived)
 - AnabolicMinds/Eroids - ~1,000 aggregated reports
@@ -389,6 +414,7 @@ npm test dataValidation.test.js
 ### Test Coverage
 
 #### Data Validation Tests
+
 - ✅ All 6 compounds present
 - ✅ Testosterone values match Bhasin data
 - ✅ **Trenbolone benefit FLAT post-300mg (not declining)** - CRITICAL
@@ -398,6 +424,7 @@ npm test dataValidation.test.js
 - ✅ Data structure integrity
 
 #### Component Tests
+
 - ✅ Disclaimer banner renders and toggles
 - ✅ View toggle switches modes correctly
 - ✅ Legend toggles compound visibility
@@ -415,12 +442,12 @@ npm test dataValidation.test.js
 
 ```javascript
 // From dataValidation.test.js
-it('should have benefit FLAT (not declining) post-300mg', () => {
+it("should have benefit FLAT (not declining) post-300mg", () => {
   const tren = compoundData.trenbolone;
-  const benefit400 = tren.benefitCurve.find(p => p.dose === 400);
-  const benefit500 = tren.benefitCurve.find(p => p.dose === 500);
-  const benefit600 = tren.benefitCurve.find(p => p.dose === 600);
-  
+  const benefit400 = tren.benefitCurve.find((p) => p.dose === 400);
+  const benefit500 = tren.benefitCurve.find((p) => p.dose === 500);
+  const benefit600 = tren.benefitCurve.find((p) => p.dose === 600);
+
   expect(benefit400.value).toBeCloseTo(4.87, 2);
   expect(benefit500.value).toBe(benefit400.value); // FLAT
   expect(benefit600.value).toBe(benefit400.value); // FLAT
@@ -489,19 +516,23 @@ physioSim/
 ### Evidence Hierarchy
 
 **Tier 1: Empirical Human Data** (Highest Confidence)
+
 - Randomized controlled trials at specific doses
 - Example: Bhasin et al. Test 0-600mg
 
 **Tier 2: Clinical/Therapeutic Human Data** (High Confidence)
+
 - Therapeutic doses extrapolated via pharmacology
 - Example: Nandrolone 50-100mg clinical use
 
 **Tier 3: Animal Studies + HED Scaling** (Medium Confidence)
+
 - Animal dose-response converted to human equivalent
 - Formula: HED = Animal Dose × (Animal Km / Human Km)
 - Example: Yarrow Tren rat study scaled to human
 
 **Tier 4: Mechanism + Anecdotal Patterns** (Lower Confidence)
+
 - Pharmacological theory + community reports
 - High bias (survivorship, reporting, confounders)
 - Example: Tren plateau at 300mg (forum consensus)
@@ -509,10 +540,10 @@ physioSim/
 ### Risk Scoring Formula
 
 ```
-Risk(X) = 0.3 × Risk_lipid(X) 
-        + 0.3 × Risk_cardio(X) 
-        + 0.2 × Risk_psych(X) 
-        + 0.1 × Risk_hepatic(X) 
+Risk(X) = 0.3 × Risk_lipid(X)
+        + 0.3 × Risk_cardio(X)
+        + 0.2 × Risk_psych(X)
+        + 0.1 × Risk_hepatic(X)
         + 0.1 × Risk_suppression(X)
 ```
 
@@ -548,6 +579,7 @@ Normalized to 0-5.5 scale for visual comparison with benefit curves.
 **CRITICAL**: Do NOT modify data without rigorous sourcing.
 
 If you have new human RCT data:
+
 1. Provide full citation (journal, DOI, authors, year, sample size)
 2. Document methodology in DESIGN.md
 3. Update compoundData.js with Tier 1 flag
@@ -555,6 +587,7 @@ If you have new human RCT data:
 5. Add to test suite
 
 If you have anecdotal aggregates:
+
 1. Document sample size and aggregation method
 2. Flag as Tier 4
 3. Widen uncertainty bands
@@ -563,6 +596,7 @@ If you have anecdotal aggregates:
 ### Bug Reports
 
 Please include:
+
 - Browser/OS version
 - Steps to reproduce
 - Expected vs. actual behavior
@@ -577,6 +611,7 @@ Please include:
 This tool visualizes dose-response relationships based on limited human data, animal studies, and community patterns. **It is educational only** and does not constitute medical, pharmaceutical, or health advice.
 
 **Key Points:**
+
 - These compounds are controlled substances in most jurisdictions
 - Individual responses vary widely (±20-30% typical); **your response may differ**
 - Risk curves are modeled, not empirically measured, at most doses
@@ -584,12 +619,14 @@ This tool visualizes dose-response relationships based on limited human data, an
 - This tool assumes proper ancillary use, training, diet, and baseline health
 
 **What This Tool Is NOT:**
+
 - ❌ A prescription for dosing
 - ❌ A guarantee of specific outcomes
 - ❌ Validated for your individual physiology
 - ❌ A replacement for medical supervision
 
 **What This Tool IS:**
+
 - ✅ A thinking tool for understanding tradeoffs
 - ✅ A harm reduction resource showing diminishing returns
 - ✅ A transparent model with explicit uncertainty
@@ -598,11 +635,13 @@ This tool visualizes dose-response relationships based on limited human data, an
 ### No Overclaiming Language
 
 This tool avoids:
+
 - "Optimal dose is X" → Instead: "appears to peak around X±Y"
 - "The science shows" → Instead: "based on available evidence"
 - "Proven" → Instead: "modeled based on theory + patterns"
 
 For Tier 4 data, explicit warnings:
+
 - "Speculative" or "high uncertainty"
 - "No human data; modeled from animal studies + community reports"
 - "Treat as hypothesis, not established fact"
@@ -639,15 +678,15 @@ SOFTWARE.
 
 ### Primary Literature
 
-1. **Bhasin, S., et al. (1996).** "The effects of supraphysiologic doses of testosterone on muscle size and strength in normal men." *New England Journal of Medicine*, 335(1), 1-7.
+1. **Bhasin, S., et al. (1996).** "The effects of supraphysiologic doses of testosterone on muscle size and strength in normal men." _New England Journal of Medicine_, 335(1), 1-7.
 
-2. **Bhasin, S., et al. (2001).** "Testosterone dose-response relationships in healthy young men." *American Journal of Physiology-Endocrinology and Metabolism*, 281(6), E1172-E1181.
+2. **Bhasin, S., et al. (2001).** "Testosterone dose-response relationships in healthy young men." _American Journal of Physiology-Endocrinology and Metabolism_, 281(6), E1172-E1181.
 
-3. **Yarrow, J. F., et al. (2011).** "Tissue selectivity and potential clinical applications of trenbolone (17β-hydroxyestra-4,9,11-trien-3-one): A potent anabolic steroid with reduced androgenic and estrogenic activity." *Steroids*, 76(1-2), 106-116.
+3. **Yarrow, J. F., et al. (2011).** "Tissue selectivity and potential clinical applications of trenbolone (17β-hydroxyestra-4,9,11-trien-3-one): A potent anabolic steroid with reduced androgenic and estrogenic activity." _Steroids_, 76(1-2), 106-116.
 
-4. **Forbes, G. B. (1985).** "The effect of anabolic steroids on lean body mass: The dose response curve." *Metabolism*, 34(6), 571-573.
+4. **Forbes, G. B. (1985).** "The effect of anabolic steroids on lean body mass: The dose response curve." _Metabolism_, 34(6), 571-573.
 
-5. **Blaquier, J. A., et al. (1991).** "Dose-response relationships for nandrolone decanoate on protein synthesis in rat skeletal muscle." *Journal of Steroid Biochemistry and Molecular Biology*, 39(4), 545-551.
+5. **Blaquier, J. A., et al. (1991).** "Dose-response relationships for nandrolone decanoate on protein synthesis in rat skeletal muscle." _Journal of Steroid Biochemistry and Molecular Biology_, 39(4), 545-551.
 
 ### Community Resources
 
@@ -673,6 +712,7 @@ SOFTWARE.
 ### Feedback
 
 This tool is a living project. If you:
+
 - Find contradictory evidence
 - Have suggestions for UI/UX improvements
 - Encounter bugs or errors
@@ -685,6 +725,7 @@ Please open an issue or submit a PR.
 ## 🗓️ Changelog
 
 ### Version 1.0 (2025-01-XX)
+
 - Initial release
 - All 6 compounds with benefit/risk curves
 - Evidence hierarchy (Tier 1-4)
@@ -695,6 +736,7 @@ Please open an issue or submit a PR.
 - Responsive design (mobile/tablet/desktop)
 
 ### Planned Features (v1.1+)
+
 - [ ] Individual variance slider ("Show my curve if I'm a poor/good responder")
 - [ ] Comparison mode (overlay 2 compounds side-by-side)
 - [ ] Data table view (numerical values for all doses)
@@ -718,4 +760,4 @@ This tool would not exist without:
 
 **Built with ❤️ for harm reduction education**
 
-*Remember: This is a thinking tool, not a prescription. Stay safe, stay informed, and prioritize your health.*
+_Remember: This is a thinking tool, not a prescription. Stay safe, stay informed, and prioritize your health._

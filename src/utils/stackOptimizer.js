@@ -1,5 +1,5 @@
-import { stackOptimizerCombos } from '../data/interactionEngineData';
-import { evaluateStack } from './stackEngine';
+import { stackOptimizerCombos } from "../data/interactionEngineData";
+import { evaluateStack } from "./stackEngine";
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -20,43 +20,54 @@ const buildDoseSamples = (min, max, steps, base) => {
 };
 
 const cartesianProduct = (arrays) =>
-  arrays.reduce((acc, curr) => {
-    const res = [];
-    acc.forEach(prefix => {
-      curr.forEach(item => {
-        res.push([...prefix, item]);
+  arrays.reduce(
+    (acc, curr) => {
+      const res = [];
+      acc.forEach((prefix) => {
+        curr.forEach((item) => {
+          res.push([...prefix, item]);
+        });
       });
-    });
-    return res;
-  }, [[]]);
+      return res;
+    },
+    [[]],
+  );
 
 const optimizeCombo = ({ combo, profile }) => {
-  const { compounds, doseRanges, defaultDoses = {}, steps = 3, id, label, narrative } = combo;
+  const {
+    compounds,
+    doseRanges,
+    defaultDoses = {},
+    steps = 3,
+    id,
+    label,
+    narrative,
+  } = combo;
   if (!compounds?.length) return [];
 
-  const samples = compounds.map(compoundKey => {
+  const samples = compounds.map((compoundKey) => {
     const [min, max] = doseRanges?.[compoundKey] || [0, 1000];
     const base = defaultDoses[compoundKey] ?? (min + max) / 2;
     return buildDoseSamples(min, max, steps, base);
   });
 
   const combinations = cartesianProduct(samples);
-  return combinations.map(sample => {
+  return combinations.map((sample) => {
     const stackEntries = compounds.map((compoundKey, idx) => ({
       compound: compoundKey,
-      dose: sample[idx]
+      dose: sample[idx],
     }));
 
     const evaluation = evaluateStack({
       stackInput: stackEntries,
-      profile
+      profile,
     });
     const totals = evaluation.totals;
 
     return {
       comboId: id,
       label,
-      narrative: narrative || '',
+      narrative: narrative || "",
       compounds,
       doses: stackEntries.reduce((acc, item) => {
         acc[item.compound] = item.dose;
@@ -68,19 +79,17 @@ const optimizeCombo = ({ combo, profile }) => {
       adjustedBenefit: totals.totalBenefit,
       adjustedRisk: totals.totalRisk,
       score: totals.netScore,
-      ratio: totals.brRatio
+      ratio: totals.brRatio,
     };
   });
 };
 
 export const runStackOptimizer = ({ combos, profile }) => {
   const results = [];
-  combos.forEach(combo => {
+  combos.forEach((combo) => {
     results.push(...optimizeCombo({ combo, profile }));
   });
-  return results
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 4);
+  return results.sort((a, b) => b.score - a.score).slice(0, 4);
 };
 
 export const generateStackOptimizerResults = ({ profile }) =>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -21,9 +21,12 @@ class ErrorBoundary extends React.Component {
           <div className="w-10 h-10 rounded-full bg-physio-accent-critical/10 flex items-center justify-center mb-3">
             <span className="text-xl">⚠️</span>
           </div>
-          <h4 className="text-sm font-bold text-physio-text-primary mb-1">Visualization Unavailable</h4>
+          <h4 className="text-sm font-bold text-physio-text-primary mb-1">
+            Visualization Unavailable
+          </h4>
           <p className="text-xs text-physio-text-tertiary max-w-[200px]">
-            We encountered an error rendering this chart. Try adjusting your inputs.
+            We encountered an error rendering this chart. Try adjusting your
+            inputs.
           </p>
         </div>
       );

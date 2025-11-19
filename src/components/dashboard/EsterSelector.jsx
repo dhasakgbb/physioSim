@@ -1,17 +1,17 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { compoundData } from '../../data/compoundData';
+import React, { useState, useRef, useEffect } from "react";
+import { compoundData } from "../../data/compoundData";
 
 const EsterSelector = ({ compoundKey, selectedEster, onChange, color }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
-  
+
   const meta = compoundData[compoundKey];
   // If no esters defined or only 1 option, don't show selector
   const esterOptions = meta?.esters ? Object.entries(meta.esters) : [];
-  
+
   if (esterOptions.length <= 1) return null;
 
-  const currentLabel = meta.esters[selectedEster]?.slug || 'Select';
+  const currentLabel = meta.esters[selectedEster]?.slug || "Select";
 
   // Click outside handler
   useEffect(() => {
@@ -20,8 +20,8 @@ const EsterSelector = ({ compoundKey, selectedEster, onChange, color }) => {
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -33,9 +33,12 @@ const EsterSelector = ({ compoundKey, selectedEster, onChange, color }) => {
         <span className="text-xs font-bold uppercase tracking-wider text-physio-text-secondary group-hover:text-physio-text-primary">
           {currentLabel}
         </span>
-        <svg 
-          className={`w-3 h-3 text-physio-text-tertiary transition-transform ${isOpen ? 'rotate-180' : ''}`} 
-          viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"
+        <svg
+          className={`w-3 h-3 text-physio-text-tertiary transition-transform ${isOpen ? "rotate-180" : ""}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
         >
           <path d="M6 9l6 6 6-6" />
         </svg>
@@ -51,14 +54,17 @@ const EsterSelector = ({ compoundKey, selectedEster, onChange, color }) => {
                 setIsOpen(false);
               }}
               className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors flex justify-between items-center ${
-                selectedEster === key 
-                  ? 'bg-physio-bg-highlight text-white' 
-                  : 'text-physio-text-secondary hover:bg-physio-bg-surface hover:text-physio-text-primary'
+                selectedEster === key
+                  ? "bg-physio-bg-highlight text-white"
+                  : "text-physio-text-secondary hover:bg-physio-bg-surface hover:text-physio-text-primary"
               }`}
             >
               {details.label}
               {selectedEster === key && (
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                <div
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: color }}
+                />
               )}
             </button>
           ))}
