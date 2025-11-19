@@ -7,16 +7,17 @@ import VitalSigns from "./VitalSigns";
 import MechanismMonitor from "./MechanismMonitor";
 import BiomarkerMatrix from "./BiomarkerMatrix";
 import CompoundInspector from "./CompoundInspector";
-import SerumStabilityChart from "./SerumStabilityChart";
 import SignalingNetwork from "./SignalingNetwork";
 import LabReportCard from "./LabReportCard";
 import DonationModal from "../DonationModal";
 import ErrorBoundary from "../ui/ErrorBoundary";
 import { useStack } from "../../context/StackContext";
+import OptimizerPane from "./OptimizerPane";
 
 const Dashboard = () => {
   const {
     stack,
+    setStack,
     userProfile,
     inspectedCompound,
     setInspectedCompound,
@@ -47,21 +48,21 @@ const Dashboard = () => {
                     : "text-physio-text-tertiary hover:text-physio-text-secondary"
                 }`}
               >
-                Net Impact
+                Explore
                 {viewMode === "net" && (
                   <span className="absolute bottom-0 left-0 w-full h-0.5 bg-physio-accent-primary rounded-t-full" />
                 )}
               </button>
               <button
-                onClick={() => setViewMode("pk")}
+                onClick={() => setViewMode("optimize")}
                 className={`relative py-2 text-sm font-medium transition-colors ${
-                  viewMode === "pk"
+                  viewMode === "optimize"
                     ? "text-physio-text-primary"
                     : "text-physio-text-tertiary hover:text-physio-text-secondary"
                 }`}
               >
-                Stability
-                {viewMode === "pk" && (
+                Optimize
+                {viewMode === "optimize" && (
                   <span className="absolute bottom-0 left-0 w-full h-0.5 bg-physio-accent-primary rounded-t-full" />
                 )}
               </button>
@@ -75,6 +76,19 @@ const Dashboard = () => {
               >
                 Signaling
                 {viewMode === "network" && (
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-physio-accent-primary rounded-t-full" />
+                )}
+              </button>
+              <button
+                onClick={() => setViewMode("pk")}
+                className={`relative py-2 text-sm font-medium transition-colors ${
+                  viewMode === "pk"
+                    ? "text-physio-text-primary"
+                    : "text-physio-text-tertiary hover:text-physio-text-secondary"
+                }`}
+              >
+                Stability
+                {viewMode === "pk" && (
                   <span className="absolute bottom-0 left-0 w-full h-0.5 bg-physio-accent-primary rounded-t-full" />
                 )}
               </button>
@@ -101,12 +115,22 @@ const Dashboard = () => {
         // ZONE B: The Visualization
         centerStage={
           <ErrorBoundary>
-            {viewMode === "pk" ? (
-              <SerumStabilityChart stack={stack} />
-            ) : viewMode === "network" ? (
+            {viewMode === "network" ? (
               <SignalingNetwork stack={stack} metrics={metrics} />
+            ) : viewMode === "optimize" ? (
+              <OptimizerPane
+                stack={stack}
+                userProfile={userProfile}
+                onApplyOptimization={(newStack) => {
+                  setStack(newStack);
+                  setViewMode("net");
+                }}
+              />
             ) : (
-              <NetEffectChart stack={stack} userProfile={userProfile} />
+              <NetEffectChart
+                stack={stack}
+                userProfile={userProfile}
+              />
             )}
           </ErrorBoundary>
         }

@@ -832,7 +832,7 @@ export const compoundData = {
       },
       {
         dose: 300,
-        value: 3.8,
+        value: 4.0,
         tier: "Tier 4",
         source: "Forum aggregates",
         caveat: "High risk; insomnia/paranoia common",
@@ -840,7 +840,7 @@ export const compoundData = {
       },
       {
         dose: 400,
-        value: 4.5,
+        value: 5.2,
         tier: "Tier 4",
         source: "Anecdotal patterns",
         caveat: "Severe risk; aggression/paranoia ~70%; severe lipid decline",
@@ -848,7 +848,7 @@ export const compoundData = {
       },
       {
         dose: 500,
-        value: 4.9,
+        value: 6.1,
         tier: "Tier 4",
         source: "Anecdotal patterns",
         caveat: "Very high risk; psychological sides dominate",
@@ -856,7 +856,7 @@ export const compoundData = {
       },
       {
         dose: 600,
-        value: 5.0,
+        value: 7.0,
         tier: "Tier 4",
         source: "Anecdotal patterns",
         caveat: "CRITICAL RISK ZONE - unknown cardio risk",
@@ -864,7 +864,7 @@ export const compoundData = {
       },
       {
         dose: 800,
-        value: 7.5,
+        value: 9.0,
         tier: "Tier 4",
         source: "Extrapolated",
         caveat: "Extreme toxicity",
@@ -872,7 +872,7 @@ export const compoundData = {
       },
       {
         dose: 1000,
-        value: 10.0,
+        value: 12.0,
         tier: "Tier 4",
         source: "Extrapolated",
         caveat: "Organ damage likely",
@@ -880,7 +880,7 @@ export const compoundData = {
       },
       {
         dose: 1200,
-        value: 13.0,
+        value: 15.0,
         tier: "Tier 4",
         source: "Extrapolated",
         caveat: "Life threatening",
@@ -1042,6 +1042,7 @@ export const compoundData = {
     color: "#00AA00",
     abbreviation: "EQ",
     type: "injectable",
+    bioavailability: 1.0,
     suppressiveFactor: 3,
     flags: { aromatization: 0.5 },
     category: "endurance",
@@ -1295,6 +1296,7 @@ export const compoundData = {
     color: "#9933FF",
     abbreviation: "Masteron",
     type: "injectable",
+    bioavailability: 1.0,
     suppressiveFactor: 2,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: "propionate",
@@ -1537,6 +1539,7 @@ export const compoundData = {
     color: "#996633",
     abbreviation: "Primo",
     type: "injectable",
+    bioavailability: 1.0,
     suppressiveFactor: 2,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: "enanthate",

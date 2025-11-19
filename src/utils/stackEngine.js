@@ -293,6 +293,7 @@ export const evaluateStack = ({
   sensitivities = defaultSensitivities,
   evidenceBlend = CONSTANTS.EVIDENCE_BLEND,
   disableInteractions = false,
+  durationWeeks = 12,
 } = {}) => {
   // 0. Validation & Normalization
   const { compounds, doses } = normalizeStackInput(stackInput);
@@ -310,6 +311,14 @@ export const evaluateStack = ({
     byCompound: {},
     activeCompounds: [], // For global penalties
   };
+
+  // Calculate Duration Penalties
+  // 1. Oral Toxicity is Exponential over time (Safe baseline ~6 weeks)
+  const oralDurationPenalty =
+    durationWeeks > 6 ? Math.pow(durationWeeks / 6, 1.5) : 1.0;
+
+  // 2. HPTA Suppression is Linear over time (Recovery gets harder)
+  const suppressionPenalty = Math.max(0, (durationWeeks - 12) / 4) * 0.5;
 
   // SHBG Logic (Dose Dependent)
   let shbgCrushScore = 0;
@@ -380,6 +389,11 @@ export const evaluateStack = ({
       isOral,
     );
     riskVal *= stabilityPenalty;
+
+    // Apply Oral Duration Penalty
+    if (isOral) {
+      riskVal *= oralDurationPenalty;
+    }
 
     // F. Bucket Sorting
     if (meta.pathway === "non_genomic") {
@@ -477,12 +491,22 @@ export const evaluateStack = ({
     state.activeCompounds,
     finalRisk,
   );
-  const adjustedRisk = finalRisk + protocolPenalty;
+  const adjustedRisk = finalRisk + protocolPenalty + suppressionPenalty;
+
+  // 2. Apply Time-Based Toxicity Scaling (The "Time Machine" Logic)
+  // Liver/Kidney stress compounds over time.
+  // Formula: If duration > 8 weeks, risk scales non-linearly.
+  const timePenaltyFactor =
+    durationWeeks > 8 ? Math.pow(durationWeeks / 8, 1.5) : 1.0;
+
+  // Apply to the adjustedRisk
+  // We apply this AFTER the protocol penalties
+  const chronicRisk = adjustedRisk * timePenaltyFactor;
 
   // 6. Final Scoring
-  const netScore = finalBenefit - adjustedRisk;
+  const netScore = finalBenefit - chronicRisk;
   const brRatio =
-    adjustedRisk > 0.1 ? finalBenefit / adjustedRisk : finalBenefit; // Prevent div/0
+    chronicRisk > 0.1 ? finalBenefit / chronicRisk : finalBenefit; // Prevent div/0
 
   // 7. Construct Result
   return {
@@ -493,7 +517,7 @@ export const evaluateStack = ({
       baseBenefit: state.genomicBenefit + state.nonGenomicBenefit,
       baseRisk: state.rawRiskSum,
       totalBenefit: Number(finalBenefit.toFixed(2)),
-      totalRisk: Number(adjustedRisk.toFixed(2)),
+      totalRisk: Number(chronicRisk.toFixed(2)),
       netScore: Number(netScore.toFixed(2)),
       brRatio: Number(brRatio.toFixed(2)),
 

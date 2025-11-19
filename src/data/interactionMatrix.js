@@ -1268,6 +1268,61 @@ export const interactionMatrix = {
     stackRisk: "High",
     rating: "caution",
   },
+
+  // --- ANCILLARY INTERACTIONS ---
+
+  // 1. TESTOSTERONE + ARIMIDEX (The Estrogen Shield)
+  testosterone_arimidex: {
+    description: 'Estrogen Management',
+    synergy: { benefit: 0, risk: -0.5 }, // REDUCES Risk (High Value)
+    mechanisms: [
+      'Arimidex inhibits aromatase, lowering conversion of Test to Estrogen',
+      'Prevents water retention and gynecomastia',
+      'Warning: Too much can crush E2, causing joint pain and libido loss'
+    ],
+    recommendation: 'Use only if symptoms appear or dose > 500mg',
+    rating: 'good'
+  },
+
+  // 2. DIANABOL + ARIMIDEX (The Partial Shield)
+  dianabol_arimidex: {
+    description: 'Partial Estrogen Blockade',
+    synergy: { benefit: 0, risk: -0.2 }, // Less effective than against Test
+    mechanisms: [
+      'Dianabol converts to Methyl-Estradiol (resistant to Arimidex)',
+      'Arimidex helps, but cannot fully block Dbol estrogenic activity',
+      'SERMs (Nolvadex) often required alongside'
+    ],
+    recommendation: 'Monitor closely; Adex may not be enough',
+    rating: 'caution'
+  },
+
+  // 3. TESTOSTERONE + FINASTERIDE (The Hair Saver)
+  testosterone_finasteride: {
+    description: 'DHT Blockade (Hair Protection)',
+    synergy: { benefit: 0, risk: -0.3 }, // Reduces Androgenic Risk
+    mechanisms: [
+      'Blocks conversion of Test to DHT (the primary driver of hair loss)',
+      'Protects prostate and hair follicles',
+      'May slightly reduce neuro-drive (DHT is neuroactive)'
+    ],
+    recommendation: 'Standard protocol for MPB-prone users',
+    rating: 'good'
+  },
+
+  // 4. NANDROLONE + FINASTERIDE (The "Paradox" Trap)
+  npp_finasteride: {
+    description: '❌ HAIR LOSS ACCELERATOR',
+    synergy: { benefit: 0, risk: 0.5 }, // INCREASES Risk
+    mechanisms: [
+      'Finasteride blocks conversion of Nandrolone to DHN',
+      'DHN is a WEAK androgen; Nandrolone is a STRONG androgen',
+      'Blocking 5-AR leaves more potent Nandrolone to attack hair follicles',
+      'Result: Finasteride makes hair loss WORSE on Deca/NPP'
+    ],
+    recommendation: 'FORBIDDEN: Do not mix 19-nors with 5-AR inhibitors',
+    rating: 'forbidden'
+  }
 };
 
 /**

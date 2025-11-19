@@ -25,14 +25,16 @@ export const StackProvider = ({ children }) => {
   const [userProfile, setUserProfile] = useState(defaultProfile);
   const [inspectedCompound, setInspectedCompound] = useState(null);
   const [viewMode, setViewMode] = useState("net"); // 'net', 'pk', 'radar'
+  const [durationWeeks, setDurationWeeks] = useState(12);
 
   // 2. The Brain
   const metrics = useMemo(() => {
     return evaluateStack({
       stackInput: stack,
       profile: userProfile,
+      durationWeeks,
     });
-  }, [stack, userProfile]);
+  }, [stack, userProfile, durationWeeks]);
 
   // 3. Actions
   const handleAddCompound = useCallback(
@@ -90,12 +92,15 @@ export const StackProvider = ({ children }) => {
 
   const value = {
     stack,
+    setStack,
     userProfile,
     setUserProfile,
     inspectedCompound,
     setInspectedCompound,
     viewMode,
     setViewMode,
+    durationWeeks,
+    setDurationWeeks,
     metrics,
     handleAddCompound,
     handleDoseChange,

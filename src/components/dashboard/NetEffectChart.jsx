@@ -127,7 +127,11 @@ const CustomTooltip = ({ active, payload, label, crossover }) => {
   );
 };
 
-const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
+const NetEffectChart = ({
+  stack,
+  userProfile = defaultProfile,
+  durationWeeks = 12,
+}) => {
   // 1. Generate Projection Data
   const { data, crossover } = useMemo(() => {
     if (stack.length === 0) return { data: [], crossover: null };
@@ -149,6 +153,7 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
       const result = evaluateStack({
         stackInput: hypotheticalStack,
         profile: userProfile,
+        durationWeeks,
       });
 
       // Calculate Saturation % for this point
@@ -188,7 +193,7 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
       });
     }
     return { data: points, crossover: foundCrossover };
-  }, [stack, userProfile]);
+  }, [stack, userProfile, durationWeeks]);
 
   // Determine Current Risk State (at 100%)
   const currentRisk = useMemo(() => {

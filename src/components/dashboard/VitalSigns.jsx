@@ -5,31 +5,52 @@ import { compoundData } from "../../data/compoundData";
 
 // Helper to calculate organ-specific loads from the stack analysis
 const calculateOrganLoad = (stack) => {
-  // Baseline loads (simplified logic for visualization)
   const loads = { heart: 0, liver: 0, mind: 0, estrogen: 0 };
 
   stack.forEach((item) => {
     const meta = compoundData[item.compound];
     if (!meta) return;
 
-    // Normalize dose intensity (approximate "high" dose baseline)
+    // Normalize dose intensity
     const doseFactor = item.dose / (meta.type === "oral" ? 50 : 400);
 
-    if (meta.category === "oral_mass" || meta.category === "oral_cutting")
-      loads.liver += doseFactor * 2.5;
-    if (meta.category === "oral_extreme") loads.liver += doseFactor * 4.0; // Halo/Superdrol
+    // --- LIVER LOGIC ---
+    // 1. Orals (Acute Toxicity)
+    if (meta.type === "oral") {
+      // Check toxicity tier if available, otherwise default based on category
+      const tier =
+        meta.toxicityTier || (meta.category === "oral_extreme" ? 4 : 2);
+      loads.liver += doseFactor * tier;
+    }
 
-    if (item.compound === "trenbolone" || item.compound === "halotestin")
+    // 2. Trenbolone (Metabolic/Lipid Stress)
+    // Tren places a load of "2" (Moderate) vs Anadrol's "4" (Severe)
+    if (item.compound === "trenbolone") {
+      loads.liver += doseFactor * 2.0;
+    }
+
+    // --- MIND LOGIC ---
+    if (item.compound === "trenbolone" || item.compound === "halotestin") {
       loads.mind += doseFactor * 3.0;
-    if (item.compound === "eq" || item.compound === "testosterone")
-      loads.heart += doseFactor * 1.5; // BP/RBC
-    if (item.compound === "trenbolone") loads.heart += doseFactor * 2.0; // Renal/BP
+    }
+    if (item.compound === "testosterone" && item.dose > 600) {
+      loads.mind += doseFactor * 1.0; // High Test aggression
+    }
 
-    if (["testosterone", "dianabol", "anadrol"].includes(item.compound))
+    // --- HEART LOGIC ---
+    if (item.compound === "eq" || item.compound === "testosterone")
+      loads.heart += doseFactor * 1.5;
+    if (item.compound === "trenbolone") loads.heart += doseFactor * 2.5; // Renal stress + BP
+    if (item.compound === "anadrol" || item.compound === "dianabol")
+      loads.heart += doseFactor * 2.0; // Water retention BP
+
+    // --- ESTROGEN LOGIC ---
+    if (["testosterone", "dianabol", "ment"].includes(item.compound)) {
       loads.estrogen += doseFactor * 2.0;
+    }
   });
 
-  // Cap values for the bars (0-10 scale)
+  // Cap values
   return {
     heart: Math.min(loads.heart, 10),
     liver: Math.min(loads.liver, 10),

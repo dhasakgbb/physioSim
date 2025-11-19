@@ -206,39 +206,11 @@ const SignalingNetwork = ({ stack, metrics }) => {
       node.intensity = pathwayLoads[node.key];
     });
 
-    // --- D. OUTPUT NODES ---
+    // --- D. CALCULATE OUTPUT LOADS & LINKS (Pathway -> Output) ---
+    // Moved before Output Node creation to populate 'mood' value
     const outputKeys = Object.keys(OUTCOME_NODES);
     const outputLoads = { muscle: 0, fat_loss: 0, mood: 0, stress: 0 };
 
-    outputKeys.forEach((key, idx) => {
-      let displayValue = 0;
-      let displayLabel = OUTCOME_NODES[key].label;
-
-      // Inject Real Metrics if available
-      if (metrics && metrics.totals) {
-        const t = metrics.totals;
-        if (key === "muscle")
-          displayValue = Number(t.genomicBenefit.toFixed(1));
-        if (key === "stress") displayValue = Number(t.totalRisk.toFixed(1));
-        if (key === "fat_loss")
-          displayValue = Number((t.totalBenefit * 0.35).toFixed(1));
-        if (key === "mood")
-          displayValue = Number(t.nonGenomicBenefit.toFixed(1));
-      }
-
-      outputNodes.push({
-        id: `out-${key}`,
-        type: "output",
-        key: key,
-        label: displayLabel,
-        displayValue: displayValue,
-        color: OUTCOME_NODES[key].color,
-        y: idx * ROW_HEIGHT + outputStartY,
-        x: 2, // Right
-      });
-    });
-
-    // --- E. CALCULATE OUTPUTS & LINKS (Pathway -> Output) ---
     pathwayNodes.forEach((pNode) => {
       if (pNode.intensity <= 0) return;
 
@@ -261,7 +233,36 @@ const SignalingNetwork = ({ stack, metrics }) => {
       });
     });
 
-    // Update Output Nodes
+    // --- E. OUTPUT NODES ---
+    outputKeys.forEach((key, idx) => {
+      let displayValue = 0;
+      let displayLabel = OUTCOME_NODES[key].label;
+
+      // Inject Real Metrics if available
+      if (metrics && metrics.totals) {
+        const t = metrics.totals;
+        if (key === "muscle")
+          displayValue = Number(t.genomicBenefit.toFixed(1));
+        if (key === "stress") displayValue = Number(t.totalRisk.toFixed(1));
+        if (key === "fat_loss")
+          displayValue = Number((t.totalBenefit * 0.35).toFixed(1));
+        // FIX: Use graph-calculated load for Mood since Engine doesn't aggregate it well
+        if (key === "mood") displayValue = Number(outputLoads.mood.toFixed(1));
+      }
+
+      outputNodes.push({
+        id: `out-${key}`,
+        type: "output",
+        key: key,
+        label: displayLabel,
+        displayValue: displayValue,
+        color: OUTCOME_NODES[key].color,
+        y: idx * ROW_HEIGHT + outputStartY,
+        x: 2, // Right
+      });
+    });
+
+    // Update Output Nodes with Intensity (for visual glow)
     outputNodes.forEach((node) => {
       node.intensity = outputLoads[node.key];
     });
