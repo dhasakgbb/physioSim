@@ -8,6 +8,7 @@ import MechanismMonitor from './MechanismMonitor';
 import BiomarkerMatrix from './BiomarkerMatrix';
 import CompoundInspector from './CompoundInspector';
 import SerumStabilityChart from './SerumStabilityChart';
+import OutcomeRadar from './OutcomeRadar';
 import LabReportCard from './LabReportCard';
 import { compoundData } from '../../data/compoundData';
 import { evaluateStack } from '../../utils/stackEngine';
@@ -18,7 +19,7 @@ const Dashboard = () => {
   const [stack, setStack] = useState([]);
   const [userProfile] = useState(defaultProfile);
   const [inspectedCompound, setInspectedCompound] = useState(null);
-  const [viewMode, setViewMode] = useState('net'); // 'net' or 'pk'
+  const [viewMode, setViewMode] = useState('net'); // 'net', 'pk', 'radar'
 
   // 2. The Brain
   const metrics = useMemo(() => {
@@ -102,13 +103,21 @@ const Dashboard = () => {
             >
               Stability (PK)
             </button>
+            <button 
+              onClick={() => setViewMode('radar')}
+              className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'radar' ? 'bg-physio-bg-highlight text-white shadow-sm' : 'text-physio-text-tertiary hover:text-physio-text-primary'}`}
+            >
+              Phenotype
+            </button>
           </div>
 
           {/* View Switcher */}
           {viewMode === 'net' ? (
             <NetEffectChart stack={stack} userProfile={userProfile} />
-          ) : (
+          ) : viewMode === 'pk' ? (
             <SerumStabilityChart stack={stack} />
+          ) : (
+            <OutcomeRadar metrics={metrics} />
           )}
         </>
       }

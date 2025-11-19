@@ -30,6 +30,7 @@ export const compoundData = {
       e2_conversion: +2 // The standard aromatizer
     },
     halfLife: 108, // ~4.5 days (Enanthate/Cypionate)
+    phenotype: { hypertrophy: 8, strength: 7, endurance: 6, conditioning: 3 },
     modelConfidence: 0.81,
     evidenceProvenance: { human: 5, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -144,6 +145,7 @@ export const compoundData = {
       hair_safe: +2   // Converts to DHN (Weak androgen) - Specialized Benefit
     },
     halfLife: 60, // ~2.5 days (Phenylpropionate)
+    phenotype: { hypertrophy: 7, strength: 6, endurance: 8, conditioning: 5 },
     modelConfidence: 0.61,
     evidenceProvenance: { human: 2, animal: 3, aggregate: 5 },
     varianceDrivers: [
@@ -250,8 +252,9 @@ export const compoundData = {
       prolactin: +2,  // Progestin activity
       neuro: -3       // Dopaminergic destabilization
     },
-    halfLife: 24, // ~1 day (Acetate)
-    modelConfidence: 0.44,
+    halfLife: 48,
+    phenotype: { hypertrophy: 7, strength: 9, endurance: 1, conditioning: 10 },
+    modelConfidence: 0.54,
     evidenceProvenance: { human: 0, animal: 4, aggregate: 7 },
     varianceDrivers: [
       'Sympathetic nervous system sensitivity (anxiety/insomnia)',
@@ -370,7 +373,8 @@ export const compoundData = {
       prolactin: 0
     },
     halfLife: 336, // ~14 days (Undecylenate)
-    modelConfidence: 0.58,
+    phenotype: { hypertrophy: 6, strength: 5, endurance: 10, conditioning: 6 },
+    modelConfidence: 0.72,
     evidenceProvenance: { human: 1, animal: 3, aggregate: 4 },
     varianceDrivers: [
       'Baseline hematocrit/RBC levels dictate cardio risk',
@@ -472,6 +476,7 @@ export const compoundData = {
       anti_e: +2      // Unique: Local anti-estrogenic action
     },
     halfLife: 48, // ~2 days (Propionate)
+    phenotype: { hypertrophy: 4, strength: 5, endurance: 3, conditioning: 9 },
     modelConfidence: 0.55,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -565,8 +570,9 @@ export const compoundData = {
       cortisol: 0,
       prolactin: 0
     },
-    halfLife: 240, // ~10 days (Enanthate)
-    modelConfidence: 0.57,
+    halfLife: 6,
+    phenotype: { hypertrophy: 10, strength: 8, endurance: 5, conditioning: 1 },
+    modelConfidence: 0.59,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
     varianceDrivers: [
       'High counterfeit/underdosed risk (costly compound)',
@@ -659,8 +665,9 @@ export const compoundData = {
       prolactin: 0,
       aromatization: +3 // Heavy methyl-estradiol conversion
     },
-    halfLife: 4, // ~4 hours
-    modelConfidence: 0.33,
+    halfLife: 24,
+    phenotype: { hypertrophy: 9, strength: 6, endurance: 5, conditioning: 4 },
+    modelConfidence: 0.63,
     evidenceProvenance: { human: 0, animal: 1, aggregate: 6 },
     varianceDrivers: [
       'Sodium intake + water retention habits swing perceived benefit',
@@ -781,6 +788,7 @@ export const compoundData = {
       estrogenic_activity: +3 // Direct ER activation
     },
     halfLife: 8, // ~8 hours
+    phenotype: { hypertrophy: 9, strength: 9, endurance: 3, conditioning: 6 },
     modelConfidence: 0.31,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 5 },
     varianceDrivers: [
@@ -903,6 +911,7 @@ export const compoundData = {
       joints: -3      // The "Dry" penalty
     },
     halfLife: 9, // ~9 hours
+    phenotype: { hypertrophy: 3, strength: 6, endurance: 7, conditioning: 8 },
     modelConfidence: 0.4,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -1020,6 +1029,7 @@ export const compoundData = {
       prolactin: 0
     },
     halfLife: 9, // ~9 hours
+    phenotype: { hypertrophy: 5, strength: 7, endurance: 7, conditioning: 8 },
     modelConfidence: 0.48,
     evidenceProvenance: { human: 2, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -1131,8 +1141,9 @@ export const compoundData = {
       prolactin: 0,
       cns_drive: +3   // The primary feature
     },
-    halfLife: 9, // ~9 hours
-    modelConfidence: 0.27,
+    halfLife: 96,
+    phenotype: { hypertrophy: 6, strength: 5, endurance: 7, conditioning: 7 },
+    modelConfidence: 0.67,
     evidenceProvenance: { human: 0, animal: 1, aggregate: 4 },
     varianceDrivers: [
       'Neurotransmitter sensitivity (aggression/anxiety)',
@@ -1264,6 +1275,7 @@ export const compoundData = {
       libido: +3      // CNS/Androgenic libido driver
     },
     halfLife: 12, // ~12 hours
+    phenotype: { hypertrophy: 2, strength: 4, endurance: 2, conditioning: 7 },
     // Minimal curves because it's not really for "Mass"
     benefitCurve: [
       { dose: 0, value: 0 }, { dose: 25, value: 0.5 }, { dose: 50, value: 0.8 }, { dose: 100, value: 0.9 }
@@ -1307,6 +1319,8 @@ export const compoundData = {
     category: 'oral_performance',
     pathway: 'non_genomic',
     bindingAffinity: 'low',
+    halfLife: 9,
+    phenotype: { hypertrophy: 5, strength: 7, endurance: 7, conditioning: 8 },
     modelConfidence: 0.65, // East German data
     biomarkers: {
       shbg: -2,       // Strong binding

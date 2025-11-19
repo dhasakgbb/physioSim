@@ -257,6 +257,34 @@ export const evaluateStack = ({
   const netScore = finalBenefit - adjustedRisk; // Use adjustedRisk
   const brRatio = adjustedRisk > 0 ? finalBenefit / adjustedRisk : finalBenefit;
 
+  // 6. Calculate Phenotype Profile
+  const phenotype = { hypertrophy: 0, strength: 0, endurance: 0, conditioning: 0 };
+
+  compounds.forEach(code => {
+    const item = stackInput.find(i => i.compound === code);
+    const meta = compoundData[code];
+    const dose = item?.dose || doses[code] || 0;
+    
+    // Skip zero-dose compounds entirely
+    if (!meta?.phenotype || dose === 0) return;
+
+    // Calculate Intensity (0 to 1.0 scale based on max useful dose)
+    const ceiling = meta.type === 'oral' ? 80 : 600; 
+    const intensity = Math.min(dose / ceiling, 1.2); // Cap at 120% intensity
+
+    phenotype.hypertrophy += meta.phenotype.hypertrophy * intensity;
+    phenotype.strength += meta.phenotype.strength * intensity;
+    
+    // Endurance is tricky: Tren actively SUBTRACTS from it
+    if (code === 'trenbolone') {
+      phenotype.endurance -= (10 - meta.phenotype.endurance) * intensity; // Penalize
+    } else {
+      phenotype.endurance += meta.phenotype.endurance * intensity;
+    }
+    
+    phenotype.conditioning += meta.phenotype.conditioning * intensity;
+  });
+
   return {
     byCompound,
     pairInteractions,
@@ -273,7 +301,14 @@ export const evaluateStack = ({
       protocolPenalty: protocolPenalty, // Expose for debugging
       // NEW: Export pathway breakdown for chart tooltips
       genomicBenefit: Number(finalGenomic.toFixed(2)),
-      nonGenomicBenefit: Number(nonGenomicBenefit.toFixed(2))
+      nonGenomicBenefit: Number(nonGenomicBenefit.toFixed(2)),
+      // Phenotype Profile
+      phenotype: {
+        hypertrophy: Number(phenotype.hypertrophy.toFixed(2)),
+        strength: Number(phenotype.strength.toFixed(2)),
+        endurance: Number(phenotype.endurance.toFixed(2)),
+        conditioning: Number(phenotype.conditioning.toFixed(2))
+      }
     }
   };
 };
