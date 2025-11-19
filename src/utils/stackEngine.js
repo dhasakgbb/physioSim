@@ -63,15 +63,23 @@ const calculateGlobalPenalties = (compounds, doses, currentRisk) => {
   });
 
   // Penalty A: "Crashed E2" (No Test Base)
-  // If running suppressives (>200mg) with negligible estrogen (<100mg Test equivalent)
-  if (totalSuppressives > 200 && totalEstrogenLoad < 100) {
-    penalty += 3.0; // Massive penalty for "No Test Base" with suppressives
+  // Gradual penalty based on the ratio of suppressives to aromatizing compounds
+  // This avoids sharp spikes in the chart
+  if (totalSuppressives > 200) {
+    const estrogenRatio = totalEstrogenLoad / totalSuppressives;
+    // If ratio < 0.4 (e.g., 200mg Test for 500mg Tren), apply penalty
+    // Penalty scales from 0 to 3.0 as ratio approaches 0
+    if (estrogenRatio < 0.4) {
+      const deficitSeverity = 1 - (estrogenRatio / 0.4); // 0 to 1
+      penalty += deficitSeverity * 3.0; // Smooth curve from 0 to 3.0
+    }
   }
 
   // Penalty B: "Estrogen Overload"
   // If estrogen load > 1000mg Test equivalent, management becomes exponential
   if (totalEstrogenLoad > 1000) {
-    penalty += 1.0;
+    const excess = totalEstrogenLoad - 1000;
+    penalty += Math.min(excess / 1000, 2.0); // Gradual up to 2.0
   }
 
   // 3. Renal Stress (Trenbolone + BP Drivers)

@@ -64,8 +64,7 @@ const StackCard = ({ item, onChange, onRemove, onInspect, onEsterChange, onFrequ
 
   return (
     <div 
-      onClick={onInspect}
-      className="group relative p-4 bg-physio-bg-core border border-physio-border-subtle rounded-xl transition-all hover:border-physio-accent-primary/30 hover:shadow-neo-sm cursor-pointer"
+      className="group relative p-4 bg-physio-bg-core border border-physio-border-subtle rounded-xl transition-all hover:border-physio-accent-primary/30 hover:shadow-neo-sm"
     >
       {/* Color Strip */}
       <div 
@@ -74,40 +73,57 @@ const StackCard = ({ item, onChange, onRemove, onInspect, onEsterChange, onFrequ
       />
 
       <div className="pl-3">
-        <div className="flex justify-between items-start mb-3">
-          <div className="flex flex-col gap-1">
-            <h3 className="text-sm font-semibold text-physio-text-primary flex items-center gap-2">
-              {meta.name}
-            </h3>
+        {/* Header Row */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <h4 className="text-sm font-bold text-physio-text-primary">{meta.name}</h4>
             
-            {/* Controls Row: Ester + Frequency + Category */}
-            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-               <EsterSelector 
-                 compoundKey={item.compound}
-                 selectedEster={selectedEster}
-                 color={meta.color}
-                 onChange={(newEster) => onEsterChange(newEster)}
-               />
-               
-               {/* NEW Frequency Selector */}
-               <FrequencySelector 
-                 value={frequency} 
-                 onChange={(val) => onFrequencyChange(val)} 
-               />
-               
-               <span className="text-[10px] text-physio-text-tertiary uppercase tracking-wider">
-                 {meta.category}
-               </span>
-            </div>
+            {/* Info Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onInspect();
+              }}
+              className="p-1 rounded-full hover:bg-physio-bg-highlight/50 text-physio-text-tertiary hover:text-physio-accent-primary transition-colors"
+              title="View compound details"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
           </div>
+
           <button 
-            onClick={(e) => { e.stopPropagation(); onRemove(); }}
-            className="text-physio-text-tertiary hover:text-physio-accent-critical transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            className="p-1.5 hover:bg-physio-accent-critical/10 rounded-lg text-physio-text-tertiary hover:text-physio-accent-critical transition-colors"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+            ✕
           </button>
+        </div>
+
+        {/* Controls Row: Ester + Frequency + Category */}
+        <div className="flex items-center gap-2 mb-3">
+          <EsterSelector 
+            compoundKey={item.compound}
+            selectedEster={selectedEster}
+            color={meta.color}
+            onChange={(newEster) => onEsterChange(newEster)}
+          />
+          
+          {/* NEW Frequency Selector */}
+          <FrequencySelector 
+            value={frequency} 
+            onChange={(val) => onFrequencyChange(val)} 
+            color={meta.color}
+          />
+          
+          {/* Category Badge */}
+          <span className="text-[9px] uppercase tracking-wider text-physio-text-tertiary border border-physio-border-subtle px-2 py-0.5 rounded">
+            {meta.category}
+          </span>
         </div>
 
         <div onClick={(e) => e.stopPropagation()}>
