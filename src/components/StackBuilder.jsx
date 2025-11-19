@@ -6,25 +6,24 @@ import { defaultProfile } from '../utils/personalization';
 import { evaluateStack } from '../utils/stackEngine';
 import { loadCycles, saveCycle, deleteCycle } from '../utils/cycleStore';
 import PDFExport from './PDFExport';
-import GuardrailChip from './GuardrailChip';
 import NavigationRail from './NavigationRail';
-import DoseSlider from './DoseSlider';
 import { deriveDoseWindow } from '../utils/doseWindows';
+import Card from './ui/Card';
+import Button from './ui/Button';
+import Badge from './ui/Badge';
+import Slider from './ui/Slider';
+import Input from './ui/Input';
 
 const stackScoringLabel = 'Net benefit − risk';
 
-const OrientationBar = ({ items, tone = 'default' }) => {
-  const toneClasses = tone === 'accent'
-    ? 'bg-physio-bg-tertiary/50 border-physio-accent-cyan/30 backdrop-blur-sm'
-    : 'bg-physio-bg-core/50 border-physio-bg-border/50 backdrop-blur-sm';
-
+const OrientationBar = ({ items }) => {
   return (
     <div className="sticky top-3 z-30">
-      <div className={`${toneClasses} rounded-2xl px-4 py-2 border flex flex-wrap items-center gap-4 text-xs uppercase tracking-wider text-physio-text-tertiary shadow-lg`}>
+      <div className="glass-panel rounded-2xl px-4 py-2 flex flex-wrap items-center gap-4 text-xs uppercase tracking-wider text-physio-text-secondary shadow-neo-sm">
         {items.map(({ label, value }, index) => (
           <div key={`${label}-${index}`} className="flex items-center gap-2">
-            <span className="font-bold">{label}</span>
-            <span className="text-physio-text-primary font-mono normal-case bg-white/5 px-1.5 py-0.5 rounded">
+            <span className="font-bold text-physio-text-tertiary">{label}</span>
+            <span className="text-physio-text-primary font-mono normal-case bg-physio-bg-highlight/50 px-1.5 py-0.5 rounded border border-physio-border-subtle">
               {value}
             </span>
           </div>
@@ -34,77 +33,6 @@ const OrientationBar = ({ items, tone = 'default' }) => {
   );
 };
 
-const bucketRegistry = {
-  lean_mass: { type: 'benefit', label: 'lean-mass benefit' },
-  cosmetic: { type: 'benefit', label: 'cosmetic benefit' },
-  strength: { type: 'benefit', label: 'strength output' },
-  joints: { type: 'benefit', label: 'joint relief' },
-  cardio: { type: 'risk', label: 'cardio risk' },
-  blood: { type: 'risk', label: 'blood viscosity risk' },
-  estrogenic: { type: 'risk', label: 'estrogenic drag' },
-  neuro: { type: 'risk', label: 'neuro load' },
-  low_e2: { type: 'risk', label: 'low-E2 strain' },
-  hepatic: { type: 'risk', label: 'hepatic stress' }
-};
-
-const dimensionToBucket = {
-  anabolic: 'lean_mass',
-  vascularity: 'cosmetic',
-  strength: 'strength',
-  joint: 'joints',
-  bp: 'cardio',
-  hematocrit: 'blood',
-  bloat: 'estrogenic',
-  neuro: 'neuro',
-  estrogenic: 'low_e2',
-  hepatic: 'hepatic'
-};
-
-const formatNarrativeDelta = value => {
-  const rounded = Math.abs(value).toFixed(1);
-  return `${value >= 0 ? '+' : '-'}${rounded}`;
-};
-
-const pluralize = (count, singular, plural) => (Math.abs(count) === 1 ? singular : plural);
-
-const formatSignedDelta = (delta, singular, plural) => {
-  const abs = Math.abs(delta);
-  if (!abs) return null;
-  const prefix = delta > 0 ? `+${abs}` : `-${abs}`;
-  const noun = pluralize(abs, singular, plural);
-  return `${prefix} ${noun}`;
-};
-
-const describeAncillaryDelta = (baseline = null, contender = null) => {
-  if (!baseline || !contender) return '';
-  const essentialDelta = contender.essential.length - baseline.essential.length;
-  const recommendedDelta = contender.recommended.length - baseline.recommended.length;
-  const monitoringDelta = contender.monitoring.length - baseline.monitoring.length;
-  const costDelta = contender.totalWeeklyCost - baseline.totalWeeklyCost;
-
-  const clauses = [];
-  const essentialText = formatSignedDelta(essentialDelta, 'essential med', 'essential meds');
-  if (essentialText) clauses.push(essentialText);
-  const recommendedText = formatSignedDelta(recommendedDelta, 'recommended med', 'recommended meds');
-  if (recommendedText) clauses.push(recommendedText);
-  const labText = formatSignedDelta(monitoringDelta, 'lab draw', 'lab draws');
-  if (labText) clauses.push(labText);
-
-  let sentence = '';
-  if (clauses.length) {
-    sentence = `Ancillary plan shifts ${clauses.join(', ')}`;
-  }
-
-  if (Math.abs(costDelta) >= 1) {
-    const costPhrase = costDelta >= 0
-      ? `costs an extra $${Math.abs(costDelta).toFixed(2)}/wk`
-      : `saves $${Math.abs(costDelta).toFixed(2)}/wk`;
-    sentence = sentence ? `${sentence}; ${costPhrase}` : `Ancillary plan ${costPhrase}`;
-  }
-
-  return sentence;
-};
-
 const formatStackForProtocol = (stackItems = []) =>
   stackItems.map(item => ({
     compound: item.compound,
@@ -112,112 +40,6 @@ const formatStackForProtocol = (stackItems = []) =>
     type: compoundData[item.compound]?.type,
     category: compoundData[item.compound]?.category
   }));
-
-const collectBucketTotals = evaluation => {
-  const totals = {};
-  Object.values(evaluation?.pairInteractions || {}).forEach(interaction => {
-    Object.entries(interaction.deltaDims || {}).forEach(([dimensionKey, delta]) => {
-      const bucketKey = dimensionToBucket[dimensionKey];
-      if (!bucketKey) return;
-      totals[bucketKey] = (totals[bucketKey] || 0) + delta;
-    });
-  });
-  return totals;
-};
-
-const collectBucketDrivers = evaluation => {
-  const drivers = {};
-  Object.entries(evaluation?.pairInteractions || {}).forEach(([pairId, interaction]) => {
-    Object.entries(interaction.deltaDims || {}).forEach(([dimensionKey, delta]) => {
-      const bucketKey = dimensionToBucket[dimensionKey];
-      if (!bucketKey) return;
-      if (!drivers[bucketKey]) drivers[bucketKey] = [];
-      drivers[bucketKey].push({ pairId, delta });
-    });
-  });
-  return drivers;
-};
-
-const selectTopBucket = (bucketDelta, targetType) => {
-  const entries = Object.entries(bucketDelta).filter(([bucketKey, value]) => bucketRegistry[bucketKey]?.type === targetType);
-  if (!entries.length) return null;
-  const sorted =
-    targetType === 'benefit'
-      ? entries.sort((a, b) => b[1] - a[1])
-      : entries.sort((a, b) => a[1] - b[1]);
-  if (targetType === 'benefit') {
-    return sorted.find(([, value]) => value >= 0.4) || null;
-  }
-  return sorted.find(([, value]) => value <= -0.4) || null;
-};
-
-const pickDriverLabel = (bucketKey, drivers) => {
-  const entries = drivers[bucketKey];
-  if (!entries || !entries.length) return null;
-  const top = [...entries].sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))[0];
-  const pair = interactionPairs[top.pairId];
-  if (pair?.label) return pair.label;
-  if (pair?.compounds?.length) {
-    return pair.compounds
-      .map(code => compoundData[code]?.abbreviation || compoundData[code]?.name || code)
-      .join(' + ');
-  }
-  return null;
-};
-
-const summarizeCycleDelta = ({
-  baselineEval,
-  contenderEval,
-  contenderName,
-  baselineAncillary = null,
-  contenderAncillary = null
-}) => {
-  if (!baselineEval || !contenderEval) return null;
-  const baselineBuckets = collectBucketTotals(baselineEval);
-  const contenderBuckets = collectBucketTotals(contenderEval);
-  const bucketKeys = new Set([...Object.keys(baselineBuckets), ...Object.keys(contenderBuckets)]);
-  const bucketDelta = {};
-  bucketKeys.forEach(bucketKey => {
-    bucketDelta[bucketKey] = (contenderBuckets[bucketKey] || 0) - (baselineBuckets[bucketKey] || 0);
-  });
-  const drivers = collectBucketDrivers(contenderEval);
-  const benefitBucket = selectTopBucket(bucketDelta, 'benefit');
-  const riskBucket = selectTopBucket(bucketDelta, 'risk');
-  const ancillarySentence = describeAncillaryDelta(baselineAncillary, contenderAncillary);
-  if (!benefitBucket && !riskBucket && !ancillarySentence) return null;
-
-  let narrative = '';
-  if (benefitBucket) {
-    const [bucketKey, value] = benefitBucket;
-    narrative += `${contenderName} adds ${formatNarrativeDelta(value)} ${bucketRegistry[bucketKey].label}`;
-  }
-  if (riskBucket) {
-    const [bucketKey, value] = riskBucket;
-    const clausePrefix = benefitBucket ? ' but ' : `${contenderName} also adds `;
-    narrative += `${clausePrefix}${formatNarrativeDelta(Math.abs(value))} ${bucketRegistry[bucketKey].label}`;
-  }
-
-  const dominantBucket =
-    benefitBucket && riskBucket
-      ? Math.abs(benefitBucket[1]) >= Math.abs(riskBucket[1])
-        ? benefitBucket[0]
-        : riskBucket[0]
-      : benefitBucket
-      ? benefitBucket[0]
-      : riskBucket
-      ? riskBucket[0]
-      : null;
-  const driverLabel = dominantBucket ? pickDriverLabel(dominantBucket, drivers) : null;
-  if (driverLabel) {
-    narrative += ` driven by ${driverLabel}`;
-  }
-
-  if (ancillarySentence) {
-    narrative += narrative ? `. ${ancillarySentence}` : ancillarySentence;
-  }
-
-  return narrative || null;
-};
 
 const formatTimestamp = isoString => {
   if (!isoString) return '—';
@@ -238,16 +60,15 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
   const [activeCycleId, setActiveCycleId] = useState(null);
   const [cycleModalOpen, setCycleModalOpen] = useState(false);
   const [cycleDraft, setCycleDraft] = useState({ name: '', notes: '' });
+  const [stackActiveAnchor, setStackActiveAnchor] = useState('builder');
   const [compareSelection, setCompareSelection] = useState({ baseline: '', contender: '' });
   const [loadSelection, setLoadSelection] = useState('');
-  const stackRef = useRef(null);
-  const compoundSelectId = 'stack-builder-compound';
-  const doseInputId = 'stack-builder-dose';
+
+  
   const builderRef = useRef(null);
   const metricsRef = useRef(null);
   const cyclesRef = useRef(null);
   const ancillaryRef = useRef(null);
-  const [stackActiveAnchor, setStackActiveAnchor] = useState('builder');
 
   const refreshCycles = useCallback(() => {
     setSavedCycles(loadCycles());
@@ -273,43 +94,13 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
   }, [stack, userProfile]);
 
   const stackTotals = stackEvaluation?.totals;
-  const baseBenefit = stackTotals?.baseBenefit ?? 0;
-  const baseRisk = stackTotals?.baseRisk ?? 0;
-  const adjustedBenefit = stackTotals?.totalBenefit ?? baseBenefit;
-  const adjustedRisk = stackTotals?.totalRisk ?? baseRisk;
-  const benefitDelta = adjustedBenefit - baseBenefit;
-  const riskDelta = adjustedRisk - baseRisk;
-  const benefitRiskRatio = baseRisk > 0 ? baseBenefit / baseRisk : baseBenefit;
-  const adjustedRatio = adjustedRisk > 0 ? adjustedBenefit / adjustedRisk : adjustedBenefit;
-  const benefitSynergyPct = baseBenefit > 0 ? (benefitDelta / baseBenefit) * 100 : 0;
-  const riskSynergyPct = baseRisk > 0 ? (riskDelta / baseRisk) * 100 : 0;
   const stackMetrics = stackEvaluation
     ? {
-        totalBenefit: baseBenefit,
-        totalRisk: baseRisk,
-        benefitRiskRatio,
-        benefitSynergyPct,
-        riskSynergyPct,
-        benefitSynergyDelta: benefitDelta,
-        riskSynergyDelta: riskDelta,
-        adjustedBenefit,
-        adjustedRisk,
-        adjustedRatio,
+        adjustedRatio: stackTotals?.totalRisk > 0 ? stackTotals.totalBenefit / stackTotals.totalRisk : stackTotals.totalBenefit,
         netScore: stackTotals?.netScore ?? 0
       }
-    : {
-        totalBenefit: 0,
-        totalRisk: 0,
-        benefitRiskRatio: 0,
-        benefitSynergyPct: 0,
-        riskSynergyPct: 0,
-        benefitSynergyDelta: 0,
-        riskSynergyDelta: 0,
-        adjustedBenefit: 0,
-        adjustedRisk: 0,
-        adjustedRatio: 0,
-        netScore: 0
-      };
+    : { adjustedRatio: 0, netScore: 0 };
+
   const formatMetric = (value, digits = 2) => Number(value ?? 0).toFixed(digits);
 
   const guardrailMap = useMemo(() => {
@@ -333,37 +124,6 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
     }, {});
   }, [stackEvaluation, stack]);
 
-  const guardrailNotices = Object.values(guardrailMap);
-
-  const stackChipContext = useMemo(() => {
-    const chips = [];
-    chips.push({
-      label: 'Scoring',
-      value: stackScoringLabel,
-      tone: 'muted'
-    });
-    const netTone = stackMetrics.netScore >= 0 ? 'success' : 'error';
-    chips.push({
-      label: netTone === 'success' ? 'Favorable' : 'Caution',
-      value: `Net ${formatMetric(stackMetrics.netScore)}`,
-      tone: netTone
-    });
-    chips.push({
-      label: 'Ratio',
-      value: stackMetrics.adjustedRatio ? formatMetric(stackMetrics.adjustedRatio) : '—',
-      tone: 'warning'
-    });
-    if (guardrailNotices.length) {
-      const notice = guardrailNotices[0];
-      chips.push({
-        label: notice.beyond ? 'Outside evidence' : 'Plateau',
-        value: notice.compound ? (compoundData[notice.compound]?.abbreviation || notice.compound) : '',
-        tone: notice.beyond ? 'error' : 'warning'
-      });
-    }
-    return chips;
-  }, [stackMetrics, guardrailNotices, compoundData]);
-
   const savedCycleMeta = useMemo(() => {
     const meta = {};
     savedCycles.forEach(cycle => {
@@ -376,13 +136,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
       const totals = evaluation?.totals;
       if (!totals) return;
       const net = totals.netScore ?? 0;
-      const ratio = totals.totalRisk > 0 ? totals.totalBenefit / totals.totalRisk : totals.totalBenefit;
-      meta[cycle.id] = {
-        net,
-        ratio,
-        tone: net >= 0 ? 'success' : 'error',
-        label: net >= 0 ? 'Favorable' : 'Caution'
-      };
+      meta[cycle.id] = { net };
     });
     return meta;
   }, [savedCycles, userProfile]);
@@ -419,54 +173,28 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
   };
 
   const handleOpenCycleModal = () => {
-    if (!stack.length) return;
-    const activeCycle = savedCycles.find(cycle => cycle.id === activeCycleId);
-    setCycleDraft({
-      name: activeCycle?.name || `Cycle (${stackScoringLabel})`,
-      notes: ''
-    });
     setCycleModalOpen(true);
+    if (activeCycleId) {
+      const active = savedCycles.find(c => c.id === activeCycleId);
+      if (active) {
+        setCycleDraft({ id: active.id, name: active.name, notes: active.notes || '' });
+        return;
+      }
+    }
+    setCycleDraft({ name: '', notes: '' });
   };
 
-  const comparisonResult = useMemo(() => {
-    const baseline = savedCycles.find(cycle => cycle.id === compareSelection.baseline);
-    const contender = savedCycles.find(cycle => cycle.id === compareSelection.contender);
-    if (!baseline || !contender) return null;
-    const baselineEval = evaluateStack({
-      stackInput: baseline.stack,
-      profile: baseline.profile || userProfile || defaultProfile
-    });
-    const contenderEval = evaluateStack({
-      stackInput: contender.stack,
-      profile: contender.profile || userProfile || defaultProfile
-    });
-    const baselineAncillary = getAncillaryProtocol(formatStackForProtocol(baseline.stack));
-    const contenderAncillary = getAncillaryProtocol(formatStackForProtocol(contender.stack));
-    return {
-      baseline: { ...baseline, totals: baselineEval.totals, evaluation: baselineEval, ancillary: baselineAncillary },
-      contender: { ...contender, totals: contenderEval.totals, evaluation: contenderEval, ancillary: contenderAncillary },
-      deltas: {
-        benefit: contenderEval.totals.totalBenefit - baselineEval.totals.totalBenefit,
-        risk: contenderEval.totals.totalRisk - baselineEval.totals.totalRisk,
-        net: contenderEval.totals.netScore - baselineEval.totals.netScore
-      }
-    };
-  }, [compareSelection, savedCycles, userProfile]);
-  const comparisonNarrative = useMemo(() => {
-    if (!comparisonResult) return null;
-    return summarizeCycleDelta({
-      baselineEval: comparisonResult.baseline.evaluation,
-      contenderEval: comparisonResult.contender.evaluation,
-      contenderName: comparisonResult.contender.name || 'Contender cycle',
-      baselineAncillary: comparisonResult.baseline.ancillary,
-      contenderAncillary: comparisonResult.contender.ancillary
-    });
-  }, [comparisonResult]);
-  
+  const handleLoadSelectionChange = (cycleId) => {
+    setLoadSelection(cycleId);
+    if (cycleId) {
+      handleLoadCycle(cycleId);
+      setLoadSelection('');
+    }
+  };
+
   // Calculate ancillary protocol
   const ancillaryProtocol = useMemo(() => {
     if (stack.length === 0) return null;
-
     return getAncillaryProtocol(formatStackForProtocol(stack));
   }, [stack]);
 
@@ -500,51 +228,12 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
     [scrollToStackSection, stackAnchors]
   );
 
-  useEffect(() => {
-    const activeSection = stackAnchors.find(section => section.key === stackActiveAnchor && section.available);
-    if (activeSection) return;
-    const fallback = stackAnchors.find(section => section.available);
-    if (fallback) {
-      setStackActiveAnchor(fallback.key);
-    }
-  }, [stackActiveAnchor, stackAnchors]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    let frame = null;
-    const determineAnchor = () => {
-      frame = null;
-      const offset = window.innerWidth < 768 ? 90 : 150;
-      let current = stackAnchors.find(section => section.available)?.key || 'builder';
-      stackAnchors.forEach(section => {
-        if (!section.available || !section.ref?.current) return;
-        const rect = section.ref.current.getBoundingClientRect();
-        if (rect.top - offset <= 0) {
-          current = section.key;
-        }
-      });
-      setStackActiveAnchor(prev => (prev === current ? prev : current));
-    };
-    const handleScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(determineAnchor);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    determineAnchor();
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, [stackAnchors]);
-  
   // Add compound to stack
   const handleAddCompound = () => {
     if (!selectedCompound || !dose) return;
-    
     const doseNum = parseFloat(dose);
     if (isNaN(doseNum) || doseNum <= 0) return;
     
-    // Check if compound already in stack
     if (stack.some(item => item.compound === selectedCompound)) {
       alert('Compound already in stack. Remove it first to change dosage.');
       return;
@@ -559,37 +248,14 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
     setDose('');
   };
   
-  // Remove compound from stack
   const handleRemoveCompound = (compoundKey) => {
     setStack(stack.filter(item => item.compound !== compoundKey));
   };
   
-  // Update dose for compound
-  const handleUpdateDose = (compoundKey, newDose) => {
-    const numericDose = typeof newDose === 'number' ? newDose : parseFloat(newDose);
-    if (!Number.isFinite(numericDose) || numericDose < 0) return;
-    const roundedDose = Math.round(numericDose * 10) / 10;
-    setStack(prevStack =>
-      prevStack.map(item =>
-        item.compound === compoundKey ? { ...item, dose: roundedDose } : item
-      )
-    );
-  };
-
-  const handleLoadSelectionChange = (value) => {
-    setLoadSelection(value);
-    if (value) {
-      handleLoadCycle(value);
-      setLoadSelection('');
-    }
-  };
-  
-  // Get available compounds (not in stack)
   const availableCompounds = Object.keys(compoundData).filter(
     key => !stack.some(item => item.compound === key)
   );
   
-  // Separate injectables and orals
   const injectables = availableCompounds.filter(key => compoundData[key].type === 'injectable');
   const orals = availableCompounds.filter(key => compoundData[key].type === 'oral');
   const hasStack = stack.length > 0;
@@ -617,22 +283,52 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
     { label: 'Net score', value: hasStack ? formatMetric(stackMetrics.netScore) : '—' }
   ];
 
-  const ancillaryOrientationItems = ancillaryProtocol
-    ? [
-        {
-          label: 'Ancillaries',
-          value: `${ancillaryProtocol.essential.length} essential • ${ancillaryProtocol.recommended.length} recommended`
-        },
-        {
-          label: 'Weekly cost',
-          value: `$${ancillaryProtocol.totalWeeklyCost.toFixed(2)}`
-        },
-        {
-          label: 'Monitoring',
-          value: `${ancillaryProtocol.monitoring.length} labs`
-        }
-      ]
-    : [];
+  const ancillaryOrientationItems = useMemo(() => {
+    if (!ancillaryProtocol) return [];
+    return [
+      { label: 'Weekly Cost', value: `$${ancillaryProtocol.totalWeeklyCost.toFixed(0)}` },
+      { label: 'Essential', value: ancillaryProtocol.essential.length },
+      { label: 'Monitoring', value: `${ancillaryProtocol.monitoring.length} Labs` }
+    ];
+  }, [ancillaryProtocol]);
+
+  const comparisonResult = useMemo(() => {
+    if (!compareSelection.baseline || !compareSelection.contender) return null;
+    
+    const baseCycle = savedCycles.find(c => c.id === compareSelection.baseline);
+    const contCycle = savedCycles.find(c => c.id === compareSelection.contender);
+    
+    if (!baseCycle || !contCycle) return null;
+    
+    const deltas = summarizeCycleDelta(
+      baseCycle.stack, 
+      contCycle.stack, 
+      userProfile || defaultProfile
+    );
+    
+    if (!deltas) return null;
+    
+    return {
+      baseline: {
+        name: baseCycle.name,
+        totals: evaluateStack({ stackInput: baseCycle.stack, profile: userProfile || defaultProfile })?.totals
+      },
+      contender: {
+        name: contCycle.name,
+        totals: evaluateStack({ stackInput: contCycle.stack, profile: userProfile || defaultProfile })?.totals
+      },
+      deltas
+    };
+  }, [compareSelection, savedCycles, userProfile]);
+
+  const comparisonNarrative = useMemo(() => {
+    if (!comparisonResult) return null;
+    const { deltas } = comparisonResult;
+    if (deltas.net > 0 && deltas.risk <= 0) return "Win-win: more benefit with same or less risk.";
+    if (deltas.net > 0 && deltas.risk > 0) return "Improved net score, but comes with increased risk.";
+    if (deltas.net < 0) return "Net score decreases. Reconsider this trade-off.";
+    return "Neutral change.";
+  }, [comparisonResult]);
   
   return (
     <div className="w-full space-y-6">
@@ -647,29 +343,27 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
           activeTab={stackActiveAnchor}
           onTabChange={handleStackAnchorChange}
           ariaLabel="Stack builder anchors"
-          size="sm"
           className="w-full"
         />
       </div>
       <section ref={builderRef} className="space-y-5">
 
         {/* Add Compound Section */}
-        <div className="bg-physio-bg-core/30 backdrop-blur-md p-6 rounded-2xl border border-physio-bg-border shadow-lg">
-          <h2 className="text-xl font-semibold mb-4 text-physio-text-primary flex items-center gap-2">
-            <span className="w-1.5 h-6 bg-physio-accent-cyan rounded-full" />
+        <Card className="p-6" variant="glass">
+          <h2 className="text-xl font-semibold mb-6 text-physio-text-primary flex items-center gap-2">
+            <div className="w-1.5 h-6 bg-physio-accent-primary rounded-full shadow-neo-glow" />
             Build Your Stack
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block text-xs font-bold text-physio-text-tertiary uppercase tracking-wide mb-2" htmlFor={compoundSelectId}>
+              <label className="block text-xs font-bold text-physio-text-secondary uppercase tracking-wide mb-2">
                 Select Compound
               </label>
               <select
-                id={compoundSelectId}
                 value={selectedCompound}
                 onChange={(e) => setSelectedCompound(e.target.value)}
-                className="w-full px-4 py-3 bg-physio-bg-core border border-physio-bg-border rounded-xl text-physio-text-primary focus:outline-none focus:border-physio-accent-cyan transition-colors"
+                className="w-full px-4 py-3 bg-physio-bg-core border border-physio-border-strong rounded-xl text-physio-text-primary focus:outline-none focus:border-physio-accent-primary focus:ring-1 focus:ring-physio-accent-primary/50 transition-all"
               >
                 <option value="">-- Choose Compound --</option>
                 <optgroup label="Injectable Compounds">
@@ -690,13 +384,12 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
             </div>
             
             <div>
-              <label className="block text-xs font-bold text-physio-text-tertiary uppercase tracking-wide mb-2" htmlFor={doseInputId}>
+              <label className="block text-xs font-bold text-physio-text-secondary uppercase tracking-wide mb-2">
                 Dose ({selectedCompound ? selectedUnit : 'mg'})
               </label>
               {selectedCompoundMeta ? (
-                <div className="bg-physio-bg-secondary/50 border border-physio-bg-border rounded-xl px-4 py-3">
-                  <DoseSlider
-                    id={doseInputId}
+                <div className="bg-physio-bg-surface/50 border border-physio-border-subtle rounded-xl px-4 py-3">
+                  <Slider
                     value={sliderValue}
                     min={selectedDoseWindow?.min || 0}
                     max={selectedDoseWindow?.max || 500}
@@ -710,7 +403,6 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                         ? { value: selectedDoseWindow.max, label: 'Ceil', tone: 'warning' }
                         : null
                     ].filter(Boolean)}
-                    ariaLabel="Stack dose selector"
                     onChange={(value) => setDose(String(value))}
                   />
                   <div className="flex items-center gap-2 mt-3 text-[11px] text-physio-text-tertiary uppercase tracking-wide">
@@ -722,38 +414,41 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                       value={dose}
                       onChange={(e) => setDose(e.target.value)}
                       placeholder="Enter dose"
-                      className="ml-auto w-24 px-2 py-1 rounded border border-physio-bg-border bg-physio-bg-core text-xs text-physio-text-primary text-right"
+                      className="ml-auto w-24 px-2 py-1 rounded border border-physio-border-subtle bg-physio-bg-core text-xs text-physio-text-primary text-right focus:border-physio-accent-primary focus:outline-none"
                     />
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-physio-text-tertiary py-3 italic">
-                  Select a compound to unlock the slider.
-                </p>
+                <div className="h-[86px] flex items-center justify-center border border-dashed border-physio-border-subtle rounded-xl bg-physio-bg-surface/30">
+                  <p className="text-xs text-physio-text-muted italic">
+                    Select a compound to unlock
+                  </p>
+                </div>
               )}
             </div>
             
             <div className="flex items-end pb-1">
-              <button
+              <Button
                 onClick={handleAddCompound}
                 disabled={!selectedCompound || !dose}
-                className="w-full px-4 py-3 bg-physio-accent-cyan hover:bg-physio-accent-cyan/90 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-physio-accent-cyan/20"
+                className="w-full h-[52px] text-base shadow-neo-md"
+                variant="primary"
               >
                 Add to Stack
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
+        </Card>
         
         {/* Current Stack */}
-        <div className="bg-physio-bg-core/30 backdrop-blur-md p-6 rounded-2xl border border-physio-bg-border shadow-lg">
-          <h3 className="text-xl font-semibold mb-4 text-physio-text-primary flex items-center gap-2">
-             <span className="w-1.5 h-6 bg-physio-accent-violet rounded-full" />
+        <Card className="p-6" variant="glass">
+          <h3 className="text-xl font-semibold mb-6 text-physio-text-primary flex items-center gap-2">
+             <div className="w-1.5 h-6 bg-physio-accent-secondary rounded-full shadow-neo-glow" />
              Current Stack
           </h3>
           
           {stack.length === 0 ? (
-            <div className="text-physio-text-tertiary text-center py-12 border-2 border-dashed border-physio-bg-border/50 rounded-xl">
+            <div className="text-physio-text-muted text-center py-12 border-2 border-dashed border-physio-border-subtle rounded-xl bg-physio-bg-surface/20">
               No compounds in stack. Add compounds above to get started.
             </div>
           ) : (
@@ -762,86 +457,59 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                 const compound = compoundData[item.compound];
                 const guardrail = guardrailMap[item.compound];
                 const guardrailTone = guardrail?.beyond
-                  ? 'border-physio-error/50 bg-physio-error/5'
+                  ? 'border-physio-accent-critical/50 bg-physio-accent-critical/5'
                   : guardrail?.plateau
-                  ? 'border-physio-warning/50 bg-physio-warning/5'
-                  : 'border-physio-bg-border/50 bg-physio-bg-secondary/30';
-                const doseWindow = deriveDoseWindow(item.compound);
-                const sliderMarkers = [
-                  doseWindow.base
-                    ? { value: doseWindow.base, label: 'Sweet spot', tone: 'accent' }
-                    : null,
-                  guardrail?.plateauDose
-                    ? { value: guardrail.plateauDose, label: 'Plateau', tone: 'warning' }
-                    : null,
-                  guardrail?.hardMax
-                    ? { value: guardrail.hardMax, label: 'Evidence', tone: 'error' }
-                    : null
-                ].filter(Boolean);
-                const unitLabel = compound.type === 'oral' ? 'mg/day' : 'mg/wk';
+                  ? 'border-physio-accent-warning/50 bg-physio-accent-warning/5'
+                  : 'border-physio-border-subtle bg-physio-bg-surface/50';
+                
                 return (
                   <div
                     key={item.compound}
-                    className={`p-4 rounded-xl border backdrop-blur-sm transition-all hover:border-physio-bg-border ${guardrailTone}`}
+                    className={`p-4 rounded-xl border backdrop-blur-sm transition-all hover:border-physio-border-strong ${guardrailTone}`}
                   >
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                        <div className="flex items-center gap-3.5">
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center shadow-lg"
-                            style={{ backgroundColor: compound.color, color: '#fff' }}
-                          >
-                            <span className="font-bold text-xs opacity-80">{compound.abbreviation.slice(0,2)}</span>
-                          </div>
-                          <div>
-                            <div className="font-bold text-lg text-physio-text-primary">{compound.name}</div>
-                            <div className="text-xs text-physio-text-tertiary uppercase tracking-wider">
-                              {compound.type === 'oral' ? 'Oral' : 'Injectable'} • {compound.abbreviation}
-                            </div>
-                            {guardrail && (
-                              <div className="text-[10px] font-bold uppercase tracking-wide mt-1 flex flex-wrap items-center gap-2">
-                                {guardrail.plateau && !guardrail.beyond && (
-                                  <span className="text-physio-warning bg-physio-warning/10 px-1.5 py-0.5 rounded">
-                                    Plateau near {guardrail.plateauDose ? guardrail.plateauDose + 'mg' : 'this dose'}
-                                  </span>
-                                )}
-                                {guardrail.beyond && (
-                                  <span className="text-physio-error bg-physio-error/10 px-1.5 py-0.5 rounded">
-                                    Outside evidence {guardrail.hardMax ? '(modeled <= ' + guardrail.hardMax + 'mg)' : ''}
-                                  </span>
-                                )}
-                              </div>
-                            )}
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="w-10 h-10 rounded-lg flex items-center justify-center shadow-neo-sm font-mono font-bold text-xs text-white"
+                          style={{ backgroundColor: compound.color }}
+                        >
+                          {compound.abbreviation.slice(0,2)}
+                        </div>
+                        <div>
+                          <div className="font-bold text-lg text-physio-text-primary tracking-tight">{compound.name}</div>
+                          <div className="text-xs text-physio-text-secondary uppercase tracking-wider flex items-center gap-2">
+                            {compound.type === 'oral' ? 'Oral' : 'Injectable'} 
+                            <span className="text-physio-border-strong">•</span>
+                            {compound.abbreviation}
                           </div>
                         </div>
-                        <button
+                      </div>
+                      
+                      <div className="flex items-center gap-4 ml-14 md:ml-0">
+                        <div className="text-right mr-4">
+                          <div className="text-2xl font-mono font-bold text-physio-text-primary leading-none">
+                            {item.dose}
+                            <span className="text-xs text-physio-text-muted font-sans font-normal ml-1">
+                              {compound.type === 'oral' ? 'mg/day' : 'mg/wk'}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {guardrail?.beyond && (
+                          <Badge variant="critical" size="sm">Beyond Evidence</Badge>
+                        )}
+                        {guardrail?.plateau && (
+                          <Badge variant="warning" size="sm">Plateau</Badge>
+                        )}
+                        
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
                           onClick={() => handleRemoveCompound(item.compound)}
-                          className="px-3 py-1.5 bg-physio-bg-core border border-physio-bg-border text-physio-text-secondary rounded-lg hover:text-physio-error hover:border-physio-error transition-colors text-xs font-medium"
+                          className="text-physio-text-muted hover:text-physio-accent-critical hover:bg-physio-accent-critical/10"
                         >
                           Remove
-                        </button>
-                      </div>
-                      <div className="bg-physio-bg-core/40 rounded-lg p-3 border border-physio-bg-border/30">
-                        <DoseSlider
-                          id={`stack-dose-${item.compound}`}
-                          value={item.dose}
-                          min={doseWindow.min}
-                          max={doseWindow.max}
-                          step={compound.type === 'oral' ? 2 : 10}
-                          unit={unitLabel}
-                          markers={sliderMarkers}
-                          ariaLabel={`${compound.name} dose`}
-                          onChange={(nextValue) => handleUpdateDose(item.compound, nextValue)}
-                        />
-                        <div className="flex justify-between items-end mt-2">
-                          <span className="text-[10px] text-physio-text-tertiary uppercase tracking-wide">
-                            Range {doseWindow.min}-{doseWindow.max} mg
-                          </span>
-                          <div className="flex items-baseline gap-1">
-                             <span className="text-lg font-bold text-physio-text-primary">{item.dose}</span>
-                             <span className="text-xs text-physio-text-secondary">{unitLabel}</span>
-                          </div>
-                        </div>
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -849,7 +517,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
               })}
             </div>
           )}
-        </div>
+        </Card>
       </section>
 
       <section ref={metricsRef}>
@@ -858,12 +526,12 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
           <div className="bg-physio-bg-core/30 backdrop-blur-md p-6 rounded-2xl border border-physio-bg-border shadow-lg">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
               <h3 className="text-xl font-semibold text-physio-text-primary flex items-center gap-2">
-                <span className="w-1.5 h-6 bg-physio-accent-mint rounded-full" />
+                <span className="w-1.5 h-6 bg-physio-accent-success rounded-full" />
                 Stack Metrics
               </h3>
               <div className="text-right">
                 <span className="block text-[10px] uppercase tracking-wider text-physio-text-tertiary">Net Score</span>
-                <span className={`text-2xl font-bold ${parseFloat(stackMetrics.netScore) >= 0 ? 'text-physio-accent-cyan' : 'text-physio-error'}`}>
+                <span className={`text-2xl font-bold ${parseFloat(stackMetrics.netScore) >= 0 ? 'text-physio-accent-cyan' : 'text-physio-accent-critical'}`}>
                   {formatMetric(stackMetrics.netScore)}
                 </span>
               </div>
@@ -875,11 +543,11 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
               <h4 className="text-xs font-bold text-physio-text-tertiary uppercase tracking-wider border-b border-physio-bg-border/50 pb-2">Base Scores (No Synergy)</h4>
               <div className="flex justify-between items-center">
                 <span className="text-physio-text-secondary text-sm">Total Benefit</span>
-                <span className="font-mono text-physio-accent-mint">{formatMetric(stackMetrics.totalBenefit)}</span>
+                <span className="font-mono text-physio-accent-success">{formatMetric(stackMetrics.totalBenefit)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-physio-text-secondary text-sm">Total Risk</span>
-                <span className="font-mono text-physio-error">{formatMetric(stackMetrics.totalRisk)}</span>
+                <span className="font-mono text-physio-accent-critical">{formatMetric(stackMetrics.totalRisk)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-physio-text-secondary text-sm">Benefit:Risk Ratio</span>
@@ -892,27 +560,27 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
               <h4 className="text-xs font-bold text-physio-text-tertiary uppercase tracking-wider border-b border-physio-bg-border/50 pb-2">With Synergy</h4>
               <div className="flex justify-between items-center">
                 <span className="text-physio-text-secondary text-sm">Benefit Synergy</span>
-                <span className={`font-mono font-bold ${stackMetrics.benefitSynergyPct >= 0 ? 'text-physio-accent-mint' : 'text-physio-error'}`}>
+                <span className={`font-mono font-bold ${stackMetrics.benefitSynergyPct >= 0 ? 'text-physio-accent-success' : 'text-physio-accent-critical'}`}>
                   {stackMetrics.benefitSynergyPct >= 0 ? '+' : ''}
                   {stackMetrics.benefitSynergyPct.toFixed(1)}%
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-physio-text-secondary text-sm">Risk Synergy</span>
-                <span className={`font-mono font-bold ${stackMetrics.riskSynergyPct <= 0 ? 'text-physio-accent-mint' : 'text-physio-error'}`}>
+                <span className={`font-mono font-bold ${stackMetrics.riskSynergyPct <= 0 ? 'text-physio-accent-success' : 'text-physio-accent-critical'}`}>
                   {stackMetrics.riskSynergyPct >= 0 ? '+' : ''}
                   {stackMetrics.riskSynergyPct.toFixed(1)}%
                 </span>
               </div>
               
-              <div className="bg-physio-bg-secondary/50 p-4 rounded-xl border border-physio-bg-border/50 mt-2">
+              <div className="bg-physio-bg-surface/50 p-4 rounded-xl border border-physio-bg-border/50 mt-2">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs uppercase tracking-wide text-physio-text-secondary">Adj. Benefit</span>
-                  <span className="font-bold text-physio-accent-mint">{formatMetric(stackMetrics.adjustedBenefit)}</span>
+                  <span className="font-bold text-physio-accent-success">{formatMetric(stackMetrics.adjustedBenefit)}</span>
                 </div>
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-xs uppercase tracking-wide text-physio-text-secondary">Adj. Risk</span>
-                  <span className="font-bold text-physio-error">{formatMetric(stackMetrics.adjustedRisk)}</span>
+                  <span className="font-bold text-physio-accent-critical">{formatMetric(stackMetrics.adjustedRisk)}</span>
                 </div>
                 <div className="flex justify-between items-center pt-3 border-t border-physio-bg-border/50">
                   <span className="text-sm font-bold text-physio-text-primary">Final Ratio</span>
@@ -925,7 +593,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
           {/* Export Stack Report */}
           <div className="mt-6 flex justify-end pt-4 border-t border-physio-bg-border/30">
           <PDFExport 
-            chartRef={stackRef}
+            chartRef={builderRef}
             stackData={{
               compounds: stack.map(item => ({
                 id: item.compound,
@@ -971,7 +639,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                 { label: 'Net score', value: stackMetrics.netScore }
               ]
             }}
-            badgeContext={stackChipContext}
+            badgeContext={[]}
           />
         </div>
         </div>
@@ -992,18 +660,19 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
             )}
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-            <button
+            <Button
               onClick={handleOpenCycleModal}
               disabled={!hasStack}
-              className="px-4 py-2 rounded-lg border border-physio-accent-cyan/50 text-physio-accent-cyan font-semibold hover:bg-physio-accent-cyan/10 transition-colors disabled:border-physio-bg-border disabled:text-physio-text-tertiary disabled:bg-transparent"
+              variant="secondary"
+              className="border-physio-accent-cyan/50 text-physio-accent-cyan hover:bg-physio-accent-cyan/10 disabled:border-physio-border-subtle disabled:text-physio-text-tertiary disabled:bg-transparent"
             >
               Save current cycle
-            </button>
+            </Button>
             <div className="flex-1">
               <select
                 value={loadSelection}
                 onChange={e => handleLoadSelectionChange(e.target.value)}
-                className="w-full bg-physio-bg-secondary border border-physio-bg-border rounded-lg px-3 py-2 text-sm text-physio-text-primary focus:outline-none focus:border-physio-accent-cyan"
+                className="w-full bg-physio-bg-surface border border-physio-bg-border rounded-lg px-3 py-2 text-sm text-physio-text-primary focus:outline-none focus:border-physio-accent-cyan"
               >
                 <option value="">Load saved cycle...</option>
                 {savedCycles.map(cycle => (
@@ -1026,7 +695,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                 return (
                   <div
                     key={cycle.id}
-                    className={`border rounded-xl p-4 flex items-center justify-between gap-3 bg-physio-bg-secondary/30 ${
+                    className={`border rounded-xl p-4 flex items-center justify-between gap-3 bg-physio-bg-surface/30 ${
                       cycle.id === activeCycleId ? 'border-physio-accent-cyan shadow-[0_0_15px_rgba(75,187,247,0.15)]' : 'border-physio-bg-border/50'
                     }`}
                   >
@@ -1038,35 +707,39 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                       <div className="flex flex-wrap gap-1">
                         {meta && (
                           <>
-                            <GuardrailChip
+                            <Badge
                               size="sm"
-                              tone={meta.tone}
-                              label={meta.label}
-                              detail={`Net ${formatMetric(meta.net)}`}
-                            />
-                            <GuardrailChip
+                              variant={meta.net >= 0 ? 'success' : 'critical'}
+                            >
+                              Net {formatMetric(meta.net)}
+                            </Badge>
+                            <Badge
                               size="sm"
-                              tone="warning"
-                              label="Ratio"
-                              detail={Number.isFinite(meta.ratio) ? formatMetric(meta.ratio) : '—'}
-                            />
+                              variant="warning"
+                            >
+                              Ratio {Number.isFinite(meta.ratio) ? formatMetric(meta.ratio) : '—'}
+                            </Badge>
                           </>
                         )}
                       </div>
                     </div>
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
                       onClick={() => handleLoadCycle(cycle.id)}
-                      className="text-xs px-3 py-1.5 rounded-lg border border-physio-accent-mint/30 text-physio-accent-mint hover:bg-physio-accent-mint/10 transition-colors font-semibold"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs border border-physio-accent-success/30 text-physio-accent-success hover:bg-physio-accent-success/10"
                     >
                       Load
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => handleDeleteCycle(cycle.id)}
-                      className="text-xs px-3 py-1.5 rounded-lg border border-physio-error/30 text-physio-error hover:bg-physio-error/10 transition-colors"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs border border-physio-accent-critical/30 text-physio-accent-critical hover:bg-physio-accent-critical/10"
                     >
                       Delete
-                    </button>
+                    </Button>
                   </div>
                   </div>
                 );
@@ -1085,7 +758,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                   <select
                     value={compareSelection.baseline}
                     onChange={e => setCompareSelection(prev => ({ ...prev, baseline: e.target.value }))}
-                    className="flex-1 bg-physio-bg-secondary border border-physio-bg-border rounded-lg px-3 py-2 text-sm text-physio-text-primary"
+                    className="flex-1 bg-physio-bg-surface border border-physio-bg-border rounded-lg px-3 py-2 text-sm text-physio-text-primary"
                   >
                     <option value="">Baseline cycle…</option>
                     {savedCycles.map(cycle => (
@@ -1097,7 +770,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                   <select
                     value={compareSelection.contender}
                     onChange={e => setCompareSelection(prev => ({ ...prev, contender: e.target.value }))}
-                    className="flex-1 bg-physio-bg-secondary border border-physio-bg-border rounded-lg px-3 py-2 text-sm text-physio-text-primary"
+                    className="flex-1 bg-physio-bg-surface border border-physio-bg-border rounded-lg px-3 py-2 text-sm text-physio-text-primary"
                   >
                     <option value="">Contender cycle…</option>
                     {savedCycles.map(cycle => (
@@ -1110,7 +783,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
               </div>
 
               {comparisonResult && (
-                <div className="bg-physio-bg-secondary/50 border border-physio-bg-border rounded-xl p-5 space-y-3">
+                <div className="bg-physio-bg-surface/50 border border-physio-bg-border rounded-xl p-5 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
                       <p className="text-[10px] text-physio-text-tertiary uppercase tracking-wider font-bold">Baseline</p>
@@ -1127,7 +800,7 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
                     </div>
                   </div>
                   <div className="text-sm text-physio-text-secondary border-t border-physio-bg-border/30 pt-3">
-                    {comparisonResult.deltas.net >= 0 ? 'Adds' : 'Drops'} <strong className={comparisonResult.deltas.net >= 0 ? 'text-physio-accent-mint' : 'text-physio-error'}>{formatMetric(Math.abs(comparisonResult.deltas.net))}</strong> net score,
+                    {comparisonResult.deltas.net >= 0 ? 'Adds' : 'Drops'} <strong className={comparisonResult.deltas.net >= 0 ? 'text-physio-accent-success' : 'text-physio-accent-critical'}>{formatMetric(Math.abs(comparisonResult.deltas.net))}</strong> net score,
                     with ΔBenefit {comparisonResult.deltas.benefit >= 0 ? '+' : '-'}
                     {formatMetric(Math.abs(comparisonResult.deltas.benefit))} and ΔRisk{' '}
                     {comparisonResult.deltas.risk >= 0 ? '+' : '-'}
@@ -1307,6 +980,22 @@ const StackBuilder = ({ prefillStack, userProfile }) => {
       )}
     </div>
   );
+};
+
+const summarizeCycleDelta = (baselineStack, contenderStack, profile) => {
+  const baseEval = evaluateStack({ stackInput: baselineStack, profile });
+  const contEval = evaluateStack({ stackInput: contenderStack, profile });
+  
+  if (!baseEval?.totals || !contEval?.totals) return null;
+
+  const baseNet = baseEval.totals.netScore ?? 0;
+  const contNet = contEval.totals.netScore ?? 0;
+  
+  return {
+    net: contNet - baseNet,
+    benefit: contEval.totals.totalBenefit - baseEval.totals.totalBenefit,
+    risk: contEval.totals.totalRisk - baseEval.totals.totalRisk
+  };
 };
 
 export default StackBuilder;

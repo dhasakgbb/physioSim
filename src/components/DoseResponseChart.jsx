@@ -151,8 +151,15 @@ const DoseResponseChart = ({
               </linearGradient>
             </React.Fragment>
           ))}
+          <filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--physio-border-subtle)" strokeOpacity={0.4} vertical={false} />
+        <CartesianGrid strokeDasharray="1 4" stroke="#374151" strokeOpacity={0.2} vertical={false} />
         
         <XAxis
           dataKey="dose"
@@ -162,12 +169,12 @@ const DoseResponseChart = ({
             value: 'Weekly Dose (mg)',
             position: 'insideBottom',
             offset: -10,
-            style: { fontSize: 11, fontWeight: 600, fill: 'var(--physio-text-secondary)', fontFamily: 'Inter, sans-serif' }
+            style: { fontSize: 11, fontWeight: 500, fill: '#6b7280', fontFamily: 'Inter, sans-serif', letterSpacing: '0.05em' }
           }}
-          tick={{ fontSize: 10, fill: 'var(--physio-text-tertiary)', fontFamily: 'JetBrains Mono, monospace' }}
-          axisLine={{ stroke: 'var(--physio-border-strong)' }}
+          tick={{ fontSize: 10, fill: '#4b5563', fontFamily: 'JetBrains Mono, monospace' }}
+          axisLine={{ stroke: '#374151', strokeOpacity: 0.5 }}
           tickLine={false}
-          tickMargin={8}
+          tickMargin={12}
         />
         
         <YAxis
@@ -176,12 +183,12 @@ const DoseResponseChart = ({
             value: 'Score (0-5.5)',
             angle: -90,
             position: 'insideLeft',
-            style: { fontSize: 11, fontWeight: 600, fill: 'var(--physio-text-secondary)', fontFamily: 'Inter, sans-serif' }
+            style: { fontSize: 11, fontWeight: 500, fill: '#6b7280', fontFamily: 'Inter, sans-serif', letterSpacing: '0.05em' }
           }}
-          tick={{ fontSize: 10, fill: 'var(--physio-text-tertiary)', fontFamily: 'JetBrains Mono, monospace' }}
-          axisLine={{ stroke: 'var(--physio-border-strong)' }}
+          tick={{ fontSize: 10, fill: '#4b5563', fontFamily: 'JetBrains Mono, monospace' }}
+          axisLine={{ stroke: '#374151', strokeOpacity: 0.5 }}
           tickLine={false}
-          tickMargin={8}
+          tickMargin={12}
         />
 
         <Tooltip
@@ -193,7 +200,7 @@ const DoseResponseChart = ({
               mode={mode}
             />
           )}
-          cursor={{ stroke: 'var(--physio-accent-cyan)', strokeDasharray: '4 4', strokeOpacity: 0.5 }}
+          cursor={{ stroke: '#6366f1', strokeWidth: 1.5, strokeDasharray: '4 4', strokeOpacity: 0.3 }}
         />
 
         {/* Render uncertainty bands and lines for each compound */}
@@ -210,9 +217,9 @@ const DoseResponseChart = ({
           const mistFillOpacity = guardrailActive ? (isHighlighted ? 0.6 : 0.05) : 0.3;
           const riskFillOpacity = guardrailActive ? (isHighlighted ? 0.7 : 0.1) : 0.5;
           const uncertaintyFillOpacity = guardrailActive ? (isHighlighted ? 0.6 : 0.05) : 0.2;
-          const benefitStrokeWidth = isHighlighted ? 2.5 : 2;
-          const riskStrokeWidth = isHighlighted ? 2.2 : 1.5;
-          const efficiencyStrokeWidth = isHighlighted ? 2.5 : 1.8;
+          const benefitStrokeWidth = isHighlighted ? 4 : 3;
+          const riskStrokeWidth = isHighlighted ? 3 : 2;
+          const efficiencyStrokeWidth = isHighlighted ? 3 : 2;
           const beyondStrokeOpacity = guardrailActive ? (isHighlighted ? 0.8 : 0.15) : 0.7;
 
           // Fill definitions
@@ -225,13 +232,13 @@ const DoseResponseChart = ({
               {showPlateau && plateauDose && (
                 <ReferenceLine
                   x={plateauDose}
-                  stroke="var(--physio-accent-amber)"
+                  stroke="#f59e0b"
                   strokeDasharray="2 2"
                   strokeOpacity={isHighlighted ? 0.6 : 0}
                   label={isHighlighted ? {
                     value: 'Plateau',
                     position: 'insideTopRight',
-                    fill: 'var(--physio-accent-amber)',
+                    fill: '#f59e0b',
                     fontSize: 10,
                     offset: 10,
                     fontFamily: 'JetBrains Mono, monospace'
@@ -241,13 +248,13 @@ const DoseResponseChart = ({
               {showPlateau && hardMax && (
                 <ReferenceLine
                   x={hardMax}
-                  stroke="var(--physio-accent-red)"
+                  stroke="#ef4444"
                   strokeDasharray="3 3"
                   strokeOpacity={isHighlighted ? 0.5 : 0}
                   label={isHighlighted ? {
                     value: 'Cap',
                     position: 'insideTopRight',
-                    fill: 'var(--physio-accent-red)',
+                    fill: '#ef4444',
                     fontSize: 10,
                     offset: 5,
                     fontFamily: 'JetBrains Mono, monospace'
@@ -284,6 +291,7 @@ const DoseResponseChart = ({
                     isAnimationActive={false}
                     connectNulls
                     name={`${compound.abbreviation} Benefit`}
+                    style={{ filter: 'url(#neon-glow)' }}
                   />
                   <Line
                     type="monotone"
@@ -300,7 +308,7 @@ const DoseResponseChart = ({
                   <Line
                     type="monotone"
                     dataKey={`${key}-benefit-beyond`}
-                    stroke="var(--physio-accent-red)"
+                    stroke="#ef4444"
                     strokeWidth={2}
                     strokeOpacity={beyondStrokeOpacity}
                     strokeDasharray="3 3"
@@ -343,6 +351,7 @@ const DoseResponseChart = ({
                     isAnimationActive={false}
                     connectNulls
                     name={`${compound.abbreviation} Risk`}
+                    style={{ filter: 'url(#neon-glow)' }}
                   />
                   <Line
                     type="monotone"
@@ -360,7 +369,7 @@ const DoseResponseChart = ({
                   <Line
                     type="monotone"
                     dataKey={`${key}-risk-beyond`}
-                    stroke="var(--physio-accent-red)"
+                    stroke="#ef4444"
                     strokeWidth={2}
                     strokeDasharray="2 2"
                     dot={false}
@@ -416,6 +425,7 @@ const DoseResponseChart = ({
                   dot={false}
                   isAnimationActive={false}
                   name={`${compound.abbreviation} Efficiency`}
+                  style={{ filter: 'url(#neon-glow)' }}
                 />
               )}
             </React.Fragment>
@@ -423,7 +433,7 @@ const DoseResponseChart = ({
         })}
 
         {/* Reference lines for context */}
-        <ReferenceLine y={0} stroke="var(--physio-border-strong)" strokeWidth={1} />
+        <ReferenceLine y={0} stroke="#374151" strokeWidth={1} strokeOpacity={0.5} />
       </LineChart>
     </ResponsiveContainer>
     </div>

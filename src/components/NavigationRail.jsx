@@ -106,17 +106,17 @@ const NavigationRail = ({
             onFocus={() => setFocusedKey(tab.key)}
             onMouseEnter={() => setFocusedKey(tab.key)}
             className={`
-              group flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-all duration-200
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physio-accent-cyan/50
+              group flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+              focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-physio-accent-primary
               ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
               ${isActive 
-                ? 'bg-physio-bg-surface text-physio-text-primary border-l-2 border-physio-accent-cyan' 
-                : 'text-physio-text-secondary hover:bg-physio-bg-subtle hover:text-physio-text-primary border-l-2 border-transparent'}
+                ? 'bg-physio-bg-surface text-physio-text-primary shadow-neo-sm border border-physio-border-subtle' 
+                : 'text-physio-text-secondary hover:bg-physio-bg-highlight hover:text-physio-text-primary border border-transparent'}
             `}
           >
-            <span className="truncate">{tab.label}</span>
+            <span className="truncate tracking-tight">{tab.label}</span>
             {isActive && (
-              <div className="w-1.5 h-1.5 rounded-full bg-physio-accent-cyan shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
+              <div className="w-1.5 h-1.5 rounded-full bg-physio-accent-primary shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
             )}
           </button>
         );

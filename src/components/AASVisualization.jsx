@@ -6,20 +6,14 @@ import MethodologyModal from './MethodologyModal';
 import InteractionHeatmap from './InteractionHeatmap';
 import StackBuilder from './StackBuilder';
 import PersonalizationPanel from './PersonalizationPanel.jsx';
-import ProfileContextBar from './ProfileContextBar.jsx';
-import NavigationRail from './NavigationRail.jsx';
-import CompoundChipRail from './CompoundChipRail.jsx';
 import UtilityCardRow from './UtilityCardRow.jsx';
 import CompoundInsightCard from './CompoundInsightCard.jsx';
 import ChartControlBar from './ChartControlBar';
-import ContextDrawer from './ContextDrawer';
-import LeanBackInsightRow from './LeanBackInsightRow.jsx';
+import Layout from './Layout';
 import { compoundData } from '../data/compoundData';
 import { defaultProfile, PROFILE_STORAGE_KEY } from '../utils/personalization';
 import { readJSONStorage, writeJSONStorage, removeStorageKey } from '../utils/storage';
 import { LAYOUT_FILTER_PREFS_KEY } from '../utils/storageKeys';
-
-const EvidencePanel = lazy(() => import('./EvidencePanel'));
 
 const mergeStoredProfile = (storedProfile) => {
   if (!storedProfile) return { ...defaultProfile };
@@ -165,21 +159,12 @@ const AASVisualization = () => {
 
   const [stackPrefill, setStackPrefill] = useState(null);
   const [filterPrefs, setFilterPrefs] = useState(defaultFilterPrefs);
-  const [contextCollapsed, setContextCollapsed] = useState({
-    injectables: true,
-    orals: true
-  });
-  const [evidenceReady, setEvidenceReady] = useState({
-    injectables: false,
-    orals: false
-  });
   const [compressedMode, setCompressedMode] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [profileStripExpanded, setProfileStripExpanded] = useState(false);
   const [filtersDirty, setFiltersDirty] = useState(false);
   const [interactionFiltersDirty, setInteractionFiltersDirty] = useState(false);
   const [interactionResetKey, setInteractionResetKey] = useState(0);
-  const [filterPrefsOpen, setFilterPrefsOpen] = useState(false);
 
   const activeCompoundType = useMemo(() => {
     if (activeTab === 'injectables') return 'injectable';
@@ -227,27 +212,6 @@ const AASVisualization = () => {
     return items;
   }, [filterPrefs, viewMode, compressedMode, legendHiddenCount, interactionFiltersDirty]);
 
-  const leanBackInsights = useMemo(() => {
-    const items = [];
-    const modeCopy = {
-      benefit: 'Benefit focus',
-      risk: 'Risk focus',
-      efficiency: 'Efficiency view',
-      uncertainty: 'Noise bands'
-    };
-    items.push({ key: 'mode', label: 'Mode', detail: modeCopy[viewMode] || 'Benefit focus', tone: 'info' });
-    if (activeCompoundKeys.length) {
-      const onCount = activeCompoundKeys.filter(key => visibleCompounds[key]).length;
-      items.push({ key: 'compounds', label: 'Compounds', detail: `${onCount}/${activeCompoundKeys.length} on`, tone: 'neutral' });
-    }
-    items.push({ key: 'interface', label: 'Interface', detail: uiMode === 'lab' ? 'Lab mode' : 'Simple mode', tone: uiMode === 'lab' ? 'info' : 'neutral' });
-    items.push({ key: 'filters', label: 'Filters', detail: filtersDirty ? 'Custom mix' : 'Clean deck', tone: filtersDirty ? 'warning' : 'success' });
-    if (profileUnsaved) {
-      items.push({ key: 'profile', label: 'Profile', detail: 'Unsaved edit', tone: 'warning' });
-    }
-    return items;
-  }, [activeCompoundKeys, filtersDirty, profileUnsaved, uiMode, viewMode, visibleCompounds]);
-
   useEffect(() => {
     const stored = readJSONStorage(LAYOUT_FILTER_PREFS_KEY, null);
     if (stored) {
@@ -261,35 +225,6 @@ const AASVisualization = () => {
   useEffect(() => {
     writeJSONStorage(LAYOUT_FILTER_PREFS_KEY, filterPrefs);
   }, [filterPrefs]);
-
-  useEffect(() => {
-    if (profileModalOpen) {
-      setProfileStripExpanded(true);
-      return;
-    }
-    if (!profileStripExpanded) return undefined;
-    const timeout = setTimeout(() => setProfileStripExpanded(false), 3200);
-    return () => clearTimeout(timeout);
-  }, [profileModalOpen, profileStripExpanded]);
-
-  const toggleContextDrawer = (tabKey) => {
-    setContextCollapsed(prev => {
-      const nextCollapsed = !prev[tabKey];
-      if (!nextCollapsed) {
-        setEvidenceReady(prevReady => {
-          if (prevReady[tabKey]) return prevReady;
-          return {
-            ...prevReady,
-            [tabKey]: true
-          };
-        });
-      }
-      return {
-        ...prev,
-        [tabKey]: nextCollapsed
-      };
-    });
-  };
 
   const handleInterfaceModeChange = useCallback((mode) => {
     setUIMode(mode);
@@ -346,232 +281,173 @@ const AASVisualization = () => {
   };
 
   return (
-    <div className="flex h-screen bg-physio-bg-core text-physio-text-primary overflow-hidden font-sans">
-      {/* Sidebar */}
-      <aside className="w-64 bg-physio-bg-core border-r border-physio-border-subtle flex flex-col flex-shrink-0 z-20">
-        <div className="h-14 flex items-center px-4 border-b border-physio-border-subtle">
-          <h1 className="text-lg font-bold text-physio-text-primary tracking-tight">physioLab</h1>
-          <span className="ml-2 text-[10px] uppercase tracking-wide text-physio-accent-cyan font-mono bg-physio-accent-cyan/10 px-1.5 py-0.5 rounded">Beta</span>
-        </div>
-        
-        <div className="flex-1 py-4 px-2 overflow-y-auto">
-          <div className="mb-6">
-            <p className="px-3 mb-2 text-[10px] uppercase tracking-wider text-physio-text-tertiary font-bold">Modules</p>
-            <NavigationRail tabs={NAV_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+    <Layout
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      navTabs={NAV_TABS}
+      userProfile={userProfile}
+      profileUnsaved={profileUnsaved}
+      onEditProfile={() => {
+        setProfileStripExpanded(true);
+        setProfileModalOpen(true);
+      }}
+      onSaveProfile={handleSaveProfile}
+      onResetProfile={handleClearProfile}
+      profileExpanded={profileStripExpanded}
+      onToggleProfileExpand={() => setProfileStripExpanded(prev => !prev)}
+      filterItems={filterStatusItems}
+      onResetFilters={resetAllFilters}
+      onManageFilters={() => {}} // Placeholder for now
+    >
+      {/* Injectable Compounds Tab */}
+      {activeTab === 'injectables' && (
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 animate-fade-in">
+          <div className="space-y-4 min-w-0">
+            <ChartControlBar viewMode={viewMode} setViewMode={setViewMode} />
+            <div className="bg-physio-bg-core border border-physio-border-subtle rounded-xl p-1 overflow-hidden relative group">
+              <div ref={chartRef} className="h-[500px] w-full">
+                <DoseResponseChart
+                  viewMode={viewMode}
+                  visibleCompounds={visibleCompounds}
+                  userProfile={userProfile}
+                  highlightedCompound={hoveredCompound}
+                />
+              </div>
+            </div>
+            
+            <UtilityCardRow
+              compoundType="injectable"
+              visibleCompounds={visibleCompounds}
+              userProfile={userProfile}
+              chartRef={chartRef}
+              onOpenProfile={() => setProfileModalOpen(true)}
+            />
           </div>
-          
-          <div>
-            <p className="px-3 mb-2 text-[10px] uppercase tracking-wider text-physio-text-tertiary font-bold">Interface Mode</p>
-            <div className="px-2 flex gap-1">
-              <button
-                onClick={() => handleInterfaceModeChange('simple')}
-                className={`flex-1 py-1.5 text-xs font-medium rounded transition-colors ${uiMode === 'simple' ? 'bg-physio-bg-surface text-physio-text-primary' : 'text-physio-text-secondary hover:text-physio-text-primary'}`}
-              >
-                Standard
-              </button>
-              <button
-                onClick={() => handleInterfaceModeChange('lab')}
-                className={`flex-1 py-1.5 text-xs font-medium rounded transition-colors ${uiMode === 'lab' ? 'bg-physio-bg-surface text-physio-accent-violet' : 'text-physio-text-secondary hover:text-physio-text-primary'}`}
-              >
-                Lab (Pro)
-              </button>
+
+          <div className="space-y-4">
+            <CustomLegend
+              visibleCompounds={visibleCompounds}
+              toggleCompound={toggleCompound}
+              onMethodologyClick={openMethodology}
+              onToggleAll={(action, keys) => {
+                setVisibleCompounds(prev => {
+                  const next = { ...prev };
+                  (keys || activeCompoundKeys).forEach(key => {
+                    if (action === 'all-on') next[key] = true;
+                    if (action === 'all-off') next[key] = false;
+                  });
+                  return next;
+                });
+              }}
+              activeTab={activeTab}
+              onCompoundHover={setHoveredCompound}
+              highlightedCompound={hoveredCompound}
+            />
+            
+            <div className="bg-physio-bg-core border border-physio-border-subtle rounded-xl p-4 space-y-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-physio-text-tertiary">Intel</p>
+              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                {activeCompoundKeys.map(compoundKey => (
+                  <CompoundInsightCard
+                    key={compoundKey}
+                    compoundKey={compoundKey}
+                    profile={userProfile}
+                    onHover={setHoveredCompound}
+                    onToggle={toggleCompound}
+                    visible={visibleCompounds[compoundKey]}
+                    isHighlighted={hoveredCompound === compoundKey}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
+      )}
 
-        <div className="p-4 border-t border-physio-border-subtle text-[10px] text-physio-text-tertiary">
-          <p>v1.0.4 · Clinical Obsidian</p>
-          <p className="mt-1">Evidence-based harm reduction only.</p>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative bg-physio-bg-core">
-        {/* Top Bar */}
-        <header className="h-14 border-b border-physio-border-subtle flex items-center justify-between px-6 bg-physio-bg-core z-10 shrink-0">
-          <div className="flex items-center gap-4">
-            <h2 className="text-sm font-semibold text-physio-text-primary">
-              {NAV_TABS.find(t => t.key === activeTab)?.label}
-            </h2>
-            {filtersDirty && (
-              <button onClick={resetAllFilters} className="text-xs text-physio-accent-amber hover:underline">
-                Reset Filters
-              </button>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <ProfileContextBar
-              profile={userProfile}
-              unsaved={profileUnsaved}
-              onEditProfile={() => {
-                setProfileStripExpanded(true);
-                setProfileModalOpen(true);
-              }}
-              onSaveProfile={handleSaveProfile}
-              onResetProfile={handleClearProfile}
-              expanded={profileStripExpanded}
-              onToggleExpand={() => setProfileStripExpanded(prev => !prev)}
-              className="!border-none !bg-transparent !shadow-none !p-0 !rounded-none"
-            />
-          </div>
-        </header>
-
-        {/* Scrollable Viewport */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 scroll-smooth">
-          <div className="max-w-[1600px] mx-auto space-y-6 pb-20">
-            {/* Injectable Compounds Tab */}
-            {activeTab === 'injectables' && (
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 animate-fade-in">
-                <div className="space-y-4 min-w-0">
-                  <ChartControlBar viewMode={viewMode} setViewMode={setViewMode} />
-                  <div className="bg-physio-bg-core border border-physio-border-subtle rounded-xl p-1 overflow-hidden relative group">
-                    <div ref={chartRef} className="h-[500px] w-full">
-                      <DoseResponseChart
-                        viewMode={viewMode}
-                        visibleCompounds={visibleCompounds}
-                        userProfile={userProfile}
-                        highlightedCompound={hoveredCompound}
-                      />
-                    </div>
-                  </div>
-                  
-                  <UtilityCardRow
-                    compoundType="injectable"
-                    visibleCompounds={visibleCompounds}
-                    userProfile={userProfile}
-                    chartRef={chartRef}
-                    onOpenProfile={() => setProfileModalOpen(true)}
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <CustomLegend
-                    visibleCompounds={visibleCompounds}
-                    toggleCompound={toggleCompound}
-                    onMethodologyClick={openMethodology}
-                    onToggleAll={(action, keys) => {
-                      setVisibleCompounds(prev => {
-                        const next = { ...prev };
-                        (keys || activeCompoundKeys).forEach(key => {
-                          if (action === 'all-on') next[key] = true;
-                          if (action === 'all-off') next[key] = false;
-                        });
-                        return next;
-                      });
-                    }}
-                    activeTab={activeTab}
-                    onCompoundHover={setHoveredCompound}
-                    highlightedCompound={hoveredCompound}
-                  />
-                  
-                  <div className="bg-physio-bg-core border border-physio-border-subtle rounded-xl p-4 space-y-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-physio-text-tertiary">Intel</p>
-                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
-                      {activeCompoundKeys.map(compoundKey => (
-                        <CompoundInsightCard
-                          key={compoundKey}
-                          compoundKey={compoundKey}
-                          profile={userProfile}
-                          onHover={setHoveredCompound}
-                          onToggle={toggleCompound}
-                          visible={visibleCompounds[compoundKey]}
-                          isHighlighted={hoveredCompound === compoundKey}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Oral Compounds Tab */}
-            {activeTab === 'orals' && (
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 animate-fade-in">
-                <div className="space-y-4 min-w-0">
-                  <ChartControlBar viewMode={viewMode} setViewMode={setViewMode} />
-                  <div className="bg-physio-bg-core border border-physio-border-subtle rounded-xl p-1 overflow-hidden">
-                    <div ref={chartRef} className="h-[500px] w-full">
-                      <OralDoseChart
-                        viewMode={viewMode}
-                        visibleCompounds={visibleCompounds}
-                        userProfile={userProfile}
-                        highlightedCompound={hoveredCompound}
-                      />
-                    </div>
-                  </div>
-                  
-                  <UtilityCardRow
-                    compoundType="oral"
-                    visibleCompounds={visibleCompounds}
-                    userProfile={userProfile}
-                    chartRef={chartRef}
-                    onOpenProfile={() => setProfileModalOpen(true)}
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <CustomLegend
-                    visibleCompounds={visibleCompounds}
-                    toggleCompound={toggleCompound}
-                    onMethodologyClick={openMethodology}
-                    onToggleAll={(action, keys) => {
-                      setVisibleCompounds(prev => {
-                        const next = { ...prev };
-                        (keys || activeCompoundKeys).forEach(key => {
-                          if (action === 'all-on') next[key] = true;
-                          if (action === 'all-off') next[key] = false;
-                        });
-                        return next;
-                      });
-                    }}
-                    activeTab={activeTab}
-                    onCompoundHover={setHoveredCompound}
-                    highlightedCompound={hoveredCompound}
-                  />
-                  
-                  <div className="bg-physio-bg-core border border-physio-border-subtle rounded-xl p-4 space-y-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-physio-text-tertiary">Insights</p>
-                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
-                      {activeCompoundKeys.map(compoundKey => (
-                        <CompoundInsightCard
-                          key={compoundKey}
-                          compoundKey={compoundKey}
-                          profile={userProfile}
-                          onHover={setHoveredCompound}
-                          onToggle={toggleCompound}
-                          visible={visibleCompounds[compoundKey]}
-                          isHighlighted={hoveredCompound === compoundKey}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Interaction Matrix Tab */}
-            {activeTab === 'interactions' && (
-              <div className="animate-fade-in">
-                <InteractionHeatmap
+      {/* Oral Compounds Tab */}
+      {activeTab === 'orals' && (
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 animate-fade-in">
+          <div className="space-y-4 min-w-0">
+            <ChartControlBar viewMode={viewMode} setViewMode={setViewMode} />
+            <div className="bg-physio-bg-core border border-physio-border-subtle rounded-xl p-1 overflow-hidden">
+              <div ref={chartRef} className="h-[500px] w-full">
+                <OralDoseChart
+                  viewMode={viewMode}
+                  visibleCompounds={visibleCompounds}
                   userProfile={userProfile}
-                  onPrefillStack={handlePrefillStack}
-                  resetSignal={interactionResetKey}
-                  onFiltersDirtyChange={handleInteractionFiltersDirty}
-                  uiMode={uiMode}
+                  highlightedCompound={hoveredCompound}
                 />
               </div>
-            )}
+            </div>
+            
+            <UtilityCardRow
+              compoundType="oral"
+              visibleCompounds={visibleCompounds}
+              userProfile={userProfile}
+              chartRef={chartRef}
+              onOpenProfile={() => setProfileModalOpen(true)}
+            />
+          </div>
 
-            {/* Stack Builder Tab */}
-            {activeTab === 'stack' && (
-              <div className="animate-fade-in">
-                <StackBuilder prefillStack={stackPrefill} userProfile={userProfile} uiMode={uiMode} />
+          <div className="space-y-4">
+            <CustomLegend
+              visibleCompounds={visibleCompounds}
+              toggleCompound={toggleCompound}
+              onMethodologyClick={openMethodology}
+              onToggleAll={(action, keys) => {
+                setVisibleCompounds(prev => {
+                  const next = { ...prev };
+                  (keys || activeCompoundKeys).forEach(key => {
+                    if (action === 'all-on') next[key] = true;
+                    if (action === 'all-off') next[key] = false;
+                  });
+                  return next;
+                });
+              }}
+              activeTab={activeTab}
+              onCompoundHover={setHoveredCompound}
+              highlightedCompound={hoveredCompound}
+            />
+            
+            <div className="bg-physio-bg-core border border-physio-border-subtle rounded-xl p-4 space-y-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-physio-text-tertiary">Insights</p>
+              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                {activeCompoundKeys.map(compoundKey => (
+                  <CompoundInsightCard
+                    key={compoundKey}
+                    compoundKey={compoundKey}
+                    profile={userProfile}
+                    onHover={setHoveredCompound}
+                    onToggle={toggleCompound}
+                    visible={visibleCompounds[compoundKey]}
+                    isHighlighted={hoveredCompound === compoundKey}
+                  />
+                ))}
               </div>
-            )}
+            </div>
           </div>
         </div>
-      </main>
+      )}
+
+      {/* Interaction Matrix Tab */}
+      {activeTab === 'interactions' && (
+        <div className="animate-fade-in">
+          <InteractionHeatmap
+            userProfile={userProfile}
+            onPrefillStack={handlePrefillStack}
+            resetSignal={interactionResetKey}
+            onFiltersDirtyChange={handleInteractionFiltersDirty}
+            uiMode={uiMode}
+          />
+        </div>
+      )}
+
+      {/* Stack Builder Tab */}
+      {activeTab === 'stack' && (
+        <div className="animate-fade-in">
+          <StackBuilder prefillStack={stackPrefill} userProfile={userProfile} uiMode={uiMode} />
+        </div>
+      )}
 
       {profileModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -608,7 +484,7 @@ const AASVisualization = () => {
           onClose={closeMethodology}
         />
       )}
-    </div>
+    </Layout>
   );
 };
 

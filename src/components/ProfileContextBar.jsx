@@ -1,5 +1,8 @@
 import React from 'react';
 import FilterStatusBadge from './FilterStatusBadge';
+import Badge from './ui/Badge';
+import Button from './ui/Button';
+import Card from './ui/Card';
 
 const formatExperience = experience => {
   switch (experience) {
@@ -55,78 +58,68 @@ const ProfileContextBar = ({
     }
   };
 
-  const ActionButton = ({ label, onClick, tone = 'neutral' }) => {
-    const toneClasses = {
-      neutral: 'text-physio-text-secondary hover:text-physio-text-primary border-physio-bg-border',
-      accent: 'text-physio-accent-mint border-physio-accent-mint hover:bg-physio-accent-mint hover:text-physio-bg-core',
-      danger: 'text-physio-error border-physio-error/60 hover:bg-physio-error hover:text-physio-bg-core'
-    };
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className={`px-3 py-1 text-[11px] font-semibold rounded-full border transition-standard ${toneClasses[tone]}`}
-      >
-        {label}
-      </button>
-    );
-  };
-
   return (
-    <section
-      className={`bg-physio-bg-secondary/70 border border-physio-bg-border/70 rounded-[32px] px-4 py-2 shadow-physio-subtle transition-all duration-200 ${className}`.trim()}
-    >
-      <div className="flex items-center gap-3 min-h-[48px]">
-        <button
-          type="button"
-          onClick={toggleExpand}
-          aria-expanded={expanded}
-          className="flex items-center gap-1 rounded-full border border-physio-bg-border/60 px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-physio-text-tertiary hover:text-physio-text-primary"
-        >
-          Profile
-          <span className={`transition-transform duration-150 ${expanded ? 'rotate-180' : ''}`}>⌄</span>
-        </button>
-        <p className="text-sm font-medium text-physio-text-secondary truncate">
-          {summary}
-        </p>
-        <div className="flex items-center gap-2 ml-auto">
-          {unsaved && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-physio-warning/15 text-physio-warning border border-physio-warning/40">
-              Unsaved
-            </span>
-          )}
-          {filterItems.length > 0 && (
-            <FilterStatusBadge
-              items={filterItems}
-              onReset={onResetFilters}
-              onManagePrefs={onManageFilters}
-              size="compact"
-              label="Filters"
-            />
-          )}
-          <ActionButton label="Edit profile" onClick={onEditProfile} />
-          <ActionButton label="Save" onClick={onSaveProfile} tone="accent" />
-          <ActionButton label="Reset" onClick={onResetProfile} tone="danger" />
+    <div className={`flex items-center gap-6 h-full ${className}`}>
+      <div className="flex items-center gap-3">
+        <div className="flex flex-col items-end">
+          <span className="text-[10px] font-bold text-physio-text-tertiary uppercase tracking-wider">Active Profile</span>
+          <div className="flex items-center gap-2">
+            <div className="px-2 py-0.5 rounded bg-physio-bg-highlight border border-physio-border-subtle text-xs font-mono text-physio-text-primary shadow-sm">
+              {age}y
+            </div>
+            <div className="px-2 py-0.5 rounded bg-physio-bg-highlight border border-physio-border-subtle text-xs font-mono text-physio-text-primary shadow-sm">
+              {lbs} lb
+            </div>
+            <div className="px-2 py-0.5 rounded bg-physio-bg-highlight border border-physio-border-subtle text-xs font-medium text-physio-text-secondary shadow-sm">
+              {experience}
+            </div>
+          </div>
+        </div>
+        
+        <div className="h-8 w-px bg-gradient-to-b from-transparent via-physio-border-subtle to-transparent mx-2 hidden md:block" />
+        
+        <div className="hidden md:flex flex-col">
+           <span className="text-[10px] font-bold text-physio-text-tertiary uppercase tracking-wider">Physiology</span>
+           <div className="flex items-center gap-3 text-xs text-physio-text-secondary">
+             <span className="flex items-center gap-1">
+               <span className="w-1.5 h-1.5 rounded-full bg-physio-accent-secondary/50"></span>
+               SHBG {shbg}
+             </span>
+             <span className="flex items-center gap-1">
+               <span className="w-1.5 h-1.5 rounded-full bg-physio-accent-warning/50"></span>
+               Arom {arom}
+             </span>
+             <span className="flex items-center gap-1">
+               <span className="w-1.5 h-1.5 rounded-full bg-physio-accent-primary/50"></span>
+               Anxiety {anxiety}
+             </span>
+           </div>
         </div>
       </div>
-
-      <div
-        className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
-          expanded ? 'max-h-32 opacity-100 pt-3 border-t border-physio-bg-border/70 mt-2' : 'max-h-0 opacity-0'
-        }`}
-      >
-        <div className="flex flex-wrap items-center gap-2 text-[12px] text-physio-text-primary">
-          {descriptors.map(item => (
-            <span
-              key={item}
-              className="px-2 py-0.5 rounded-full bg-physio-bg-core/80 border border-physio-bg-border/60"
-            >
-              {item}
-            </span>
-          ))}
+      
+      <div className="flex items-center gap-3 ml-auto">
+        {unsaved && (
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-physio-accent-warning/10 border border-physio-accent-warning/20 text-[10px] font-bold text-physio-accent-warning uppercase tracking-wide animate-pulse">
+            <div className="w-1.5 h-1.5 rounded-full bg-physio-accent-warning" />
+            Unsaved
+          </div>
+        )}
+        {filterItems.length > 0 && (
+          <FilterStatusBadge
+            items={filterItems}
+            onReset={onResetFilters}
+            onManagePrefs={onManageFilters}
+            size="compact"
+            label="Filters"
+          />
+        )}
+        <div className="flex items-center gap-2 pl-4 border-l border-physio-border-subtle">
+          <Button size="sm" variant="ghost" onClick={onEditProfile} className="text-xs">Edit</Button>
+          <Button size="sm" variant="primary" onClick={onSaveProfile} className="shadow-[0_0_15px_rgba(99,102,241,0.3)]">Save</Button>
+          <Button size="sm" variant="ghost" onClick={onResetProfile} className="text-physio-accent-critical hover:bg-physio-accent-critical/10 text-xs">Reset</Button>
         </div>
       </div>
-    </section>
+    </div>
   );
 };
 

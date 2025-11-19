@@ -29,7 +29,7 @@ const InteractionSummaryCard = ({
   return (
     <div className="bg-physio-bg-core border border-physio-bg-border rounded-2xl p-5 shadow-sm relative overflow-hidden">
       {/* Radial gradient hint */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-physio-accent-cyan/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-64 h-64 bg-physio-accent-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
       <div className="relative z-10 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div className="space-y-2">
@@ -38,7 +38,7 @@ const InteractionSummaryCard = ({
               {nameA} <span className="text-physio-text-tertiary">+</span> {nameB}
             </h3>
             {pair.tags && pair.tags.map(tag => (
-              <span key={tag} className="px-2 py-0.5 rounded-full bg-physio-bg-secondary border border-physio-bg-border text-[10px] uppercase tracking-wide text-physio-text-secondary">
+              <span key={tag} className="px-2 py-0.5 rounded-full bg-physio-bg-surface border border-physio-bg-border text-[10px] uppercase tracking-wide text-physio-text-secondary">
                 {tag}
               </span>
             ))}
@@ -52,14 +52,14 @@ const InteractionSummaryCard = ({
           <div className="flex flex-wrap gap-3 pt-1">
             <div className="flex items-center gap-1.5 text-xs">
               <span className="text-physio-text-tertiary uppercase tracking-wide">Synergy Gain</span>
-              <span className={`font-semibold ${benefitSynergy >= 0 ? 'text-physio-accent-mint' : 'text-physio-text-secondary'}`}>
+              <span className={`font-semibold ${benefitSynergy >= 0 ? 'text-physio-accent-success' : 'text-physio-text-secondary'}`}>
                 {benefitSign}{benefitSynergy.toFixed(1)}% Benefit
               </span>
             </div>
             <div className="w-px h-3 bg-physio-bg-border self-center" />
             <div className="flex items-center gap-1.5 text-xs">
               <span className="text-physio-text-tertiary uppercase tracking-wide">Risk Modifier</span>
-              <span className={`font-semibold ${riskSynergy > 0 ? 'text-physio-error' : 'text-physio-accent-mint'}`}>
+              <span className={`font-semibold ${riskSynergy > 0 ? 'text-physio-accent-critical' : 'text-physio-accent-success'}`}>
                 {riskSign}{riskSynergy.toFixed(1)}% Risk
               </span>
             </div>
@@ -71,9 +71,9 @@ const InteractionSummaryCard = ({
             <div className="text-[10px] uppercase tracking-wide text-physio-text-tertiary mb-0.5">Evidence Mix</div>
             <div className="flex items-center justify-end gap-2 text-xs font-medium text-physio-text-secondary">
               <span className={clinicalShare > 50 ? 'text-physio-text-primary' : ''}>{clinicalShare}% Clinical</span>
-              <div className="w-16 h-1.5 bg-physio-bg-secondary rounded-full overflow-hidden">
+              <div className="w-16 h-1.5 bg-physio-bg-surface rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-physio-accent-cyan" 
+                  className="h-full bg-physio-accent-primary" 
                   style={{ width: `${clinicalShare}%` }}
                 />
               </div>

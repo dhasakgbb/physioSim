@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { compoundData } from '../data/compoundData';
 import { findSweetSpotRange } from '../utils/sweetSpot';
 import { deriveDoseWindow } from '../utils/doseWindows';
-import DoseSlider from './DoseSlider';
 
 const formatRange = (range) => {
   if (!range) return 'n/a';
@@ -65,11 +64,13 @@ const SweetSpotFinder = ({
         <div className={`grid grid-cols-1 gap-3 text-xs ${inline ? 'pt-2 border-t border-dashed border-physio-bg-border/70' : 'mt-3'}`}>
           {results.map(result => {
             const doseWindow = deriveDoseWindow(result.compoundKey);
-            const sliderRange = [Math.round(result.optimalRange[0]), Math.round(result.optimalRange[1])];
+            const rangeStartPct = ((result.optimalRange[0] - doseWindow.min) / (doseWindow.max - doseWindow.min)) * 100;
+            const rangeWidthPct = ((result.optimalRange[1] - result.optimalRange[0]) / (doseWindow.max - doseWindow.min)) * 100;
+            
             return (
               <div
                 key={result.compoundKey}
-                className="border border-physio-bg-border rounded-2xl p-3.5 bg-physio-bg-secondary/80 shadow-inner space-y-2"
+                className="border border-physio-border-subtle rounded-2xl p-3.5 bg-physio-bg-surface shadow-inner space-y-2"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-physio-text-primary">
@@ -79,28 +80,34 @@ const SweetSpotFinder = ({
                     Peak @ {result.peakDose} {result.unit}
                   </span>
                 </div>
-                <DoseSlider
-                  id={`sweetspot-${result.compoundKey}`}
-                  value={sliderRange}
-                  range
-                  min={doseWindow.min}
-                  max={doseWindow.max}
-                  unit={result.unit}
-                  markers={[
-                    { value: result.peakDose, label: 'Peak', tone: 'accent' },
-                    result.warningDose
-                      ? { value: result.warningDose, label: 'Risk', tone: 'warning' }
-                      : null
-                  ].filter(Boolean)}
-                  disabled
-                  ariaLabel={`${result.abbreviation} sweet spot`}
-                />
+                
+                {/* Visual Range Indicator */}
+                <div className="relative h-6 w-full bg-physio-bg-highlight rounded-full overflow-hidden">
+                  {/* Optimal Range Bar */}
+                  <div 
+                    className="absolute h-full bg-physio-accent-success/30 border-x border-physio-accent-success"
+                    style={{ left: `${rangeStartPct}%`, width: `${rangeWidthPct}%` }}
+                  />
+                  {/* Peak Marker */}
+                  <div 
+                    className="absolute h-full w-0.5 bg-physio-accent-success top-0"
+                    style={{ left: `${((result.peakDose - doseWindow.min) / (doseWindow.max - doseWindow.min)) * 100}%` }}
+                  />
+                  {/* Warning Marker */}
+                  {result.warningDose && (
+                    <div 
+                      className="absolute h-full w-0.5 bg-physio-accent-critical top-0"
+                      style={{ left: `${((result.warningDose - doseWindow.min) / (doseWindow.max - doseWindow.min)) * 100}%` }}
+                    />
+                  )}
+                </div>
+
                 <p className="text-physio-text-primary text-xs">
                   Optimal window: <strong>{formatRange(result.optimalRange)} {result.unit}</strong>
                   {doseWindow?.min !== undefined && ` • Guardrail ${doseWindow.min}-${doseWindow.max} ${result.unit}`}
                 </p>
                 {result.warningDose && (
-                  <p className="text-physio-error text-[11px]">
+                  <p className="text-physio-accent-critical text-[11px]">
                     Above {result.warningDose} {result.unit} risk outpaces benefit.
                   </p>
                 )}

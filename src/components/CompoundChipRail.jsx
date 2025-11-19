@@ -95,12 +95,12 @@ const CompoundChipRail = ({
               onKeyDown={event => handleKeyDown(event, index, key)}
               className={`px-3.5 py-1.5 rounded-full border text-sm font-semibold transition-all duration-150 flex items-center gap-2 backdrop-blur-sm ${
                 isActive
-                  ? 'bg-physio-bg-core/70 border-physio-accent-cyan text-white shadow-[0_0_20px_rgba(75,187,247,0.25)]'
-                  : 'bg-physio-bg-secondary/70 border-physio-bg-border/80 text-physio-text-tertiary'
+                  ? 'bg-physio-bg-core/70 border-physio-accent-primary text-white shadow-neo-glow'
+                  : 'bg-physio-bg-surface/70 border-physio-border-subtle text-physio-text-tertiary'
               } ${
                 isHighlighted
-                  ? 'ring-2 ring-physio-accent-cyan/70'
-                  : 'hover:border-physio-accent-cyan/50 hover:text-white hover:shadow-[0_0_16px_rgba(75,187,247,0.18)]'
+                  ? 'ring-2 ring-physio-accent-primary/70'
+                  : 'hover:border-physio-accent-primary/50 hover:text-white hover:shadow-neo-glow'
               } ${isFocused && !isActive ? 'border-physio-text-tertiary/40 text-physio-text-primary' : ''}`}
               style={{ boxShadow: isActive ? `0 0 16px ${compound.color}33` : 'none' }}
               title={compound.name || key}

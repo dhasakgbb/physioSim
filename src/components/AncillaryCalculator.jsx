@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ancillaries } from '../data/sideFxAndAncillaries';
+import Card from './ui/Card';
 
 /**
  * Ancillary Calculator Component
@@ -56,23 +57,23 @@ const AncillaryCalculator = () => {
   return (
     <div className="w-full space-y-6">
       {/* Header */}
-      <div className="bg-physio-bg-secondary p-6 rounded-lg shadow-sm border border-physio-bg-border">
+      <Card className="p-6">
         <h2 className="text-3xl font-bold mb-3 text-physio-text-primary">Ancillary Medications Reference</h2>
         <p className="text-physio-text-secondary">
           Comprehensive guide to ancillary medications used for harm reduction during AAS cycles.
           Click any drug for detailed information including dosing, mechanism, sides, and cost.
         </p>
-      </div>
+      </Card>
       
       {/* Category Filter */}
-      <div className="bg-physio-bg-secondary p-4 rounded-lg shadow-sm border border-physio-bg-border">
+      <Card className="p-4">
         <label className="block text-sm font-medium text-physio-text-secondary mb-2">
           Filter by Category
         </label>
         <select
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value)}
-          className="w-full md:w-1/2 px-3 py-2 bg-physio-bg-tertiary text-physio-text-primary border border-physio-bg-border rounded-md focus:outline-none focus:ring-2 focus:ring-physio-accent-cyan transition-standard"
+          className="w-full md:w-1/2 px-3 py-2 bg-physio-bg-highlight text-physio-text-primary border border-physio-border-subtle rounded-md focus:outline-none focus:ring-2 focus:ring-physio-accent-primary transition-standard"
         >
           <option value="all">All Categories</option>
           {categories.map(cat => (
@@ -81,15 +82,15 @@ const AncillaryCalculator = () => {
             </option>
           ))}
         </select>
-      </div>
+      </Card>
       
       {/* Drugs by Category */}
       {Object.entries(drugsByCategory).map(([category, drugs]) => {
         const color = getCategoryColor(category);
         
         return (
-          <div key={category} className="bg-physio-bg-secondary p-6 rounded-lg shadow-sm border border-physio-bg-border">
-            <h3 className={`text-2xl font-semibold mb-4 text-${color}-700`}>
+          <Card key={category} className="p-6">
+            <h3 className={`text-2xl font-semibold mb-4 text-physio-text-primary`}>
               {getCategoryLabel(category)}
             </h3>
             <div className="space-y-3">
@@ -109,13 +110,13 @@ const AncillaryCalculator = () => {
                     <div
                       onClick={() => setExpandedDrug(isExpanded ? null : drug.key)}
                       className={`p-4 cursor-pointer flex justify-between items-center ${
-                        isExpanded ? `bg-${color}-50` : 'bg-physio-bg-secondary hover:bg-physio-bg-tertiary'
+                        isExpanded ? `bg-physio-bg-highlight` : 'bg-physio-bg-surface hover:bg-physio-bg-highlight'
                       }`}
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-3">
                           <h4 className="text-lg font-semibold text-physio-text-primary">{drug.name}</h4>
-                          <span className={`px-2 py-1 rounded text-xs font-medium bg-${color}-100 text-${color}-800`}>
+                          <span className={`px-2 py-1 rounded text-xs font-medium bg-physio-bg-highlight text-physio-text-primary border border-physio-border-subtle`}>
                             {drug.type || getCategoryLabel(drug.category)}
                           </span>
                         </div>
@@ -144,7 +145,7 @@ const AncillaryCalculator = () => {
                         
                         {/* Dosing */}
                         {drug.dosing && (
-                          <div className={`p-3 bg-${color}-50 rounded-lg`}>
+                          <div className={`p-3 bg-physio-bg-highlight rounded-lg`}>
                             <h5 className="font-semibold text-physio-text-primary mb-2">Dosing Protocols</h5>
                             {typeof drug.dosing === 'object' ? (
                               <div className="space-y-2">
@@ -173,8 +174,8 @@ const AncillaryCalculator = () => {
                         
                         {/* Caution */}
                         {drug.caution && (
-                          <div className="p-3 bg-physio-bg-tertiary border-l-4 border-physio-warning">
-                            <h5 className="font-semibold text-physio-warning mb-1">⚠️ Caution</h5>
+                          <div className="p-3 bg-physio-bg-highlight border-l-4 border-physio-accent-warning">
+                            <h5 className="font-semibold text-physio-accent-warning mb-1">⚠️ Caution</h5>
                             <p className="text-physio-text-secondary text-sm">{drug.caution}</p>
                           </div>
                         )}
@@ -189,16 +190,16 @@ const AncillaryCalculator = () => {
                         
                         {/* Bloodwork Target */}
                         {drug.bloodworkTarget && (
-                          <div className="p-3 bg-purple-50 rounded-lg">
-                            <h5 className="font-semibold text-purple-900 mb-1">Bloodwork Target</h5>
+                          <div className="p-3 bg-physio-accent-primary/10 rounded-lg">
+                            <h5 className="font-semibold text-physio-accent-primary mb-1">Bloodwork Target</h5>
                             <p className="text-physio-text-secondary text-sm">{drug.bloodworkTarget}</p>
                           </div>
                         )}
                         
                         {/* Advantages */}
                         {drug.advantages && (
-                          <div className="p-3 bg-physio-bg-tertiary rounded-lg">
-                            <h5 className="font-semibold text-green-900 mb-1">Advantages</h5>
+                          <div className="p-3 bg-physio-bg-highlight rounded-lg">
+                            <h5 className="font-semibold text-physio-accent-success mb-1">Advantages</h5>
                             <p className="text-physio-text-secondary text-sm">{drug.advantages}</p>
                           </div>
                         )}
@@ -222,59 +223,59 @@ const AncillaryCalculator = () => {
                 );
               })}
             </div>
-          </div>
+          </Card>
         );
       })}
       
       {/* General Guidelines */}
-      <div className="bg-physio-bg-secondary p-6 rounded-lg shadow-sm border border-physio-bg-border">
+      <Card className="p-6">
         <h3 className="text-xl font-semibold mb-4 text-physio-text-primary">General Harm Reduction Guidelines</h3>
         <div className="space-y-4 text-physio-text-secondary">
-          <div className="p-4 bg-physio-bg-tertiary rounded-lg">
-            <h4 className="font-semibold text-blue-900 mb-2">Aromatase Inhibitors (AI)</h4>
+          <div className="p-4 bg-physio-bg-highlight rounded-lg">
+            <h4 className="font-semibold text-physio-accent-primary mb-2">Aromatase Inhibitors (AI)</h4>
             <p className="text-sm">
               Essential for compounds that aromatize (Test, Dbol, Anadrol). Start low and titrate based on symptoms
               and bloodwork. Crashing estrogen (E2) causes worse sides than high E2. Target E2: 20-30 pg/mL (sensitive assay).
             </p>
           </div>
           
-          <div className="p-4 bg-physio-bg-tertiary rounded-lg">
-            <h4 className="font-semibold text-green-900 mb-2">Dopamine Agonists</h4>
+          <div className="p-4 bg-physio-bg-highlight rounded-lg">
+            <h4 className="font-semibold text-physio-accent-success mb-2">Dopamine Agonists</h4>
             <p className="text-sm">
               Mandatory for 19-nor compounds (NPP, Tren) to prevent prolactin-induced sexual dysfunction ("deca dick").
               Cabergoline is gold standard. Monitor prolactin levels via bloodwork (target &lt;15 ng/mL).
             </p>
           </div>
           
-          <div className="p-4 bg-physio-bg-tertiary rounded-lg">
-            <h4 className="font-semibold text-red-900 mb-2">Liver Support (Orals)</h4>
+          <div className="p-4 bg-physio-bg-highlight rounded-lg">
+            <h4 className="font-semibold text-physio-accent-critical mb-2">Liver Support (Orals)</h4>
             <p className="text-sm">
               TUDCA is NON-NEGOTIABLE for all oral AAS use. Take 3 hours after oral dose for maximum effectiveness.
               NAC is excellent adjunct. Monitor ALT/AST every 3-4 weeks on orals. Discontinue if &gt;3x upper limit.
             </p>
           </div>
           
-          <div className="p-4 bg-orange-50 rounded-lg">
-            <h4 className="font-semibold text-orange-900 mb-2">Cardiovascular Support</h4>
+          <div className="p-4 bg-physio-accent-warning/10 rounded-lg">
+            <h4 className="font-semibold text-physio-accent-warning mb-2">Cardiovascular Support</h4>
             <p className="text-sm">
               Blood pressure management (ARBs, ACE inhibitors) essential if BP &gt;140/90. Lipid support (fish oil, statins)
               critical for all cycles, especially orals and Tren. Monitor BP 3x/week at home. Lipid panels every 6-8 weeks.
             </p>
           </div>
           
-          <div className="p-4 bg-purple-50 rounded-lg">
-            <h4 className="font-semibold text-purple-900 mb-2">PCT (Post-Cycle Therapy)</h4>
+          <div className="p-4 bg-physio-accent-primary/10 rounded-lg">
+            <h4 className="font-semibold text-physio-accent-primary mb-2">PCT (Post-Cycle Therapy)</h4>
             <p className="text-sm">
               SERMs (Nolvadex, Clomid) essential for HPTA restart after cycle. HCG during cycle makes PCT easier and faster.
               Extended PCT needed for 19-nors (4-6 months recovery typical). Bloodwork post-cycle to verify recovery (Total T, Free T, LH, FSH).
             </p>
           </div>
         </div>
-      </div>
+      </Card>
       
       {/* Disclaimer */}
-      <div className="bg-physio-bg-tertiary border-l-4 border-physio-warning p-4">
-        <h3 className="text-lg font-semibold text-physio-warning mb-2">⚠️ Important Disclaimer</h3>
+      <div className="bg-physio-bg-highlight border-l-4 border-physio-accent-warning p-4">
+        <h3 className="text-lg font-semibold text-physio-accent-warning mb-2">⚠️ Important Disclaimer</h3>
         <p className="text-physio-text-secondary text-sm">
           This information is for educational purposes only and does not constitute medical advice.
           Ancillary medications may require prescriptions and should be used under medical supervision.

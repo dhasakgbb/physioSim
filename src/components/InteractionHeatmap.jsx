@@ -20,10 +20,13 @@ import { defaultProfile } from '../utils/personalization';
 import { readJSONStorage, writeJSONStorage, removeStorageKey } from '../utils/storage';
 import { INTERACTION_CONTROL_STORAGE_KEY, HEATMAP_FOCUS_PIN_KEY } from '../utils/storageKeys';
 import { deriveDoseWindow } from '../utils/doseWindows';
-import DoseSlider from './DoseSlider';
 import InteractionSummaryCard from './interactions/InteractionSummaryCard';
 import InteractionDoseSliders from './interactions/InteractionDoseSliders';
 import InteractionAnalyticsDeck from './interactions/InteractionAnalyticsDeck';
+import Card from './ui/Card';
+import Button from './ui/Button';
+import Badge from './ui/Badge';
+import Input from './ui/Input';
 
 const uniqueCompounds = Array.from(new Set(Object.values(interactionPairs).flatMap(pair => pair.compounds)));
 
@@ -31,12 +34,12 @@ const heatmapColorScale = (value, maxValue, mode) => {
   if (maxValue === 0) return '#e5e7eb';
   const normalized = Math.min(value / maxValue, 1);
   if (mode === 'benefit') {
-    return `rgba(14,165,233,${0.2 + normalized * 0.8})`; // physio-accent-cyan
+    return `rgba(99,102,241,${0.2 + normalized * 0.8})`; // physio-accent-primary (Indigo)
   }
   if (mode === 'risk') {
-    return `rgba(248,113,113,${0.2 + normalized * 0.8})`; // physio-error
+    return `rgba(239,68,68,${0.2 + normalized * 0.8})`; // physio-accent-critical (Red)
   }
-  return `rgba(168,85,247,${0.2 + normalized * 0.8})`; // physio-accent-violet
+  return `rgba(139,92,246,${0.2 + normalized * 0.8})`; // physio-accent-secondary (Violet)
 };
 
 const defaultHeatmapControls = {
@@ -64,10 +67,10 @@ const getLeanBackGlyph = (value) => {
 };
 
 const getLeanBackPalette = (value) => {
-  if (value >= 0.35) return 'bg-physio-accent-mint/20 text-physio-accent-mint border-physio-accent-mint/40';
-  if (value >= 0.15) return 'bg-physio-accent-cyan/20 text-physio-accent-cyan border-physio-accent-cyan/40';
-  if (value <= -0.35) return 'bg-physio-error/20 text-physio-error border-physio-error/40';
-  if (value <= -0.15) return 'bg-physio-warning/20 text-physio-warning border-physio-warning/40';
+  if (value >= 0.35) return 'bg-physio-accent-success/20 text-physio-accent-success border-physio-accent-success/40';
+  if (value >= 0.15) return 'bg-physio-accent-primary/20 text-physio-accent-primary border-physio-accent-primary/40';
+  if (value <= -0.35) return 'bg-physio-accent-critical/20 text-physio-accent-critical border-physio-accent-critical/40';
+  if (value <= -0.15) return 'bg-physio-accent-warning/20 text-physio-accent-warning border-physio-accent-warning/40';
   return 'bg-physio-bg-core text-physio-text-tertiary border-physio-bg-border';
 };
 
@@ -380,8 +383,8 @@ const InteractionHeatmap = ({
   return (
     <div className="space-y-8">
       {/* ZONE 1: Matrix Dashboard */}
-      <section ref={heatmapRef} className={`bg-physio-bg-secondary border border-physio-bg-border rounded-2xl shadow-sm transition-all duration-200 ${heatmapCompact ? 'p-4' : 'p-6'}`}>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <Card variant="glass" className={`transition-all duration-200 ${heatmapCompact ? 'p-4' : 'p-6'}`}>
+        <div ref={heatmapRef} className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
             <h2 className="text-2xl font-bold text-physio-text-primary tracking-tight">Interaction Matrix</h2>
             {!heatmapCompact && (
@@ -399,7 +402,7 @@ const InteractionHeatmap = ({
                    onClick={() => setHeatmapMode(mode.key)}
                    className={`px-3 py-1 text-[11px] rounded-full font-medium transition ${
                      heatmapMode === mode.key
-                       ? 'bg-physio-accent-cyan text-physio-bg-core shadow-sm'
+                       ? 'bg-physio-accent-primary text-physio-bg-core shadow-sm'
                        : 'text-physio-text-secondary hover:text-physio-text-primary'
                    }`}
                  >
@@ -415,7 +418,7 @@ const InteractionHeatmap = ({
                    onClick={() => setMatrixViewMode(option.key)}
                    className={`px-3 py-1 text-[11px] rounded-full font-medium transition ${
                      matrixViewMode === option.key
-                       ? 'bg-physio-accent-mint text-physio-bg-core shadow-sm'
+                       ? 'bg-physio-accent-success text-physio-bg-core shadow-sm'
                        : 'text-physio-text-secondary hover:text-physio-text-primary'
                    }`}
                  >
@@ -469,7 +472,7 @@ const InteractionHeatmap = ({
                         onClick={() => handlePairChange(pair.id)}
                         className={`h-12 relative rounded-md border transition-all duration-200 hover:scale-105 hover:z-10 hover:shadow-lg ${
                           isSelected 
-                            ? 'ring-2 ring-physio-accent-cyan ring-offset-2 ring-offset-physio-bg-secondary z-10' 
+                            ? 'ring-2 ring-physio-accent-primary ring-offset-2 ring-offset-physio-bg-secondary z-10' 
                             : 'border-physio-bg-border/50'
                         } ${leanBackClass}`}
                         style={!leanBackEnabled ? { backgroundColor: color } : {}}
@@ -488,7 +491,7 @@ const InteractionHeatmap = ({
             </div>
           </div>
         </div>
-      </section>
+      </Card>
 
       {/* ZONE 2: Interaction Workspace */}
       <div ref={pairDetailRef} className="min-h-[600px]">
@@ -503,12 +506,13 @@ const InteractionHeatmap = ({
             />
 
             <div className="flex justify-end gap-3">
-              <button
+              <Button
                 onClick={handleSendCurrentToStack}
-                className="px-4 py-2 rounded-lg border border-physio-accent-cyan text-physio-accent-cyan text-sm font-semibold hover:bg-physio-accent-cyan/10 transition-colors"
+                variant="secondary"
+                size="sm"
               >
                 Load Current Doses into Stack
-              </button>
+              </Button>
               <PDFExport
                 chartRef={pairDetailRef}
                 filename={`interaction-${selectedPair.label.replace(/\s+/g, '-')}.pdf`}
@@ -524,7 +528,7 @@ const InteractionHeatmap = ({
             </div>
 
             {/* Control Surface */}
-            <div className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6 shadow-lg">
+            <Card className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-physio-text-primary">Dose Synergy Lab</h3>
                 <div className="flex gap-2">
@@ -534,7 +538,7 @@ const InteractionHeatmap = ({
                       onClick={() => setSelectedDimension(key)}
                       className={`px-3 py-1.5 text-xs font-medium rounded-full border transition ${
                         selectedDimension === key
-                          ? 'bg-physio-accent-cyan/10 text-physio-accent-cyan border-physio-accent-cyan'
+                          ? 'bg-physio-accent-primary/10 text-physio-accent-primary border-physio-accent-primary'
                           : 'bg-physio-bg-core text-physio-text-secondary border-physio-bg-border hover:text-physio-text-primary'
                       }`}
                     >
@@ -558,7 +562,7 @@ const InteractionHeatmap = ({
                   netScore: netScore
                 }}
               />
-            </div>
+            </Card>
 
             {/* Analytics Deck */}
             <InteractionAnalyticsDeck
@@ -580,15 +584,16 @@ const InteractionHeatmap = ({
       </div>
 
       {/* Advanced / Optimizers */}
-      <section className="bg-physio-bg-secondary border border-physio-bg-border rounded-2xl p-6">
+      <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-physio-text-primary">Advanced Optimizers</h3>
-          <button
+          <Button
             onClick={() => setOptimizerCollapsed(prev => !prev)}
-            className="text-sm text-physio-accent-cyan hover:underline"
+            variant="ghost"
+            size="sm"
           >
             {optimizerCollapsed ? 'Show' : 'Hide'}
-          </button>
+          </Button>
         </div>
         
         {!optimizerCollapsed && (
@@ -598,25 +603,27 @@ const InteractionHeatmap = ({
               <h4 className="text-sm font-medium text-physio-text-secondary mb-3">3-Compound Templates</h4>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {stackResults.map(result => (
-                  <article key={result.comboId} className="bg-physio-bg-core border border-physio-bg-border rounded-xl p-4 flex flex-col gap-3 hover:border-physio-accent-cyan/30 transition-colors">
+                  <article key={result.comboId} className="bg-physio-bg-core border border-physio-bg-border rounded-xl p-4 flex flex-col gap-3 hover:border-physio-accent-primary/30 transition-colors">
                     <div className="flex justify-between items-start">
                       <div>
                         <h5 className="font-semibold text-physio-text-primary">{stackOptimizerCombos.find(c => c.id === result.comboId)?.label}</h5>
                         <p className="text-xs text-physio-text-secondary mt-1">{result.narrative}</p>
                       </div>
-                      <span className={`text-sm font-bold ${result.score >= 0 ? 'text-physio-accent-cyan' : 'text-physio-error'}`}>
+                      <span className={`text-sm font-bold ${result.score >= 0 ? 'text-physio-accent-primary' : 'text-physio-accent-critical'}`}>
                         Net {result.score.toFixed(2)}
                       </span>
                     </div>
                     <div className="text-xs text-physio-text-tertiary">
                       {result.compounds.map(c => `${compoundData[c]?.abbreviation}: ${result.doses[c]}mg`).join(' · ')}
                     </div>
-                    <button
+                    <Button
                       onClick={() => onPrefillStack?.(result.compounds.map(c => ({ compound: c, dose: result.doses[c] })))}
-                      className="mt-auto w-full py-2 rounded-lg border border-physio-bg-border text-xs font-semibold text-physio-text-secondary hover:bg-physio-bg-secondary hover:text-physio-accent-cyan transition"
+                      variant="secondary"
+                      size="sm"
+                      className="mt-auto w-full"
                     >
                       Load to Stack Builder
-                    </button>
+                    </Button>
                   </article>
                 ))}
               </div>
@@ -636,20 +643,23 @@ const InteractionHeatmap = ({
                     <option key={k} value={k}>{compoundData[k]?.name}</option>
                   ))}
                 </select>
-                <button 
+                <Button 
                   onClick={handleAddCustomCompound}
                   disabled={!customSelection}
-                  className="px-4 py-2 bg-physio-accent-cyan text-white rounded-lg text-sm font-semibold disabled:opacity-50"
+                  variant="primary"
+                  size="sm"
                 >
                   Add
-                </button>
-                <button 
+                </Button>
+                <Button 
                   onClick={handleRunCustomOptimizer}
                   disabled={!customCompounds.length}
-                  className="px-4 py-2 border border-physio-accent-cyan text-physio-accent-cyan rounded-lg text-sm font-semibold ml-auto disabled:opacity-50"
+                  variant="secondary"
+                  size="sm"
+                  className="ml-auto"
                 >
                   Run Optimizer
-                </button>
+                </Button>
               </div>
               
               {customCompounds.length > 0 && (
@@ -657,7 +667,7 @@ const InteractionHeatmap = ({
                   {customCompounds.map(k => (
                     <div key={k} className="bg-physio-bg-core border border-physio-bg-border rounded-lg p-3 flex justify-between items-center">
                       <span className="text-sm font-medium text-physio-text-primary">{compoundData[k]?.name}</span>
-                      <button onClick={() => handleRemoveCustomCompound(k)} className="text-xs text-physio-error">Remove</button>
+                      <button onClick={() => handleRemoveCustomCompound(k)} className="text-xs text-physio-accent-critical">Remove</button>
                     </div>
                   ))}
                 </div>
@@ -669,17 +679,19 @@ const InteractionHeatmap = ({
                     <div key={idx} className="bg-physio-bg-core border border-physio-bg-border rounded-xl p-4">
                       <div className="flex justify-between text-sm mb-2">
                         <span className="text-physio-text-tertiary">Result #{idx+1}</span>
-                        <span className="font-bold text-physio-accent-mint">Net {res.score.toFixed(2)}</span>
+                        <span className="font-bold text-physio-accent-success">Net {res.score.toFixed(2)}</span>
                       </div>
                       <div className="text-xs text-physio-text-primary mb-3">
                         {res.compounds.map(c => `${c}: ${res.doses[c]}mg`).join(', ')}
                       </div>
-                      <button
+                      <Button
                         onClick={() => onPrefillStack?.(res.compounds.map(c => ({ compound: c, dose: res.doses[c] })))}
-                        className="w-full py-1.5 rounded border border-physio-accent-cyan text-xs font-semibold text-physio-accent-cyan hover:bg-physio-accent-cyan/10"
+                        variant="ghost"
+                        size="sm"
+                        className="w-full border border-physio-accent-primary text-physio-accent-primary hover:bg-physio-accent-primary/10"
                       >
                         Use Stack
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -687,7 +699,7 @@ const InteractionHeatmap = ({
             </div>
           </div>
         )}
-      </section>
+      </Card>
     </div>
   );
 };

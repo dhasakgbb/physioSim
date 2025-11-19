@@ -1,5 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { defaultProfile, buildPersonalizationNarrative, defaultCurveScales } from '../utils/personalization';
+import Card from './ui/Card';
+import Button from './ui/Button';
+import Input from './ui/Input';
+import Slider from './ui/Slider';
 
 const numericFields = [
   { name: 'age', label: 'Age', min: 18, max: 70, suffix: 'yrs', helper: 'Biological recovery capacity declines with age.' },
@@ -154,7 +158,7 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compre
   const cardPadding = compressed ? 'p-3' : 'p-4';
 
   return (
-    <section className={`mb-8 bg-physio-bg-core border-2 border-physio-accent-cyan/60 rounded-2xl shadow-lg ${containerPadding}`}>
+    <Card className={`mb-8 ${containerPadding}`} variant="highlight">
       <div className={`flex flex-col md:flex-row md:items-center gap-3 ${collapsed ? 'mb-0' : 'mb-4'}`}>
         <button
           type="button"
@@ -174,24 +178,27 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compre
         </button>
         {collapsed && (
           <div className="flex flex-wrap gap-2">
-            <button
+            <Button
               onClick={() => setCollapsed(false)}
-              className="px-3 py-2 text-xs font-semibold border border-physio-accent-cyan text-physio-accent-cyan rounded-lg hover:bg-physio-accent-cyan hover:text-physio-bg-core transition-standard"
+              variant="secondary"
+              size="sm"
             >
               Edit profile
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={resetProfile}
-              className="px-3 py-2 text-xs font-semibold border border-physio-bg-border rounded-lg text-physio-text-secondary hover:text-physio-text-primary transition-standard"
+              variant="ghost"
+              size="sm"
             >
               Reset
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => onClearProfile?.()}
-              className="px-3 py-2 text-xs font-semibold border border-physio-bg-border rounded-lg text-physio-text-secondary hover:text-physio-text-primary transition-standard"
+              variant="ghost"
+              size="sm"
             >
               Forget saved
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -206,18 +213,20 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compre
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 self-start md:self-auto">
-              <button
+              <Button
                 onClick={resetProfile}
-                className="px-4 py-2 border border-physio-accent-cyan rounded-lg text-sm font-semibold text-physio-accent-cyan hover:bg-physio-accent-cyan hover:text-physio-bg-core transition-standard"
+                variant="secondary"
+                size="sm"
               >
                 Reset to baseline
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => onClearProfile?.()}
-                className="px-4 py-2 border border-physio-bg-border rounded-lg text-sm font-semibold text-physio-text-secondary hover:text-physio-text-primary transition-standard"
+                variant="ghost"
+                size="sm"
               >
                 Forget saved profile
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -225,19 +234,19 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compre
         {numericFields.map(field => (
           <label key={field.name} className="flex flex-col text-sm">
             <span className="font-semibold text-physio-text-secondary">{field.label}</span>
-            <div className="mt-1 flex items-center bg-physio-bg-secondary border border-physio-bg-border rounded-lg">
-              <input
+            <div className="mt-1">
+              <Input
                 type="number"
                 min={field.min}
                 max={field.max}
                 value={profile[field.name] ?? ''}
                 placeholder={field.optional ? 'optional' : ''}
                 onChange={e => handleNumericChange(field.name, e.target.value)}
-                className="flex-1 bg-transparent px-3 py-2 focus:outline-none text-physio-text-primary"
+                label={null}
               />
-              <span className="px-3 text-xs uppercase tracking-wide text-physio-text-tertiary border-l border-physio-bg-border">
+              <div className="text-right text-xs uppercase tracking-wide text-physio-text-tertiary mt-1">
                 {field.suffix}
-              </span>
+              </div>
             </div>
             <span className="mt-1 text-xs text-physio-text-tertiary">{field.helper}</span>
           </label>
@@ -282,12 +291,14 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compre
             <h3 className="text-lg font-bold text-physio-text-primary">Response tuning sliders</h3>
             <p className="text-xs text-physio-text-secondary">Dial the heuristics that tailor benefit/risk curves to your physiology.</p>
           </div>
-          <button
+          <Button
             onClick={resetCurveScales}
-            className="px-3 py-1 text-xs font-semibold rounded-lg border border-physio-accent-cyan text-physio-accent-cyan transition-standard"
+            variant="ghost"
+            size="sm"
+            className="text-physio-accent-cyan border-physio-accent-cyan hover:bg-physio-accent-cyan/10"
           >
             Reset sliders
-          </button>
+          </Button>
         </div>
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -297,14 +308,12 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compre
                 <span>{field.label}</span>
                 <span className="text-physio-accent-cyan">{curveScales[field.key].toFixed(2)}×</span>
               </div>
-              <input
-                type="range"
-                min="0.5"
-                max="1.5"
-                step="0.05"
+              <Slider
+                min={0.5}
+                max={1.5}
+                step={0.05}
                 value={curveScales[field.key]}
-                onChange={e => updateCurveScale(field.key, parseFloat(e.target.value))}
-                className="w-full"
+                onChange={value => updateCurveScale(field.key, value)}
               />
               <p className="text-[11px] text-physio-text-tertiary mt-1">{field.helper}</p>
             </div>
@@ -313,7 +322,7 @@ const PersonalizationPanel = ({ profile, onProfileChange, onClearProfile, compre
       </div>
         </>
       )}
-    </section>
+    </Card>
   );
 };
 

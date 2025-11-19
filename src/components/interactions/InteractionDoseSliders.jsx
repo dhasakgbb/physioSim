@@ -1,5 +1,6 @@
 import React from 'react';
-import DoseSlider from '../DoseSlider';
+import Slider from '../ui/Slider';
+import Badge from '../ui/Badge';
 import { compoundData } from '../../data/compoundData';
 
 const InteractionDoseSliders = ({
@@ -32,50 +33,38 @@ const InteractionDoseSliders = ({
     const isPrimary = primaryCompound === compoundKey;
 
     return (
-      <div key={compoundKey} className="flex-1 min-w-[120px] flex flex-col items-center gap-3 p-4 rounded-xl bg-physio-bg-core border border-physio-bg-border transition-colors hover:border-physio-bg-border/80">
-        <div className="w-full flex items-center justify-between">
-          <span className="font-semibold text-physio-text-primary">{meta?.abbreviation || compoundKey}</span>
-          <button
-            onClick={() => onPrimaryChange(compoundKey)}
-            className={`text-[10px] px-1.5 py-0.5 rounded border ${
-              isPrimary 
-                ? 'border-physio-accent-cyan text-physio-accent-cyan bg-physio-accent-cyan/5' 
-                : 'border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary'
-            }`}
-            title="Set as primary axis for charts"
-          >
-            {isPrimary ? 'Axis' : 'Set Axis'}
-          </button>
-        </div>
-        
-        <div className="h-48 w-full flex justify-center">
-          <DoseSlider
-            id={`slider-${compoundKey}`}
-            value={currentDose}
-            min={min}
-            max={max}
-            step={meta?.type === 'oral' ? 2 : 10}
-            unit="mg"
-            orientation="vertical"
-            trackLength={180}
-            markers={markers}
-            onChange={(val) => onDoseChange(compoundKey, val)}
-            ariaLabel={`${meta?.name} dose`}
-          />
-        </div>
-        
-        <div className="text-center">
-          <div className="text-xl font-bold text-physio-text-primary tabular-nums">
-            {currentDose} <span className="text-xs font-normal text-physio-text-secondary">mg</span>
+      <div key={compoundKey} className="w-full p-4 rounded-xl bg-physio-bg-core border border-physio-bg-border transition-colors hover:border-physio-bg-border/80">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-physio-text-primary">{meta?.name || compoundKey}</span>
+            <button
+              onClick={() => onPrimaryChange(compoundKey)}
+              className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
+                isPrimary 
+                  ? 'border-physio-accent-cyan text-physio-accent-cyan bg-physio-accent-cyan/5' 
+                  : 'border-physio-bg-border text-physio-text-tertiary hover:text-physio-text-primary'
+              }`}
+              title="Set as primary axis for charts"
+            >
+              {isPrimary ? 'Primary Axis' : 'Set Axis'}
+            </button>
           </div>
-          {guardrail?.beyond ? (
-             <span className="text-[10px] font-semibold text-physio-error">Beyond Evidence</span>
-          ) : guardrail?.nearingPlateau ? (
-             <span className="text-[10px] font-semibold text-physio-warning">Plateau Near</span>
-          ) : (
-             <span className="text-[10px] text-physio-text-tertiary">Modeled Range</span>
-          )}
+          
+          <div className="flex items-center gap-2">
+            {guardrail?.beyond && <Badge variant="critical" size="sm">Beyond Evidence</Badge>}
+            {guardrail?.nearingPlateau && <Badge variant="warning" size="sm">Plateau Near</Badge>}
+          </div>
         </div>
+        
+        <Slider
+          value={currentDose}
+          min={min}
+          max={max}
+          step={meta?.type === 'oral' ? 2 : 10}
+          unit="mg"
+          markers={markers}
+          onChange={(val) => onDoseChange(compoundKey, val)}
+        />
       </div>
     );
   };
@@ -101,7 +90,7 @@ const InteractionDoseSliders = ({
   return (
     <div className="flex flex-col lg:flex-row gap-6">
       {/* Sliders */}
-      <div className="flex gap-4 flex-1">
+      <div className="flex flex-col gap-4 flex-1">
         {pair.compounds.map(renderSlider)}
       </div>
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Button from './ui/Button';
 import { compoundData, tierDescriptions } from '../data/compoundData';
 
 const describeConfidence = (score = 0) => {
@@ -31,7 +32,7 @@ const MethodologyModal = ({ compound, onClose }) => {
   const data = compoundData[compound];
   if (!data) return null;
 
-  const CollapsibleSection = ({ id, icon, title, children, bgColor = 'bg-gray-50' }) => {
+  const CollapsibleSection = ({ id, icon, title, children, bgColor = 'bg-physio-bg-subtle' }) => {
     const isExpanded = expandedSections[id];
     return (
       <section className="border border-physio-bg-border rounded-lg overflow-hidden">
@@ -66,12 +67,12 @@ const MethodologyModal = ({ compound, onClose }) => {
             </h2>
             <p className="text-physio-text-secondary mt-1">Evidence-Based Methodology</p>
           </div>
-          <button
+          <Button
             onClick={onClose}
-            className="ml-4 px-4 py-2 bg-physio-bg-border hover:bg-physio-bg-tertiary rounded-lg font-semibold transition-colors"
+            variant="ghost"
           >
             Close
-          </button>
+          </Button>
         </div>
 
         <div className="p-6 space-y-3">
@@ -104,13 +105,13 @@ const MethodologyModal = ({ compound, onClose }) => {
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
                 <div className="bg-physio-bg-secondary rounded-lg p-2">
                   <div className="uppercase text-[10px] text-physio-text-tertiary">Human</div>
-                  <div className="text-xl font-bold text-green-400">
+                  <div className="text-xl font-bold text-physio-accent-success">
                     {data.evidenceProvenance?.human ?? 0}
                   </div>
                 </div>
                 <div className="bg-physio-bg-secondary rounded-lg p-2">
                   <div className="uppercase text-[10px] text-physio-text-tertiary">Animal</div>
-                  <div className="text-xl font-bold text-amber-400">
+                  <div className="text-xl font-bold text-physio-accent-warning">
                     {data.evidenceProvenance?.animal ?? 0}
                   </div>
                 </div>
@@ -125,10 +126,10 @@ const MethodologyModal = ({ compound, onClose }) => {
           </div>
 
           {/* Limitations (Start expanded - most important) */}
-          <CollapsibleSection id="limitations" icon="🚨" title="Key Limitations" bgColor="bg-red-50">
+          <CollapsibleSection id="limitations" icon="🚨" title="Key Limitations" bgColor="bg-physio-accent-critical/10">
             <ul className="list-disc list-inside space-y-2">
               {data.methodology.limitations.map((limitation, idx) => (
-                <li key={idx} className="text-red-800">{limitation}</li>
+                <li key={idx} className="text-physio-accent-critical">{limitation}</li>
               ))}
             </ul>
           </CollapsibleSection>
@@ -153,16 +154,16 @@ const MethodologyModal = ({ compound, onClose }) => {
           </CollapsibleSection>
 
           {/* Assumptions */}
-          <CollapsibleSection id="assumptions" icon="✓" title="Model Assumptions" bgColor="bg-blue-50">
+          <CollapsibleSection id="assumptions" icon="✓" title="Model Assumptions" bgColor="bg-physio-accent-primary/10">
             <ul className="list-disc list-inside space-y-2">
               {data.methodology.assumptions.map((assumption, idx) => (
-                <li key={idx} className="text-blue-800">{assumption}</li>
+                <li key={idx} className="text-physio-accent-primary">{assumption}</li>
               ))}
             </ul>
           </CollapsibleSection>
 
           {/* Individual Variance */}
-          <CollapsibleSection id="variance" icon="👤" title="Individual Variance Factors" bgColor="bg-physio-warning/10">
+          <CollapsibleSection id="variance" icon="👤" title="Individual Variance Factors" bgColor="bg-physio-accent-warning/10">
             <ul className="list-disc list-inside space-y-2">
               {data.methodology.individualVariance.map((variance, idx) => (
                 <li key={idx} className="text-physio-text-primary">{variance}</li>

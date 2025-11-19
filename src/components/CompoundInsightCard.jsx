@@ -64,7 +64,7 @@ const CompoundInsightCard = ({
         </div>
         <div className="flex justify-between">
           <dt>Efficiency peak</dt>
-          <dd className="font-semibold text-physio-accent-mint">
+          <dd className="font-semibold text-physio-accent-success">
             {sweetSpot ? formatDose(sweetSpot.peakDose, compound.type) : '—'}
           </dd>
         </div>
@@ -76,7 +76,7 @@ const CompoundInsightCard = ({
         </div>
         <div className="flex justify-between">
           <dt>Risk acceleration</dt>
-          <dd className="font-semibold text-physio-error">
+          <dd className="font-semibold text-physio-accent-critical">
             {sweetSpot?.warningDose ? formatDose(sweetSpot.warningDose, compound.type) : formatDose(hardCap, compound.type)}
           </dd>
         </div>

@@ -1,4 +1,7 @@
 import React from 'react';
+import Card from './ui/Card';
+import Badge from './ui/Badge';
+import Button from './ui/Button';
 import { formatProfileSummary, isProfileCustomized } from './PersonalizationPanel';
 
 const ProfileStatusBar = ({
@@ -11,42 +14,43 @@ const ProfileStatusBar = ({
   const customized = isProfileCustomized(profile);
 
   return (
-    <div className="bg-physio-bg-secondary/80 border border-physio-bg-border rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3 shadow-physio-subtle">
+    <Card className="px-4 py-3 flex flex-wrap items-center gap-3" variant="glass">
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-xs uppercase tracking-wide text-physio-text-tertiary">Profile</span>
-        <span className="px-3 py-1 rounded-full bg-physio-bg-core border border-physio-bg-border text-physio-text-primary">
+        <Badge variant="neutral" size="md">
           {summary || 'Baseline'}
-        </span>
+        </Badge>
         {customized && (
-          <span className="px-2 py-0.5 rounded-full text-[11px] bg-physio-accent-cyan/10 text-physio-accent-cyan border border-physio-accent-cyan/50">
+          <Badge variant="primary" size="sm">
             Custom
-          </span>
+          </Badge>
         )}
         {unsaved && (
-          <span className="px-2 py-0.5 rounded-full text-[11px] bg-physio-warning/15 text-physio-warning border border-physio-warning/60">
+          <Badge variant="warning" size="sm">
             Unsaved profile
-          </span>
+          </Badge>
         )}
       </div>
       <div className="flex items-center gap-2 ml-auto">
         {unsaved && typeof onSaveProfile === 'function' && (
-          <button
-            type="button"
+          <Button
             onClick={onSaveProfile}
-            className="px-3 py-1.5 rounded-full border border-physio-warning/60 text-physio-warning text-xs font-semibold hover:bg-physio-warning/10 transition"
+            variant="ghost"
+            size="sm"
+            className="text-physio-accent-warning border-physio-accent-warning hover:bg-physio-accent-warning/10"
           >
             Save profile
-          </button>
+          </Button>
         )}
-        <button
-          type="button"
+        <Button
           onClick={onEditProfile}
-          className="px-3 py-1.5 rounded-full border border-physio-accent-cyan text-physio-accent-cyan text-xs font-semibold hover:bg-physio-accent-cyan/10 transition"
+          variant="secondary"
+          size="sm"
         >
           Edit profile
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 };
 

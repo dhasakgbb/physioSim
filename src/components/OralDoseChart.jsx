@@ -124,17 +124,17 @@ const OralDoseChart = ({
             </React.Fragment>
           ))}
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--physio-border-subtle)" strokeOpacity={0.4} vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#374151" strokeOpacity={0.2} vertical={false} />
         <XAxis 
           dataKey="dose" 
           label={{ 
             value: 'Daily Dose (mg)', 
             position: 'insideBottom', 
             offset: -10,
-            style: { fontSize: 11, fontWeight: 600, fill: 'var(--physio-text-secondary)', fontFamily: 'Inter, sans-serif' }
+            style: { fontSize: 11, fontWeight: 600, fill: '#9ca3af', fontFamily: 'Inter, sans-serif' }
           }}
-          tick={{ fontSize: 10, fill: 'var(--physio-text-tertiary)', fontFamily: 'JetBrains Mono, monospace' }}
-          stroke="var(--physio-border-strong)"
+          tick={{ fontSize: 10, fill: '#6b7280', fontFamily: 'JetBrains Mono, monospace' }}
+          stroke="#4b5563"
           strokeOpacity={0.3}
           tickLine={false}
           tickMargin={8}
@@ -144,11 +144,11 @@ const OralDoseChart = ({
             value: 'Score (0-5.5)', 
             angle: -90, 
             position: 'insideLeft',
-            style: { fontSize: 11, fontWeight: 600, fill: 'var(--physio-text-secondary)', fontFamily: 'Inter, sans-serif' }
+            style: { fontSize: 11, fontWeight: 600, fill: '#9ca3af', fontFamily: 'Inter, sans-serif' }
           }}
           domain={[0, 5.5]}
-          tick={{ fontSize: 10, fill: 'var(--physio-text-tertiary)', fontFamily: 'JetBrains Mono, monospace' }}
-          stroke="var(--physio-border-strong)"
+          tick={{ fontSize: 10, fill: '#6b7280', fontFamily: 'JetBrains Mono, monospace' }}
+          stroke="#4b5563"
           strokeOpacity={0.3}
           tickLine={false}
           tickMargin={8}
@@ -163,7 +163,7 @@ const OralDoseChart = ({
               mode={mode}
             />
           )}
-          cursor={{ stroke: 'var(--physio-accent-violet)', strokeDasharray: '4 4', strokeOpacity: 0.5 }}
+          cursor={{ stroke: '#6366f1', strokeDasharray: '4 4', strokeOpacity: 0.5 }}
         />
 
         {/* Render uncertainty bands and lines for each oral compound */}
@@ -183,7 +183,7 @@ const OralDoseChart = ({
               {showPlateau && plateauDose && (
                 <ReferenceLine
                   x={plateauDose}
-                  stroke="var(--physio-accent-amber)"
+                  stroke="#f59e0b"
                   strokeDasharray="2 2"
                   strokeOpacity={isHighlighted ? 0.6 : 0}
                 />
@@ -191,7 +191,7 @@ const OralDoseChart = ({
               {showPlateau && hardMax && (
                 <ReferenceLine
                   x={hardMax}
-                  stroke="var(--physio-accent-red)"
+                  stroke="#ef4444"
                   strokeDasharray="3 3"
                   strokeOpacity={isHighlighted ? 0.5 : 0}
                 />
@@ -242,7 +242,7 @@ const OralDoseChart = ({
                   <Line
                     type="monotone"
                     dataKey={`${key}-benefit-beyond`}
-                    stroke="var(--physio-accent-red)"
+                    stroke="#ef4444"
                     strokeWidth={isHighlighted ? 3 : 2}
                     strokeDasharray="3 3"
                     dot={false}

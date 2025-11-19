@@ -1,66 +1,50 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
-        // physioLab Design System
+        // Neo-Lab Design System
         physio: {
           bg: {
-            core: '#101218',
-            edge: '#161925',
-            secondary: '#1C2430',
-            tertiary: '#21293F',
-            border: '#2D3748',
+            core: "#030712", // Gray-950 (Canvas)
+            surface: "#111827", // Gray-900 (Cards)
+            highlight: "#1f2937", // Gray-800 (Hover)
+            glass: "rgba(17, 24, 39, 0.7)",
           },
           text: {
-            primary: '#F5F7FF',
-            secondary: '#A6AECF',
-            tertiary: '#5A6385',
+            primary: "#f9fafb", // Gray-50
+            secondary: "#9ca3af", // Gray-400
+            muted: "#4b5563", // Gray-600
+            inverse: "#030712", // Gray-950
           },
           accent: {
-            cyan: '#4BBBF7',
-            violet: '#9B6CFF',
-            mint: '#45E2AB',
+            primary: "#6366f1", // Indigo-500 (Action)
+            secondary: "#8b5cf6", // Violet-500 (Data)
+            success: "#10b981", // Emerald-500
+            warning: "#f59e0b", // Amber-500
+            critical: "#ef4444", // Red-500
           },
-          tier: {
-            1: '#45E2AB',
-            2: '#4BBBF7',
-            3: '#F59E0B',
-            4: '#F85149',
+          border: {
+            subtle: "rgba(255, 255, 255, 0.05)",
+            strong: "rgba(255, 255, 255, 0.1)",
           },
-          success: '#45E2AB',
-          warning: '#F59E0B',
-          error: '#F85149',
-          info: '#4BBBF7',
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
-      },
-      fontSize: {
-        'h1': ['32px', { lineHeight: '1.2', fontWeight: '600' }],
-        'h2': ['24px', { lineHeight: '1.3', fontWeight: '600' }],
-        'h3': ['18px', { lineHeight: '1.4', fontWeight: '600' }],
-        'h4': ['16px', { lineHeight: '1.4', fontWeight: '600' }],
+        sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
+        mono: ["JetBrains Mono", "Fira Code", "monospace"],
       },
       boxShadow: {
-        'physio-subtle': '0 1px 2px rgba(0, 0, 0, 0.3)',
-        'physio-medium': '0 4px 6px rgba(0, 0, 0, 0.4)',
-        'physio-elevated': '0 10px 15px rgba(0, 0, 0, 0.5)',
-        'physio-glow-cyan': '0 0 32px rgba(75, 187, 247, 0.35)',
+        "neo-sm": "0 2px 4px rgba(0, 0, 0, 0.3)",
+        "neo-md": "0 8px 16px rgba(0, 0, 0, 0.4)",
+        "neo-lg": "0 16px 32px rgba(0, 0, 0, 0.5)",
+        "neo-glow": "0 0 20px rgba(99, 102, 241, 0.3)", // Indigo glow
       },
-      transitionDuration: {
-        'fast': '100ms',
-        'standard': '200ms',
-        'slow': '400ms',
+      backgroundImage: {
+        "gradient-primary": "linear-gradient(to right, #6366f1, #8b5cf6)",
       },
     },
   },
   plugins: [],
-}
-
+};
