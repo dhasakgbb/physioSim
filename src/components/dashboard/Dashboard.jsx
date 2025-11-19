@@ -64,7 +64,7 @@ const Dashboard = () => {
             {viewMode === 'pk' ? (
               <SerumStabilityChart stack={stack} />
             ) : viewMode === 'network' ? (
-              <SignalingNetwork stack={stack} />
+              <SignalingNetwork stack={stack} metrics={metrics} />
             ) : (
               <NetEffectChart stack={stack} userProfile={userProfile} />
             )}
