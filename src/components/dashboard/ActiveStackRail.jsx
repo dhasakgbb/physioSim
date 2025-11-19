@@ -1,15 +1,72 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { compoundData } from '../../data/compoundData';
-import Slider from '../ui/Slider'; // Reusing your existing component
+import Slider from '../ui/Slider';
+import EsterSelector from './EsterSelector';
 
-const StackCard = ({ item, onChange, onRemove }) => {
+const freqOptions = [
+  { label: 'ED', value: 1 },
+  { label: 'EOD', value: 2 },
+  { label: '2x/Wk', value: 3.5 },
+  { label: '1x/Wk', value: 7 }
+];
+
+const FrequencySelector = ({ value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+  const currentLabel = freqOptions.find(f => f.value === value)?.label || 'Cust';
+
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button 
+        onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
+        className="text-[9px] font-bold uppercase tracking-wide text-physio-accent-primary bg-physio-accent-primary/10 px-2 py-0.5 rounded border border-physio-accent-primary/20 hover:bg-physio-accent-primary/20 transition-colors"
+      >
+        @{currentLabel}
+      </button>
+      
+      {isOpen && (
+        <div className="absolute top-full right-0 mt-1 z-50 bg-physio-bg-surface border border-physio-border-strong rounded-lg shadow-xl overflow-hidden min-w-[80px]">
+          {freqOptions.map(opt => (
+            <button
+              key={opt.label}
+              onClick={(e) => { e.stopPropagation(); onChange(opt.value); setIsOpen(false); }}
+              className={`w-full text-left px-3 py-1.5 text-[10px] hover:bg-physio-bg-highlight transition-colors ${value === opt.value ? 'text-physio-accent-primary font-bold' : 'text-physio-text-secondary'}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const StackCard = ({ item, onChange, onRemove, onInspect, onEsterChange, onFrequencyChange }) => {
   const meta = compoundData[item.compound];
   const isOral = meta.type === 'oral';
   const unit = isOral ? 'mg/day' : 'mg/wk';
   const max = isOral ? 100 : 1000;
+  
+  // Fallback for compounds without explicit ester config
+  const selectedEster = item.ester || meta.defaultEster || 'enanthate';
+  const frequency = item.frequency || 3.5; // Default fallback
 
   return (
-    <div className="group relative p-4 bg-physio-bg-core border border-physio-border-subtle rounded-xl transition-all hover:border-physio-accent-primary/30 hover:shadow-neo-sm">
+    <div 
+      onClick={onInspect}
+      className="group relative p-4 bg-physio-bg-core border border-physio-border-subtle rounded-xl transition-all hover:border-physio-accent-primary/30 hover:shadow-neo-sm cursor-pointer"
+    >
       {/* Color Strip */}
       <div 
         className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full" 
@@ -18,14 +75,33 @@ const StackCard = ({ item, onChange, onRemove }) => {
 
       <div className="pl-3">
         <div className="flex justify-between items-start mb-3">
-          <div>
-            <h3 className="text-sm font-semibold text-physio-text-primary">{meta.name}</h3>
-            <p className="text-[10px] text-physio-text-tertiary uppercase tracking-wider">
-              {meta.category}
-            </p>
+          <div className="flex flex-col gap-1">
+            <h3 className="text-sm font-semibold text-physio-text-primary flex items-center gap-2">
+              {meta.name}
+            </h3>
+            
+            {/* Controls Row: Ester + Frequency + Category */}
+            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+               <EsterSelector 
+                 compoundKey={item.compound}
+                 selectedEster={selectedEster}
+                 color={meta.color}
+                 onChange={(newEster) => onEsterChange(newEster)}
+               />
+               
+               {/* NEW Frequency Selector */}
+               <FrequencySelector 
+                 value={frequency} 
+                 onChange={(val) => onFrequencyChange(val)} 
+               />
+               
+               <span className="text-[10px] text-physio-text-tertiary uppercase tracking-wider">
+                 {meta.category}
+               </span>
+            </div>
           </div>
           <button 
-            onClick={onRemove}
+            onClick={(e) => { e.stopPropagation(); onRemove(); }}
             className="text-physio-text-tertiary hover:text-physio-accent-critical transition-colors"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -48,7 +124,7 @@ const StackCard = ({ item, onChange, onRemove }) => {
   );
 };
 
-const ActiveStackRail = ({ stack, onDoseChange, onRemove }) => {
+const ActiveStackRail = ({ stack, onDoseChange, onRemove, onInspect, onEsterChange, onFrequencyChange }) => {
   if (stack.length === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-physio-border-subtle rounded-xl opacity-50">
@@ -69,6 +145,9 @@ const ActiveStackRail = ({ stack, onDoseChange, onRemove }) => {
           item={item}
           onChange={(val) => onDoseChange(item.compound, val)}
           onRemove={() => onRemove(item.compound)}
+          onInspect={() => onInspect(item.compound)}
+          onEsterChange={(val) => onEsterChange(item.compound, val)}
+          onFrequencyChange={(val) => onFrequencyChange(item.compound, val)}
         />
       ))}
     </div>

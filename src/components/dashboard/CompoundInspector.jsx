@@ -53,11 +53,11 @@ const CompoundInspector = ({ compoundKey, onClose }) => {
   if (!data) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-physio-bg-surface border border-physio-border-strong rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
-        
-        {/* Header */}
-        <div className="p-6 border-b border-physio-border-subtle flex items-start justify-between sticky top-0 bg-physio-bg-surface/95 backdrop-blur z-10">
+    // Changed to FIXED position, h-screen, and high Z-index to float above everything
+    <div className="fixed inset-y-0 right-0 w-[450px] bg-physio-bg-core/95 backdrop-blur-xl border-l border-physio-border-strong shadow-2xl z-[100] flex flex-col animate-slide-left">
+      
+      {/* Header */}
+      <div className="p-6 border-b border-physio-border-subtle flex items-start justify-between bg-physio-bg-core/50 shrink-0">
           <div className="flex items-center gap-4">
             <div 
               className="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold text-white shadow-lg"
@@ -76,7 +76,8 @@ const CompoundInspector = ({ compoundKey, onClose }) => {
           <Button variant="ghost" size="icon" onClick={onClose}>✕</Button>
         </div>
 
-        <div className="p-6 space-y-8">
+        {/* Content Scroll Area - added flex-1 and overflow-y-auto */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
           
           {/* 1. Clinical Clearance & Pharmacology */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -131,15 +132,17 @@ const CompoundInspector = ({ compoundKey, onClose }) => {
               </div>
           </div>
 
+          {/* Padding at bottom */}
+          <div className="h-12" />
+
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 border-t border-physio-border-subtle bg-physio-bg-core flex justify-end">
+        <div className="p-6 border-t border-physio-border-subtle bg-physio-bg-core flex justify-end shrink-0">
           <Button variant="primary" onClick={onClose}>Close Inspector</Button>
         </div>
 
       </div>
-    </div>
   );
 };
 

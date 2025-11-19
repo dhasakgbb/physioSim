@@ -15,40 +15,60 @@ import { evaluateStack } from '../../utils/stackEngine';
 import { defaultProfile } from '../../utils/personalization';
 import { compoundData } from '../../data/compoundData';
 
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label, crossover }) => {
   if (!active || !payload || !payload.length) return null;
 
   const data = payload[0].payload;
   const isProfitable = data.net > 0;
   const isSaturated = data.saturation > 0.85;
+  const isWasted = crossover !== null && data.percent > crossover;
+  const penaltyPct = Math.round((1 - (data.benefit / (data.benefit / (data.saturationPenalty || 1)))) * 100);
 
   return (
-    <div className="bg-physio-bg-surface/95 backdrop-blur-md border border-physio-border-strong p-4 rounded-xl shadow-2xl min-w-[200px]">
+    <div className={`backdrop-blur-md border p-4 rounded-xl shadow-2xl min-w-[220px] transition-colors duration-300 ${isWasted ? 'bg-physio-accent-critical/10 border-physio-accent-critical/50' : 'bg-physio-bg-surface/95 border-physio-border-strong'}`}>
       <p className="text-[10px] uppercase tracking-widest text-physio-text-tertiary mb-2">
         Stack Intensity: <span className="text-physio-text-primary font-bold">{label}%</span>
       </p>
       
-      <div className="space-y-2">
-        <div className="flex justify-between items-center">
-          <span className="text-xs text-physio-accent-success font-medium">Anabolic Signal</span>
-          <span className="text-sm font-mono font-bold text-physio-text-primary">{data.benefit.toFixed(2)}</span>
+      {isWasted ? (
+        <div className="mb-3 p-2 bg-physio-accent-critical/20 rounded border border-physio-accent-critical/30">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">🛑</span>
+            <span className="text-xs font-bold text-physio-accent-critical uppercase tracking-wider">Wasted Zone</span>
+          </div>
+          <p className="text-[10px] text-physio-text-primary leading-tight">
+            Every mg added here reduces net growth. Risk exceeds benefit.
+          </p>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-xs text-physio-accent-critical font-medium">Systemic Load</span>
-          <span className="text-sm font-mono font-bold text-physio-text-primary">{data.risk.toFixed(2)}</span>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-physio-accent-success font-medium">Anabolic Signal</span>
+            <span className="text-sm font-mono font-bold text-physio-text-primary">{data.benefit.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-physio-accent-critical font-medium">Systemic Load</span>
+            <span className="text-sm font-mono font-bold text-physio-text-primary">{data.risk.toFixed(2)}</span>
+          </div>
+          <div className="h-px bg-physio-border-subtle my-1" />
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-physio-text-secondary">Net Efficiency</span>
+            <span className={`text-sm font-mono font-bold ${isProfitable ? 'text-physio-accent-cyan' : 'text-physio-accent-warning'}`}>
+              {data.net > 0 ? '+' : ''}{data.net.toFixed(2)}
+            </span>
+          </div>
         </div>
-        <div className="h-px bg-physio-border-subtle my-1" />
-        <div className="flex justify-between items-center">
-          <span className="text-xs text-physio-text-secondary">Net Efficiency</span>
-          <span className={`text-sm font-mono font-bold ${isProfitable ? 'text-physio-accent-cyan' : 'text-physio-accent-warning'}`}>
-            {data.net > 0 ? '+' : ''}{data.net.toFixed(2)}
-          </span>
-        </div>
-      </div>
+      )}
 
-      {isSaturated && (
+      {isSaturated && !isWasted && (
         <div className="mt-3 py-1.5 px-2 bg-physio-accent-warning/10 border border-physio-accent-warning/20 rounded text-[10px] text-physio-accent-warning flex items-center gap-1.5">
           <span className="text-xs">⚠️</span> Diminishing Returns (Saturated)
+        </div>
+      )}
+
+      {data.saturationPenalty < 0.9 && (
+        <div className="mt-1 text-[9px] text-physio-text-tertiary">
+          Potential wasted: -{penaltyPct}% (Receptor Saturation)
         </div>
       )}
     </div>
@@ -57,12 +77,11 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
   // 1. Generate Projection Data
-  const data = useMemo(() => {
-    if (stack.length === 0) return [];
+  const { data, crossover } = useMemo(() => {
+    if (stack.length === 0) return { data: [], crossover: null };
 
     const points = [];
-    // Calculate Max Potential (for Saturation reference)
-    let maxARLoad = 0;
+    let foundCrossover = null;
     
     // Sweep from 0% to 150% Intensity
     for (let percent = 0; percent <= 150; percent += 5) {
@@ -74,29 +93,36 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
       // Run the Engine
       const result = evaluateStack({ stackInput: hypotheticalStack, profile: userProfile });
       
-      // Calculate Saturation % for this point (simplified AR load logic)
+      // Calculate Saturation % for this point
       let currentARLoad = 0;
       hypotheticalStack.forEach(item => {
         const meta = compoundData[item.compound];
         if (meta?.pathway === 'ar_genomic') {
-          // Rough weighting for saturation curve visual
           const weight = meta.bindingAffinity === 'very_high' ? 3 : meta.bindingAffinity === 'high' ? 1.5 : 1;
           currentARLoad += item.dose * weight;
         }
       });
       
-      // Normalize saturation (soft cap around 1000-1200mg weighted)
       const saturation = Math.min(currentARLoad / 1200, 1); 
+      const benefit = result.totals.totalBenefit;
+      const risk = result.totals.totalRisk;
+
+      // Detect Crossover (Risk > Benefit)
+      // We look for the first point where Risk exceeds Benefit significantly (to avoid noise at 0)
+      if (foundCrossover === null && percent > 10 && risk > benefit) {
+        foundCrossover = percent;
+      }
 
       points.push({
         percent,
-        benefit: result.totals.totalBenefit,
-        risk: result.totals.totalRisk,
+        benefit,
+        risk,
         net: result.totals.netScore,
-        saturation // 0 to 1
+        saturation,
+        saturationPenalty: result.totals.saturationPenalty
       });
     }
-    return points;
+    return { data: points, crossover: foundCrossover };
   }, [stack, userProfile]);
 
   if (stack.length === 0) {
@@ -109,14 +135,6 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
       </div>
     );
   }
-
-  // Calculate gradient offsets for the "Profit/Loss" background
-  const offset = (() => {
-    const dataMax = Math.max(...data.map((i) => Math.max(i.benefit, i.risk)));
-    if (dataMax <= 0) return 0;
-    // Find crossing point logic could go here, but for now we use simple gradients
-    return 0; 
-  })();
 
   return (
     <div className="absolute inset-0 w-full h-full">
@@ -135,11 +153,10 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
               <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
             </linearGradient>
 
-            {/* Net Score Line Gradient (Cyan to Warning) */}
-            <linearGradient id="netLine" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#22d3ee" />   {/* Cyan */}
-              <stop offset="100%" stopColor="#f59e0b" /> {/* Amber */}
-            </linearGradient>
+            {/* Hatched Pattern for Wasted Zone */}
+            <pattern id="wastedPattern" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+              <rect width="4" height="8" transform="translate(0,0)" fill="#ef4444" opacity="0.1" />
+            </pattern>
           </defs>
 
           <CartesianGrid 
@@ -160,9 +177,25 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
             axisLine={false}
             dy={10}
           />
-          <YAxis hide domain={[0, 'auto']} />
+          <YAxis 
+            hide 
+            domain={[0, dataMax => Math.max(dataMax, 6)]} 
+          />
           
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '3 3' }} />
+          <Tooltip 
+            content={<CustomTooltip crossover={crossover} />} 
+            cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '3 3' }} 
+          />
+
+          {/* Wasted Zone Background */}
+          {crossover !== null && (
+            <ReferenceArea 
+              x1={crossover} 
+              x2={150} 
+              fill="url(#wastedPattern)" 
+              opacity={1}
+            />
+          )}
 
           {/* 1. The Context Areas */}
           <Area 
@@ -180,8 +213,7 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
             isAnimationActive={false}
           />
 
-          {/* 2. The "Net Efficiency" Line (The Alpha) */}
-          {/* We plot this prominently to show the "Profit" curve */}
+          {/* 2. The Lines */}
           <Line 
             type="monotone" 
             dataKey="benefit" 
@@ -203,13 +235,13 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
 
           {/* 3. The "You Are Here" Line */}
           <ReferenceLine x={100} stroke="#6366f1" strokeDasharray="3 3" strokeOpacity={0.8}>
-            <div /> {/* Recharts label hack */}
+            <div /> 
           </ReferenceLine>
           
         </ComposedChart>
       </ResponsiveContainer>
       
-      {/* Floating Labels (HTML overlay for crisp text) */}
+      {/* Floating Labels */}
       <div className="absolute top-4 right-6 flex flex-col items-end gap-1 pointer-events-none">
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-bold text-physio-accent-success uppercase tracking-wider">Anabolic Output</span>
@@ -221,7 +253,7 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
         </div>
       </div>
 
-      {/* Current Position Marker at Bottom */}
+      {/* Current Position Marker */}
       <div className="absolute bottom-0 left-2/3 -translate-x-1/2 mb-1 pointer-events-none">
          <span className="text-[9px] font-bold text-physio-accent-primary bg-physio-bg-core/80 px-2 py-1 rounded-full border border-physio-accent-primary/30">
            CURRENT DOSE

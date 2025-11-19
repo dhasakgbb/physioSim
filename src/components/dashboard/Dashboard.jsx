@@ -7,6 +7,7 @@ import VitalSigns from './VitalSigns';
 import MechanismMonitor from './MechanismMonitor';
 import BiomarkerMatrix from './BiomarkerMatrix';
 import CompoundInspector from './CompoundInspector';
+import SerumStabilityChart from './SerumStabilityChart';
 import { compoundData } from '../../data/compoundData';
 import { evaluateStack } from '../../utils/stackEngine';
 import { defaultProfile } from '../../utils/personalization';
@@ -16,6 +17,7 @@ const Dashboard = () => {
   const [stack, setStack] = useState([]);
   const [userProfile] = useState(defaultProfile);
   const [inspectedCompound, setInspectedCompound] = useState(null);
+  const [viewMode, setViewMode] = useState('net'); // 'net' or 'pk'
 
   // 2. The Brain
   const metrics = useMemo(() => {
@@ -30,7 +32,18 @@ const Dashboard = () => {
     if (stack.some(i => i.compound === compoundKey)) return; 
     const meta = compoundData[compoundKey];
     const startDose = meta.type === 'oral' ? 20 : 200; 
-    setStack(prev => [...prev, { compound: compoundKey, dose: startDose }]);
+    
+    // --- THE GOOGLE "SMART DEFAULT" LOGIC ---
+    let defaultFreq = 3.5; // Default 2x/week
+    if (meta.type === 'oral') defaultFreq = 1; // Daily
+    else if (meta.halfLife < 48) defaultFreq = 2; // EOD for short esters
+    // ----------------------------------------
+
+    setStack(prev => [...prev, { 
+      compound: compoundKey, 
+      dose: startDose,
+      frequency: defaultFreq // Store it here
+    }]);
   }, [stack]);
 
   const handleDoseChange = useCallback((compoundKey, newDose) => {
@@ -43,8 +56,21 @@ const Dashboard = () => {
     setStack(prev => prev.filter(i => i.compound !== compoundKey));
   }, []);
 
+  const handleEsterChange = useCallback((compoundKey, newEster) => {
+    setStack(prev => prev.map(item => 
+      item.compound === compoundKey ? { ...item, ester: newEster } : item
+    ));
+  }, []);
+
+  const handleFrequencyChange = useCallback((compoundKey, newFreq) => {
+    setStack(prev => prev.map(item => 
+      item.compound === compoundKey ? { ...item, frequency: newFreq } : item
+    ));
+  }, []);
+
   // 4. Render
   return (
+    <>
     <DashboardLayout
       // ZONE A: The Active Inputs
       leftRail={
@@ -53,18 +79,35 @@ const Dashboard = () => {
           onDoseChange={handleDoseChange} 
           onRemove={handleRemove}
           onInspect={setInspectedCompound}
+          onEsterChange={handleEsterChange}
+          onFrequencyChange={handleFrequencyChange}
         />
       }
 
       // ZONE B: The Visualization
       centerStage={
         <>
-          <NetEffectChart stack={stack} userProfile={userProfile} />
-          {inspectedCompound && (
-            <CompoundInspector 
-              compoundKey={inspectedCompound} 
-              onClose={() => setInspectedCompound(null)} 
-            />
+          {/* Toggle Switch (Floating Top Right) */}
+          <div className="absolute top-4 right-6 z-20 flex bg-physio-bg-surface/80 backdrop-blur border border-physio-border-subtle rounded-lg p-1">
+            <button 
+              onClick={() => setViewMode('net')}
+              className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'net' ? 'bg-physio-bg-highlight text-white shadow-sm' : 'text-physio-text-tertiary hover:text-physio-text-primary'}`}
+            >
+              Net Impact
+            </button>
+            <button 
+              onClick={() => setViewMode('pk')}
+              className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'pk' ? 'bg-physio-bg-highlight text-white shadow-sm' : 'text-physio-text-tertiary hover:text-physio-text-primary'}`}
+            >
+              Stability (PK)
+            </button>
+          </div>
+
+          {/* View Switcher */}
+          {viewMode === 'net' ? (
+            <NetEffectChart stack={stack} userProfile={userProfile} />
+          ) : (
+            <SerumStabilityChart stack={stack} />
           )}
         </>
       }
@@ -91,6 +134,15 @@ const Dashboard = () => {
         <CompoundDock onAddCompound={handleAddCompound} />
       }
     />
+
+    {/* CompoundInspector - Render outside layout as overlay */}
+    {inspectedCompound && (
+      <CompoundInspector 
+        compoundKey={inspectedCompound} 
+        onClose={() => setInspectedCompound(null)} 
+      />
+    )}
+    </>
   );
 };
 

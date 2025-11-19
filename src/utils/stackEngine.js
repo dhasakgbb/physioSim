@@ -94,48 +94,78 @@ export const evaluateStack = ({
   disableInteractions = false
 } = {}) => {
   const { compounds, doses } = normalizeStackInput(stackInput);
-  if (!compounds.length) {
-    return baseResult();
-  }
+  if (!compounds.length) return baseResult();
 
+  // 1. Calculate Raw Sums (Linear)
   const byCompound = {};
-  const benefitDims = { base: 0 };
-  const riskDims = { base: 0 };
+  let rawBenefitSum = 0;
+  let rawRiskSum = 0;
+  let totalGenomicLoad = 0; // mg of AR agonists
+  let totalSystemicLoad = 0; // Total mg of everything
 
-  // 1. Check for SHBG Crushers (Proviron/Winstrol)
-  const shbgCrusher = compounds.find(c => ['proviron', 'winstrol'].includes(c));
-  const shbgBonus = shbgCrusher ? 1.1 : 1.0; // 10% Potency Boost to injectables if SHBG is crushed
+  // SHBG Bonus Logic (Proviron/Winstrol/Masteron)
+  const shbgCrushers = compounds.filter(c => ['proviron', 'winstrol', 'masteron'].includes(c));
+  // 5% bonus per crusher, max 15%
+  const shbgMultiplier = 1 + (Math.min(shbgCrushers.length, 3) * 0.05);
 
   compounds.forEach(code => {
+    // Find the full item from stackInput to get the ester
+    const stackItem = stackInput.find(i => i.compound === code);
     const dose = doses[code] ?? 0;
-    const compoundMeta = compoundData[code];
+    const meta = compoundData[code];
     
-    // 2. Apply SHBG Bonus to Injectables ONLY (Orals don't bind SHBG the same way)
-    let effectiveDose = dose;
-    // Safety check: ensure compoundMeta exists before accessing properties
-    if (compoundMeta && compoundMeta.type === 'injectable' && compoundMeta.pathway === 'ar_genomic') {
-      effectiveDose = dose * shbgBonus;
+    if (!meta) return;
+
+    // 1. Determine Ester Weight
+    // Default to 1.0 (Orals/Base) or the default ester's weight
+    let weightFactor = 1.0;
+    const esterKey = stackItem?.ester || meta.defaultEster;
+    
+    if (meta.esters && meta.esters[esterKey]) {
+      weightFactor = meta.esters[esterKey].weight;
+    }
+
+    // 2. Calculate ACTIVE Hormone Load (The Real Dose)
+    let activeDose = dose * weightFactor;
+
+    // Track Loads
+    // Systemic Load (Toxicity) = Raw Dose (metabolic burden of the ester + hormone)
+    // Genomic Load (Saturation) = Active Dose (receptor binding)
+    totalSystemicLoad += dose; 
+    
+    if (meta.pathway === 'ar_genomic') {
+      // Weighted load: Tren counts 2x for saturation due to affinity
+      const weight = meta.bindingAffinity === 'very_high' ? 2 : 1;
+      totalGenomicLoad += activeDose * weight;
+    }
+
+    // Apply SHBG Bonus to Injectables only
+    let effectiveDose = activeDose;
+    if (meta.type === 'injectable' && meta.pathway === 'ar_genomic') {
+      effectiveDose = activeDose * shbgMultiplier;
     }
 
     const benefitRes = evaluateCompoundResponse(code, 'benefit', effectiveDose, profile);
     const riskRes = evaluateCompoundResponse(code, 'risk', effectiveDose, profile);
-    const benefitValue = benefitRes?.value ?? 0;
-    const riskValue = riskRes?.value ?? 0;
+
+    const benefitVal = benefitRes?.value ?? 0;
+    const riskVal = riskRes?.value ?? 0;
 
     byCompound[code] = {
-      benefit: benefitValue,
-      risk: riskValue,
-      meta: {
-        benefit: benefitRes?.meta,
-        risk: riskRes?.meta
-      }
+      benefit: benefitVal,
+      risk: riskVal,
+      meta: { benefit: benefitRes?.meta, risk: riskRes?.meta }
     };
 
-    benefitDims.base += benefitValue;
-    riskDims.base += riskValue;
+    rawBenefitSum += benefitVal;
+    rawRiskSum += riskVal;
   });
 
+  // 2. Calculate Interaction Synergies (Linear)
+  let synergyBenefit = 0;
+  let synergyRisk = 0;
   const pairInteractions = {};
+
   if (!disableInteractions && compounds.length > 1) {
     compounds.forEach((compoundA, i) => {
       for (let j = i + 1; j < compounds.length; j++) {
@@ -146,80 +176,82 @@ export const evaluateStack = ({
         if (!pair) continue;
 
         const deltaDims = {};
-        const dimensionKeys = [
-          ...Object.keys(pair.synergy || {}),
-          ...Object.keys(pair.penalties || {})
-        ];
-        const pairDoses = {
-          [compoundA]: doses[compoundA] ?? 0,
-          [compoundB]: doses[compoundB] ?? 0
-        };
+        const dimensionKeys = [...Object.keys(pair.synergy || {}), ...Object.keys(pair.penalties || {})];
+        
+        const pairDoses = { [compoundA]: doses[compoundA] ?? 0, [compoundB]: doses[compoundB] ?? 0 };
 
-        dimensionKeys.forEach(dimensionKey => {
-          const dimension = interactionDimensions[dimensionKey];
-          if (!dimension) return;
-          const result = evaluatePairDimension({
-            pairId,
-            dimensionKey,
-            doses: pairDoses,
-            profile,
-            sensitivities,
-            evidenceBlend
+        dimensionKeys.forEach(dimKey => {
+          const dim = interactionDimensions[dimKey];
+          if (!dim) return;
+          const res = evaluatePairDimension({
+            pairId, dimensionKey: dimKey, doses: pairDoses,
+            profile, sensitivities, evidenceBlend
           });
-          if (!result?.delta) return;
-          const signedDelta = dimension.type === 'risk' ? -Math.abs(result.delta) : result.delta;
-          deltaDims[dimensionKey] = signedDelta;
-          if (dimension.type === 'benefit') {
-            benefitDims[dimensionKey] = (benefitDims[dimensionKey] || 0) + result.delta;
-          } else {
-            riskDims[dimensionKey] = (riskDims[dimensionKey] || 0) + Math.abs(result.delta);
-          }
+          if (!res?.delta) return;
+
+          deltaDims[dimKey] = res.delta;
+          if (dim.type === 'benefit') synergyBenefit += res.delta;
+          else synergyRisk += Math.abs(res.delta);
         });
 
-        if (Object.keys(deltaDims).length) {
-          pairInteractions[pairId] = { deltaDims };
-        }
+        if (Object.keys(deltaDims).length) pairInteractions[pairId] = { deltaDims };
       }
     });
   }
 
-  const synergyBenefitSum = Object.entries(benefitDims)
-    .filter(([key]) => key !== 'base')
-    .reduce((acc, [, value]) => acc + value, 0);
-  const synergyRiskSum = Object.entries(riskDims)
-    .filter(([key]) => key !== 'base')
-    .reduce((acc, [, value]) => acc + value, 0);
+  // =================================================================================
+  // 3. THE "REALITY CHECK" LAYERS (Non-Linear Modifiers)
+  // =================================================================================
 
-  const baseBenefit = benefitDims.base;
-  const baseRisk = riskDims.base;
+  // A. The Saturation Ceiling (Benefit Dampener)
+  // If Genomic Load > 1000mg, the "marginal utility" of additional Benefit crashes.
+  // We use a logistic decay curve on the TOTAL benefit.
+  const saturationThreshold = 1000;
+  let saturationPenalty = 1.0; // 1.0 = No penalty
+
+  if (totalGenomicLoad > saturationThreshold) {
+    const excess = totalGenomicLoad - saturationThreshold;
+    // Decay factor: For every 500mg over, efficiency drops by 20%
+    saturationPenalty = 1 / (1 + (excess / 800)); 
+  }
   
-  // Apply Global Penalties
-  const globalPenalty = calculateGlobalPenalties(compounds, doses, baseRisk + synergyRiskSum);
-  
-  const totalBenefit = baseBenefit + synergyBenefitSum;
-  const totalRisk = baseRisk + synergyRiskSum + globalPenalty; // Add global penalty here
+  // Apply Ceiling to Benefit
+  const finalBenefit = (rawBenefitSum + synergyBenefit) * saturationPenalty;
 
-  const weightedBenefit = totalBenefit;
-  const weightedRisk = totalRisk;
 
-  const netScore = weightedBenefit - weightedRisk;
-  const brRatio = totalRisk > 0 ? totalBenefit / totalRisk : totalBenefit;
+  // B. The Toxicity Avalanche (Risk Compounder)
+  // Risk isn't linear; it's exponential relative to total organ load.
+  // If Total Load > 1200mg, risk accelerates.
+  const toxicityThreshold = 1200;
+  let toxicityMultiplier = 1.0;
+
+  if (totalSystemicLoad > toxicityThreshold) {
+    const excessRisk = totalSystemicLoad - toxicityThreshold;
+    // Exponential ramp: At 2000mg total, Risk is magnified by ~1.5x
+    toxicityMultiplier = 1 + Math.pow((excessRisk / 1500), 1.5);
+  }
+
+  // Apply Avalanche to Risk
+  const finalRisk = (rawRiskSum + synergyRisk) * toxicityMultiplier;
+
+
+  // 4. Final Tally
+  const netScore = finalBenefit - finalRisk;
+  const brRatio = finalRisk > 0 ? finalBenefit / finalRisk : finalBenefit;
 
   return {
     byCompound,
     pairInteractions,
     totals: {
-      benefitDims,
-      riskDims,
-      baseBenefit,
-      baseRisk,
-      totalBenefit,
-      totalRisk,
-      weightedBenefit,
-      weightedRisk,
-      netScore,
-      brRatio,
-      globalPenalty // Expose this for debugging/UI if needed
+      baseBenefit: rawBenefitSum,
+      baseRisk: rawRiskSum,
+      totalBenefit: Number(finalBenefit.toFixed(2)),
+      totalRisk: Number(finalRisk.toFixed(2)),
+      netScore: Number(netScore.toFixed(2)),
+      brRatio: Number(brRatio.toFixed(2)),
+      // Return these for UI debugging/visualization
+      saturationPenalty: saturationPenalty, 
+      toxicityMultiplier: toxicityMultiplier 
     }
   };
 };

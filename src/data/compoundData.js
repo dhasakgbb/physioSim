@@ -10,6 +10,14 @@ export const compoundData = {
     color: '#0066CC',
     abbreviation: 'Test',
     type: 'injectable',
+    defaultEster: 'enanthate',
+    esters: {
+      propionate: { label: 'Propionate', halfLife: 19, weight: 0.83, slug: 'Prop' },
+      enanthate: { label: 'Enanthate', halfLife: 108, weight: 0.72, slug: 'Enanthate' },
+      cypionate: { label: 'Cypionate', halfLife: 120, weight: 0.70, slug: 'Cyp' },
+      suspension: { label: 'Suspension', halfLife: 1, weight: 1.00, slug: 'Susp' },
+      sustanon: { label: 'Sustanon 250', halfLife: 120, weight: 0.74, slug: 'Sust' }
+    },
     category: 'base',
     pathway: 'ar_genomic', // The Reference Agonist
     bindingAffinity: 'moderate',
@@ -21,7 +29,7 @@ export const compoundData = {
       prolactin: 0,
       e2_conversion: +2 // The standard aromatizer
     },
-    halfLife: '4.5 days', // Enanthate/Cypionate
+    halfLife: 108, // ~4.5 days (Enanthate/Cypionate)
     modelConfidence: 0.81,
     evidenceProvenance: { human: 5, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -135,7 +143,7 @@ export const compoundData = {
       prolactin: +3,  // HIGH RISK (Direct Progesterone Receptor Agonist)
       hair_safe: +2   // Converts to DHN (Weak androgen) - Specialized Benefit
     },
-    halfLife: '1.1 days', // Phenylpropionate
+    halfLife: 60, // ~2.5 days (Phenylpropionate)
     modelConfidence: 0.61,
     evidenceProvenance: { human: 2, animal: 3, aggregate: 5 },
     varianceDrivers: [
@@ -225,6 +233,12 @@ export const compoundData = {
     color: '#CC0000',
     abbreviation: 'Tren',
     type: 'injectable',
+    defaultEster: 'acetate',
+    esters: {
+      acetate: { label: 'Acetate', halfLife: 24, weight: 0.87, slug: 'Ace' },
+      enanthate: { label: 'Enanthate', halfLife: 108, weight: 0.70, slug: 'Enanthate' },
+      hexahydro: { label: 'Hexahydrobenzylcarbonate', halfLife: 144, weight: 0.68, slug: 'Parabolan' }
+    },
     category: 'androgen',
     pathway: 'ar_genomic', // Very High binder
     bindingAffinity: 'very_high',
@@ -236,7 +250,7 @@ export const compoundData = {
       prolactin: +2,  // Progestin activity
       neuro: -3       // Dopaminergic destabilization
     },
-    halfLife: '1 day', // Acetate
+    halfLife: 24, // ~1 day (Acetate)
     modelConfidence: 0.44,
     evidenceProvenance: { human: 0, animal: 4, aggregate: 7 },
     varianceDrivers: [
@@ -355,7 +369,7 @@ export const compoundData = {
       cortisol: 0,
       prolactin: 0
     },
-    halfLife: '14 days', // Undecylenate
+    halfLife: 336, // ~14 days (Undecylenate)
     modelConfidence: 0.58,
     evidenceProvenance: { human: 1, animal: 3, aggregate: 4 },
     varianceDrivers: [
@@ -395,7 +409,7 @@ export const compoundData = {
         { name: 'Increased Appetite', severity: 'positive', onset: 'week 2-3', doseDependent: true, management: 'Beneficial for mass gaining; control if cutting' },
         { name: 'RBC Elevation', severity: 'low-medium', onset: 'week 4+', doseDependent: true, management: 'Donate blood if HCT >52%; monitor regularly' },
         { name: 'Vascularity', severity: 'positive', onset: 'week 4-6', doseDependent: true, management: 'Aesthetic benefit; RBC-related' },
-        { name: 'Acne', severity: 'low', onset: 'week 2-4', doseDependent: true, management: 'Mild; standard hygiene' }
+        { name: 'Acne', severity: 'low', onset: 'week 2-4', doseDependent: true, management: 'Minimal; standard hygiene' }
       ],
       lipidProfile: {
         hdlDecline: 'mild (less than Test)',
@@ -441,6 +455,11 @@ export const compoundData = {
     color: '#9933FF',
     abbreviation: 'Masteron',
     type: 'injectable',
+    defaultEster: 'propionate',
+    esters: {
+      propionate: { label: 'Propionate', halfLife: 48, weight: 0.80, slug: 'Prop' },
+      enanthate: { label: 'Enanthate', halfLife: 108, weight: 0.70, slug: 'Enanthate' }
+    },
     category: 'cosmetic',
     pathway: 'ar_genomic',
     bindingAffinity: 'moderate',
@@ -452,7 +471,7 @@ export const compoundData = {
       prolactin: 0,
       anti_e: +2      // Unique: Local anti-estrogenic action
     },
-    halfLife: '0.8 days', // Propionate
+    halfLife: 48, // ~2 days (Propionate)
     modelConfidence: 0.55,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -531,6 +550,11 @@ export const compoundData = {
     color: '#996633',
     abbreviation: 'Primo',
     type: 'injectable',
+    defaultEster: 'enanthate',
+    esters: {
+      enanthate: { label: 'Enanthate', halfLife: 240, weight: 0.70, slug: 'Enanthate' },
+      acetate: { label: 'Acetate (Oral)', halfLife: 6, weight: 0.90, slug: 'Oral' }
+    },
     category: 'mild',
     pathway: 'ar_genomic',
     bindingAffinity: 'moderate',
@@ -541,7 +565,7 @@ export const compoundData = {
       cortisol: 0,
       prolactin: 0
     },
-    halfLife: '4.5 days', // Enanthate
+    halfLife: 240, // ~10 days (Enanthate)
     modelConfidence: 0.57,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -620,6 +644,10 @@ export const compoundData = {
     color: '#FF1493',
     abbreviation: 'Dbol',
     type: 'oral',
+    defaultEster: 'oral',
+    esters: {
+      oral: { label: 'Oral Tablet', halfLife: 4, weight: 1.0, slug: 'Tab' }
+    },
     category: 'oral_kickstart',
     pathway: 'non_genomic',
     bindingAffinity: 'low', // Works via rapid signaling, not AR
@@ -631,7 +659,7 @@ export const compoundData = {
       prolactin: 0,
       aromatization: +3 // Heavy methyl-estradiol conversion
     },
-    halfLife: '4 hours',
+    halfLife: 4, // ~4 hours
     modelConfidence: 0.33,
     evidenceProvenance: { human: 0, animal: 1, aggregate: 6 },
     varianceDrivers: [
@@ -737,6 +765,10 @@ export const compoundData = {
     color: '#DC143C',
     abbreviation: 'Adrol',
     type: 'oral',
+    defaultEster: 'oral',
+    esters: {
+      oral: { label: 'Oral Tablet', halfLife: 9, weight: 1.0, slug: 'Tab' }
+    },
     category: 'oral_mass',
     pathway: 'non_genomic',
     bindingAffinity: 'very_low',
@@ -748,7 +780,7 @@ export const compoundData = {
       prolactin: 0,   // Paradoxical estrogenic action
       estrogenic_activity: +3 // Direct ER activation
     },
-    halfLife: '9 hours',
+    halfLife: 8, // ~8 hours
     modelConfidence: 0.31,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 5 },
     varianceDrivers: [
@@ -855,6 +887,10 @@ export const compoundData = {
     color: '#4169E1',
     abbreviation: 'Winny',
     type: 'oral',
+    defaultEster: 'oral',
+    esters: {
+      oral: { label: 'Oral Tablet', halfLife: 9, weight: 1.0, slug: 'Tab' }
+    },
     category: 'oral_cutting',
     pathway: 'non_genomic', // Low binding; SHBG crashing + non-genomic
     bindingAffinity: 'low',
@@ -866,7 +902,7 @@ export const compoundData = {
       prolactin: 0,
       joints: -3      // The "Dry" penalty
     },
-    halfLife: '9 hours',
+    halfLife: 9, // ~9 hours
     modelConfidence: 0.4,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -969,6 +1005,10 @@ export const compoundData = {
     color: '#FF6347',
     abbreviation: 'Var',
     type: 'oral',
+    defaultEster: 'oral',
+    esters: {
+      oral: { label: 'Oral Tablet', halfLife: 9, weight: 1.0, slug: 'Tab' }
+    },
     category: 'oral_mild',
     pathway: 'ar_genomic',
     bindingAffinity: 'low', // Surprisingly low AR affinity; works via other signaling
@@ -979,7 +1019,7 @@ export const compoundData = {
       cortisol: -1,   // Mild anti-catabolic
       prolactin: 0
     },
-    halfLife: '9 hours',
+    halfLife: 9, // ~9 hours
     modelConfidence: 0.48,
     evidenceProvenance: { human: 2, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -1076,6 +1116,10 @@ export const compoundData = {
     color: '#8B0000',
     abbreviation: 'Halo',
     type: 'oral',
+    defaultEster: 'oral',
+    esters: {
+      oral: { label: 'Oral Tablet', halfLife: 12, weight: 1.0, slug: 'Tab' }
+    },
     category: 'oral_extreme',
     pathway: 'non_genomic', // CNS Dominant
     bindingAffinity: 'low',
@@ -1087,7 +1131,7 @@ export const compoundData = {
       prolactin: 0,
       cns_drive: +3   // The primary feature
     },
-    halfLife: '9 hours',
+    halfLife: 9, // ~9 hours
     modelConfidence: 0.27,
     evidenceProvenance: { human: 0, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -1203,6 +1247,10 @@ export const compoundData = {
     color: '#60A5FA', // Light Blue
     abbreviation: 'Prov',
     type: 'oral',
+    defaultEster: 'oral',
+    esters: {
+      oral: { label: 'Oral Tablet', halfLife: 9, weight: 1.0, slug: 'Tab' }
+    },
     category: 'support', // Unique category
     pathway: 'ar_genomic',
     bindingAffinity: 'very_high', // Binds SHBG aggressively
@@ -1215,7 +1263,7 @@ export const compoundData = {
       prolactin: 0,
       libido: +3      // CNS/Androgenic libido driver
     },
-    halfLife: '12 hours',
+    halfLife: 12, // ~12 hours
     // Minimal curves because it's not really for "Mass"
     benefitCurve: [
       { dose: 0, value: 0 }, { dose: 25, value: 0.5 }, { dose: 50, value: 0.8 }, { dose: 100, value: 0.9 }
@@ -1252,6 +1300,10 @@ export const compoundData = {
     color: '#F472B6', // Pink
     abbreviation: 'Tbol',
     type: 'oral',
+    defaultEster: 'oral',
+    esters: {
+      oral: { label: 'Oral Tablet', halfLife: 8, weight: 1.0, slug: 'Tab' }
+    },
     category: 'oral_performance',
     pathway: 'non_genomic',
     bindingAffinity: 'low',
@@ -1263,7 +1315,7 @@ export const compoundData = {
       cortisol: 0,
       prolactin: 0
     },
-    halfLife: '16 hours',
+    halfLife: 16, // ~16 hours
     benefitCurve: [ /* Standard curve 20-80mg */ 
       { dose: 0, value: 0 }, { dose: 40, value: 2.0 }, { dose: 80, value: 2.8 }
     ],
@@ -1299,6 +1351,10 @@ export const compoundData = {
     color: '#9F1239', // Deep Rose
     abbreviation: 'Sdrol',
     type: 'oral',
+    defaultEster: 'oral',
+    esters: {
+      oral: { label: 'Oral Tablet', halfLife: 16, weight: 1.0, slug: 'Tab' }
+    },
     category: 'oral_mass',
     pathway: 'non_genomic',
     bindingAffinity: 'low',
@@ -1311,7 +1367,7 @@ export const compoundData = {
       prolactin: 0,
       liver_toxicity: +3 // Extreme
     },
-    halfLife: '8 hours',
+    halfLife: 8, // ~8 hours
     benefitCurve: [ /* steep rise */
       { dose: 0, value: 0 }, { dose: 10, value: 2.5 }, { dose: 20, value: 4.5 }, { dose: 30, value: 4.8 }
     ],
