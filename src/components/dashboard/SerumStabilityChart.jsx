@@ -31,9 +31,15 @@ const simulateSerum = (stack) => {
   const hoursTotal = 28 * 24; 
   const dataPoints = [];
   
-  // Track active mg for EACH compound independently
-  // We use a superposition of Bateman functions for each injection
+  // State tracking for numerical simulation
+  let activeLevels = {}; 
+  let depotLevels = {}; // Track oil sitting in muscle
   
+  stack.forEach(c => { 
+    activeLevels[c.compound] = 0; 
+    depotLevels[c.compound] = 0; 
+  });
+
   for (let hour = 0; hour <= hoursTotal; hour += 4) {
     let totalSystemicLoad = 0;
     let point = { hour, day: (hour / 24).toFixed(1) };
@@ -43,41 +49,43 @@ const simulateSerum = (stack) => {
       if (!meta) return;
 
       const hl = meta.halfLife || 24;
-      const ke = Math.log(2) / hl; // Elimination rate
-      const ka = getAbsorptionRate(item.ester, meta.type); // Absorption rate
+      const isOral = meta.type === 'oral';
       
-      const freqDays = item.frequency || 3.5;
-      const freqHours = freqDays * 24;
-      const dosePerPin = (item.dose / 7) * freqDays;
-
-      // Calculate concentration from ALL previous injections
-      // C(t) = D * (ka / (ka - ke)) * (exp(-ke * t) - exp(-ka * t))
-      let compoundLevel = 0;
+      // 1. INJECTION EVENT
+      // Calculate interval in hours based on frequency (pins per week)
+      const freq = item.frequency || 1;
+      const intervalHours = (7 / freq) * 24;
       
-      // Look back at previous injections (up to 5 half-lives)
-      const lookbackLimit = hl * 5;
-      
-      for (let injectionTime = 0; injectionTime <= hour; injectionTime += freqHours) {
-        const timeSinceInjection = hour - injectionTime;
-        
-        if (timeSinceInjection >= 0 && timeSinceInjection < lookbackLimit) {
-          // Bateman Function
-          // Note: We simplify Volume of Distribution (Vd) to 1 for relative comparison
-          let concentration = 0;
-          
-          if (Math.abs(ka - ke) < 0.0001) {
-            // Special case where ka == ke (rare but possible mathematically)
-            concentration = dosePerPin * ke * timeSinceInjection * Math.exp(-ke * timeSinceInjection);
-          } else {
-            concentration = dosePerPin * (ka / (ka - ke)) * (Math.exp(-ke * timeSinceInjection) - Math.exp(-ka * timeSinceInjection));
-          }
-          
-          compoundLevel += concentration;
-        }
+      // Check if injection happens this hour
+      // We use a tolerance of 4 hours (one step)
+      if (hour % Math.round(intervalHours) < 4) { 
+         // Calculate dose per pin
+         const dosePerPin = (item.dose / 7) * (7 / freq); 
+         depotLevels[item.compound] += dosePerPin;
       }
 
-      point[item.compound] = compoundLevel;
-      totalSystemicLoad += compoundLevel;
+      // 2. ABSORPTION: Transfer from Depot to Active
+      // Orals absorb instantly (gut). Injectables absorb from depot.
+      // Fast esters (Prop) absorb fast, Slow esters (Deca) absorb slow.
+      let absorptionRate;
+      if (isOral) {
+          absorptionRate = 0.8; // Fast gut absorption
+      } else {
+          // Empirically tuned rates for 4-hour steps
+          absorptionRate = hl < 48 ? 0.15 : 0.04; 
+      }
+      
+      const absorbed = depotLevels[item.compound] * absorptionRate;
+      depotLevels[item.compound] -= absorbed;
+      activeLevels[item.compound] += absorbed;
+
+      // 3. ELIMINATION: Decay the Active
+      // Decay factor for 4 hours: 0.5 ^ (4 / hl)
+      const decayFactor = Math.pow(0.5, 4 / hl);
+      activeLevels[item.compound] *= decayFactor;
+
+      point[item.compound] = activeLevels[item.compound];
+      totalSystemicLoad += activeLevels[item.compound];
     });
 
     point.total = totalSystemicLoad;

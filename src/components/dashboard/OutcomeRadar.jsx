@@ -66,7 +66,7 @@ const OutcomeRadar = ({ metrics }) => {
             {/* THE SCALE LOCK */}
             <PolarRadiusAxis 
               angle={90} 
-              domain={[0, MAX_SCORE]} 
+              domain={[0, 35]} 
               tick={false} 
               axisLine={false} 
             />

@@ -2,6 +2,7 @@ import React from 'react';
 import { compoundData } from '../../data/compoundData';
 import Slider from '../ui/Slider';
 import Button from '../ui/Button';
+import Card from '../ui/Card';
 
 const StackCard = ({ item, onUpdateDose, onRemove }) => {
   const compound = compoundData[item.compoundId];
@@ -9,7 +10,7 @@ const StackCard = ({ item, onUpdateDose, onRemove }) => {
   if (!compound) return null;
 
   return (
-    <div className="bg-physio-bg-surface border border-physio-border-subtle rounded-xl p-4 relative overflow-hidden group transition-all hover:border-physio-border-strong">
+    <Card className="relative overflow-hidden group transition-all hover:border-physio-border-strong p-4">
       {/* Colored Stripe */}
       <div 
         className="absolute left-0 top-0 bottom-0 w-1.5"
@@ -23,7 +24,7 @@ const StackCard = ({ item, onUpdateDose, onRemove }) => {
             <h3 className="text-sm font-bold text-physio-text-primary leading-none">{compound.name}</h3>
             <div className="flex items-center gap-2 mt-1.5">
               <span className="text-xs text-physio-text-tertiary uppercase tracking-wider">{compound.type}</span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-physio-bg-core border border-physio-border-subtle text-physio-text-secondary font-mono">
+              <span className="text-xs px-2 py-0.5 rounded bg-physio-bg-core border border-physio-border-subtle text-physio-text-secondary font-mono">
                 HL: {compound.halfLife}
               </span>
             </div>
@@ -55,7 +56,7 @@ const StackCard = ({ item, onUpdateDose, onRemove }) => {
           />
         </div>
       </div>
-    </div>
+    </Card>
   );
 };
 

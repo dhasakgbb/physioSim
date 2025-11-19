@@ -1,9 +1,10 @@
 import React from 'react';
 import { compoundData } from '../../data/compoundData';
 import { useStack } from '../../context/StackContext';
+import Card from '../ui/Card';
 
 const PathwayGroup = ({ label, description, compounds, onSelect, color }) => (
-  <div className={`flex flex-col gap-3 p-4 rounded-2xl border ${color} bg-physio-bg-surface/40 backdrop-blur-sm min-w-[240px]`}>
+  <Card variant="glass" className={`flex flex-col gap-3 p-4 border ${color} min-w-[240px]`}>
     <div className="mb-1">
       <h4 className="text-sm font-bold text-physio-text-primary uppercase tracking-widest">{label}</h4>
       <p className="text-xs text-physio-text-tertiary leading-tight mt-1">{description}</p>
@@ -21,12 +22,12 @@ const PathwayGroup = ({ label, description, compounds, onSelect, color }) => (
           />
           <div className="text-left">
             <span className="block text-xs font-bold text-physio-text-primary leading-none">{data.abbreviation}</span>
-            <span className="block text-[10px] text-physio-text-tertiary leading-none mt-1">{data.type}</span>
+            <span className="block text-xs text-physio-text-tertiary leading-none mt-1">{data.type}</span>
           </div>
         </button>
       ))}
     </div>
-  </div>
+  </Card>
 );
 
 const CompoundDock = () => {

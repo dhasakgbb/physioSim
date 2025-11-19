@@ -10,6 +10,7 @@ const LabReportCard = ({ stack, totals }) => {
     let ast = 25; // Baseline U/L
     let alt = 25; // Baseline U/L
     let creatinine = 1.0; // Baseline mg/dL
+    let neuroRisk = 0; // Baseline Index
 
     stack.forEach(item => {
       const meta = compoundData[item.compound];
@@ -41,8 +42,13 @@ const LabReportCard = ({ stack, totals }) => {
       }
 
       // Creatinine (Kidney stress - mainly Tren, high doses)
-      if (meta.code === 'trenbolone') {
+      if (item.compound === 'trenbolone') {
         creatinine += dose * 0.0008;
+      }
+
+      // Neurotoxicity Accumulation
+      if (meta.biomarkers?.neurotoxicity) {
+        neuroRisk += meta.biomarkers.neurotoxicity * (dose / 300);
       }
     });
 
@@ -53,8 +59,9 @@ const LabReportCard = ({ stack, totals }) => {
     ast = Math.min(ast, 150);
     alt = Math.min(alt, 150);
     creatinine = Math.min(creatinine, 2.0);
+    neuroRisk = Math.min(neuroRisk, 10.0);
 
-    return { hdl, ldl, hematocrit, ast, alt, creatinine };
+    return { hdl, ldl, hematocrit, ast, alt, creatinine, neuroRisk };
   }, [stack]);
 
   const getStatus = (value, ranges) => {
@@ -154,6 +161,36 @@ const LabReportCard = ({ stack, totals }) => {
           status={getStatus(labValues.creatinine, { critical: 1.5, warning: 1.3 })}
           reference="&lt; 1.2"
         />
+
+        {/* Neuro Risk */}
+        <LabRow 
+          label="Neuro Risk" 
+          value={labValues.neuroRisk.toFixed(1)} 
+          unit="Index"
+          status={getStatus(labValues.neuroRisk, { critical: 5, warning: 3 })}
+          reference="&lt; 2.0"
+        />
+
+        {/* Metabolite Shadow (New) */}
+        {stack.some(i => compoundData[i.compound]?.flags?.createsMethylEstrogen) && (
+          <LabRow 
+            label="Methyl-E2" 
+            value="DETECTED" 
+            unit="High Potency" 
+            reference="0" 
+            status={{ color: 'text-physio-accent-critical', bg: 'bg-physio-accent-critical/10', label: 'CRITICAL' }} 
+          />
+        )}
+
+        {stack.some(i => compoundData[i.compound]?.flags?.createsDHN) && (
+          <LabRow 
+            label="DHN Disp." 
+            value="RISK" 
+            unit="Sexual Func" 
+            reference="-" 
+            status={{ color: 'text-physio-accent-warning', bg: 'bg-physio-accent-warning/10', label: 'ELEVATED' }} 
+          />
+        )}
       </div>
 
       <div className="mt-5 pt-3 border-t border-physio-border-subtle text-xs text-physio-text-tertiary">

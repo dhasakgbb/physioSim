@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import Card from '../ui/Card';
 import { getAncillaryProtocol } from '../../data/sideFxAndAncillaries';
 import { compoundData } from '../../data/compoundData';
 
@@ -34,7 +35,7 @@ const calculateOrganLoad = (stack) => {
 };
 
 const LoadBar = ({ label, value, color }) => (
-  <div className="flex items-center gap-3 text-[10px] font-medium text-physio-text-secondary">
+  <div className="flex items-center gap-3 text-xs font-medium text-physio-text-secondary">
     <span className="w-12 text-right uppercase tracking-wider">{label}</span>
     <div className="flex-1 h-1.5 bg-physio-bg-core rounded-full overflow-hidden border border-physio-border-subtle">
       <div 
@@ -73,11 +74,11 @@ const VitalSigns = ({ metrics, stack, showScoreOnly = false, showSafetyOnly = fa
       
       {/* --- SECTION 1: THE NORTH STAR (SCORE) --- */}
       {(showAll || showScoreOnly) && (
-        <div className="p-5 bg-physio-bg-core border border-physio-border-strong rounded-2xl shadow-inner relative overflow-hidden">
+        <Card variant="core" className="shadow-inner relative overflow-hidden p-5">
           <div className="absolute top-0 right-0 p-3 opacity-10">
             <span className="text-4xl">⚕️</span>
           </div>
-          <p className="text-[10px] uppercase tracking-widest text-physio-text-tertiary mb-1">Net Efficiency</p>
+          <p className="text-xs uppercase tracking-widest text-physio-text-tertiary mb-1">Net Efficiency</p>
           <div className="flex items-baseline gap-1">
             <span className="text-3xl font-bold text-physio-text-primary">{netScore.toFixed(2)}</span>
             <span className="text-xs text-physio-text-secondary">pts</span>
@@ -93,7 +94,7 @@ const VitalSigns = ({ metrics, stack, showScoreOnly = false, showSafetyOnly = fa
               <span className="font-bold text-physio-text-primary">{brRatio.toFixed(2)}</span>
             </div>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* --- SECTION 2: THE BILL (SAFETY & SUPPORT) --- */}
@@ -102,7 +103,7 @@ const VitalSigns = ({ metrics, stack, showScoreOnly = false, showSafetyOnly = fa
           {/* NEW: Clinical Warnings (The "Doctor's Note") */}
           {metrics.warnings && metrics.warnings.length > 0 && (
             <div className="space-y-2 mb-4">
-               <h4 className="text-[10px] uppercase tracking-widest text-physio-accent-critical font-bold border-b border-physio-accent-critical/30 pb-2 flex items-center gap-2">
+               <h4 className="text-xs uppercase tracking-widest text-physio-accent-critical font-bold border-b border-physio-accent-critical/30 pb-2 flex items-center gap-2">
                  <span>⚠️ Clinical Contraindications</span>
                </h4>
                {metrics.warnings.map((warn, idx) => (
@@ -111,7 +112,7 @@ const VitalSigns = ({ metrics, stack, showScoreOnly = false, showSafetyOnly = fa
                      ? 'bg-red-950/30 border-red-900/50 text-red-200' 
                      : 'bg-orange-950/30 border-orange-900/50 text-orange-200'
                  }`}>
-                   <strong className="block mb-1 uppercase text-[10px] tracking-wider opacity-80">{warn.type} Warning</strong>
+                   <strong className="block mb-1 uppercase text-xs tracking-wider opacity-80">{warn.type} Warning</strong>
                    {warn.message}
                  </div>
                ))}
@@ -120,7 +121,7 @@ const VitalSigns = ({ metrics, stack, showScoreOnly = false, showSafetyOnly = fa
 
           {/* Organ Load Breakdown */}
           <div className="space-y-3">
-            <h4 className="text-[10px] uppercase tracking-widest text-physio-text-tertiary font-bold border-b border-physio-border-subtle pb-2">
+            <h4 className="text-xs uppercase tracking-widest text-physio-text-tertiary font-bold border-b border-physio-border-subtle pb-2">
               Systemic Burden Breakdown
             </h4>
             <div className="space-y-2">
@@ -138,7 +139,7 @@ const VitalSigns = ({ metrics, stack, showScoreOnly = false, showSafetyOnly = fa
                 <h4 className="text-xs font-bold text-physio-accent-warning uppercase tracking-wide">
                   Required Support
                 </h4>
-                <span className="text-[10px] font-mono text-physio-text-secondary">
+                <span className="text-xs font-mono text-physio-text-secondary">
                   ${ancillaries.totalWeeklyCost}/wk
                 </span>
               </div>
@@ -148,7 +149,7 @@ const VitalSigns = ({ metrics, stack, showScoreOnly = false, showSafetyOnly = fa
                     <span className="text-physio-accent-warning mt-0.5">●</span>
                     <span>
                       <span className="font-semibold text-physio-text-primary">{med.drug}</span>
-                      <span className="block text-[10px] text-physio-text-tertiary">{med.dosing}</span>
+                      <span className="block text-xs text-physio-text-tertiary">{med.dosing}</span>
                     </span>
                   </li>
                 ))}

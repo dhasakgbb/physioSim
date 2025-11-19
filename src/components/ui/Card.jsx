@@ -4,6 +4,7 @@ const variants = {
   default: 'bg-physio-bg-surface border border-physio-border-subtle',
   glass: 'glass-panel',
   highlight: 'bg-physio-bg-highlight border border-physio-border-strong',
+  core: 'bg-physio-bg-core border border-physio-border-strong',
 };
 
 const Card = ({ 

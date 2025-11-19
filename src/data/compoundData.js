@@ -10,6 +10,7 @@ export const compoundData = {
     color: '#0066CC',
     abbreviation: 'Test',
     type: 'injectable',
+    bioavailability: 1.0,
     suppressiveFactor: 2, // Standard suppression
     flags: { aromatization: 1.0, isSuppressive: true },
     defaultEster: 'enanthate',
@@ -18,7 +19,7 @@ export const compoundData = {
       enanthate: { label: 'Enanthate', halfLife: 108, weight: 0.72, slug: 'Enanthate' },
       cypionate: { label: 'Cypionate', halfLife: 120, weight: 0.70, slug: 'Cyp' },
       suspension: { label: 'Suspension', halfLife: 1, weight: 1.00, slug: 'Susp' },
-      sustanon: { label: 'Sustanon 250', halfLife: 120, weight: 0.74, slug: 'Sust', isBlend: true }
+      sustanon: { label: 'Sustanon 250', halfLife: 216, weight: 0.74, slug: 'Sust', isBlend: true }
     },
     category: 'base',
     pathway: 'ar_genomic', // The Reference Agonist
@@ -135,8 +136,9 @@ export const compoundData = {
     color: '#FF9900',
     abbreviation: 'NPP',
     type: 'injectable',
+    bioavailability: 1.0,
     suppressiveFactor: 4, // 19-nor suppression
-    flags: { aromatization: 0.2, isSuppressive: true },
+    flags: { aromatization: 0.2, isSuppressive: true, createsDHN: true },
     category: 'progestin',
     pathway: 'ar_genomic', // Strong binder
     bindingAffinity: 'high',
@@ -146,7 +148,8 @@ export const compoundData = {
       rbc: +1,        // Mild increase
       cortisol: -1,   // Mild anti-catabolic
       prolactin: +3,  // HIGH RISK (Direct Progesterone Receptor Agonist)
-      hair_safe: +2   // Converts to DHN (Weak androgen) - Specialized Benefit
+      hair_safe: +2,  // Converts to DHN (Weak androgen) - Specialized Benefit
+      neurotoxicity: 2 // Moderate Neurotoxicity (19-nor)
     },
     halfLife: 60, // ~2.5 days (Phenylpropionate)
     phenotype: { hypertrophy: 7, strength: 6, endurance: 8, conditioning: 5 },
@@ -239,6 +242,7 @@ export const compoundData = {
     color: '#CC0000',
     abbreviation: 'Tren',
     type: 'injectable',
+    bioavailability: 1.0,
     suppressiveFactor: 5, // Severe shutdown
     flags: { isSuppressive: true, isRenalToxic: true },
     defaultEster: 'acetate',
@@ -256,7 +260,7 @@ export const compoundData = {
       rbc: +3,        // High Hematocrit risk
       cortisol: -3,   // ELITE FEATURE: Blocks Cortisol receptors (Anti-catabolic)
       prolactin: +2,  // Progestin activity
-      neuro: -3       // Dopaminergic destabilization
+      neurotoxicity: 3 // High Risk (Amyloid/Dopamine)
     },
     halfLife: 48,
     phenotype: { hypertrophy: 7, strength: 9, endurance: 1, conditioning: 10 },
@@ -663,9 +667,9 @@ export const compoundData = {
     abbreviation: 'Dbol',
     type: 'oral',
     toxicityTier: 2,
-    bioavailability: 0.85, // 17-aa protects it
+    bioavailability: 0.80, // 17-aa protects it, but some loss
     suppressiveFactor: 3,
-    flags: { aromatization: 2.0, isHeavyBP: true },
+    flags: { aromatization: 2.0, isHeavyBP: true, createsMethylEstrogen: true },
     defaultEster: 'oral',
     esters: {
       oral: { label: 'Oral Tablet', halfLife: 4, weight: 1.0, slug: 'Tab' }
