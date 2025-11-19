@@ -86,11 +86,15 @@ const getWeeklyDose = (dose, isOral) => {
 const calculateStabilityPenalty = (meta, esterKey, frequency, isOral) => {
   if (isOral) return 1.0; // Orals assumed daily/stable
 
-  const freq = frequency || 1; // Default 1 pin/week
+  // frequency is "Days Interval" (1=ED, 3.5=2x/Wk, 7=1x/Wk)
+  const intervalDays = frequency || 7; // Default to 1x/Wk (7 days) if undefined
+  
   const halfLifeHours =
     meta.esters?.[esterKey]?.halfLife || meta.halfLife || 24;
   const halfLifeDays = halfLifeHours / 24;
-  const injectionInterval = 7 / freq;
+  
+  // The injection interval is simply the frequency in days
+  const injectionInterval = intervalDays;
 
   let penalty = 1.0;
 
@@ -100,8 +104,10 @@ const calculateStabilityPenalty = (meta, esterKey, frequency, isOral) => {
   }
 
   // Extra penalty for volatile blends (e.g., Sustanon) if infrequent
+  // Previously: freq < 3 (pins/week). 3 pins/week = every 2.33 days.
+  // So if interval > 2.5 days, we penalize.
   const isVolatileBlend = meta.esters?.[esterKey]?.isBlend;
-  if (isVolatileBlend && freq < 3) {
+  if (isVolatileBlend && intervalDays > 2.5) {
     penalty += 0.2;
   }
 

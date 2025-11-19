@@ -61,15 +61,26 @@ const simulateSerum = (stack) => {
       const isOral = meta.type === "oral";
 
       // 1. INJECTION EVENT
-      // Calculate interval in hours based on frequency (pins per week)
-      const freq = item.frequency || 1;
-      const intervalHours = (7 / freq) * 24;
+      // Calculate interval in hours based on frequency (days between pins)
+      // Note: item.frequency comes from ActiveStackRail as "Days Interval" (1=ED, 3.5=2x/Wk)
+      const intervalDays = item.frequency || 1;
+      const intervalHours = intervalDays * 24;
 
       // Check if injection happens this hour
       // We use a tolerance of 4 hours (one step)
       if (hour % Math.round(intervalHours) < 4) {
         // Calculate dose per pin
-        const dosePerPin = (item.dose / 7) * (7 / freq);
+        let dosePerPin;
+        if (isOral) {
+          // For Orals, item.dose is "mg/day" (Dose per administration)
+          // We inject the full pill dose at each interval
+          dosePerPin = item.dose;
+        } else {
+          // For Injectables, item.dose is "mg/week" (Total Weekly Dose)
+          // We inject a fraction based on frequency: WeeklyDose * (DaysInterval / 7)
+          dosePerPin = item.dose * (intervalDays / 7);
+        }
+
         depotLevels[item.compound] += dosePerPin;
       }
 
