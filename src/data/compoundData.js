@@ -1629,7 +1629,10 @@ export const compoundData = {
     modelConfidence: 0.95,
     benefitCurve: [{dose: 0, value: 0}, {dose: 1, value: 1}],
     riskCurve: [{dose: 0, value: 0}, {dose: 1, value: 0.5}],
-    methodology: { summary: 'Aromatase Inhibitor. Reduces E2. 1mg reduces serum E2 by ~50%.' },
+    methodology: { 
+      summary: 'Aromatase Inhibitor. Reduces E2. 1mg reduces serum E2 by ~50%.',
+      sources: ['Clinical trials (Arimidex)', 'Community logs']
+    },
     sideEffectProfile: { common: [], lipidProfile: {}, cardiovascular: {}, hpta: {} },
     ancillaryRequirements: {}
   },
@@ -1662,7 +1665,10 @@ export const compoundData = {
     modelConfidence: 0.95,
     benefitCurve: [{dose: 0, value: 0}, {dose: 1, value: 1}],
     riskCurve: [{dose: 0, value: 0}, {dose: 1, value: 0.5}],
-    methodology: { summary: '5-Alpha Reductase Inhibitor. Blocks conversion of Test to DHT (Hair Safe). Blocks conversion of Nandrolone to DHN (Hair TOXIC).' },
+    methodology: { 
+      summary: '5-Alpha Reductase Inhibitor. Blocks conversion of Test to DHT (Hair Safe). Blocks conversion of Nandrolone to DHN (Hair TOXIC).',
+      sources: ['Clinical trials (Propecia)', 'Community logs']
+    },
     sideEffectProfile: { common: [], lipidProfile: {}, cardiovascular: {}, hpta: {} },
     ancillaryRequirements: {}
   }

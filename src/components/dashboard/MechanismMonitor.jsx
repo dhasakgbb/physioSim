@@ -6,11 +6,11 @@ const SaturationGauge = ({ label, value, limit, warning }) => {
   const isOverloaded = value > limit;
   
   return (
-    <div className="mb-4">
-      <div className="flex justify-between items-end mb-1.5">
-        <span className="text-xs font-bold uppercase tracking-widest text-physio-text-secondary">{label}</span>
-        <span className={`text-sm font-mono ${isOverloaded ? 'text-physio-accent-critical' : 'text-physio-text-primary'}`}>
-          {Math.round(percent)}% <span className="text-[10px] text-physio-text-tertiary">Saturation</span>
+    <div className="mb-6">
+      <div className="flex justify-between items-end mb-2">
+        <span className="text-sm font-medium text-physio-text-secondary">{label}</span>
+        <span className={`text-sm font-bold font-mono ${isOverloaded ? 'text-physio-accent-critical' : 'text-physio-text-primary'}`}>
+          {Math.round(percent)}%
         </span>
       </div>
       <div className="h-2 bg-physio-bg-core rounded-full overflow-hidden border border-physio-border-subtle">
@@ -20,8 +20,8 @@ const SaturationGauge = ({ label, value, limit, warning }) => {
         />
       </div>
       {isOverloaded && (
-        <p className="text-xs text-physio-accent-critical mt-1.5 flex items-center gap-1.5">
-          <span>⚠️</span> {warning}
+        <p className="text-xs text-physio-accent-critical mt-2 flex items-center gap-1.5 font-medium">
+          <span className="material-symbols-rounded text-sm">warning</span> {warning}
         </p>
       )}
     </div>

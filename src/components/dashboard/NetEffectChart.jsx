@@ -150,9 +150,19 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
   if (stack.length === 0) {
     return (
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="text-center opacity-30">
-          <div className="text-6xl mb-4">🧬</div>
-          <p className="text-sm font-medium uppercase tracking-widest">Awaiting Compound Input</p>
+        <div className="text-center opacity-60">
+          <div className="text-6xl mb-4 grayscale opacity-50">🧬</div>
+          <h3 className="text-lg font-bold text-physio-text-primary mb-2">No Active Compounds</h3>
+          <p className="text-sm text-physio-text-secondary mb-6 max-w-xs mx-auto">
+            Select a compound from the library below to begin your simulation.
+          </p>
+          <button 
+            onClick={() => document.querySelector('footer')?.scrollIntoView({ behavior: 'smooth' })}
+            className="px-6 py-2.5 bg-physio-accent-primary text-physio-bg-core font-bold rounded-full hover:bg-physio-accent-primary/90 transition-all active:scale-95 flex items-center gap-2 mx-auto shadow-lg shadow-physio-accent-primary/20"
+          >
+            <span className="text-xl leading-none">+</span>
+            Add Compound
+          </button>
         </div>
       </div>
     );

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import DashboardLayout from './DashboardLayout';
 import CompoundDock from './CompoundDock';
 import ActiveStackRail from './ActiveStackRail';
@@ -10,6 +10,7 @@ import CompoundInspector from './CompoundInspector';
 import SerumStabilityChart from './SerumStabilityChart';
 import SignalingNetwork from './SignalingNetwork';
 import LabReportCard from './LabReportCard';
+import DonationModal from '../DonationModal';
 import ErrorBoundary from '../ui/ErrorBoundary';
 import { useStack } from '../../context/StackContext';
 
@@ -25,6 +26,8 @@ const Dashboard = () => {
     handleAddCompound
   } = useStack();
 
+  const [showDonation, setShowDonation] = useState(false);
+
   // 4. Render
   return (
     <>
@@ -34,42 +37,75 @@ const Dashboard = () => {
         <ActiveStackRail />
       }
 
-      // ZONE B: The Visualization
-      centerStage={
-        <>
-          {/* Toggle Switch (Floating Top Right) */}
-          <div className="absolute top-4 right-6 z-20 flex bg-physio-bg-surface/80 backdrop-blur border border-physio-border-subtle rounded-lg p-1">
+      // Header Controls (View Switcher + Donate)
+      headerControls={
+        <div className="flex items-center gap-8">
+          {/* Navigation Tabs */}
+          <div className="flex items-center gap-6">
             <button 
               onClick={() => setViewMode('net')}
-              className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'net' ? 'bg-physio-bg-highlight text-white shadow-sm' : 'text-physio-text-tertiary hover:text-physio-text-primary'}`}
+              className={`relative py-2 text-sm font-medium transition-colors ${
+                viewMode === 'net' 
+                  ? 'text-physio-text-primary' 
+                  : 'text-physio-text-tertiary hover:text-physio-text-secondary'
+              }`}
             >
               Net Impact
+              {viewMode === 'net' && (
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-physio-accent-primary rounded-t-full" />
+              )}
             </button>
             <button 
               onClick={() => setViewMode('pk')}
-              className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'pk' ? 'bg-physio-bg-highlight text-white shadow-sm' : 'text-physio-text-tertiary hover:text-physio-text-primary'}`}
+              className={`relative py-2 text-sm font-medium transition-colors ${
+                viewMode === 'pk' 
+                  ? 'text-physio-text-primary' 
+                  : 'text-physio-text-tertiary hover:text-physio-text-secondary'
+              }`}
             >
-              Stability (PK)
+              Stability
+              {viewMode === 'pk' && (
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-physio-accent-primary rounded-t-full" />
+              )}
             </button>
             <button 
               onClick={() => setViewMode('network')}
-              className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'network' ? 'bg-physio-bg-highlight text-white shadow-sm' : 'text-physio-text-tertiary hover:text-physio-text-primary'}`}
+              className={`relative py-2 text-sm font-medium transition-colors ${
+                viewMode === 'network' 
+                  ? 'text-physio-text-primary' 
+                  : 'text-physio-text-tertiary hover:text-physio-text-secondary'
+              }`}
             >
               Signaling
+              {viewMode === 'network' && (
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-physio-accent-primary rounded-t-full" />
+              )}
             </button>
           </div>
+          
+          {/* Action Button (Material 3 Filled Tonal) */}
+          <button 
+            onClick={() => setShowDonation(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-physio-accent-primary/10 hover:bg-physio-accent-primary/20 text-physio-accent-primary transition-all active:scale-95"
+            title="Support Development"
+          >
+            <span className="material-symbols-rounded text-lg">favorite</span>
+            <span className="text-sm font-bold">Donate</span>
+          </button>
+        </div>
+      }
 
-          {/* View Switcher */}
-          <ErrorBoundary>
-            {viewMode === 'pk' ? (
-              <SerumStabilityChart stack={stack} />
-            ) : viewMode === 'network' ? (
-              <SignalingNetwork stack={stack} metrics={metrics} />
-            ) : (
-              <NetEffectChart stack={stack} userProfile={userProfile} />
-            )}
-          </ErrorBoundary>
-        </>
+      // ZONE B: The Visualization
+      centerStage={
+        <ErrorBoundary>
+          {viewMode === 'pk' ? (
+            <SerumStabilityChart stack={stack} />
+          ) : viewMode === 'network' ? (
+            <SignalingNetwork stack={stack} metrics={metrics} />
+          ) : (
+            <NetEffectChart stack={stack} userProfile={userProfile} />
+          )}
+        </ErrorBoundary>
       }
 
       // ZONE C: THE LOGICAL LOOP (Score -> Governor -> Engine -> Bill)
@@ -103,6 +139,13 @@ const Dashboard = () => {
       <CompoundInspector 
         compoundKey={inspectedCompound} 
         onClose={() => setInspectedCompound(null)} 
+      />
+    )}
+
+    {/* Donation Modal */}
+    {showDonation && (
+      <DonationModal 
+        onClose={() => setShowDonation(false)} 
       />
     )}
     </>

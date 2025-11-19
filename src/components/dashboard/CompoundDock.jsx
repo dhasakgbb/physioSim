@@ -14,7 +14,7 @@ const PathwayGroup = ({ label, description, compounds, onSelect, color }) => (
         <button
           key={key}
           onClick={() => onSelect(key)}
-          className="group relative flex items-center gap-2.5 pl-1.5 pr-3 py-2 rounded-lg bg-physio-bg-core border border-physio-border-subtle hover:border-physio-accent-primary transition-all hover:shadow-neo-sm"
+          className="group relative flex items-center gap-2.5 pl-1.5 pr-3 py-2 rounded-lg bg-physio-bg-core border border-physio-border-subtle hover:border-physio-accent-primary transition-all hover:shadow-neo-sm active:scale-95 active:bg-physio-bg-highlight/10"
         >
           <div 
             className="w-2 h-9 rounded-full" 

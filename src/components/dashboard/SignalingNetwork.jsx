@@ -40,13 +40,26 @@ const SignalingNetwork = ({ stack, metrics }) => {
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
   useEffect(() => {
-    if (containerRef.current) {
-      setDimensions({
-        width: containerRef.current.offsetWidth,
-        height: Math.max(500, Object.keys(PATHWAY_NODES).length * ROW_HEIGHT + 80)
-      });
-    }
-  }, [containerRef.current]);
+    if (!containerRef.current) return;
+
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        setDimensions({
+          width: containerRef.current.offsetWidth,
+          height: Math.max(500, Object.keys(PATHWAY_NODES).length * ROW_HEIGHT + 150)
+        });
+      }
+    };
+
+    // Initial sizing
+    updateDimensions();
+
+    // Watch for resize
+    const observer = new ResizeObserver(updateDimensions);
+    observer.observe(containerRef.current);
+
+    return () => observer.disconnect();
+  }, []);
 
   // 1. Calculate Data Model
   const { nodes, links } = useMemo(() => {
@@ -62,7 +75,7 @@ const SignalingNetwork = ({ stack, metrics }) => {
         type: 'input',
         label: compoundData[item.compound].name,
         color: compoundData[item.compound].color || '#9ca3af',
-        y: (idx * ROW_HEIGHT) + 80, // Start a bit down
+        y: (idx * ROW_HEIGHT) + 120, // Start lower to avoid header overlap
         x: 0, // Left
         data: item
       });
@@ -79,7 +92,7 @@ const SignalingNetwork = ({ stack, metrics }) => {
         key: key,
         label: PATHWAY_NODES[key].label,
         color: PATHWAY_NODES[key].color,
-        y: (idx * ROW_HEIGHT) + 50,
+        y: (idx * ROW_HEIGHT) + 120, // Start lower to avoid header overlap
         x: 1, // Center (logical coord)
       });
     });
@@ -138,7 +151,7 @@ const SignalingNetwork = ({ stack, metrics }) => {
         label: displayLabel,
         displayValue: displayValue,
         color: OUTCOME_NODES[key].color,
-        y: (idx * ROW_HEIGHT) + 80,
+        y: (idx * ROW_HEIGHT) + 120, // Start lower to avoid header overlap
         x: 2 // Right
       });
     });
@@ -180,9 +193,9 @@ const SignalingNetwork = ({ stack, metrics }) => {
   // Helper to get coordinates
   const getCoords = (node, colWidth) => {
     let x = 0;
-    if (node.type === 'input') x = 40; // Padding left
+    if (node.type === 'input') x = 120; // Padding left (increased to prevent cutoff)
     if (node.type === 'pathway') x = colWidth * 1.5; // Center
-    if (node.type === 'output') x = colWidth * 3 - 40; // Padding right
+    if (node.type === 'output') x = colWidth * 3 - 120; // Padding right (increased to prevent cutoff)
     return { x, y: node.y };
   };
 

@@ -6,6 +6,7 @@ const DashboardLayout = ({
   centerStage, // Zone B: Visualization
   rightRail,  // Zone C: Vitals/Intel
   bottomDock, // Zone D: Compound Picker
+  headerControls, // Optional controls for the header
   className = ''
 }) => {
   const [showLeft, setShowLeft] = useState(false);
@@ -69,9 +70,13 @@ const DashboardLayout = ({
           <header className="hidden md:flex h-16 items-center justify-between px-8 border-b border-physio-border-subtle">
             <div className="flex items-center gap-4">
               <Logo />
-              <span className="text-physio-text-tertiary font-normal text-sm border-l border-physio-border-subtle pl-4">Net Interaction Model</span>
             </div>
-            {/* Global Toolbar (PDF, Share, etc) could go here */}
+            {/* Global Toolbar (PDF, Share, etc) */}
+            {headerControls && (
+              <div className="flex items-center gap-4">
+                {headerControls}
+              </div>
+            )}
           </header>
           
           <div className="flex-1 relative p-4 md:p-6 overflow-hidden flex flex-col">
@@ -109,7 +114,10 @@ const DashboardLayout = ({
 
       {/* ZONE D: The Dock (Bottom) */}
       <footer className="h-auto min-h-[140px] py-6 border-t border-physio-border-subtle bg-physio-bg-core z-30 flex items-center justify-center px-4 md:px-8 relative">
-        <div className="absolute -top-6 left-1/2 -translate-x-1/2 px-4 py-1 bg-physio-bg-core border border-physio-border-subtle rounded-t-xl border-b-0 text-[10px] text-physio-text-tertiary uppercase tracking-wider">
+        {/* Drag Handle Indicator */}
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-physio-border-strong rounded-full opacity-50 hover:opacity-100 transition-opacity cursor-grab" />
+        
+        <div className="absolute -top-6 left-1/2 -translate-x-1/2 px-4 py-1 bg-physio-bg-core border border-physio-border-subtle rounded-t-xl border-b-0 text-[10px] text-physio-text-tertiary uppercase tracking-wider hidden">
           Compound Library
         </div>
         <div className="w-full max-w-5xl overflow-x-auto">

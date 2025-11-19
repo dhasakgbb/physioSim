@@ -248,7 +248,7 @@ export const interactionMatrix = {
     mechanisms: [
       'Primo adds slow, quality lean tissue; Test provides anabolic drive',
       'Both well-tolerated; minimal sides',
-      'Synergy slightly negative (Primo weak; doesn\'t multiply Test gains)',
+      'Synergy slightly negative (Primo weak; doesn\'t amplify Test gains)',
       'Lipid impact: among mildest stacks (Primo very gentle)',
       'Cost consideration: Primo expensive; stack cost-prohibitive at high doses'
     ],
@@ -264,6 +264,55 @@ export const interactionMatrix = {
     caution: 'Expensive; verify Primo legitimacy (counterfeiting common); weak gains relative to cost',
     stackBenefit: 'Slow, quality lean gains; excellent lipid profile; minimal sides; well-tolerated',
     stackRisk: 'Very low: among safest stacks available; standard HPTA suppression only',
+    rating: 'good'
+  },
+
+  testosterone_ment: {
+    description: 'Experimental mass monster stack; extreme potency and risk',
+    synergy: { benefit: 0.25, risk: 0.6 },
+    mechanisms: [
+      'MENT is 10x more myotrophic than Test; Test provides DHT base',
+      'Both aromatize heavily (MENT to 7a-methyl-E2); E2 control critical',
+      'Synergistic mass gains; rapid glycogen loading',
+      'Extreme HPTA suppression (MENT is a male contraceptive)',
+      'Lipid impact: severe (MENT lowers HDL significantly)'
+    ],
+    recommendedRatio: 'Test (TRT) : MENT (Low) - e.g., 150mg Test : 10-20mg/day MENT',
+    recommendedProtocol: {
+      testDose: '100-200mg/week (TRT base)',
+      mentDose: '5-30mg/day (Acetate) or 50-150mg/week',
+      aiProtocol: 'Aggressive AI required; frequent bloodwork',
+      prolactinMgmt: 'Cabergoline likely needed',
+      duration: '6-8 weeks maximum'
+    },
+    recommendation: 'Advanced users only; experimental compound',
+    caution: '⚠️ HIGH RISK: Gyno risk extreme; infertility risk high; very little human safety data',
+    stackBenefit: 'Rapid, extreme mass gains; strength surge',
+    stackRisk: 'High: Estrogen control difficult, infertility, lipids, unknown long-term safety',
+    rating: 'caution'
+  },
+
+  testosterone_dhb: {
+    description: 'Dry lean mass stack; "Pip" is the main limiter',
+    synergy: { benefit: 0.1, risk: 0.2 },
+    mechanisms: [
+      'DHB provides dry, grainy look similar to Tren but without mental sides',
+      'Test provides estrogen base (DHB does not aromatize)',
+      'DHB is structurally similar to Primo but much stronger',
+      'PIP (Post Injection Pain) from DHB can be debilitating',
+      'Kidney stress reported with DHB'
+    ],
+    recommendedRatio: 'Test:DHB = 1:1 to 2:1',
+    recommendedProtocol: {
+      testDose: '300-500mg/week',
+      dhbDose: '300-500mg/week',
+      carrierOil: 'Must dilute DHB to avoid PIP',
+      duration: '10-12 weeks'
+    },
+    recommendation: 'Good alternative to Tren for those who can\'t handle mental sides',
+    caution: 'Severe PIP; possible kidney stress; solvent reactions',
+    stackBenefit: 'Dry, hard muscle; strength; vascularity',
+    stackRisk: 'Moderate: PIP, injection site issues, lipids, kidneys',
     rating: 'good'
   },
 

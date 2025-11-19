@@ -35,14 +35,15 @@ const calculateOrganLoad = (stack) => {
 };
 
 const LoadBar = ({ label, value, color }) => (
-  <div className="flex items-center gap-3 text-xs font-medium text-physio-text-secondary">
-    <span className="w-12 text-right uppercase tracking-wider">{label}</span>
-    <div className="flex-1 h-1.5 bg-physio-bg-core rounded-full overflow-hidden border border-physio-border-subtle">
+  <div className="flex items-center gap-4 text-sm">
+    <span className="w-16 text-right text-physio-text-secondary font-medium">{label}</span>
+    <div className="flex-1 h-2 bg-physio-bg-core rounded-full overflow-hidden border border-physio-border-subtle">
       <div 
         className={`h-full rounded-full transition-all duration-500 ${color}`}
         style={{ width: `${(value / 10) * 100}%` }}
       />
     </div>
+    <span className="w-6 text-right font-bold text-physio-text-primary">{value.toFixed(1)}</span>
   </div>
 );
 
