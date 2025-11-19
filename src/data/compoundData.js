@@ -10,6 +10,7 @@ export const compoundData = {
     color: '#0066CC',
     abbreviation: 'Test',
     type: 'injectable',
+    suppressiveFactor: 2, // Standard suppression
     flags: { aromatization: 1.0, isSuppressive: true },
     defaultEster: 'enanthate',
     esters: {
@@ -17,7 +18,7 @@ export const compoundData = {
       enanthate: { label: 'Enanthate', halfLife: 108, weight: 0.72, slug: 'Enanthate' },
       cypionate: { label: 'Cypionate', halfLife: 120, weight: 0.70, slug: 'Cyp' },
       suspension: { label: 'Suspension', halfLife: 1, weight: 1.00, slug: 'Susp' },
-      sustanon: { label: 'Sustanon 250', halfLife: 120, weight: 0.74, slug: 'Sust' }
+      sustanon: { label: 'Sustanon 250', halfLife: 120, weight: 0.74, slug: 'Sust', isBlend: true }
     },
     category: 'base',
     pathway: 'ar_genomic', // The Reference Agonist
@@ -134,6 +135,7 @@ export const compoundData = {
     color: '#FF9900',
     abbreviation: 'NPP',
     type: 'injectable',
+    suppressiveFactor: 4, // 19-nor suppression
     flags: { aromatization: 0.2, isSuppressive: true },
     category: 'progestin',
     pathway: 'ar_genomic', // Strong binder
@@ -237,6 +239,7 @@ export const compoundData = {
     color: '#CC0000',
     abbreviation: 'Tren',
     type: 'injectable',
+    suppressiveFactor: 5, // Severe shutdown
     flags: { isSuppressive: true, isRenalToxic: true },
     defaultEster: 'acetate',
     esters: {
@@ -365,6 +368,7 @@ export const compoundData = {
     color: '#00AA00',
     abbreviation: 'EQ',
     type: 'injectable',
+    suppressiveFactor: 3,
     flags: { aromatization: 0.5 },
     category: 'endurance',
     pathway: 'ar_genomic', // Moderate binder
@@ -463,6 +467,7 @@ export const compoundData = {
     color: '#9933FF',
     abbreviation: 'Masteron',
     type: 'injectable',
+    suppressiveFactor: 2,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: 'propionate',
     esters: {
@@ -560,11 +565,12 @@ export const compoundData = {
     color: '#996633',
     abbreviation: 'Primo',
     type: 'injectable',
+    suppressiveFactor: 2,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: 'enanthate',
     esters: {
       enanthate: { label: 'Enanthate', halfLife: 240, weight: 0.70, slug: 'Enanthate' },
-      acetate: { label: 'Acetate (Oral)', halfLife: 6, weight: 0.90, slug: 'Oral' }
+      acetate: { label: 'Acetate (Oral)', halfLife: 6, weight: 0.90, slug: 'Oral', bioavailability: 0.15 }
     },
     category: 'mild',
     pathway: 'ar_genomic',
@@ -656,6 +662,9 @@ export const compoundData = {
     color: '#FF1493',
     abbreviation: 'Dbol',
     type: 'oral',
+    toxicityTier: 2,
+    bioavailability: 0.85, // 17-aa protects it
+    suppressiveFactor: 3,
     flags: { aromatization: 2.0, isHeavyBP: true },
     defaultEster: 'oral',
     esters: {
@@ -779,6 +788,9 @@ export const compoundData = {
     color: '#DC143C',
     abbreviation: 'Adrol',
     type: 'oral',
+    toxicityTier: 3,
+    bioavailability: 0.85,
+    suppressiveFactor: 3,
     flags: { aromatization: 0.5, isHeavyBP: true },
     defaultEster: 'oral',
     esters: {
@@ -903,6 +915,9 @@ export const compoundData = {
     color: '#4169E1',
     abbreviation: 'Winny',
     type: 'oral',
+    toxicityTier: 2,
+    bioavailability: 0.80,
+    suppressiveFactor: 2,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: 'oral',
     esters: {
@@ -1023,6 +1038,9 @@ export const compoundData = {
     color: '#FF6347',
     abbreviation: 'Var',
     type: 'oral',
+    toxicityTier: 1,
+    bioavailability: 0.80,
+    suppressiveFactor: 2,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: 'oral',
     esters: {
@@ -1136,6 +1154,9 @@ export const compoundData = {
     color: '#8B0000',
     abbreviation: 'Halo',
     type: 'oral',
+    toxicityTier: 4,
+    bioavailability: 0.80,
+    suppressiveFactor: 4,
     flags: { aromatization: 0, isSuppressive: true, isLiverToxic: true },
     defaultEster: 'oral',
     esters: {
@@ -1269,6 +1290,9 @@ export const compoundData = {
     color: '#60A5FA', // Light Blue
     abbreviation: 'Prov',
     type: 'oral',
+    toxicityTier: 0,
+    bioavailability: 0.05, // Poor oral bioavailability
+    suppressiveFactor: 1,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: 'oral',
     esters: {
@@ -1324,6 +1348,9 @@ export const compoundData = {
     color: '#F472B6', // Pink
     abbreviation: 'Tbol',
     type: 'oral',
+    toxicityTier: 2,
+    bioavailability: 0.85,
+    suppressiveFactor: 2,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: 'oral',
     esters: {
@@ -1378,6 +1405,9 @@ export const compoundData = {
     color: '#9F1239', // Deep Rose
     abbreviation: 'Sdrol',
     type: 'oral',
+    toxicityTier: 4,
+    bioavailability: 0.85,
+    suppressiveFactor: 4,
     flags: { aromatization: 0, isSuppressive: true, isLiverToxic: true },
     defaultEster: 'oral',
     esters: {

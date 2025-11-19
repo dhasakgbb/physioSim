@@ -4,16 +4,27 @@ import { compoundData } from '../../data/compoundData';
 
 const getAbsorptionRate = (ester, type) => {
   // ka (absorption rate constant) approximations
-  if (type === 'oral') return 2.5; // Peaks in ~3-4 hours
-  if (!ester) return 0.5; // Default injectable
+  // Lower ka = Slower absorption = Slower ramp up
+  // Previous values were too high, causing instant spikes.
+  
+  if (type === 'oral') return 2.0; // Peaks in ~2-3 hours
+  if (!ester) return 0.1; // Default injectable
   
   const slug = ester.toLowerCase();
-  if (slug.includes('prop') || slug.includes('ace')) return 0.8; // Fast esters
-  if (slug.includes('enanth') || slug.includes('cyp')) return 0.4; // Medium esters
-  if (slug.includes('dec') || slug.includes('undec')) return 0.15; // Slow esters
-  if (slug.includes('susp')) return 5.0; // Instant
   
-  return 0.4;
+  // Fast Esters (Prop, Ace) -> Peak ~12-18h
+  if (slug.includes('prop') || slug.includes('ace')) return 0.1; 
+  
+  // Medium Esters (Enanthate, Cyp) -> Peak ~24-36h
+  if (slug.includes('enanth') || slug.includes('cyp')) return 0.05; 
+  
+  // Slow Esters (Decanoate, Undec) -> Peak ~48-72h
+  if (slug.includes('dec') || slug.includes('undec')) return 0.03; 
+  
+  // Suspension -> Very Fast but not instant
+  if (slug.includes('susp')) return 1.5; 
+  
+  return 0.05;
 };
 
 const simulateSerum = (stack) => {
@@ -114,7 +125,7 @@ const SerumStabilityChart = ({ stack }) => {
 
       <div className="flex-1 w-full min-h-0 relative pb-12">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+          <LineChart data={data} margin={{ top: 20, right: 30, left: 30, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.15} vertical={false} />
             <XAxis 
               dataKey="day" 
@@ -150,6 +161,7 @@ const SerumStabilityChart = ({ stack }) => {
                   strokeWidth={2} 
                   dot={false}
                   activeDot={{ r: 3 }}
+                  isAnimationActive={false}
                 />
               );
             })}
@@ -161,9 +173,10 @@ const SerumStabilityChart = ({ stack }) => {
               name="Total Load"
               stroke="#ffffff" 
               strokeWidth={1} 
-              strokeDasharray="3 3"
+              strokeDasharray="3 3" 
               strokeOpacity={0.3}
               dot={false} 
+              isAnimationActive={false}
             />
             
           </LineChart>

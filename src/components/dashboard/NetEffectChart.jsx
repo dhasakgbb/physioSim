@@ -48,11 +48,17 @@ const CustomTooltip = ({ active, payload, label, crossover }) => {
             <span className="text-sm font-mono font-bold text-physio-text-primary">{data.benefit.toFixed(2)}</span>
           </div>
           
-          {/* NEW: Show the "Bypass" Bonus if significant */}
+          {/* THE POSITIVE REINFORCEMENT */}
           {data.nonGenomicBenefit > 0.5 && (
-            <div className="flex justify-between items-center pl-2 border-l-2 border-physio-accent-secondary/30">
-              <span className="text-[10px] text-physio-text-secondary">↳ Pathway Bypass</span>
-              <span className="text-[10px] font-mono text-physio-accent-secondary">+{data.nonGenomicBenefit.toFixed(2)}</span>
+            <div className="pl-2 border-l-2 border-physio-accent-secondary/50 my-1">
+              <div className="flex justify-between items-center">
+                <span className="text-[9px] text-physio-text-tertiary">↳ Receptor Load</span>
+                <span className="text-[9px] font-mono text-physio-text-secondary">{(data.benefit - data.nonGenomicBenefit).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[9px] text-physio-accent-secondary font-bold">↳ Pathway Bypass</span>
+                <span className="text-[9px] font-mono text-physio-accent-secondary">+{data.nonGenomicBenefit.toFixed(2)}</span>
+              </div>
             </div>
           )}
           
@@ -71,8 +77,12 @@ const CustomTooltip = ({ active, payload, label, crossover }) => {
       )}
 
       {isSaturated && !isWasted && (
-        <div className="mt-3 py-1.5 px-2 bg-physio-accent-warning/10 border border-physio-accent-warning/20 rounded text-xs text-physio-accent-warning flex items-center gap-1.5">
-          <span className="text-sm">⚠️</span> Diminishing Returns (Saturated)
+        <div className="mt-3 py-1.5 px-2 bg-physio-accent-primary/10 border border-physio-accent-primary/20 rounded text-[10px] text-physio-text-secondary flex items-start gap-1.5">
+          <span className="text-xs mt-0.5">ℹ️</span> 
+          <span className="leading-tight">
+            AR Upregulation Active.<br/>
+            <span className="text-physio-text-tertiary">Gains are still increasing, but efficiency is dropping. Risk is compounding faster than growth.</span>
+          </span>
         </div>
       )}
 
@@ -125,11 +135,13 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
 
       points.push({
         percent,
-        benefit,
-        risk,
+        benefit: result.totals.totalBenefit,
+        risk: result.totals.totalRisk,
         net: result.totals.netScore,
         saturation,
-        saturationPenalty: result.totals.saturationPenalty
+        saturationPenalty: result.totals.saturationPenalty,
+        genomicBenefit: result.totals.genomicBenefit || 0,
+        nonGenomicBenefit: result.totals.nonGenomicBenefit || 0
       });
     }
     return { data: points, crossover: foundCrossover };

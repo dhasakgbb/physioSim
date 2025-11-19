@@ -78,8 +78,7 @@ const OutcomeRadar = ({ metrics }) => {
               strokeWidth={3}
               fill={COLORS.benefit}
               fillOpacity={0.4}
-              isAnimationActive={true}
-              animationDuration={500}
+              isAnimationActive={false}
             />
             <Tooltip content={<CustomRadarTooltip />} />
           </RadarChart>

@@ -21,14 +21,7 @@ const Slider = ({
   const handleChange = (e) => {
     const newValue = Number(e.target.value);
     setLocalValue(newValue);
-
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      onChange(newValue);
-    }, 50);
+    onChange(newValue);
   };
 
   const percentage = ((localValue - min) / (max - min)) * 100;

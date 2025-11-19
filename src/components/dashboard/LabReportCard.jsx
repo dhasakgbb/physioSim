@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { compoundData } from '../../data/compoundData';
 
-const LabReportCard = ({ stack }) => {
+const LabReportCard = ({ stack, totals }) => {
   // Calculate predicted lab values based on stack
   const labValues = useMemo(() => {
     let hdl = 50; // Baseline mg/dL
@@ -69,6 +69,16 @@ const LabReportCard = ({ stack }) => {
     return { color: 'text-physio-accent-success', bg: 'bg-physio-accent-success/10', label: 'NORMAL' };
   };
 
+  // Recovery Status Logic
+  const recoveryStatus = useMemo(() => {
+    const score = totals?.maxSuppression || 0;
+    if (score >= 5) return { label: 'Severe (4-6 Months+)', color: 'text-physio-accent-critical', bg: 'bg-physio-accent-critical/10' };
+    if (score >= 4) return { label: 'Difficult (3-4 Months)', color: 'text-physio-accent-critical', bg: 'bg-physio-accent-critical/10' };
+    if (score >= 3) return { label: 'Extended (2-3 Months)', color: 'text-physio-accent-warning', bg: 'bg-physio-accent-warning/10' };
+    if (score >= 2) return { label: 'Standard (1-2 Months)', color: 'text-physio-accent-success', bg: 'bg-physio-accent-success/10' };
+    return { label: 'Rapid (Weeks)', color: 'text-physio-accent-success', bg: 'bg-physio-accent-success/10' };
+  }, [totals]);
+
   return (
     <div className="bg-physio-bg-surface border border-physio-border-strong rounded-xl p-5 shadow-neo">
       <div className="flex items-center justify-between mb-5">
@@ -81,6 +91,16 @@ const LabReportCard = ({ stack }) => {
       </div>
 
       <div className="space-y-2.5">
+        {/* Recovery Score (New) */}
+        <div className="flex items-center justify-between py-2 px-3 rounded bg-physio-bg-core/50 border border-physio-border-subtle mb-4">
+          <div className="flex items-center gap-3 flex-1">
+            <span className="text-xs font-mono text-physio-text-tertiary uppercase w-24">Est. Recovery</span>
+            <span className={`text-sm font-bold font-mono ${recoveryStatus.color}`}>
+              {recoveryStatus.label}
+            </span>
+          </div>
+        </div>
+
         {/* HDL */}
         <LabRow 
           label="HDL" 

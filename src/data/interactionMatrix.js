@@ -909,6 +909,113 @@ export const interactionMatrix = {
     stackBenefit: 'Peak contest conditioning, extreme hardness + dryness, vascularity',
     stackRisk: 'Extreme: lipids (catastrophic), psychological, joint pain, sleep, hepatic',
     rating: 'dangerous'
+  },
+
+  // SUPERDROL COMBINATIONS
+  testosterone_superdrol: {
+    description: 'Extreme mass stack; highly toxic but effective',
+    synergy: { benefit: 0.2, risk: 0.5 },
+    mechanisms: [
+      'Superdrol provides rapid, dry mass; Test provides base',
+      'Superdrol crushes SHBG, freeing up Test',
+      'Lipid devastation (Superdrol extreme + Test moderate)',
+      'Hepatic stress extreme (Superdrol is methasterone)',
+      'Lethargy common from Superdrol; Test helps energy'
+    ],
+    recommendedRatio: 'Test 400-600mg/week + Superdrol 10-20mg/day (3-4 weeks)',
+    recommendedProtocol: {
+      testDose: '400-600mg/week',
+      superdrolDose: '10-20mg/day, 3-4 weeks MAXIMUM',
+      tudca: '1000mg+ daily MANDATORY',
+      lipidManagement: 'Aggressive',
+      timing: 'Kickstart or plateau breaker'
+    },
+    recommendation: 'Advanced users only; limit duration strictly',
+    caution: '⚠️ HIGH RISK: Liver toxicity extreme; lipids crushed; lethargy common',
+    stackBenefit: 'Rapid dry mass, strength surge, fullness',
+    stackRisk: 'High: hepatic, lipids, lethargy, BP',
+    rating: 'caution'
+  },
+
+  superdrol_anadrol: {
+    description: '❌ FORBIDDEN - Dual harsh orals',
+    synergy: { benefit: 0, risk: 1.0 },
+    recommendation: '❌ FORBIDDEN - Liver toxicity risk too high',
+    caution: '⚠️ FORBIDDEN: Do not stack these two',
+    stackRisk: 'Critical: hepatic failure risk',
+    rating: 'forbidden'
+  },
+
+  superdrol_winstrol: {
+    description: '❌ FORBIDDEN - Dual dry orals; liver + joint stress',
+    synergy: { benefit: 0, risk: 0.9 },
+    recommendation: '❌ FORBIDDEN - Joints will dry out; liver stress extreme',
+    caution: '⚠️ FORBIDDEN: Redundant and dangerous',
+    stackRisk: 'Critical: hepatic, joints, lipids',
+    rating: 'forbidden'
+  },
+
+  trenbolone_superdrol: {
+    description: 'The "Death Stack"; extreme toxicity for extreme results',
+    synergy: { benefit: 0.15, risk: 0.8 },
+    mechanisms: [
+      'Both extremely potent and toxic',
+      'Lipids devastated from both angles',
+      'Liver stress from Superdrol; Tren adds metabolic stress',
+      'Psychological + physical side effects compound'
+    ],
+    recommendedRatio: 'NOT RECOMMENDED',
+    recommendation: 'Dangerous; only for reckless advanced users',
+    caution: '⚠️ DANGEROUS: High probability of severe health impact',
+    stackBenefit: 'Extreme physique changes',
+    stackRisk: 'Critical: everything',
+    rating: 'dangerous'
+  },
+
+  // TURINABOL COMBINATIONS
+  testosterone_turinabol: {
+    description: 'Athletic performance stack; "Dry Dbol"',
+    synergy: { benefit: 0.1, risk: 0.15 },
+    mechanisms: [
+      'Tbol adds quality lean mass without water',
+      'Good strength gains; excellent for athletes',
+      'Lower toxicity than Dbol/Adrol',
+      'SHBG binding from Tbol enhances Test efficiency'
+    ],
+    recommendedRatio: 'Test 400-600mg/week + Tbol 40-60mg/day',
+    recommendedProtocol: {
+      testDose: '400-600mg/week',
+      tbolDose: '40-60mg/day, 6-8 weeks',
+      tudca: '500mg daily',
+      lipidManagement: 'Standard'
+    },
+    recommendation: 'Excellent for lean bulk or athletic performance',
+    caution: 'Pumps can be painful (back pumps)',
+    stackBenefit: 'Lean mass, strength, endurance, no bloat',
+    stackRisk: 'Moderate: lipids, hepatic (mild-moderate)',
+    rating: 'good'
+  },
+
+  // PROVIRON COMBINATIONS
+  testosterone_proviron: {
+    description: 'Synergistic optimization; Proviron frees up Test',
+    synergy: { benefit: 0.2, risk: 0.05 },
+    mechanisms: [
+      'Proviron binds SHBG avidly, increasing Free Test',
+      'Adds hardening and libido boost',
+      'Non-toxic; very safe addition',
+      'Enhances the efficiency of the Test base'
+    ],
+    recommendedRatio: 'Test (Any dose) + Proviron 25-50mg/day',
+    recommendedProtocol: {
+      provironDose: '25-50mg/day',
+      duration: 'Can be run entire cycle'
+    },
+    recommendation: 'Excellent addition to almost any stack',
+    caution: 'Hair loss (DHT) is the main concern',
+    stackBenefit: 'Higher free T, libido, hardness, mood',
+    stackRisk: 'Low: hair loss',
+    rating: 'excellent'
   }
 };
 
