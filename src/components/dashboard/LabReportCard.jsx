@@ -13,6 +13,9 @@ const LabReportCard = ({ stack, totals }) => {
     let neuroRisk = 0; // Baseline Index
     let estradiol = 25; // Baseline pg/mL
     let prolactin = 6.0; // Baseline ng/mL
+    let shbg = 30; // Baseline nmol/L
+    let totalTestosterone = 600; // Baseline ng/dL
+    let freeTestosterone = 12; // Baseline pg/mL
 
     stack.forEach(item => {
       const meta = compoundData[item.compound];
@@ -21,9 +24,9 @@ const LabReportCard = ({ stack, totals }) => {
       // HDL Decline (all AAS suppress HDL)
       if (meta.type === 'injectable') {
         // Bhasin et al: 600mg Test -> ~20% HDL drop. 
-        // Previous logic (0.02 * dose) was too aggressive (500mg -> -10mg/dL).
-        // New logic: 0.008 * dose (500mg -> -4mg/dL) which is more clinically accurate for Test.
-        hdl -= dose * 0.008; 
+        // Updated logic: 0.02 * dose (500mg -> -10mg/dL).
+        // This aligns better with clinical reality (50 -> 40mg/dL on 500mg Test).
+        hdl -= dose * 0.02; 
       } else if (meta.type === 'oral') {
         // Orals are hepatic lipase suicide inhibitors. They CRUSH HDL.
         // 50mg Anavar -> -50% HDL is common.
@@ -34,7 +37,8 @@ const LabReportCard = ({ stack, totals }) => {
       if (meta.type === 'oral') {
         ldl += dose * 0.3;
       } else {
-        ldl += dose * 0.01;
+        // Injectables have mild impact, but not zero.
+        ldl += dose * 0.02;
       }
 
       // Hematocrit (RBC boost)
@@ -124,8 +128,14 @@ const LabReportCard = ({ stack, totals }) => {
   }, [stack]);
 
   const getStatus = (value, ranges) => {
+    // Check for low critical/warning first (if defined)
+    if (ranges.lowCritical !== undefined && value <= ranges.lowCritical) return { color: 'text-physio-accent-critical', bg: 'bg-physio-accent-critical/10', label: 'CRITICAL LOW' };
+    if (ranges.lowWarning !== undefined && value <= ranges.lowWarning) return { color: 'text-physio-accent-warning', bg: 'bg-physio-accent-warning/10', label: 'LOW' };
+    
+    // Check for high critical/warning
     if (value >= ranges.critical) return { color: 'text-physio-accent-critical', bg: 'bg-physio-accent-critical/10', label: 'CRITICAL' };
     if (value >= ranges.warning) return { color: 'text-physio-accent-warning', bg: 'bg-physio-accent-warning/10', label: 'WARNING' };
+    
     return { color: 'text-physio-accent-success', bg: 'bg-physio-accent-success/10', label: 'NORMAL' };
   };
 
@@ -237,7 +247,7 @@ const LabReportCard = ({ stack, totals }) => {
           label="Estradiol" 
           value={labValues.estradiol.toFixed(0)} 
           unit="pg/mL"
-          status={getStatus(labValues.estradiol, { critical: 80, warning: 50 })}
+          status={getStatus(labValues.estradiol, { critical: 80, warning: 50, lowWarning: 15, lowCritical: 10 })}
           reference="20-40"
         />
 

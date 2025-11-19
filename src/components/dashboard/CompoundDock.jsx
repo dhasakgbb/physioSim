@@ -4,12 +4,12 @@ import { useStack } from '../../context/StackContext';
 import Card from '../ui/Card';
 
 const PathwayGroup = ({ label, description, compounds, onSelect, color }) => (
-  <Card variant="glass" className={`flex flex-col gap-3 p-4 border ${color} min-w-[240px]`}>
-    <div className="mb-1">
+  <Card variant="glass" className={`flex flex-col gap-3 p-4 border ${color} min-w-[240px] h-full`}>
+    <div className="mb-1 min-h-[48px]">
       <h4 className="text-sm font-bold text-physio-text-primary uppercase tracking-widest">{label}</h4>
       <p className="text-xs text-physio-text-tertiary leading-tight mt-1">{description}</p>
     </div>
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 content-start">
       {compounds.map(([key, data]) => (
         <button
           key={key}

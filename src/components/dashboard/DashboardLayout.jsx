@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Logo from '../ui/Logo';
 
 const DashboardLayout = ({ 
   leftRail,   // Zone A: Active Stack
@@ -22,7 +23,9 @@ const DashboardLayout = ({
            <span className="text-lg">🧪</span> Stack
          </button>
          
-         <span className="font-bold text-sm tracking-tight text-physio-text-tertiary">PhysioLab Mobile</span>
+         <div className="scale-75 origin-center">
+            <Logo />
+         </div>
          
          <button 
            onClick={() => setShowRight(true)} 
@@ -64,9 +67,10 @@ const DashboardLayout = ({
         {/* ZONE B: Center Stage (Visualization) */}
         <main className="flex-1 flex flex-col relative z-10 min-w-0 overflow-hidden">
           <header className="hidden md:flex h-16 items-center justify-between px-8 border-b border-physio-border-subtle">
-            <h1 className="text-lg font-semibold tracking-tight text-physio-text-primary">
-              PhysioLab <span className="text-physio-text-tertiary font-normal">/ Net Interaction Model</span>
-            </h1>
+            <div className="flex items-center gap-4">
+              <Logo />
+              <span className="text-physio-text-tertiary font-normal text-sm border-l border-physio-border-subtle pl-4">Net Interaction Model</span>
+            </div>
             {/* Global Toolbar (PDF, Share, etc) could go here */}
           </header>
           

@@ -123,7 +123,7 @@ const NetEffectChart = ({ stack, userProfile = defaultProfile }) => {
         }
       });
       
-      const saturation = Math.min(currentARLoad / 1200, 1); 
+      const saturation = Math.min(currentARLoad / 1500, 1); 
       const benefit = result.totals.totalBenefit;
       const risk = result.totals.totalRisk;
 

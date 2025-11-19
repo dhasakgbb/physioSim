@@ -159,7 +159,8 @@ export const personalizeScore = ({
   // Ensure uncertainty bounds respect profile volatility (minimum floor)
   const ciFloor = baseCi === 0 ? 0 : Math.max(baseCi, 0.1);
   const personalizedCi = clamp(ciFloor * ciMultiplier * uncertaintyScale, 0, 1.5);
-  const boundedValue = clamp(adjustedValue, 0, 5.5);
+  // Increased cap from 5.5 to 15.0 to support high-dose "Open Class" curves
+  const boundedValue = clamp(adjustedValue, 0, 15.0);
 
   return {
     value: Number(boundedValue.toFixed(3)),

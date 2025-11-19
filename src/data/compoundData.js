@@ -45,11 +45,16 @@ export const compoundData = {
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
       { dose: 100, value: 0.83, tier: 'Tier 1', source: 'Bhasin et al. (1996)', caveat: 'Direct empirical data from RCT', ci: 0.15 },
       { dose: 300, value: 2.5, tier: 'Tier 1', source: 'Bhasin et al. (1996)', caveat: 'Linear dose-response observed', ci: 0.15 },
+      { dose: 400, value: 3.4, tier: 'Tier 1', source: 'Interpolated', caveat: 'Smoothing', ci: 0.15 },
+      { dose: 500, value: 4.3, tier: 'Tier 1', source: 'Interpolated', caveat: 'Smoothing', ci: 0.15 },
       { dose: 600, value: 5.0, tier: 'Tier 1', source: 'Bhasin et al. (1996, 2001)', caveat: 'Peak measured dose in RCT (n=43)', ci: 0.15 },
-      { dose: 800, value: 5.2, tier: 'Tier 3', source: 'Extrapolated via receptor saturation model', caveat: 'No human data; receptor occupancy ~85-90%', ci: 0.5 },
-      { dose: 900, value: 5.2, tier: 'Tier 3', source: 'Extrapolated via receptor model', caveat: 'Plateau driven by receptor saturation', ci: 0.5 },
-      { dose: 1000, value: 5.25, tier: 'Tier 3', source: 'Extrapolated via receptor model', caveat: 'Diminishing returns; modeled', ci: 0.5 },
-      { dose: 1200, value: 5.25, tier: 'Tier 3', source: 'Extrapolated via receptor model', caveat: 'Asymptotic plateau; high uncertainty', ci: 0.5 },
+      { dose: 700, value: 5.6, tier: 'Tier 3', source: 'Extrapolated', caveat: 'Smoothing transition', ci: 0.5 },
+      { dose: 800, value: 6.1, tier: 'Tier 3', source: 'Extrapolated via receptor saturation model', caveat: 'Diminishing returns (AR Saturation)', ci: 0.5 },
+      { dose: 1000, value: 6.9, tier: 'Tier 3', source: 'Extrapolated via receptor model', caveat: 'Non-genomic signaling dominates', ci: 0.5 },
+      { dose: 1200, value: 7.5, tier: 'Tier 3', source: 'Extrapolated via receptor model', caveat: 'High waste; brute force growth', ci: 0.5 },
+      { dose: 1500, value: 8.2, tier: 'Tier 3', source: 'Extrapolated via receptor model', caveat: 'High waste; brute force growth', ci: 0.5 },
+      { dose: 2000, value: 9.0, tier: 'Tier 3', source: 'Extrapolated via receptor model', caveat: 'High waste; brute force growth', ci: 0.5 },
+      { dose: 3000, value: 10.0, tier: 'Tier 3', source: 'Extrapolated via receptor model', caveat: 'High waste; brute force growth', ci: 0.5 },
     ],
     riskCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
@@ -59,6 +64,10 @@ export const compoundData = {
       { dose: 800, value: 3.2, tier: 'Tier 3', source: 'Extrapolated cardio/hepatic', caveat: 'Cardio acceleration modeled; not measured', ci: 0.5 },
       { dose: 1000, value: 4.0, tier: 'Tier 3', source: 'Extrapolated cardio/hepatic', caveat: 'Severe lipid + cardio stress assumed', ci: 0.5 },
       { dose: 1200, value: 4.5, tier: 'Tier 3', source: 'Extrapolated cardio/hepatic', caveat: 'Peak risk zone; hepatic + cardio', ci: 0.5 },
+      { dose: 1500, value: 6.0, tier: 'Tier 4', source: 'Open Class Extrapolation', caveat: 'Hematocrit/BP risk becomes critical', ci: 0.6 },
+      { dose: 2000, value: 8.8, tier: 'Tier 4', source: 'Open Class Extrapolation', caveat: 'Diminishing returns; Risk ~= Benefit', ci: 0.6 },
+      { dose: 2500, value: 11.5, tier: 'Tier 4', source: 'Open Class Extrapolation', caveat: 'Net Negative; Health costs exceed gains', ci: 0.7 },
+      { dose: 3000, value: 15.0, tier: 'Tier 4', source: 'Open Class Extrapolation', caveat: 'Extreme toxicity', ci: 0.8 },
     ],
     methodology: {
       summary: 'Tier 1 (0-600mg, Bhasin et al.); Tier 3 (600-1200mg, extrapolated)',
@@ -167,6 +176,8 @@ export const compoundData = {
       { dose: 300, value: 3.0, tier: 'Tier 2/3', source: 'HED-scaled + forum consensus', caveat: 'Plateau in lean mass gains', ci: 0.4 },
       { dose: 400, value: 3.15, tier: 'Tier 3', source: 'Forum reports', caveat: 'Anecdotal plateau; no additional mass', ci: 0.5 },
       { dose: 600, value: 3.25, tier: 'Tier 4', source: 'Forum consensus', caveat: 'Flat; diminishing returns', ci: 0.5 },
+      { dose: 800, value: 3.3, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
+      { dose: 1000, value: 3.35, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
     ],
     riskCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
@@ -175,6 +186,8 @@ export const compoundData = {
       { dose: 300, value: 1.5, tier: 'Tier 2/3', source: 'Forum reports', caveat: '"Deca dick" threshold reports; ~40% of users', ci: 0.4 },
       { dose: 400, value: 2.2, tier: 'Tier 3', source: 'Anecdotal aggregates', caveat: 'Significant prolactin + lipid decline', ci: 0.5 },
       { dose: 600, value: 3.0, tier: 'Tier 4', source: 'Forum consensus', caveat: 'High risk; prolactin dominates; sexual dysfunction common', ci: 0.5 },
+      { dose: 800, value: 4.5, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Severe prolactin risk', ci: 0.6 },
+      { dose: 1000, value: 6.5, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Extreme risk', ci: 0.7 },
     ],
     methodology: {
       summary: 'Tier 2 (0-300mg); Tier 3/4 (300-600mg); prolactin highly variable',
@@ -291,6 +304,9 @@ export const compoundData = {
       { dose: 400, value: 4.5, tier: 'Tier 4', source: 'Anecdotal patterns', caveat: 'Severe risk; aggression/paranoia ~70%; severe lipid decline', ci: 0.8 },
       { dose: 500, value: 4.9, tier: 'Tier 4', source: 'Anecdotal patterns', caveat: 'Very high risk; psychological sides dominate', ci: 0.8 },
       { dose: 600, value: 5.0, tier: 'Tier 4', source: 'Anecdotal patterns', caveat: 'CRITICAL RISK ZONE - unknown cardio risk', ci: 0.8 },
+      { dose: 800, value: 7.5, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Extreme toxicity', ci: 0.9 },
+      { dose: 1000, value: 10.0, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Organ damage likely', ci: 0.9 },
+      { dose: 1200, value: 13.0, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Life threatening', ci: 0.9 },
     ],
     methodology: {
       summary: 'Tier 3 (0-400mg, Yarrow rat study); Tier 4 (400+, entirely anecdotal); NO HUMAN DATA',
@@ -401,6 +417,7 @@ export const compoundData = {
       { dose: 800, value: 2.0, tier: 'Tier 4', source: 'Forum patterns', caveat: 'Plateau; no additional benefit reported', ci: 0.5 },
       { dose: 1000, value: 2.5, tier: 'Tier 4', source: 'Forum patterns', caveat: 'Diminishing returns', ci: 0.5 },
       { dose: 1200, value: 3.0, tier: 'Tier 4', source: 'Forum patterns', caveat: 'Gentle rise; weak compound', ci: 0.5 },
+      { dose: 1500, value: 3.2, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
     ],
     riskCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
@@ -409,6 +426,7 @@ export const compoundData = {
       { dose: 600, value: 1.0, tier: 'Tier 2/4', source: 'Anecdotal aggregates', caveat: 'Anxiety inconsistent; may be individual/E2-related', ci: 0.6 },
       { dose: 800, value: 1.3, tier: 'Tier 4', source: 'Forum patterns', caveat: 'Anxiety escalates ~40%; dose-dependent unclear', ci: 0.6 },
       { dose: 1200, value: 1.6, tier: 'Tier 4', source: 'Forum patterns', caveat: 'High variance; anxiety mechanism unknown', ci: 0.6 },
+      { dose: 1500, value: 2.5, tier: 'Tier 4', source: 'Extrapolated', caveat: 'HCT/Anxiety risk', ci: 0.7 },
     ],
     methodology: {
       summary: 'Tier 2 (0-600mg, veterinary extrapolated); Tier 4 (600+, anecdotal); weak compound',
@@ -503,12 +521,16 @@ export const compoundData = {
       { dose: 200, value: 0.8, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Cosmetic (hardening, anti-E); low anabolic index ~40', ci: 0.5 },
       { dose: 400, value: 1.2, tier: 'Tier 4', source: 'Forum consensus', caveat: 'Plateau; no additional lean mass', ci: 0.5 },
       { dose: 600, value: 1.3, tier: 'Tier 4', source: 'Forum patterns', caveat: 'Flat; primarily used as ancillary', ci: 0.5 },
+      { dose: 800, value: 1.35, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
+      { dose: 1000, value: 1.4, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
     ],
     riskCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
       { dose: 200, value: 0.4, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Androgenic sides; prostate concerns theoretical', ci: 0.6 },
       { dose: 400, value: 0.8, tier: 'Tier 4', source: 'Theory', caveat: 'Weak compound; low absolute risk', ci: 0.7 },
       { dose: 600, value: 1.1, tier: 'Tier 4', source: 'Theory', caveat: 'Prostate risk assumed but not measured', ci: 0.8 },
+      { dose: 800, value: 1.5, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Prostate/Hair risk', ci: 0.8 },
+      { dose: 1000, value: 2.0, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Prostate/Hair risk', ci: 0.8 },
     ],
     methodology: {
       summary: 'Tier 4 (entirely anecdotal); no clinical data; cosmetic compound',
@@ -601,6 +623,8 @@ export const compoundData = {
       { dose: 200, value: 0.88, tier: 'Tier 2/4', source: 'Therapeutic extrapolated', caveat: 'Weak compound; variable response', ci: 0.4 },
       { dose: 400, value: 1.3, tier: 'Tier 4', source: 'Forum reports', caveat: 'Anecdotal plateau; cost-prohibitive', ci: 0.5 },
       { dose: 600, value: 1.5, tier: 'Tier 4', source: 'Forum patterns', caveat: 'No additional benefit; rare to use this high', ci: 0.5 },
+      { dose: 800, value: 1.6, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
+      { dose: 1000, value: 1.65, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
     ],
     riskCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
@@ -608,6 +632,8 @@ export const compoundData = {
       { dose: 200, value: 0.4, tier: 'Tier 2/4', source: 'Therapeutic extrapolated', caveat: 'Hepatic stress minimal (injectable form)', ci: 0.4 },
       { dose: 400, value: 0.6, tier: 'Tier 4', source: 'Theory', caveat: 'High cost; rare to use this high', ci: 0.5 },
       { dose: 600, value: 0.8, tier: 'Tier 4', source: 'Theory', caveat: 'Speculative; very few users report', ci: 0.7 },
+      { dose: 800, value: 1.2, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Mild risk', ci: 0.8 },
+      { dose: 1000, value: 1.8, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Mild risk', ci: 0.8 },
     ],
     methodology: {
       summary: 'Tier 2 (0-200mg, therapeutic data); Tier 4 (200+, weak data)',
@@ -701,7 +727,10 @@ export const compoundData = {
       { dose: 20, value: 2.3, tier: 'Tier 4', source: 'Forum consensus', caveat: 'Classic dose; mass + strength spike', ci: 0.6 },
       { dose: 30, value: 3.0, tier: 'Tier 4', source: 'Community reports', caveat: 'High dose; plateau emerging', ci: 0.7 },
       { dose: 40, value: 3.3, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Sides dominate; marginal benefit increase', ci: 0.7 },
-      { dose: 50, value: 3.4, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Not recommended; risk exceeds benefit', ci: 0.8 }
+      { dose: 50, value: 3.4, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Not recommended; risk exceeds benefit', ci: 0.8 },
+      { dose: 60, value: 3.45, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.8 },
+      { dose: 80, value: 3.5, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.8 },
+      { dose: 100, value: 3.5, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.8 },
     ],
     riskCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
@@ -709,7 +738,10 @@ export const compoundData = {
       { dose: 20, value: 0.8, tier: 'Tier 4', source: 'Forum consensus', caveat: 'Mostly estrogenic risk', ci: 0.6 },
       { dose: 30, value: 1.5, tier: 'Tier 4', source: 'Community reports', caveat: 'E2 + mild hepatic stress emerging', ci: 0.7 },
       { dose: 40, value: 2.2, tier: 'Tier 4', source: 'Anecdotal', caveat: 'E2 + moderate hepatic stress', ci: 0.8 },
-      { dose: 50, value: 2.8, tier: 'Tier 4', source: 'Anecdotal', caveat: 'E2 + significant hepatic stress', ci: 0.9 }
+      { dose: 50, value: 2.8, tier: 'Tier 4', source: 'Anecdotal', caveat: 'E2 + significant hepatic stress', ci: 0.9 },
+      { dose: 60, value: 3.5, tier: 'Tier 4', source: 'Extrapolated', caveat: 'High toxicity', ci: 0.9 },
+      { dose: 80, value: 5.0, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Severe toxicity', ci: 0.9 },
+      { dose: 100, value: 7.0, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Critical toxicity', ci: 0.9 },
     ],
     methodology: {
       summary: 'Tier 4 (entirely anecdotal); NO HUMAN DATA at supraphysio doses',
@@ -827,7 +859,8 @@ export const compoundData = {
       { dose: 50, value: 3.2, tier: 'Tier 4', source: 'Forum consensus', caveat: 'Classic dose; extreme water + strength', ci: 0.6 },
       { dose: 75, value: 4.0, tier: 'Tier 4', source: 'Community reports', caveat: 'High dose; plateau emerging', ci: 0.7 },
       { dose: 100, value: 4.3, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Very high dose; sides severe', ci: 0.8 },
-      { dose: 150, value: 4.5, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Extreme dose; not recommended', ci: 0.8 }
+      { dose: 150, value: 4.5, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Extreme dose; not recommended', ci: 0.8 },
+      { dose: 200, value: 4.6, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.9 },
     ],
     riskCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
@@ -835,7 +868,8 @@ export const compoundData = {
       { dose: 50, value: 1.8, tier: 'Tier 4', source: 'Forum consensus', caveat: 'Estrogenic + moderate hepatic stress', ci: 0.7 },
       { dose: 75, value: 2.8, tier: 'Tier 4', source: 'Community reports', caveat: 'Estrogenic + severe hepatic stress', ci: 0.8 },
       { dose: 100, value: 3.5, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Estrogenic + critical hepatic stress', ci: 0.9 },
-      { dose: 150, value: 4.2, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Estrogenic + extreme hepatic stress; jaundice risk', ci: 1.0 }
+      { dose: 150, value: 4.2, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Estrogenic + extreme hepatic stress; jaundice risk', ci: 1.0 },
+      { dose: 200, value: 6.0, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Liver failure risk', ci: 1.0 },
     ],
     methodology: {
       summary: 'Tier 4 (entirely anecdotal); harshest oral for hepatic stress',
@@ -953,14 +987,18 @@ export const compoundData = {
       { dose: 25, value: 0.9, tier: 'Tier 4', source: 'Community patterns', caveat: 'Mild hardening; dry look', ci: 0.6 },
       { dose: 50, value: 1.5, tier: 'Tier 4', source: 'Forum consensus', caveat: 'Classic dose; cosmetic hardening peaks', ci: 0.6 },
       { dose: 75, value: 1.8, tier: 'Tier 4', source: 'Community reports', caveat: 'High dose; marginal benefit increase', ci: 0.7 },
-      { dose: 100, value: 1.9, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Very high dose; joint pain severe', ci: 0.7 }
+      { dose: 100, value: 1.9, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Very high dose; joint pain severe', ci: 0.7 },
+      { dose: 120, value: 1.95, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.8 },
+      { dose: 150, value: 2.0, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.8 },
     ],
     riskCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
       { dose: 25, value: 0.7, tier: 'Tier 4', source: 'Community patterns', caveat: 'Mild hepatic + lipid stress', ci: 0.6 },
       { dose: 50, value: 1.4, tier: 'Tier 4', source: 'Forum consensus', caveat: 'Moderate hepatic + lipid crash + joint pain emerges', ci: 0.7 },
       { dose: 75, value: 2.3, tier: 'Tier 4', source: 'Community reports', caveat: 'Severe hepatic + lipid devastation + severe joint pain', ci: 0.8 },
-      { dose: 100, value: 3.0, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Critical hepatic + lipids critical + extreme joint pain', ci: 0.9 }
+      { dose: 100, value: 3.0, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Critical hepatic + lipids critical + extreme joint pain', ci: 0.9 },
+      { dose: 120, value: 4.0, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Joint/Liver toxicity', ci: 0.9 },
+      { dose: 150, value: 5.5, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Severe toxicity', ci: 0.9 },
     ],
     methodology: {
       summary: 'Tier 4 (entirely anecdotal); cosmetic cutting compound',
@@ -1075,14 +1113,18 @@ export const compoundData = {
       { dose: 25, value: 0.6, tier: 'Tier 4', source: 'Community patterns', caveat: 'Low dose; mild lean gains', ci: 0.5 },
       { dose: 50, value: 1.2, tier: 'Tier 4', source: 'Forum consensus', caveat: 'Classic dose; quality tissue + hardening', ci: 0.5 },
       { dose: 75, value: 1.6, tier: 'Tier 4', source: 'Community reports', caveat: 'High dose; plateau emerging', ci: 0.6 },
-      { dose: 100, value: 1.8, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Very high dose; marginal increase; cost-prohibitive', ci: 0.6 }
+      { dose: 100, value: 1.8, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Very high dose; marginal increase; cost-prohibitive', ci: 0.6 },
+      { dose: 120, value: 1.85, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.7 },
+      { dose: 150, value: 1.9, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.7 },
     ],
     riskCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
       { dose: 25, value: 0.3, tier: 'Tier 4', source: 'Community patterns', caveat: 'Minimal hepatic stress; well-tolerated', ci: 0.5 },
       { dose: 50, value: 0.7, tier: 'Tier 4', source: 'Forum consensus', caveat: 'Mild hepatic + lipid stress', ci: 0.6 },
       { dose: 75, value: 1.2, tier: 'Tier 4', source: 'Community reports', caveat: 'Moderate hepatic + lipid decline', ci: 0.6 },
-      { dose: 100, value: 1.8, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Increased hepatic + lipids concerning', ci: 0.7 }
+      { dose: 100, value: 1.8, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Increased hepatic + lipids concerning', ci: 0.7 },
+      { dose: 120, value: 2.5, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Lipid stress', ci: 0.8 },
+      { dose: 150, value: 3.5, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Significant stress', ci: 0.8 },
     ],
     methodology: {
       summary: 'Tier 4 (anecdotal + therapeutic burn victim data); mildest oral',
@@ -1192,14 +1234,18 @@ export const compoundData = {
       { dose: 10, value: 1.8, tier: 'Tier 4', source: 'Community patterns', caveat: 'Extreme strength spike; aggression', ci: 0.8 },
       { dose: 20, value: 3.0, tier: 'Tier 4', source: 'Forum consensus', caveat: 'Peak strength; cosmetic hardening', ci: 0.8 },
       { dose: 30, value: 3.5, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Very high dose; sides dominate', ci: 0.9 },
-      { dose: 40, value: 3.7, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Extreme dose; not advisable', ci: 0.9 }
+      { dose: 40, value: 3.7, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Extreme dose; not advisable', ci: 0.9 },
+      { dose: 50, value: 3.8, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.9 },
+      { dose: 60, value: 3.85, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.9 },
     ],
     riskCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
       { dose: 10, value: 2.0, tier: 'Tier 4', source: 'Community patterns', caveat: 'Severe hepatic stress + aggression', ci: 0.8 },
       { dose: 20, value: 3.5, tier: 'Tier 4', source: 'Forum consensus', caveat: 'Extreme hepatic + psychological risk', ci: 0.9 },
       { dose: 30, value: 4.5, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Critical hepatic + psychological instability', ci: 0.9 },
-      { dose: 40, value: 5.2, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Dangerous; hepatic failure risk', ci: 1.0 }
+      { dose: 40, value: 5.2, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Dangerous; hepatic failure risk', ci: 1.0 },
+      { dose: 50, value: 6.5, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Liver failure imminent', ci: 1.0 },
+      { dose: 60, value: 8.0, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Critical', ci: 1.0 },
     ],
     methodology: {
       summary: 'Tier 4 (entirely anecdotal); most toxic oral; competition use only',
@@ -1375,10 +1421,10 @@ export const compoundData = {
     },
     halfLife: 16, // ~16 hours
     benefitCurve: [ /* Standard curve 20-80mg */ 
-      { dose: 0, value: 0 }, { dose: 40, value: 2.0 }, { dose: 80, value: 2.8 }
+      { dose: 0, value: 0 }, { dose: 40, value: 2.0 }, { dose: 80, value: 2.8 }, { dose: 100, value: 3.0 }
     ],
     riskCurve: [ /* Lower risk than Dbol */
-      { dose: 0, value: 0 }, { dose: 40, value: 1.2 }, { dose: 80, value: 2.5 }
+      { dose: 0, value: 0 }, { dose: 40, value: 1.2 }, { dose: 80, value: 2.5 }, { dose: 100, value: 3.5 }
     ],
     methodology: {
       summary: 'Tier 1 (East German Doping Records). "Dry Dbol".',
@@ -1432,10 +1478,10 @@ export const compoundData = {
     halfLife: 8, // ~8 hours
     phenotype: { hypertrophy: 10, strength: 9, endurance: 2, conditioning: 6 },
     benefitCurve: [ /* steep rise */
-      { dose: 0, value: 0 }, { dose: 10, value: 2.5 }, { dose: 20, value: 4.5 }, { dose: 30, value: 4.8 }
+      { dose: 0, value: 0 }, { dose: 10, value: 2.5 }, { dose: 20, value: 4.5 }, { dose: 30, value: 4.8 }, { dose: 40, value: 4.9 }
     ],
     riskCurve: [ /* vertical wall */
-      { dose: 0, value: 0 }, { dose: 10, value: 2.0 }, { dose: 20, value: 4.5 }, { dose: 30, value: 6.0 }
+      { dose: 0, value: 0 }, { dose: 10, value: 2.0 }, { dose: 20, value: 4.5 }, { dose: 30, value: 6.0 }, { dose: 40, value: 8.0 }
     ],
     methodology: {
       summary: 'Tier 4 (Anecdotal). The most potent/toxic oral gram-for-gram.',
@@ -1488,8 +1534,8 @@ export const compoundData = {
     halfLife: 24,
     phenotype: { hypertrophy: 10, strength: 9, endurance: 3, conditioning: 2 },
     modelConfidence: 0.7,
-    benefitCurve: [{dose: 0, value: 0}, {dose: 50, value: 3.0}, {dose: 100, value: 4.5}, {dose: 200, value: 5.0}], // Very potent mg for mg
-    riskCurve: [{dose: 0, value: 0}, {dose: 50, value: 2.0}, {dose: 100, value: 4.0}, {dose: 200, value: 5.5}],
+    benefitCurve: [{dose: 0, value: 0}, {dose: 50, value: 3.0}, {dose: 100, value: 4.5}, {dose: 200, value: 5.0}, {dose: 300, value: 5.2}], // Very potent mg for mg
+    riskCurve: [{dose: 0, value: 0}, {dose: 50, value: 2.0}, {dose: 100, value: 4.0}, {dose: 200, value: 5.5}, {dose: 300, value: 7.5}],
     methodology: {
       summary: 'Tier 2 (Male Contraceptive Data). The most potent steroid mg-for-mg available. 19-nor that does not bind to SHBG.',
       benefitRationale: 'Hyper-potent due to lack of SHBG binding (all hormone is "free"). 10x myotrophic rating vs Testosterone. Rapid glycogen loading and tissue accretion. "Look" is similar to NPP but fuller.',
@@ -1543,8 +1589,8 @@ export const compoundData = {
     halfLife: 120,
     phenotype: { hypertrophy: 8, strength: 8, endurance: 5, conditioning: 9 },
     modelConfidence: 0.6,
-    benefitCurve: [{dose: 0, value: 0}, {dose: 200, value: 2.0}, {dose: 400, value: 3.5}, {dose: 600, value: 4.2}],
-    riskCurve: [{dose: 0, value: 0}, {dose: 200, value: 1.0}, {dose: 400, value: 2.0}, {dose: 600, value: 3.0}],
+    benefitCurve: [{dose: 0, value: 0}, {dose: 200, value: 2.0}, {dose: 400, value: 3.5}, {dose: 600, value: 4.2}, {dose: 800, value: 4.5}],
+    riskCurve: [{dose: 0, value: 0}, {dose: 200, value: 1.0}, {dose: 400, value: 2.0}, {dose: 600, value: 3.0}, {dose: 800, value: 4.5}],
     methodology: {
       summary: 'Tier 4 (Anecdotal). "Pip" (Post Injection Pain) is the limiting factor. Structural cousin to Primobolan but far stronger.',
       benefitRationale: 'Very potent anabolic (ratio ~200). Does not aromatize. Provides a very "dry", grainy look similar to Trenbolone but without the mental side effects. Excellent strength gains.',

@@ -17,15 +17,12 @@ export const derivePlateauDose = (curve = []) => {
 };
 
 export const getPlateauDose = compound =>
-  compound?.plateauDose ?? derivePlateauDose(compound?.benefitCurve || []);
+  derivePlateauDose(compound?.benefitCurve || []);
 
 export const getHardMax = compound => {
   if (!compound) return 0;
   const plateauDose = getPlateauDose(compound);
-  return (
-    compound.hardMax ??
-    Math.max(getCurveCap(compound.benefitCurve), getCurveCap(compound.riskCurve), plateauDose)
-  );
+  return Math.max(getCurveCap(compound.benefitCurve), getCurveCap(compound.riskCurve), plateauDose);
 };
 
 const interpolateCurvePoint = (curve = [], dose) => {
@@ -168,7 +165,8 @@ export const evaluatePairDimension = ({
     ((evidence.clinical ?? 0) * clinicalWeight + (evidence.anecdote ?? 0) * anecdoteWeight) / evidenceTotal;
 
   const delta = rawCoeff * doseShape * sensitivityMultiplier * evidenceScalar;
-  const total = dimension.type === 'risk' ? clamp(naive + Math.abs(delta), 0, 6) : clamp(naive + delta, 0, 6);
+  // Increased clamp from 6 to 15 to match new high-dose ceiling
+  const total = dimension.type === 'risk' ? clamp(naive + Math.abs(delta), 0, 15) : clamp(naive + delta, 0, 15);
 
   return {
     dimensionKey,

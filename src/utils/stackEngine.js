@@ -14,7 +14,7 @@ import { MAX_PHENOTYPE_SCORE } from '../data/constants';
 // ============================================================================
 
 const CONSTANTS = {
-  SATURATION_THRESHOLD: 1000,
+  SATURATION_THRESHOLD: 1500, // Increased for Open Class realism
   TOXICITY_THRESHOLD: 1200,
   ORAL_TOXICITY_THRESHOLD: 500,
   SUPPRESSION_THRESHOLD: 200,
@@ -420,7 +420,11 @@ export const evaluateStack = ({
   let genomicFactor = 1.0;
   if (state.totalGenomicLoad > CONSTANTS.SATURATION_THRESHOLD) {
     const excess = state.totalGenomicLoad - CONSTANTS.SATURATION_THRESHOLD;
-    const dampenedExcess = Math.sqrt(excess * 400);
+    // Logarithmic Diminishing Returns: Smooth transition from slope 1.0 to slope ~0
+    // Formula: Threshold + Scale * ln(1 + excess/Scale)
+    // Scale = 2500 pushes the "hard diminishing returns" out to ~4000mg+
+    const scale = 2500; 
+    const dampenedExcess = scale * Math.log(1 + (excess / scale));
     const projectedTotal = CONSTANTS.SATURATION_THRESHOLD + dampenedExcess;
     genomicFactor = projectedTotal / state.totalGenomicLoad;
   }

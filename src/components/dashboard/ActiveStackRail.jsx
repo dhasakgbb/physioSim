@@ -65,7 +65,7 @@ const StackCard = ({ item }) => {
   const meta = compoundData[item.compound];
   const isOral = meta.type === 'oral';
   const unit = isOral ? 'mg/day' : 'mg/wk';
-  const max = isOral ? 100 : 1000;
+  const max = isOral ? 150 : 2500;
   
   // Fallback for compounds without explicit ester config
   const selectedEster = item.ester || meta.defaultEster || 'enanthate';
