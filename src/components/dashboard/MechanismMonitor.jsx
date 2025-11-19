@@ -1,0 +1,108 @@
+import React, { useMemo } from 'react';
+import { compoundData } from '../../data/compoundData';
+
+const SaturationGauge = ({ label, value, limit, warning }) => {
+  const percent = Math.min((value / limit) * 100, 100);
+  const isOverloaded = value > limit;
+  
+  return (
+    <div className="mb-4">
+      <div className="flex justify-between items-end mb-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-physio-text-secondary">{label}</span>
+        <span className={`text-xs font-mono ${isOverloaded ? 'text-physio-accent-critical' : 'text-physio-text-primary'}`}>
+          {Math.round(percent)}% <span className="text-[9px] text-physio-text-tertiary">Saturation</span>
+        </span>
+      </div>
+      <div className="h-1.5 bg-physio-bg-core rounded-full overflow-hidden border border-physio-border-subtle">
+        <div 
+          className={`h-full transition-all duration-500 ${isOverloaded ? 'bg-physio-accent-critical' : 'bg-physio-accent-primary'}`}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+      {isOverloaded && (
+        <p className="text-[9px] text-physio-accent-critical mt-1 flex items-center gap-1">
+          <span>⚠️</span> {warning}
+        </p>
+      )}
+    </div>
+  );
+};
+
+const MechanismMonitor = ({ stack }) => {
+  const loads = useMemo(() => {
+    let arLoad = 0;     // Genomic Load (weighted mg)
+    let cnsLoad = 0;    // Non-Genomic Load (mg)
+    let liverLoad = 0;  // Hepatic Load (mg)
+    
+    stack.forEach(item => {
+      const meta = compoundData[item.compound];
+      if (!meta) return;
+      
+      // AR Saturation Logic (Scientific Weighting)
+      if (meta.pathway === 'ar_genomic') {
+        let affinityWeight = 1.0; // Baseline (Testosterone)
+        
+        // Adjust for binding affinity constants (RBA)
+        if (meta.bindingAffinity === 'low') affinityWeight = 0.5;
+        if (meta.bindingAffinity === 'moderate') affinityWeight = 0.8;
+        if (meta.bindingAffinity === 'high') affinityWeight = 1.25; // NPP
+        if (meta.bindingAffinity === 'very_high') affinityWeight = 3.0; // Tren/Proviron
+
+        arLoad += item.dose * affinityWeight;
+      }
+      
+      // CNS/Non-Genomic Logic
+      if (meta.pathway === 'non_genomic') {
+        cnsLoad += item.dose;
+      }
+      
+      // Hepatic proxy (C17-aa orals)
+      if (meta.type === 'oral' && meta.category !== 'support') {
+        liverLoad += item.dose;
+      }
+    });
+
+    return { arLoad, cnsLoad, liverLoad };
+  }, [stack]);
+
+  return (
+    <div className="space-y-6">
+      <div className="p-4 bg-physio-bg-highlight/20 rounded-xl border border-physio-border-subtle">
+        <h3 className="text-xs font-bold text-physio-text-primary mb-3 flex items-center gap-2">
+          <span className="w-2 h-2 bg-physio-accent-secondary rounded-full animate-pulse"></span>
+          Pathway Saturation Analysis
+        </h3>
+        
+        <SaturationGauge 
+          label="Androgen Receptor (AR)" 
+          value={loads.arLoad} 
+          limit={1200} 
+          warning="Receptor competition likely. Diminishing returns."
+        />
+        
+        <SaturationGauge 
+          label="CNS / Non-Genomic" 
+          value={loads.cnsLoad} 
+          limit={150} 
+          warning="High neurological strain. Toxicity risk."
+        />
+
+        <SaturationGauge 
+          label="Hepatic Capacity" 
+          value={loads.liverLoad} 
+          limit={80} 
+          warning="Liver enzyme stress critical."
+        />
+      </div>
+
+      {/* Dynamic Insight */}
+      {loads.arLoad > 1000 && loads.cnsLoad < 50 && (
+        <div className="text-xs text-physio-text-secondary bg-physio-bg-core p-3 rounded-lg border-l-2 border-physio-accent-primary">
+          <strong>Optimization Tip:</strong> Your AR pathway is saturated. Adding more injectables yields little benefit. Consider a small Non-Genomic addition for synergy, rather than more Test/Primo.
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MechanismMonitor;

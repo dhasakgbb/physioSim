@@ -11,6 +11,17 @@ export const compoundData = {
     abbreviation: 'Test',
     type: 'injectable',
     category: 'base',
+    pathway: 'ar_genomic', // The Reference Agonist
+    bindingAffinity: 'moderate',
+    biomarkers: {
+      shbg: -1,
+      igf1: +1,
+      rbc: +1,
+      cortisol: 0,
+      prolactin: 0,
+      e2_conversion: +2 // The standard aromatizer
+    },
+    halfLife: '4.5 days', // Enanthate/Cypionate
     modelConfidence: 0.81,
     evidenceProvenance: { human: 5, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -114,6 +125,17 @@ export const compoundData = {
     abbreviation: 'NPP',
     type: 'injectable',
     category: 'progestin',
+    pathway: 'ar_genomic', // Strong binder
+    bindingAffinity: 'high',
+    biomarkers: {
+      shbg: -1,       // Mild suppression
+      igf1: +1,       // Moderate increase
+      rbc: +1,        // Mild increase
+      cortisol: -1,   // Mild anti-catabolic
+      prolactin: +3,  // HIGH RISK (Direct Progesterone Receptor Agonist)
+      hair_safe: +2   // Converts to DHN (Weak androgen) - Specialized Benefit
+    },
+    halfLife: '1.1 days', // Phenylpropionate
     modelConfidence: 0.61,
     evidenceProvenance: { human: 2, animal: 3, aggregate: 5 },
     varianceDrivers: [
@@ -204,6 +226,17 @@ export const compoundData = {
     abbreviation: 'Tren',
     type: 'injectable',
     category: 'androgen',
+    pathway: 'ar_genomic', // Very High binder
+    bindingAffinity: 'very_high',
+    biomarkers: {
+      shbg: -1,
+      igf1: +3,       // ELITE FEATURE: Massive local IGF-1 mRNA expression
+      rbc: +3,        // High Hematocrit risk
+      cortisol: -3,   // ELITE FEATURE: Blocks Cortisol receptors (Anti-catabolic)
+      prolactin: +2,  // Progestin activity
+      neuro: -3       // Dopaminergic destabilization
+    },
+    halfLife: '1 day', // Acetate
     modelConfidence: 0.44,
     evidenceProvenance: { human: 0, animal: 4, aggregate: 7 },
     varianceDrivers: [
@@ -225,11 +258,11 @@ export const compoundData = {
     ],
     riskCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
-      { dose: 100, value: 0.8, tier: 'Tier 3', source: 'HED-scaled + inference', caveat: 'Mild; animal data extrapolated', ci: 0.6 },
-      { dose: 200, value: 2.0, tier: 'Tier 3', source: 'Forum reports', caveat: 'Aggression/mood emerging; ~30% report sides', ci: 0.6 },
-      { dose: 300, value: 3.2, tier: 'Tier 4', source: 'Forum aggregates', caveat: 'Significant psych + lipid risk; ~50% report insomnia/mood', ci: 0.7 },
-      { dose: 400, value: 4.2, tier: 'Tier 4', source: 'Anecdotal patterns', caveat: 'High risk; aggression/paranoia ~70%; severe lipid decline', ci: 0.8 },
-      { dose: 500, value: 4.8, tier: 'Tier 4', source: 'Anecdotal patterns', caveat: 'Very high risk; psychological sides dominate', ci: 0.8 },
+      { dose: 100, value: 1.5, tier: 'Tier 3', source: 'HED-scaled + inference', caveat: 'Psychological sides (insomnia/irritability) often start here', ci: 0.6 },
+      { dose: 200, value: 2.8, tier: 'Tier 3', source: 'Forum reports', caveat: 'Significant aggression/mood issues; ~40% report sides', ci: 0.6 },
+      { dose: 300, value: 3.8, tier: 'Tier 4', source: 'Forum aggregates', caveat: 'High risk; insomnia/paranoia common', ci: 0.7 },
+      { dose: 400, value: 4.5, tier: 'Tier 4', source: 'Anecdotal patterns', caveat: 'Severe risk; aggression/paranoia ~70%; severe lipid decline', ci: 0.8 },
+      { dose: 500, value: 4.9, tier: 'Tier 4', source: 'Anecdotal patterns', caveat: 'Very high risk; psychological sides dominate', ci: 0.8 },
       { dose: 600, value: 5.0, tier: 'Tier 4', source: 'Anecdotal patterns', caveat: 'CRITICAL RISK ZONE - unknown cardio risk', ci: 0.8 },
     ],
     methodology: {
@@ -313,6 +346,16 @@ export const compoundData = {
     abbreviation: 'EQ',
     type: 'injectable',
     category: 'endurance',
+    pathway: 'ar_genomic', // Moderate binder
+    bindingAffinity: 'low_moderate',
+    biomarkers: {
+      shbg: -1,
+      igf1: +1,
+      rbc: +3,          // The Hematocrit King
+      cortisol: 0,
+      prolactin: 0
+    },
+    halfLife: '14 days', // Undecylenate
     modelConfidence: 0.58,
     evidenceProvenance: { human: 1, animal: 3, aggregate: 4 },
     varianceDrivers: [
@@ -399,6 +442,17 @@ export const compoundData = {
     abbreviation: 'Masteron',
     type: 'injectable',
     category: 'cosmetic',
+    pathway: 'ar_genomic',
+    bindingAffinity: 'moderate',
+    biomarkers: {
+      shbg: -2,       // Strong SHBG binding (frees up Test)
+      igf1: 0,        // Neutral
+      rbc: +1,        // Mild
+      cortisol: 0,
+      prolactin: 0,
+      anti_e: +2      // Unique: Local anti-estrogenic action
+    },
+    halfLife: '0.8 days', // Propionate
     modelConfidence: 0.55,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -478,6 +532,16 @@ export const compoundData = {
     abbreviation: 'Primo',
     type: 'injectable',
     category: 'mild',
+    pathway: 'ar_genomic',
+    bindingAffinity: 'moderate',
+    biomarkers: {
+      shbg: -1,       // Mild
+      igf1: +1,       // Quality nitrogen retention
+      rbc: +1,        // Mild (Safe)
+      cortisol: 0,
+      prolactin: 0
+    },
+    halfLife: '4.5 days', // Enanthate
     modelConfidence: 0.57,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -557,6 +621,17 @@ export const compoundData = {
     abbreviation: 'Dbol',
     type: 'oral',
     category: 'oral_kickstart',
+    pathway: 'non_genomic',
+    bindingAffinity: 'low', // Works via rapid signaling, not AR
+    biomarkers: {
+      shbg: -1,
+      igf1: +2,       // Strong IGF-1 spike (similar to Test)
+      rbc: +1,
+      cortisol: -1,   // "Feel good" dopamine effect
+      prolactin: 0,
+      aromatization: +3 // Heavy methyl-estradiol conversion
+    },
+    halfLife: '4 hours',
     modelConfidence: 0.33,
     evidenceProvenance: { human: 0, animal: 1, aggregate: 6 },
     varianceDrivers: [
@@ -663,6 +738,17 @@ export const compoundData = {
     abbreviation: 'Adrol',
     type: 'oral',
     category: 'oral_mass',
+    pathway: 'non_genomic',
+    bindingAffinity: 'very_low',
+    biomarkers: {
+      shbg: -2,
+      igf1: +2,       // Potent responder
+      rbc: +3,        // Extreme RBC (The "Pump" driver)
+      cortisol: 0,
+      prolactin: 0,   // Paradoxical estrogenic action
+      estrogenic_activity: +3 // Direct ER activation
+    },
+    halfLife: '9 hours',
     modelConfidence: 0.31,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 5 },
     varianceDrivers: [
@@ -770,6 +856,17 @@ export const compoundData = {
     abbreviation: 'Winny',
     type: 'oral',
     category: 'oral_cutting',
+    pathway: 'non_genomic', // Low binding; SHBG crashing + non-genomic
+    bindingAffinity: 'low',
+    biomarkers: {
+      shbg: -3,       // ELITE FEATURE: Crushes SHBG, freeing other hormones
+      igf1: -1,       // Oral stress can blunt hepatic IGF-1 output
+      rbc: +1,
+      cortisol: 0,
+      prolactin: 0,
+      joints: -3      // The "Dry" penalty
+    },
+    halfLife: '9 hours',
     modelConfidence: 0.4,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -873,6 +970,16 @@ export const compoundData = {
     abbreviation: 'Var',
     type: 'oral',
     category: 'oral_mild',
+    pathway: 'ar_genomic',
+    bindingAffinity: 'low', // Surprisingly low AR affinity; works via other signaling
+    biomarkers: {
+      shbg: -1,
+      igf1: +1,       // Documented T3/IGF interplay
+      rbc: +1,
+      cortisol: -1,   // Mild anti-catabolic
+      prolactin: 0
+    },
+    halfLife: '9 hours',
     modelConfidence: 0.48,
     evidenceProvenance: { human: 2, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -970,6 +1077,17 @@ export const compoundData = {
     abbreviation: 'Halo',
     type: 'oral',
     category: 'oral_extreme',
+    pathway: 'non_genomic', // CNS Dominant
+    bindingAffinity: 'low',
+    biomarkers: {
+      shbg: -2,
+      igf1: 0,
+      rbc: +3,        // Extreme Hematocrit risk
+      cortisol: 0,
+      prolactin: 0,
+      cns_drive: +3   // The primary feature
+    },
+    halfLife: '9 hours',
     modelConfidence: 0.27,
     evidenceProvenance: { human: 0, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -1077,6 +1195,150 @@ export const compoundData = {
         note: 'Discontinue immediately if ALT/AST >3x or any signs of jaundice',
         action: 'Medical evaluation if severe elevation or symptoms'
       }
+    }
+  },
+
+  proviron: {
+    name: 'Proviron (Mesterolone)',
+    color: '#60A5FA', // Light Blue
+    abbreviation: 'Prov',
+    type: 'oral',
+    category: 'support', // Unique category
+    pathway: 'ar_genomic',
+    bindingAffinity: 'very_high', // Binds SHBG aggressively
+    modelConfidence: 0.85, // Very well understood
+    biomarkers: {
+      shbg: -3,       // THE primary use case (SHBG Crusher)
+      igf1: 0,
+      rbc: +1,
+      cortisol: 0,
+      prolactin: 0,
+      libido: +3      // CNS/Androgenic libido driver
+    },
+    halfLife: '12 hours',
+    // Minimal curves because it's not really for "Mass"
+    benefitCurve: [
+      { dose: 0, value: 0 }, { dose: 25, value: 0.5 }, { dose: 50, value: 0.8 }, { dose: 100, value: 0.9 }
+    ],
+    riskCurve: [
+      { dose: 0, value: 0 }, { dose: 25, value: 0.1 }, { dose: 50, value: 0.2 }, { dose: 100, value: 0.4 }
+    ],
+    methodology: {
+      summary: 'Tier 1/2. Used as a "force multiplier" to free up bound Testosterone.',
+      benefitRationale: 'Binds SHBG more strongly than Testosterone, increasing Free T levels. Hardening effect. Libido support.',
+      riskRationale: 'Extremely mild. Non-hepatotoxic (not C17-aa). Primary risk is androgenic (hair loss).',
+      sources: ['Clinical hypogonadism studies', 'Decades of bodybuilding utility'],
+      limitations: ['Not anabolic (don\'t expect mass)'],
+      assumptions: ['Used as ancillary'],
+      individualVariance: ['Hair loss susceptibility']
+    },
+    sideEffectProfile: {
+      common: [
+        { name: 'Libido Increase', severity: 'positive', onset: 'week 1', doseDependent: true, management: 'Primary benefit' },
+        { name: 'Hair Loss', severity: 'medium-high', onset: 'week 2-4', doseDependent: true, management: 'DHT derivative; finasteride ineffective' }
+      ],
+      lipidProfile: { hdlDecline: 'mild', ldlIncrease: 'mild', triglycerides: 'mild', management: 'Standard monitoring' },
+      cardiovascular: { bloodPressure: 'minimal impact', lvh: 'low risk', rbc: 'mild increase', management: 'Standard monitoring' },
+      hepatic: { altAstElevation: 'minimal', cholestasis: 'very low risk', management: 'Not C17-aa; liver safe', reversibility: 'N/A' },
+      hpta: { suppression: 'mild', recovery: 'rapid', pctRequired: true, management: 'Standard PCT' }
+    },
+    ancillaryRequirements: {
+      hairLossPrevention: { trigger: 'If prone', management: 'Discontinue if shedding', note: 'DHT derivative' }
+    }
+  },
+
+  turinabol: {
+    name: 'Turinabol (CDMT)',
+    color: '#F472B6', // Pink
+    abbreviation: 'Tbol',
+    type: 'oral',
+    category: 'oral_performance',
+    pathway: 'non_genomic',
+    bindingAffinity: 'low',
+    modelConfidence: 0.65, // East German data
+    biomarkers: {
+      shbg: -2,       // Strong binding
+      igf1: +1,
+      rbc: +1,
+      cortisol: 0,
+      prolactin: 0
+    },
+    halfLife: '16 hours',
+    benefitCurve: [ /* Standard curve 20-80mg */ 
+      { dose: 0, value: 0 }, { dose: 40, value: 2.0 }, { dose: 80, value: 2.8 }
+    ],
+    riskCurve: [ /* Lower risk than Dbol */
+      { dose: 0, value: 0 }, { dose: 40, value: 1.2 }, { dose: 80, value: 2.5 }
+    ],
+    methodology: {
+      summary: 'Tier 1 (East German Doping Records). "Dry Dbol".',
+      benefitRationale: 'Performance output, steady lean gains, no water. 4-chloro alteration prevents aromatization.',
+      riskRationale: 'Hepatic stress (C17-aa) but lower than Dbol/Adrol. Lipid impact moderate.',
+      sources: ['East German State Doping Program (DDR)', 'Clinical data'],
+      limitations: ['Pumps can be debilitating at high doses'],
+      assumptions: ['Performance context'],
+      individualVariance: ['Pump tolerance']
+    },
+    sideEffectProfile: {
+      common: [
+        { name: 'Lean Gains', severity: 'positive', onset: 'week 2', doseDependent: true, management: 'Quality tissue' },
+        { name: 'Pumps', severity: 'medium', onset: 'week 1', doseDependent: true, management: 'Taurine 3-5g' }
+      ],
+      lipidProfile: { hdlDecline: 'moderate', ldlIncrease: 'moderate', triglycerides: 'moderate', management: 'Fish oil' },
+      cardiovascular: { bloodPressure: 'mild increase', lvh: 'low risk', rbc: 'mild increase', management: 'Standard monitoring' },
+      hepatic: { altAstElevation: 'moderate', cholestasis: 'low risk', management: 'TUDCA recommended', reversibility: 'Reversible' },
+      hpta: { suppression: 'moderate', recovery: 'standard', pctRequired: true, management: 'Standard PCT' }
+    },
+    ancillaryRequirements: {
+      tudca: { trigger: 'Recommended', dosing: '500mg', purpose: 'Liver support', cost: 15 }
+    }
+  },
+
+  superdrol: {
+    name: 'Superdrol (Methasterone)',
+    color: '#9F1239', // Deep Rose
+    abbreviation: 'Sdrol',
+    type: 'oral',
+    category: 'oral_mass',
+    pathway: 'non_genomic',
+    bindingAffinity: 'low',
+    modelConfidence: 0.4, // Anecdotal
+    biomarkers: {
+      shbg: -2,
+      igf1: +2,
+      rbc: +2,
+      cortisol: 0,
+      prolactin: 0,
+      liver_toxicity: +3 // Extreme
+    },
+    halfLife: '8 hours',
+    benefitCurve: [ /* steep rise */
+      { dose: 0, value: 0 }, { dose: 10, value: 2.5 }, { dose: 20, value: 4.5 }, { dose: 30, value: 4.8 }
+    ],
+    riskCurve: [ /* vertical wall */
+      { dose: 0, value: 0 }, { dose: 10, value: 2.0 }, { dose: 20, value: 4.5 }, { dose: 30, value: 6.0 }
+    ],
+    methodology: {
+      summary: 'Tier 4 (Anecdotal). The most potent/toxic oral gram-for-gram.',
+      benefitRationale: 'Glycogen loading extreme. Mass gains rapid and dry. Strength surge.',
+      riskRationale: 'Extreme hepatotoxicity (jaundice risk). Lethargy common ("Superdrol Flu"). Lipids crushed immediately.',
+      sources: ['Designer steroid era logs', 'Forum consensus'],
+      limitations: ['Cannot be run >3-4 weeks'],
+      assumptions: ['Liver support mandatory'],
+      individualVariance: ['Lethargy response']
+    },
+    sideEffectProfile: {
+      common: [
+        { name: 'Rapid Mass', severity: 'positive', onset: 'week 1', doseDependent: true, management: 'Glycogen supercompensation' },
+        { name: 'Lethargy', severity: 'high', onset: 'week 2', doseDependent: true, management: 'Liver support; reduce dose' }
+      ],
+      lipidProfile: { hdlDecline: 'severe', ldlIncrease: 'severe', triglycerides: 'severe', management: 'Aggressive lipid protocol' },
+      cardiovascular: { bloodPressure: 'moderate increase', lvh: 'risk', rbc: 'moderate increase', management: 'BP meds likely' },
+      hepatic: { altAstElevation: 'extreme', cholestasis: 'high risk', management: 'TUDCA 1000mg+ MANDATORY', reversibility: 'Usually reversible' },
+      hpta: { suppression: 'severe', recovery: 'difficult', pctRequired: true, management: 'Aggressive PCT' }
+    },
+    ancillaryRequirements: {
+      tudca: { trigger: 'MANDATORY', dosing: '1000mg+', purpose: 'Liver survival', cost: 20 }
     }
   }
 };
