@@ -11,6 +11,8 @@ const LabReportCard = ({ stack, totals }) => {
     let alt = 25; // Baseline U/L
     let creatinine = 1.0; // Baseline mg/dL
     let neuroRisk = 0; // Baseline Index
+    let estradiol = 25; // Baseline pg/mL
+    let prolactin = 6.0; // Baseline ng/mL
 
     stack.forEach(item => {
       const meta = compoundData[item.compound];
@@ -18,9 +20,14 @@ const LabReportCard = ({ stack, totals }) => {
 
       // HDL Decline (all AAS suppress HDL)
       if (meta.type === 'injectable') {
-        hdl -= dose * 0.02; // ~2% per 100mg
+        // Bhasin et al: 600mg Test -> ~20% HDL drop. 
+        // Previous logic (0.02 * dose) was too aggressive (500mg -> -10mg/dL).
+        // New logic: 0.008 * dose (500mg -> -4mg/dL) which is more clinically accurate for Test.
+        hdl -= dose * 0.008; 
       } else if (meta.type === 'oral') {
-        hdl -= dose * 0.5; // Orals hit harder
+        // Orals are hepatic lipase suicide inhibitors. They CRUSH HDL.
+        // 50mg Anavar -> -50% HDL is common.
+        hdl -= dose * 0.5; 
       }
 
       // LDL Increase
@@ -50,6 +57,47 @@ const LabReportCard = ({ stack, totals }) => {
       if (meta.biomarkers?.neurotoxicity) {
         neuroRisk += meta.biomarkers.neurotoxicity * (dose / 300);
       }
+
+      // Estradiol (E2) Calculation
+      // Base assumption: Average Responder (No AI)
+      if (meta.flags?.aromatization) {
+        // ~500mg Test -> ~75pg/mL E2 (Average response)
+        // Previous (0.15) was "High Aromatizer". New (0.10) is "Average".
+        estradiol += dose * 0.10 * meta.flags.aromatization;
+      }
+      if (item.compound === 'dianabol') {
+        // Methyl-E2 is potent but 1.5 was extreme. 1.0 is safer average.
+        estradiol += dose * 1.0;
+      }
+
+      // Prolactin Calculation (19-nors)
+      if (meta.biomarkers?.prolactin) {
+        // Scale: 300mg NPP -> +10ng/mL
+        prolactin += meta.biomarkers.prolactin * (dose / 100);
+      }
+
+      // AI Logic (Arimidex)
+      if (item.compound === 'arimidex') {
+        // 1mg Arimidex/week reduces E2 by ~40pg/mL (Linear approx)
+        estradiol -= dose * 40;
+      }
+
+      // SPECIAL: Equipoise (Boldenone) "AI Effect"
+      if (item.compound === 'eq') {
+        estradiol -= dose * 0.12; 
+      }
+
+      // TESTOSTERONE & SHBG LOGIC
+      if (item.compound === 'testosterone') {
+        totalTestosterone += dose * 7; // ~500mg -> 3500ng/dL
+      }
+
+      // SHBG Suppression (DHTs crush it)
+      if (meta.biomarkers?.shbg) {
+        // shbg biomarker is negative (e.g. -3). 
+        // 50mg Proviron (-3) -> -15 nmol/L reduction
+        shbg += meta.biomarkers.shbg * (dose / 100) * 5;
+      }
     });
 
     // Clamp values to realistic ranges
@@ -60,8 +108,19 @@ const LabReportCard = ({ stack, totals }) => {
     alt = Math.min(alt, 150);
     creatinine = Math.min(creatinine, 2.0);
     neuroRisk = Math.min(neuroRisk, 10.0);
+    estradiol = Math.max(5, estradiol); 
+    
+    // Clamp SHBG (Can't go below ~5 nmol/L realistically)
+    shbg = Math.max(5, shbg);
+    
+    // Calculate Free Testosterone (The "Active" Hormone)
+    // Simplified Free Androgen Index (FAI) proxy
+    // As SHBG drops, % of Free Test rises.
+    // Baseline: 2% free. Crushed SHBG: ~6% free.
+    const freeTestRatio = 0.02 + ((30 - shbg) * 0.0015);
+    freeTestosterone = totalTestosterone * freeTestRatio * 10; // x10 for pg/mL scaling approx
 
-    return { hdl, ldl, hematocrit, ast, alt, creatinine, neuroRisk };
+    return { hdl, ldl, hematocrit, ast, alt, creatinine, neuroRisk, estradiol, prolactin, totalTestosterone, freeTestosterone, shbg };
   }, [stack]);
 
   const getStatus = (value, ranges) => {
@@ -171,6 +230,25 @@ const LabReportCard = ({ stack, totals }) => {
           reference="&lt; 2.0"
         />
 
+        {/* HORMONAL PANEL (New) */}
+        <div className="my-3 border-t border-physio-border-subtle/50" />
+        
+        <LabRow 
+          label="Estradiol" 
+          value={labValues.estradiol.toFixed(0)} 
+          unit="pg/mL"
+          status={getStatus(labValues.estradiol, { critical: 80, warning: 50 })}
+          reference="20-40"
+        />
+
+        <LabRow 
+          label="Prolactin" 
+          value={labValues.prolactin.toFixed(1)} 
+          unit="ng/mL"
+          status={getStatus(labValues.prolactin, { critical: 20, warning: 15 })}
+          reference="&lt; 15"
+        />
+
         {/* Metabolite Shadow (New) */}
         {stack.some(i => compoundData[i.compound]?.flags?.createsMethylEstrogen) && (
           <LabRow 
@@ -189,6 +267,16 @@ const LabReportCard = ({ stack, totals }) => {
             unit="Sexual Func" 
             reference="-" 
             status={{ color: 'text-physio-accent-warning', bg: 'bg-physio-accent-warning/10', label: 'ELEVATED' }} 
+          />
+        )}
+
+        {stack.some(i => i.compound === 'eq') && (
+          <LabRow 
+            label="EQ AI Effect" 
+            value="ACTIVE" 
+            unit="Serum E2" 
+            reference="-" 
+            status={{ color: 'text-physio-accent-primary', bg: 'bg-physio-accent-primary/10', label: 'SUPPRESSIVE' }} 
           />
         )}
       </div>

@@ -181,12 +181,27 @@ const getInteractionWarnings = (compounds) => {
   const warnings = [];
   const codes = new Set(compounds);
 
-  // 1. 5-AR Inhibitor Trap (Deca/NPP)
-  if (codes.has('npp') || codes.has('deca')) {
+  // 1. 5-AR Inhibitor Trap (Deca/NPP + Finasteride)
+  const hasFinasteride = codes.has('finasteride');
+  const hasNandrolone = codes.has('npp') || codes.has('deca');
+
+  if (hasFinasteride && hasNandrolone) {
     warnings.push({
       type: 'metabolite',
       level: 'critical',
-      message: '⚠️ 5-AR Inhibitor Contraindication: Nandrolone converts to DHN (weak androgen) via 5-alpha reductase. Taking Finasteride/Dutasteride blocks this, leaving potent Nandrolone to bind to scalp follicles. This GREATLY INCREASES hair loss risk.'
+      message: '⚠️ HAIR LOSS NUCLEAR WINTER: You are combining Finasteride with Nandrolone. Finasteride blocks 5-AR, preventing Nandrolone from converting to DHN (hair safe). It remains as pure Nandrolone, which is HIGHLY ANDROGENIC in the scalp. You are maximizing hair loss.'
+    });
+  } else if (hasNandrolone) {
+     warnings.push({
+      type: 'metabolite',
+      level: 'warning',
+      message: '⚠️ 5-AR Interaction Note: Nandrolone converts to DHN (hair safe). Do NOT take Finasteride with this stack, or you will accelerate hair loss.'
+    });
+  } else if (hasFinasteride && codes.has('testosterone')) {
+     warnings.push({
+      type: 'safety',
+      level: 'success',
+      message: '✅ Hair Safe Protocol: Finasteride is blocking Testosterone conversion to DHT. This significantly reduces hair loss risk.'
     });
   }
 
@@ -268,9 +283,14 @@ export const evaluateStack = ({
     activeCompounds: [] // For global penalties
   };
 
-  // SHBG Logic
-  const shbgCrushers = compounds.filter(c => ['proviron', 'winstrol', 'masteron'].includes(c));
-  const shbgMultiplier = 1 + (Math.min(shbgCrushers.length, 3) * 0.05);
+  // SHBG Logic (Dose Dependent)
+  let shbgCrushScore = 0;
+  if (doses['proviron']) shbgCrushScore += (doses['proviron'] * 7) / 350; // 50mg/day = 1.0
+  if (doses['winstrol']) shbgCrushScore += (doses['winstrol'] * 7) / 350; // 50mg/day = 1.0
+  if (doses['masteron']) shbgCrushScore += doses['masteron'] / 400; // 400mg/week = 1.0
+  
+  // Cap the multiplier to avoid game-breaking numbers (max 20% boost)
+  const shbgMultiplier = 1 + (Math.min(shbgCrushScore, 2.0) * 0.10);
 
   // 2. Primary Compound Loop
   compounds.forEach(code => {

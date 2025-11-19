@@ -49,8 +49,8 @@ const StackCard = ({ item, onUpdateDose, onRemove }) => {
           <Slider
             value={[item.dose]}
             min={0}
-            max={1500}
-            step={10}
+            max={compound.category === 'ancillary' ? 10 : 1500}
+            step={compound.category === 'ancillary' ? 0.25 : 10}
             onValueChange={(val) => onUpdateDose(item.id, val[0])}
             className="py-2"
           />

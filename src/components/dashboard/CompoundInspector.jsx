@@ -12,7 +12,16 @@ const BiomarkerRow = ({ label, value }) => {
   
   let color = 'bg-physio-text-tertiary';
   if (isPositive) color = 'bg-physio-accent-success'; // e.g. IGF-1 boost
-  if (isNegative) color = 'bg-physio-accent-primary'; // e.g. SHBG suppression (good) or Cortisol suppression
+  
+  // Special handling for "Bad" positives
+  if (['prolactin', 'cortisol', 'liver_toxicity', 'pip', 'neurotoxicity', 'estrogenic_activity'].includes(label.toLowerCase())) {
+    if (isPositive) color = 'bg-physio-accent-critical'; // Bad stuff going up is RED
+    if (isNegative) color = 'bg-physio-accent-success'; // Bad stuff going down is GREEN
+  }
+  
+  if (isNegative && !['prolactin', 'cortisol', 'liver_toxicity', 'pip', 'neurotoxicity', 'estrogenic_activity'].includes(label.toLowerCase())) {
+     color = 'bg-physio-accent-primary'; // e.g. SHBG suppression (good)
+  }
   
   // Contextual coloring based on specific biomarkers could be more nuanced, 
   // but for now we stick to a consistent visual language.

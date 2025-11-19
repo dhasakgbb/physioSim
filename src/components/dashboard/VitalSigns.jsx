@@ -132,7 +132,8 @@ const VitalSigns = ({ metrics, stack, showScoreOnly = false, showSafetyOnly = fa
             </div>
           </div>
 
-          {/* Ancillary Checklist */}
+          {/* Ancillary Checklist (HIDDEN) */}
+          {/* 
           {ancillaries && ancillaries.essential.length > 0 ? (
             <div className="p-4 bg-physio-accent-warning/5 border border-physio-accent-warning/20 rounded-xl">
               <div className="flex items-center justify-between mb-2">
@@ -156,14 +157,14 @@ const VitalSigns = ({ metrics, stack, showScoreOnly = false, showSafetyOnly = fa
               </ul>
             </div>
           ) : (
-            // Empty State for Safety
              stack.length > 0 && (
               <div className="p-4 bg-physio-bg-surface border border-physio-border-subtle rounded-xl flex items-center gap-3 opacity-60">
                 <div className="w-6 h-6 rounded-full bg-physio-accent-success/10 flex items-center justify-center text-physio-accent-success text-xs">✓</div>
                 <p className="text-xs text-physio-text-tertiary">No essential ancillaries triggered.</p>
               </div>
             )
-          )}
+          )} 
+          */}
         </>
       )}
     </div>

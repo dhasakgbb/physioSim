@@ -152,7 +152,7 @@ export const compoundData = {
       neurotoxicity: 2 // Moderate Neurotoxicity (19-nor)
     },
     halfLife: 60, // ~2.5 days (Phenylpropionate)
-    phenotype: { hypertrophy: 7, strength: 6, endurance: 8, conditioning: 5 },
+    phenotype: { hypertrophy: 7, strength: 6, endurance: 6, conditioning: 5 },
     modelConfidence: 0.61,
     evidenceProvenance: { human: 2, animal: 3, aggregate: 5 },
     varianceDrivers: [
@@ -1178,7 +1178,7 @@ export const compoundData = {
       cns_drive: +3   // The primary feature
     },
     halfLife: 96,
-    phenotype: { hypertrophy: 6, strength: 5, endurance: 7, conditioning: 7 },
+    phenotype: { hypertrophy: 2, strength: 10, endurance: 7, conditioning: 7 },
     modelConfidence: 0.67,
     evidenceProvenance: { human: 0, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -1459,6 +1459,184 @@ export const compoundData = {
     ancillaryRequirements: {
       tudca: { trigger: 'MANDATORY', dosing: '1000mg+', purpose: 'Liver survival', cost: 20 }
     }
+  },
+
+  ment: {
+    name: 'Ment (Trestolone)',
+    color: '#701a75', // Fuchsia 900
+    abbreviation: 'Ment',
+    type: 'injectable',
+    bioavailability: 1.0,
+    suppressiveFactor: 5, // The most suppressive compound known (male contraceptive)
+    flags: { aromatization: 3.0, isSuppressive: true }, // Aromatizes to 7a-methyl-estradiol (very potent)
+    defaultEster: 'acetate',
+    esters: {
+      acetate: { label: 'Acetate', halfLife: 24, weight: 0.87, slug: 'Ace' },
+      enanthate: { label: 'Enanthate', halfLife: 108, weight: 0.70, slug: 'Enanthate' }
+    },
+    category: 'mass_monster',
+    pathway: 'ar_genomic',
+    bindingAffinity: 'very_high',
+    biomarkers: {
+      shbg: -1,
+      igf1: +3,       // Massive IGF-1 driver
+      rbc: +2,
+      cortisol: -2,
+      prolactin: +2,  // 19-nor
+      e2_conversion: +3 // Extreme estrogenic activity
+    },
+    halfLife: 24,
+    phenotype: { hypertrophy: 10, strength: 9, endurance: 3, conditioning: 2 },
+    modelConfidence: 0.7,
+    benefitCurve: [{dose: 0, value: 0}, {dose: 50, value: 3.0}, {dose: 100, value: 4.5}, {dose: 200, value: 5.0}], // Very potent mg for mg
+    riskCurve: [{dose: 0, value: 0}, {dose: 50, value: 2.0}, {dose: 100, value: 4.0}, {dose: 200, value: 5.5}],
+    methodology: {
+      summary: 'Tier 2 (Male Contraceptive Data). The most potent steroid mg-for-mg available. 19-nor that does not bind to SHBG.',
+      benefitRationale: 'Hyper-potent due to lack of SHBG binding (all hormone is "free"). 10x myotrophic rating vs Testosterone. Rapid glycogen loading and tissue accretion. "Look" is similar to NPP but fuller.',
+      riskRationale: 'Aromatizes to 7-alpha-methyl-estradiol, which is resistant to metabolism and extremely potent. Gyno risk is extreme. Severe HPTA suppression (azoospermia induced rapidly).',
+      sources: ['Population Council (Male Contraceptive Trials)', 'r/steroids wiki', 'Anecdotal logs'],
+      limitations: ['E2 management is difficult/unpredictable', 'No long-term safety data at bodybuilding doses'],
+      assumptions: ['User is experienced with AI management'],
+      individualVariance: ['Aromatization rate', 'Prolactin sensitivity']
+    },
+    sideEffectProfile: { 
+      common: [
+        { name: 'Extreme Estrogen', severity: 'high', onset: 'week 1', doseDependent: true, management: 'Aggressive AI (Letrozole/Exemestane); frequent bloodwork' },
+        { name: 'Gynecomastia', severity: 'critical', onset: 'week 1-2', doseDependent: true, management: 'Raloxifene on hand; surgery risk high if ignored' },
+        { name: 'Insomnia', severity: 'medium', onset: 'week 2', doseDependent: true, management: 'Sleep hygiene; lower dose' },
+        { name: 'Appetite Increase', severity: 'medium', onset: 'week 1', doseDependent: true, management: 'Dietary discipline' }
+      ],
+      lipidProfile: { hdlDecline: 'severe', ldlIncrease: 'moderate', triglycerides: 'moderate', management: 'Standard lipid protocol' },
+      cardiovascular: { bloodPressure: 'moderate-high', lvh: 'risk', rbc: 'moderate', management: 'BP monitoring essential' },
+      hpta: { suppression: 'complete (azoospermia)', recovery: 'very slow', pctRequired: true, management: 'HCG mandatory during cycle' }
+    },
+    ancillaryRequirements: {
+      aromataseInhibitor: { trigger: 'MANDATORY', dosing: 'High dose AI (e.g. 12.5mg Aromasin ED)', purpose: 'Control 7a-methyl-E2', cost: 5 },
+      serm: { trigger: 'Recommended', dosing: 'Raloxifene 60mg', purpose: 'Gyno protection', cost: 5 }
+    }
+  },
+
+  dhb: {
+    name: 'DHB (1-Testosterone)',
+    color: '#b45309', // Amber 700
+    abbreviation: 'DHB',
+    type: 'injectable',
+    bioavailability: 1.0,
+    suppressiveFactor: 3,
+    flags: { aromatization: 0, isSuppressive: true },
+    defaultEster: 'cypionate',
+    esters: {
+      cypionate: { label: 'Cypionate', halfLife: 120, weight: 0.70, slug: 'Cyp' },
+      propionate: { label: 'Propionate', halfLife: 24, weight: 0.83, slug: 'Prop' }
+    },
+    category: 'dry_mass',
+    pathway: 'ar_genomic',
+    bindingAffinity: 'high',
+    biomarkers: {
+      shbg: -1,
+      igf1: +1,
+      rbc: +1,
+      cortisol: 0,
+      prolactin: 0,
+      pip: +5 // Post Injection Pain
+    },
+    halfLife: 120,
+    phenotype: { hypertrophy: 8, strength: 8, endurance: 5, conditioning: 9 },
+    modelConfidence: 0.6,
+    benefitCurve: [{dose: 0, value: 0}, {dose: 200, value: 2.0}, {dose: 400, value: 3.5}, {dose: 600, value: 4.2}],
+    riskCurve: [{dose: 0, value: 0}, {dose: 200, value: 1.0}, {dose: 400, value: 2.0}, {dose: 600, value: 3.0}],
+    methodology: {
+      summary: 'Tier 4 (Anecdotal). "Pip" (Post Injection Pain) is the limiting factor. Structural cousin to Primobolan but far stronger.',
+      benefitRationale: 'Very potent anabolic (ratio ~200). Does not aromatize. Provides a very "dry", grainy look similar to Trenbolone but without the mental side effects. Excellent strength gains.',
+      riskRationale: 'PIP is legendary; can cause sterile abscesses or fever. Crashes out of solution in muscle. Kidney stress reported (anecdotal).',
+      sources: ['Designer steroid era', 'Forum logs (Meso-Rx)'],
+      limitations: ['PIP often forces discontinuation', 'Solvents used (EO) can cause allergic reactions'],
+      assumptions: ['User can tolerate high-solvent carrier oils'],
+      individualVariance: ['Pain tolerance', 'Reaction to Ethyl Oleate (EO)']
+    },
+    sideEffectProfile: { 
+      common: [
+        { name: 'PIP (Severe Pain)', severity: 'critical', onset: 'immediate', doseDependent: true, management: 'Dilute with GSO/MCT (1:1 ratio); heat depot; massage' },
+        { name: 'DHB Flu', severity: 'medium', onset: 'week 1', doseDependent: false, management: 'Inflammatory response; NSAIDs; hydration' },
+        { name: 'Sweats', severity: 'medium', onset: 'week 1', doseDependent: true, management: 'Hydration' },
+        { name: 'Insomnia', severity: 'low-medium', onset: 'week 2', doseDependent: true, management: 'Sleep hygiene' }
+      ],
+      lipidProfile: { hdlDecline: 'moderate', ldlIncrease: 'moderate', triglycerides: 'moderate', management: 'Standard' },
+      cardiovascular: { bloodPressure: 'mild', lvh: 'low risk', rbc: 'mild', management: 'Standard' },
+      hpta: { suppression: 'moderate', recovery: 'standard', pctRequired: true, management: 'Standard PCT' }
+    },
+    ancillaryRequirements: {
+      carrierOil: { trigger: 'Recommended', dosing: 'Cut with Sterile Oil', purpose: 'Reduce PIP', cost: 0 },
+      kidneySupport: { trigger: 'Recommended', dosing: 'Astragalus 4g', purpose: 'Renal protection', cost: 5 }
+    }
+  },
+
+  arimidex: {
+    name: 'Arimidex (Anastrozole)',
+    color: '#6B7280', // Cool Gray
+    abbreviation: 'Adex',
+    type: 'oral',
+    toxicityTier: 0,
+    bioavailability: 0.85,
+    suppressiveFactor: 0,
+    flags: { isAI: true },
+    defaultEster: 'oral',
+    esters: {
+      oral: { label: 'Tablet', halfLife: 48, weight: 1.0, slug: 'Tab' }
+    },
+    category: 'ancillary',
+    pathway: 'enzyme_inhibitor',
+    bindingAffinity: 'none',
+    biomarkers: {
+      shbg: 0,
+      igf1: 0,
+      rbc: 0,
+      cortisol: 0,
+      prolactin: 0,
+      e2_control: +5 // Special marker
+    },
+    halfLife: 48,
+    phenotype: { hypertrophy: 0, strength: 0, endurance: 0, conditioning: 2 },
+    modelConfidence: 0.95,
+    benefitCurve: [{dose: 0, value: 0}, {dose: 1, value: 1}],
+    riskCurve: [{dose: 0, value: 0}, {dose: 1, value: 0.5}],
+    methodology: { summary: 'Aromatase Inhibitor. Reduces E2. 1mg reduces serum E2 by ~50%.' },
+    sideEffectProfile: { common: [], lipidProfile: {}, cardiovascular: {}, hpta: {} },
+    ancillaryRequirements: {}
+  },
+
+  finasteride: {
+    name: 'Finasteride (Propecia)',
+    color: '#6B7280', // Cool Gray
+    abbreviation: 'Fin',
+    type: 'oral',
+    toxicityTier: 0,
+    bioavailability: 0.65,
+    suppressiveFactor: 0,
+    flags: { is5AR: true },
+    defaultEster: 'oral',
+    esters: {
+      oral: { label: 'Tablet', halfLife: 6, weight: 1.0, slug: 'Tab' }
+    },
+    category: 'ancillary',
+    pathway: 'enzyme_inhibitor',
+    bindingAffinity: 'none',
+    biomarkers: {
+      shbg: 0,
+      igf1: 0,
+      rbc: 0,
+      cortisol: 0,
+      prolactin: 0,
+      dht_inhibition: +5
+    },
+    halfLife: 6,
+    phenotype: { hypertrophy: 0, strength: 0, endurance: 0, conditioning: 0 },
+    modelConfidence: 0.95,
+    benefitCurve: [{dose: 0, value: 0}, {dose: 1, value: 1}],
+    riskCurve: [{dose: 0, value: 0}, {dose: 1, value: 0.5}],
+    methodology: { summary: '5-Alpha Reductase Inhibitor. Blocks conversion of Test to DHT (Hair Safe). Blocks conversion of Nandrolone to DHN (Hair TOXIC).' },
+    sideEffectProfile: { common: [], lipidProfile: {}, cardiovascular: {}, hpta: {} },
+    ancillaryRequirements: {}
   }
 };
 

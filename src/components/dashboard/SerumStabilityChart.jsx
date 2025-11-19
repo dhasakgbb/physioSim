@@ -115,7 +115,7 @@ const SerumStabilityChart = ({ stack }) => {
           <h3 className="text-sm font-bold text-physio-text-primary uppercase tracking-wider">
             Serum Stability Simulator
           </h3>
-          <p className="text-xs text-physio-text-tertiary">
+          <p className="text-xs text-physio-text-tertiary hidden lg:block">
             Visualizing release rates based on half-lives and injection frequency
           </p>
         </div>
