@@ -74,24 +74,57 @@ const VitalSigns = ({ metrics, stack, showScoreOnly = false, showSafetyOnly = fa
       
       {/* --- SECTION 1: THE NORTH STAR (SCORE) --- */}
       {(showAll || showScoreOnly) && (
-        <Card variant="core" className="shadow-inner relative overflow-hidden p-5">
-          <div className="absolute top-0 right-0 p-3 opacity-10">
-            <span className="text-4xl">⚕️</span>
-          </div>
-          <p className="text-xs uppercase tracking-widest text-physio-text-tertiary mb-1">Net Efficiency</p>
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-bold text-physio-text-primary">{netScore.toFixed(2)}</span>
-            <span className="text-xs text-physio-text-secondary">pts</span>
-          </div>
-          <div className="mt-2 flex items-center gap-3 text-xs">
-            <div className="flex gap-1">
-              <span className="text-physio-text-tertiary">Risk Load:</span>
-              <span className={`font-bold ${riskColor}`}>{riskLevel}</span>
+        <Card variant="core" className="shadow-inner relative overflow-hidden p-0">
+          {/* Header */}
+          <div className="p-4 border-b border-physio-border-subtle bg-physio-bg-surface/50">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-physio-text-tertiary mb-1">Net Efficiency</p>
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-3xl font-bold ${netScore > 0 ? 'text-physio-accent-cyan' : 'text-physio-accent-warning'}`}>
+                    {netScore > 0 ? '+' : ''}{netScore.toFixed(2)}
+                  </span>
+                  <span className="text-xs text-physio-text-secondary">pts</span>
+                </div>
+              </div>
+              <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                brRatio > 1.5 ? 'bg-physio-accent-success/10 border-physio-accent-success/30 text-physio-accent-success' :
+                brRatio > 1.0 ? 'bg-physio-accent-cyan/10 border-physio-accent-cyan/30 text-physio-accent-cyan' :
+                'bg-physio-accent-critical/10 border-physio-accent-critical/30 text-physio-accent-critical'
+              }`}>
+                {brRatio > 1.5 ? 'Optimized' : brRatio > 1.0 ? 'Sustainable' : 'Diminishing'}
+              </div>
             </div>
-            <div className="w-px h-3 bg-physio-border-subtle" />
-            <div className="flex gap-1">
-              <span className="text-physio-text-tertiary">Ratio:</span>
-              <span className="font-bold text-physio-text-primary">{brRatio.toFixed(2)}</span>
+          </div>
+
+          {/* The Dual Perspective (Bro vs Scientist) */}
+          <div className="grid grid-cols-2 divide-x divide-physio-border-subtle">
+            {/* Left: The Gains (Bro Appeal) */}
+            <div className="p-3 bg-physio-accent-success/5">
+              <p className="text-[9px] uppercase tracking-wider text-physio-text-tertiary mb-1">Anabolic Power</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-bold text-physio-accent-success">{metrics.totals.totalBenefit.toFixed(1)}</span>
+                <span className="text-[9px] text-physio-text-tertiary">/ 15.0</span>
+              </div>
+              <p className="text-[9px] font-medium text-physio-text-secondary mt-1">
+                {metrics.totals.totalBenefit > 10 ? 'ELITE TIER' : 
+                 metrics.totals.totalBenefit > 7 ? 'ADVANCED' : 
+                 metrics.totals.totalBenefit > 4 ? 'INTERMEDIATE' : 'SPORTS TRT'}
+              </p>
+            </div>
+
+            {/* Right: The Cost (Scientist Appeal) */}
+            <div className="p-3 bg-physio-accent-critical/5">
+              <p className="text-[9px] uppercase tracking-wider text-physio-text-tertiary mb-1">Systemic Cost</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-bold text-physio-accent-critical">{metrics.totals.totalRisk.toFixed(1)}</span>
+                <span className="text-[9px] text-physio-text-tertiary">/ 15.0</span>
+              </div>
+              <p className="text-[9px] font-medium text-physio-text-secondary mt-1">
+                {metrics.totals.totalRisk > 10 ? 'HAZARDOUS' : 
+                 metrics.totals.totalRisk > 7 ? 'HIGH RISK' : 
+                 metrics.totals.totalRisk > 4 ? 'MANAGEABLE' : 'SAFE'}
+              </p>
             </div>
           </div>
         </Card>

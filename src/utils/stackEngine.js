@@ -1,13 +1,12 @@
-import { evaluateCompoundResponse, evaluatePairDimension } from './interactionEngine';
+import { evaluateCompoundResponse, evaluatePairDimension } from './interactionEngine.js';
 import {
   interactionDimensions,
   interactionPairs,
   defaultSensitivities
-} from '../data/interactionEngineData';
-import { normalizeStackInput, resolvePairKey } from '../data/interactionMatrix';
-import { defaultProfile } from './personalization';
-import { compoundData } from '../data/compoundData';
-import { MAX_PHENOTYPE_SCORE } from '../data/constants';
+} from '../data/interactionEngineData.js';
+import { normalizeStackInput, resolvePairKey } from '../data/interactionMatrix.js';
+import { defaultProfile } from './personalization.js';
+import { compoundData } from '../data/compoundData.js';
 
 // ============================================================================
 // CONSTANTS & CONFIGURATION
@@ -54,13 +53,7 @@ const getEmptyResult = () => ({
     protocolPenalty: 0,
     maxSuppression: 0,
     genomicBenefit: 0,
-    nonGenomicBenefit: 0,
-    phenotype: {
-      hypertrophy: 0,
-      strength: 0,
-      endurance: 0,
-      conditioning: 0
-    }
+    nonGenomicBenefit: 0
   }
 });
 
@@ -278,7 +271,6 @@ export const evaluateStack = ({
     totalSystemicLoad: 0,
     wastedMg: 0,
     maxSuppression: 0,
-    phenotype: { hypertrophy: 0, strength: 0, endurance: 0, conditioning: 0 },
     byCompound: {},
     activeCompounds: [] // For global penalties
   };
@@ -315,23 +307,6 @@ export const evaluateStack = ({
     
     const activeGenomicDose = weeklyDose * weightFactor * bioavailability;
     state.wastedMg += (weeklyDose - activeGenomicDose);
-
-    // C. Phenotype Calculation
-    const ceiling = isOral ? CONSTANTS.ORAL_CEILING : CONSTANTS.INJECTABLE_CEILING;
-    const intensity = Math.min(dose / ceiling, 1.2);
-
-    if (meta.phenotype) {
-      state.phenotype.hypertrophy += meta.phenotype.hypertrophy * intensity;
-      state.phenotype.strength += meta.phenotype.strength * intensity;
-      state.phenotype.conditioning += meta.phenotype.conditioning * intensity;
-      
-      // Special Case: Trenbolone kills endurance
-      if (code === 'trenbolone') {
-        state.phenotype.endurance -= (10 - meta.phenotype.endurance) * intensity;
-      } else {
-        state.phenotype.endurance += meta.phenotype.endurance * intensity;
-      }
-    }
 
     // D. Load Tracking
     state.totalSystemicLoad += weeklyDose;
@@ -469,14 +444,7 @@ export const evaluateStack = ({
       maxSuppression: state.maxSuppression,
       genomicBenefit: Number(finalGenomic.toFixed(2)),
       nonGenomicBenefit: Number(state.nonGenomicBenefit.toFixed(2)),
-      wastedMg: Number(state.wastedMg.toFixed(1)),
-      
-      phenotype: {
-        hypertrophy: Math.min(Number(state.phenotype.hypertrophy.toFixed(2)), MAX_PHENOTYPE_SCORE),
-        strength: Math.min(Number(state.phenotype.strength.toFixed(2)), MAX_PHENOTYPE_SCORE),
-        endurance: Math.min(Number(state.phenotype.endurance.toFixed(2)), MAX_PHENOTYPE_SCORE),
-        conditioning: Math.min(Number(state.phenotype.conditioning.toFixed(2)), MAX_PHENOTYPE_SCORE)
-      }
+      wastedMg: Number(state.wastedMg.toFixed(1))
     }
   };
 };

@@ -36,7 +36,7 @@ const CompoundDock = () => {
   const nonGenomic = Object.entries(compoundData).filter(([key, data]) => data.pathway === 'non_genomic');
 
   return (
-    <div className="flex gap-4 items-end pb-2 overflow-x-auto">
+    <div className="flex gap-4 items-stretch pb-2 overflow-x-auto">
       <PathwayGroup 
         label="Genomic AR Agonists" 
         description="Primary tissue builders. High receptor affinity. Diminishing returns if stacked heavily."

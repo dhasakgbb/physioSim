@@ -1,6 +1,6 @@
-import { compoundData } from '../data/compoundData';
-import { personalizeScore } from './personalization';
-import { interactionDimensions, interactionPairs } from '../data/interactionEngineData';
+import { compoundData } from '../data/compoundData.js';
+import { personalizeScore } from './personalization.js';
+import { interactionDimensions, interactionPairs } from '../data/interactionEngineData.js';
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 

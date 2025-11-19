@@ -1,4 +1,4 @@
-export { PROFILE_STORAGE_KEY } from './storageKeys';
+export { PROFILE_STORAGE_KEY } from './storageKeys.js';
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 

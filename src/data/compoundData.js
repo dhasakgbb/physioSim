@@ -33,7 +33,6 @@ export const compoundData = {
       e2_conversion: +2 // The standard aromatizer
     },
     halfLife: 108, // ~4.5 days (Enanthate/Cypionate)
-    phenotype: { hypertrophy: 8, strength: 7, endurance: 6, conditioning: 3 },
     modelConfidence: 0.81,
     evidenceProvenance: { human: 5, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -161,7 +160,6 @@ export const compoundData = {
       neurotoxicity: 2 // Moderate Neurotoxicity (19-nor)
     },
     halfLife: 60, // ~2.5 days (Phenylpropionate)
-    phenotype: { hypertrophy: 7, strength: 6, endurance: 6, conditioning: 5 },
     modelConfidence: 0.61,
     evidenceProvenance: { human: 2, animal: 3, aggregate: 5 },
     varianceDrivers: [
@@ -175,9 +173,9 @@ export const compoundData = {
       { dose: 200, value: 2.5, tier: 'Tier 2', source: 'Blaquier et al. (1991) rat study HED-scaled', caveat: 'Joint protection benefit peaks', ci: 0.3 },
       { dose: 300, value: 3.0, tier: 'Tier 2/3', source: 'HED-scaled + forum consensus', caveat: 'Plateau in lean mass gains', ci: 0.4 },
       { dose: 400, value: 3.15, tier: 'Tier 3', source: 'Forum reports', caveat: 'Anecdotal plateau; no additional mass', ci: 0.5 },
-      { dose: 600, value: 3.25, tier: 'Tier 4', source: 'Forum consensus', caveat: 'Flat; diminishing returns', ci: 0.5 },
-      { dose: 800, value: 3.3, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
-      { dose: 1000, value: 3.35, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
+      { dose: 600, value: 3.45, tier: 'Tier 4', source: 'Forum consensus', caveat: 'Diminishing returns', ci: 0.5 },
+      { dose: 800, value: 3.65, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
+      { dose: 1000, value: 3.8, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
     ],
     riskCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
@@ -276,7 +274,6 @@ export const compoundData = {
       neurotoxicity: 3 // High Risk (Amyloid/Dopamine)
     },
     halfLife: 48,
-    phenotype: { hypertrophy: 7, strength: 9, endurance: 1, conditioning: 10 },
     modelConfidence: 0.54,
     evidenceProvenance: { human: 0, animal: 4, aggregate: 7 },
     varianceDrivers: [
@@ -290,11 +287,11 @@ export const compoundData = {
       { dose: 200, value: 3.67, tier: 'Tier 3', source: 'Yarrow HED-scaled', caveat: 'Peak "bang-for-buck"; ~70% forum users report plateau', ci: 0.6 },
       { dose: 300, value: 4.333, tier: 'Tier 4', source: 'Forum consensus', caveat: 'Anecdotal diminishing gains; mood changes dominate', ci: 0.63 },
       { dose: 400, value: 4.87, tier: 'Tier 4', source: 'Forum patterns', caveat: 'Benefit plateau; no proportional gains reported', ci: 0.63 },
-      { dose: 500, value: 4.87, tier: 'Tier 4', source: 'Forum patterns', caveat: 'FLAT PLATEAU - gains stop increasing', ci: 0.63 },
-      { dose: 600, value: 4.87, tier: 'Tier 4', source: 'Forum patterns', caveat: 'FLAT PLATEAU - no additional benefit', ci: 0.63 },
-      { dose: 800, value: 4.87, tier: 'Tier 4', source: 'Forum patterns', caveat: 'FLAT PLATEAU - sides dominate', ci: 0.63 },
-      { dose: 1000, value: 4.87, tier: 'Tier 4', source: 'Forum patterns', caveat: 'FLAT PLATEAU - not recommended', ci: 0.63 },
-      { dose: 1200, value: 4.87, tier: 'Tier 4', source: 'Forum patterns', caveat: 'FLAT PLATEAU - extreme risk', ci: 0.63 },
+      { dose: 500, value: 5.15, tier: 'Tier 4', source: 'Forum patterns', caveat: 'Diminishing returns', ci: 0.63 },
+      { dose: 600, value: 5.35, tier: 'Tier 4', source: 'Forum patterns', caveat: 'Diminishing returns', ci: 0.63 },
+      { dose: 800, value: 5.65, tier: 'Tier 4', source: 'Forum patterns', caveat: 'Diminishing returns', ci: 0.63 },
+      { dose: 1000, value: 5.85, tier: 'Tier 4', source: 'Forum patterns', caveat: 'Diminishing returns', ci: 0.63 },
+      { dose: 1200, value: 6.0, tier: 'Tier 4', source: 'Forum patterns', caveat: 'Diminishing returns', ci: 0.63 },
     ],
     riskCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
@@ -401,7 +398,6 @@ export const compoundData = {
       prolactin: 0
     },
     halfLife: 336, // ~14 days (Undecylenate)
-    phenotype: { hypertrophy: 6, strength: 5, endurance: 10, conditioning: 6 },
     modelConfidence: 0.72,
     evidenceProvenance: { human: 1, animal: 3, aggregate: 4 },
     varianceDrivers: [
@@ -508,7 +504,6 @@ export const compoundData = {
       anti_e: +2      // Unique: Local anti-estrogenic action
     },
     halfLife: 48, // ~2 days (Propionate)
-    phenotype: { hypertrophy: 4, strength: 5, endurance: 3, conditioning: 9 },
     modelConfidence: 0.55,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -520,9 +515,9 @@ export const compoundData = {
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
       { dose: 200, value: 0.8, tier: 'Tier 4', source: 'Anecdotal', caveat: 'Cosmetic (hardening, anti-E); low anabolic index ~40', ci: 0.5 },
       { dose: 400, value: 1.2, tier: 'Tier 4', source: 'Forum consensus', caveat: 'Plateau; no additional lean mass', ci: 0.5 },
-      { dose: 600, value: 1.3, tier: 'Tier 4', source: 'Forum patterns', caveat: 'Flat; primarily used as ancillary', ci: 0.5 },
-      { dose: 800, value: 1.35, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
-      { dose: 1000, value: 1.4, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
+      { dose: 600, value: 1.4, tier: 'Tier 4', source: 'Forum patterns', caveat: 'Diminishing returns', ci: 0.5 },
+      { dose: 800, value: 1.55, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
+      { dose: 1000, value: 1.65, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
     ],
     riskCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
@@ -609,7 +604,6 @@ export const compoundData = {
       prolactin: 0
     },
     halfLife: 6,
-    phenotype: { hypertrophy: 10, strength: 8, endurance: 5, conditioning: 7 },
     modelConfidence: 0.59,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -622,9 +616,9 @@ export const compoundData = {
       { dose: 100, value: 0.44, tier: 'Tier 2', source: 'Therapeutic data', caveat: 'Mild anabolic index ~44; lean gains', ci: 0.3 },
       { dose: 200, value: 0.88, tier: 'Tier 2/4', source: 'Therapeutic extrapolated', caveat: 'Weak compound; variable response', ci: 0.4 },
       { dose: 400, value: 1.3, tier: 'Tier 4', source: 'Forum reports', caveat: 'Anecdotal plateau; cost-prohibitive', ci: 0.5 },
-      { dose: 600, value: 1.5, tier: 'Tier 4', source: 'Forum patterns', caveat: 'No additional benefit; rare to use this high', ci: 0.5 },
-      { dose: 800, value: 1.6, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
-      { dose: 1000, value: 1.65, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
+      { dose: 600, value: 1.6, tier: 'Tier 4', source: 'Forum patterns', caveat: 'Diminishing returns', ci: 0.5 },
+      { dose: 800, value: 1.8, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
+      { dose: 1000, value: 1.95, tier: 'Tier 4', source: 'Extrapolated', caveat: 'Saturated', ci: 0.6 },
     ],
     riskCurve: [
       { dose: 0, value: 0.0, tier: 'Tier 0', source: 'Baseline', caveat: 'No AAS use', ci: 0.0 },
@@ -712,7 +706,6 @@ export const compoundData = {
       aromatization: +3 // Heavy methyl-estradiol conversion
     },
     halfLife: 24,
-    phenotype: { hypertrophy: 9, strength: 6, endurance: 5, conditioning: 4 },
     modelConfidence: 0.63,
     evidenceProvenance: { human: 0, animal: 1, aggregate: 6 },
     varianceDrivers: [
@@ -844,7 +837,6 @@ export const compoundData = {
       estrogenic_activity: +3 // Direct ER activation
     },
     halfLife: 8, // ~8 hours
-    phenotype: { hypertrophy: 10, strength: 10, endurance: 4, conditioning: 1 },
     modelConfidence: 0.31,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 5 },
     varianceDrivers: [
@@ -973,7 +965,6 @@ export const compoundData = {
       joints: -3      // The "Dry" penalty
     },
     halfLife: 9, // ~9 hours
-    phenotype: { hypertrophy: 5, strength: 8, endurance: 6, conditioning: 9 },
     modelConfidence: 0.4,
     evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -1099,7 +1090,6 @@ export const compoundData = {
       prolactin: 0
     },
     halfLife: 9, // ~9 hours
-    phenotype: { hypertrophy: 5, strength: 7, endurance: 7, conditioning: 8 },
     modelConfidence: 0.48,
     evidenceProvenance: { human: 2, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -1220,7 +1210,6 @@ export const compoundData = {
       cns_drive: +3   // The primary feature
     },
     halfLife: 96,
-    phenotype: { hypertrophy: 2, strength: 10, endurance: 7, conditioning: 7 },
     modelConfidence: 0.67,
     evidenceProvenance: { human: 0, animal: 1, aggregate: 4 },
     varianceDrivers: [
@@ -1361,7 +1350,6 @@ export const compoundData = {
       libido: +3      // CNS/Androgenic libido driver
     },
     halfLife: 12, // ~12 hours
-    phenotype: { hypertrophy: 2, strength: 4, endurance: 2, conditioning: 7 },
     // Minimal curves because it's not really for "Mass"
     benefitCurve: [
       { dose: 0, value: 0 }, { dose: 25, value: 0.5 }, { dose: 50, value: 0.8 }, { dose: 100, value: 0.9 }
@@ -1410,7 +1398,6 @@ export const compoundData = {
     pathway: 'non_genomic',
     bindingAffinity: 'low',
     halfLife: 9,
-    phenotype: { hypertrophy: 5, strength: 7, endurance: 7, conditioning: 8 },
     modelConfidence: 0.65, // East German data
     biomarkers: {
       shbg: -2,       // Strong binding
@@ -1476,7 +1463,6 @@ export const compoundData = {
       liver_toxicity: +3 // Extreme
     },
     halfLife: 8, // ~8 hours
-    phenotype: { hypertrophy: 10, strength: 9, endurance: 2, conditioning: 6 },
     benefitCurve: [ /* steep rise */
       { dose: 0, value: 0 }, { dose: 10, value: 2.5 }, { dose: 20, value: 4.5 }, { dose: 30, value: 4.8 }, { dose: 40, value: 4.9 }
     ],
@@ -1532,7 +1518,6 @@ export const compoundData = {
       e2_conversion: +3 // Extreme estrogenic activity
     },
     halfLife: 24,
-    phenotype: { hypertrophy: 10, strength: 9, endurance: 3, conditioning: 2 },
     modelConfidence: 0.7,
     benefitCurve: [{dose: 0, value: 0}, {dose: 50, value: 3.0}, {dose: 100, value: 4.5}, {dose: 200, value: 5.0}, {dose: 300, value: 5.2}], // Very potent mg for mg
     riskCurve: [{dose: 0, value: 0}, {dose: 50, value: 2.0}, {dose: 100, value: 4.0}, {dose: 200, value: 5.5}, {dose: 300, value: 7.5}],
@@ -1587,7 +1572,6 @@ export const compoundData = {
       pip: +5 // Post Injection Pain
     },
     halfLife: 120,
-    phenotype: { hypertrophy: 8, strength: 8, endurance: 5, conditioning: 9 },
     modelConfidence: 0.6,
     benefitCurve: [{dose: 0, value: 0}, {dose: 200, value: 2.0}, {dose: 400, value: 3.5}, {dose: 600, value: 4.2}, {dose: 800, value: 4.5}],
     riskCurve: [{dose: 0, value: 0}, {dose: 200, value: 1.0}, {dose: 400, value: 2.0}, {dose: 600, value: 3.0}, {dose: 800, value: 4.5}],
@@ -1642,7 +1626,6 @@ export const compoundData = {
       e2_control: +5 // Special marker
     },
     halfLife: 48,
-    phenotype: { hypertrophy: 0, strength: 0, endurance: 0, conditioning: 2 },
     modelConfidence: 0.95,
     benefitCurve: [{dose: 0, value: 0}, {dose: 1, value: 1}],
     riskCurve: [{dose: 0, value: 0}, {dose: 1, value: 0.5}],
@@ -1676,7 +1659,6 @@ export const compoundData = {
       dht_inhibition: +5
     },
     halfLife: 6,
-    phenotype: { hypertrophy: 0, strength: 0, endurance: 0, conditioning: 0 },
     modelConfidence: 0.95,
     benefitCurve: [{dose: 0, value: 0}, {dose: 1, value: 1}],
     riskCurve: [{dose: 0, value: 0}, {dose: 1, value: 0.5}],

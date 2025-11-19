@@ -8,7 +8,7 @@ import MechanismMonitor from './MechanismMonitor';
 import BiomarkerMatrix from './BiomarkerMatrix';
 import CompoundInspector from './CompoundInspector';
 import SerumStabilityChart from './SerumStabilityChart';
-import OutcomeRadar from './OutcomeRadar';
+import SignalingNetwork from './SignalingNetwork';
 import LabReportCard from './LabReportCard';
 import ErrorBoundary from '../ui/ErrorBoundary';
 import { useStack } from '../../context/StackContext';
@@ -52,21 +52,21 @@ const Dashboard = () => {
               Stability (PK)
             </button>
             <button 
-              onClick={() => setViewMode('radar')}
-              className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'radar' ? 'bg-physio-bg-highlight text-white shadow-sm' : 'text-physio-text-tertiary hover:text-physio-text-primary'}`}
+              onClick={() => setViewMode('network')}
+              className={`px-3 py-1 text-xs font-medium rounded transition-all ${viewMode === 'network' ? 'bg-physio-bg-highlight text-white shadow-sm' : 'text-physio-text-tertiary hover:text-physio-text-primary'}`}
             >
-              Phenotype
+              Signaling
             </button>
           </div>
 
           {/* View Switcher */}
           <ErrorBoundary>
-            {viewMode === 'net' ? (
-              <NetEffectChart stack={stack} userProfile={userProfile} />
-            ) : viewMode === 'pk' ? (
+            {viewMode === 'pk' ? (
               <SerumStabilityChart stack={stack} />
+            ) : viewMode === 'network' ? (
+              <SignalingNetwork stack={stack} />
             ) : (
-              <OutcomeRadar metrics={metrics} />
+              <NetEffectChart stack={stack} userProfile={userProfile} />
             )}
           </ErrorBoundary>
         </>
