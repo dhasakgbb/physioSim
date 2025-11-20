@@ -6,49 +6,53 @@ export default {
       colors: {
         physio: {
           bg: {
-            core: "#030712", // Deepest Black/Blue
-            surface: "#111827", // Card Background
-            highlight: "#1f2937", // Hover State
-            glass: "rgba(17, 24, 39, 0.7)",
+            core: "#202124", // Google Dark Grey (Background)
+            surface: "#2D2E31", // Surface (Panels)
+            highlight: "#3C4043", // Hover / Selected
+            glass: "rgba(32, 33, 36, 0.95)", // Solid, technical feel
           },
           text: {
-            primary: "#f9fafb", // High Emphasis
-            secondary: "#9ca3af", // Medium Emphasis
-            tertiary: "#6b7280", // Low Emphasis (NEW - Essential for labels)
-            muted: "#4b5563",
-            inverse: "#030712",
+            primary: "#E8EAED", // High Emphasis
+            secondary: "#9AA0A6", // Medium Emphasis
+            tertiary: "#5F6368", // Low Emphasis / Disabled
+            muted: "#3C4043", // Borders / Dividers
+            inverse: "#202124",
           },
           accent: {
-            primary: "#6366f1", // Indigo
-            secondary: "#8b5cf6", // Violet
-            success: "#10b981", // Emerald
-            warning: "#f59e0b", // Amber
-            critical: "#ef4444", // Red
-            cyan: "#06b6d4", // Cyan (Good for "Information")
-            mint: "#34d399", // Mint (Good for "Safe")
+            primary: "#8AB4F8", // Cornflower Blue (Anabolic/Primary Data)
+            secondary: "#C58AF9", // Purple (Secondary Data)
+            success: "#81C995", // Green (Safe)
+            warning: "#FDD663", // Yellow (Warning)
+            critical: "#F28B82", // Light Red (Danger/Risk)
+            cyan: "#78D9EC", // Cyan (Info)
+            mint: "#81C995", // Mint
           },
           border: {
-            subtle: "rgba(255, 255, 255, 0.08)", // Slightly lighter for visibility
-            strong: "rgba(255, 255, 255, 0.15)",
+            subtle: "#3C4043", // Divider
+            strong: "#5F6368", // Input Border
           },
         },
       },
       fontFamily: {
-        sans: ["Outfit", "Inter", "system-ui", "sans-serif"], // Added Outfit preference
-        mono: ["JetBrains Mono", "Fira Code", "monospace"],
+        sans: ["Roboto", "system-ui", "sans-serif"], // Roboto is king for Google style
+        mono: ["Roboto Mono", "Menlo", "monospace"], // Technical font
+      },
+      borderRadius: {
+        'sm': '2px',
+        'md': '4px',
+        'lg': '8px',
+        'xl': '12px', // Max rounding for this aesthetic
       },
       boxShadow: {
-        "neo-sm": "0 2px 4px rgba(0, 0, 0, 0.3)",
-        "neo-md": "0 8px 16px rgba(0, 0, 0, 0.4)",
-        "neo-lg": "0 16px 32px rgba(0, 0, 0, 0.5)",
-        "neo-glow": "0 0 20px rgba(99, 102, 241, 0.15)",
-        "physio-subtle": "0 1px 2px 0 rgba(0, 0, 0, 0.5)",
-        "physio-elevated": "0 10px 15px -3px rgba(0, 0, 0, 0.5)",
+        "neo-sm": "0 1px 2px 0 rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15)",
+        "neo-md": "0 1px 2px 0 rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15)",
+        "physio-subtle": "0 1px 2px 0 rgba(0,0,0,0.3)",
+        "physio-elevated": "0 4px 8px 3px rgba(0,0,0,0.15)",
       },
       backgroundImage: {
-        "gradient-primary": "linear-gradient(to right, #6366f1, #8b5cf6)",
-        "gradient-safe": "linear-gradient(to right, #10b981, #34d399)",
-        "gradient-danger": "linear-gradient(to right, #ef4444, #f87171)",
+        "gradient-primary": "linear-gradient(to right, #8AB4F8, #C58AF9)",
+        "gradient-safe": "linear-gradient(to right, #81C995, #A5D6A7)",
+        "gradient-danger": "linear-gradient(to right, #F28B82, #EF9A9A)",
       },
     },
   },

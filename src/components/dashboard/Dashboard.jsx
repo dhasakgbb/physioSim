@@ -129,22 +129,10 @@ const Dashboard = () => {
         }
         // ZONE C: THE LOGICAL LOOP (Score -> Governor -> Engine -> Bill)
         rightRail={
-          <div className="space-y-6 pb-10">
-            {/* 1. THE NORTH STAR: Score */}
-            <VitalSigns metrics={metrics} stack={stack} showScoreOnly={true} />
-
-            {/* 2. THE GOVERNOR: Saturation */}
-            <MechanismMonitor stack={stack} />
-
-            {/* 3. THE VIRTUAL PHLEBOTOMIST: Lab Prediction */}
-            <LabReportCard stack={stack} metrics={metrics} />
-
-            {/* 4. THE ENGINE: Signaling */}
-            <BiomarkerMatrix stack={stack} />
-
-            {/* 5. THE BILL: Safety */}
-            <VitalSigns metrics={metrics} stack={stack} showSafetyOnly={true} />
-          </div>
+          <OptimizerPane 
+            stack={stack} 
+            userProfile={userProfile} 
+          />
         }
         // ZONE D: The Dock
         bottomDock={<CompoundDock />}

@@ -1,0 +1,178 @@
+syntax = "proto3";
+
+package physiosim.v1;
+
+option go_package = "github.com/yourusername/physiosim/gen/go/physiosim/v1";
+
+// -----------------------------------------------------------------------------
+// Service Definition
+// -----------------------------------------------------------------------------
+service SimulationService {
+  // Calculates serum levels and health risks for a given cycle configuration.
+  rpc SimulateCycle (SimulateCycleRequest) returns (SimulateCycleResponse);
+
+  // Runs a Monte Carlo simulation to find the optimal dosage for specific goals.
+  rpc OptimizeCycle (OptimizeCycleRequest) returns (OptimizeCycleResponse);
+}
+
+// -----------------------------------------------------------------------------
+// Enums (The "Strict Vocabulary")
+// -----------------------------------------------------------------------------
+
+// Eliminates string parsing. The UI selects an Enum, the Backend maps it to 
+// Molecular Weight and Binding Affinity constants.
+enum CompoundType {
+  COMPOUND_TYPE_UNSPECIFIED = 0;
+  COMPOUND_TYPE_TESTOSTERONE = 1;
+  COMPOUND_TYPE_TRENBOLONE = 2;
+  COMPOUND_TYPE_NANDROLONE = 3;
+  COMPOUND_TYPE_DROSTANOLONE = 4; // Masteron
+  COMPOUND_TYPE_METHENOLONE = 5;  // Primobolan
+  COMPOUND_TYPE_OXYMETHOLONE = 6; // Anadrol (Oral)
+  COMPOUND_TYPE_OXANDROLONE = 7;  // Anavar (Oral)
+  COMPOUND_TYPE_STANOZOLOL = 8;   // Winstrol
+  COMPOUND_TYPE_BOLDENONE = 9;    // EQ
+}
+
+// Defines the release curve. The Backend uses this to look up the 
+// specific Lambda (decay constant) from a trusted 'constants.go' file.
+enum EsterType {
+  ESTER_TYPE_UNSPECIFIED = 0;
+  ESTER_TYPE_NONE = 1;           // Base / Suspension / Oral
+  ESTER_TYPE_ACETATE = 2;
+  ESTER_TYPE_PROPIONATE = 3;
+  ESTER_TYPE_ENANTHATE = 4;
+  ESTER_TYPE_CYPIONATE = 5;
+  ESTER_TYPE_PHENYLPROPIONATE = 6;
+  ESTER_TYPE_DECANOATE = 7;
+  ESTER_TYPE_UNDECANOATE = 8;
+  ESTER_TYPE_HEXAHYDROBENZYLCARBONATE = 9; // Parabolan
+}
+
+enum AdministrationRoute {
+  ROUTE_UNSPECIFIED = 0;
+  ROUTE_INTRAMUSCULAR = 1;
+  ROUTE_SUBCUTANEOUS = 2;
+  ROUTE_ORAL = 3;
+  ROUTE_TRANSDERMAL = 4;
+}
+
+// -----------------------------------------------------------------------------
+// Core Data Structures (The "Active Mixture" Panel)
+// -----------------------------------------------------------------------------
+
+message CompoundEntry {
+  string id = 1; // UUID for frontend tracking (e.g., "row-123")
+  
+  CompoundType type = 2;
+  EsterType ester = 3;
+  
+  // Strict unsigned integer. Prevents negative dosages.
+  // Standardized to Milligrams (mg).
+  uint32 dosage_mg = 4; 
+  
+  // Standardized to hours. 
+  // UI can show "Every 3.5 Days", but must send `84` (hours) to backend.
+  uint32 frequency_hours = 5; 
+
+  AdministrationRoute route = 6;
+}
+
+message UserBiometrics {
+  uint32 age = 1;
+  uint32 weight_lbs = 2;
+  uint32 height_inches = 3;
+  double body_fat_percentage = 4;
+  
+  // Affects aromatization math (High BF% = Higher E2 conversion)
+  enum AromatizationRate {
+    AROMATIZATION_RATE_NORMAL = 0;
+    AROMATIZATION_RATE_HIGH = 1; // "High Responder"
+    AROMATIZATION_RATE_LOW = 2;
+  }
+  AromatizationRate aromatization_genetics = 5;
+}
+
+// -----------------------------------------------------------------------------
+// Requests & Responses
+// -----------------------------------------------------------------------------
+
+message SimulateCycleRequest {
+  repeated CompoundEntry compounds = 1;
+  uint32 cycle_duration_weeks = 2; // e.g., 12
+  UserBiometrics user = 3;
+}
+
+message SimulateCycleResponse {
+  // The X/Y coordinates for the main "Dose Efficiency" chart.
+  // Using a flat list of points is faster for Canvas rendering than nested objects.
+  repeated DailySerumPoint time_series = 1;
+  
+  // The "Projected Vitals" panel data.
+  PredictedHealthMarkers aggregate_health = 2;
+
+  // The "Diminishing Returns" inflection point.
+  // If current dose > this value, UI draws the yellow warning line.
+  double diminishing_returns_mg_threshold = 3;
+}
+
+// -----------------------------------------------------------------------------
+// Output Data (The "Vitals" & "Charts")
+// -----------------------------------------------------------------------------
+
+message DailySerumPoint {
+  uint32 day = 1;             // X-Axis
+  double total_mg_active = 2; // Y-Axis (Stacked Total)
+  double anabolic_score = 3;  // Calculated ROI
+  double toxicity_score = 4;  // Systemic load
+}
+
+message PredictedHealthMarkers {
+  // We map these strictly to avoid "dict['LDL']" vs "dict['ldl']" bugs.
+  
+  Metric ldl_cholesterol = 1; // mg/dL
+  Metric hdl_cholesterol = 2; // mg/dL
+  Metric hematocrit = 3;      // %
+  Metric ast_liver = 4;       // U/L
+  Metric alt_liver = 5;       // U/L
+  Metric systolic_bp = 6;     // mmHg
+  Metric kidney_gfr = 7;      // mL/min
+}
+
+message Metric {
+  double value = 1;
+  double baseline = 2; // The user's natural starting point
+  
+  enum RiskLevel {
+    RISK_LEVEL_OPTIMAL = 0;
+    RISK_LEVEL_ELEVATED = 1; // Yellow
+    RISK_LEVEL_HIGH = 2;     // Orange
+    RISK_LEVEL_CRITICAL = 3; // Red
+  }
+  RiskLevel risk = 3;
+  
+  // A small array of 10-20 points to draw the sparkline in the UI table.
+  repeated double trend_sparkline = 4;
+}
+
+// -----------------------------------------------------------------------------
+// Optimization (The "Solver" Panel)
+// -----------------------------------------------------------------------------
+
+message OptimizeCycleRequest {
+  SimulateCycleRequest base_request = 1;
+  
+  enum Goal {
+    GOAL_UNSPECIFIED = 0;
+    GOAL_MAX_ANABOLISM_SAFE = 1; // Maximize muscle, keep health green
+    GOAL_MAX_TOLERABLE = 2;      // Maximize muscle, keep health yellow
+    GOAL_REDLINE = 3;            // Ignore health caps
+  }
+  Goal optimization_goal = 2;
+}
+
+message OptimizeCycleResponse {
+  // The engine returns the "Fixed" compound list to replace the user's inputs.
+  repeated CompoundEntry optimized_compounds = 1;
+  double projected_efficiency_gain_percent = 2;
+}

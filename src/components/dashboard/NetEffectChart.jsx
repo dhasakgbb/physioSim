@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   ReferenceArea,
+  Legend,
 } from "recharts";
 import { evaluateStack } from "../../utils/stackEngine";
 import { simulateSerum } from "../../utils/pharmacokinetics";
@@ -19,26 +20,55 @@ import { compoundData } from "../../data/compoundData";
 import { COLORS } from "../../utils/theme";
 import Slider from "../ui/Slider";
 
-// Scientific / Clinical Dark Theme
+// TensorBoard / Google Cloud Console Theme
 const PALETTE = {
-  surface: "#0B0C10", // Deepest Background
-  surfaceContainer: "#15171E", // Card Background
-  surfaceContainerHigh: "#1F2937", // Hover/Active
-  primary: COLORS.benefit, // Emerald Green
-  secondary: "#06B6D4", // Cyan
-  tertiary: "#8B5CF6", // Violet
-  error: COLORS.risk, // Red
-  outline: "#374151", // Borders
-  onSurface: "#F3F4F6", // Primary Text
-  onSurfaceVariant: "#9CA3AF", // Secondary Text
+  surface: COLORS.bgSurface,
+  grid: COLORS.grid,
+  primary: COLORS.benefit, // Cornflower Blue
+  secondary: COLORS.accentCyan,
+  tertiary: COLORS.accentSecondary,
+  error: COLORS.risk, // Light Red
+  warning: COLORS.accentWarning, // Yellow
+  textPrimary: COLORS.textPrimary,
+  textSecondary: COLORS.textSecondary,
 };
+
+const ChartHeader = ({ title, subtitle, legendItems }) => (
+  <div className="flex items-center justify-between px-4 py-3 border-b border-physio-border-subtle bg-physio-bg-surface">
+    <div>
+      <h3 className="text-xs font-bold text-physio-text-primary uppercase tracking-wider">
+        {title}
+      </h3>
+      {subtitle && (
+        <p className="text-[10px] text-physio-text-secondary mt-0.5">
+          {subtitle}
+        </p>
+      )}
+    </div>
+    {legendItems && (
+      <div className="flex items-center gap-4">
+        {legendItems.map((item) => (
+          <div key={item.label} className="flex items-center gap-1.5">
+            <div
+              className={`w-2 h-2 rounded-full ${item.shape === "line" ? "h-0.5 w-3" : ""}`}
+              style={{ backgroundColor: item.color }}
+            />
+            <span className="text-[10px] font-medium text-physio-text-secondary">
+              {item.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+);
 
 const ReleaseTooltip = ({ active, payload, label }) => {
   if (!active || !payload || !payload.length) return null;
 
   return (
-    <div className="bg-[#15171E] border border-[#374151] p-4 rounded-xl shadow-xl min-w-[200px] z-50">
-      <p className="text-sm font-bold text-[#9CA3AF] mb-2">
+    <div className="bg-physio-bg-core border border-physio-border-subtle p-3 rounded shadow-xl min-w-[180px] z-50">
+      <p className="text-xs font-bold text-physio-text-secondary mb-2 border-b border-physio-border-subtle pb-1">
         Day {Math.floor(label)} (Week {Math.floor(label / 7)})
       </p>
       {payload.map((entry) => (
@@ -48,18 +78,18 @@ const ReleaseTooltip = ({ active, payload, label }) => {
         >
           <div className="flex items-center gap-2">
             <div
-              className="w-2 h-2 rounded-full"
+              className="w-1.5 h-1.5 rounded-full"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-xs text-[#9CA3AF] capitalize">
+            <span className="text-[10px] text-physio-text-secondary capitalize">
               {entry.name === "total"
                 ? "Systemic Load"
                 : compoundData[entry.name]?.name || entry.name}
             </span>
           </div>
-          <span className="text-xs font-mono font-bold text-[#F3F4F6]">
+          <span className="text-[10px] font-mono font-bold text-physio-text-primary">
             {entry.value.toFixed(1)}{" "}
-            <span className="text-[9px] text-[#6B7280]">mg</span>
+            <span className="text-[9px] text-physio-text-tertiary">mg</span>
           </span>
         </div>
       ))}
@@ -71,111 +101,53 @@ const CustomTooltip = ({ active, payload, label, crossover }) => {
   if (!active || !payload || !payload.length) return null;
 
   const data = payload[0].payload;
-  const isProfitable = data.net > 0;
-  const isSaturated = data.saturation > 0.85;
   const isWasted = crossover !== null && data.percent > crossover;
-  const penaltyPct = Math.round(
-    (1 - data.benefit / (data.benefit / (data.saturationPenalty || 1))) * 100,
-  );
 
   return (
     <div
-      className={`backdrop-blur-md border p-4 rounded-xl shadow-xl min-w-[240px] transition-colors duration-300 z-50 ${
+      className={`backdrop-blur-md border p-3 rounded shadow-xl min-w-[200px] z-50 ${
         isWasted
-          ? "bg-[#EF4444]/10 border-[#EF4444]/50"
-          : "bg-[#15171E]/95 border-[#374151]"
+          ? "bg-physio-accent-critical/10 border-physio-accent-critical/30"
+          : "bg-physio-bg-core/95 border-physio-border-subtle"
       }`}
     >
-      <p className="text-xs uppercase tracking-widest text-[#9CA3AF] mb-2">
-        Stack Intensity:{" "}
-        <span className="text-[#F3F4F6] font-bold">{label}%</span>
-      </p>
+      <div className="flex justify-between items-center mb-2 border-b border-physio-border-subtle pb-1">
+        <span className="text-[10px] uppercase tracking-widest text-physio-text-secondary">
+          Intensity
+        </span>
+        <span className="text-xs font-mono font-bold text-physio-text-primary">{label}%</span>
+      </div>
 
       {isWasted ? (
-        <div className="mb-3 p-2 bg-[#EF4444]/20 rounded border border-[#EF4444]/30">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg">🛑</span>
-            <span className="text-xs font-bold text-[#EF4444] uppercase tracking-wider">
-              Wasted Zone
-            </span>
-          </div>
-          <p className="text-xs text-[#F3F4F6] leading-tight">
-            Every mg added here reduces net growth. Risk exceeds benefit.
-          </p>
+        <div className="mb-2 text-[10px] text-physio-accent-critical font-bold flex items-center gap-1">
+          <span>⚠️</span> Diminishing Returns
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-[#10B981] font-medium">
-              Anabolic Signal
-            </span>
-            <span className="text-sm font-mono font-bold text-[#F3F4F6]">
+            <span className="text-[10px] text-physio-accent-primary">Benefit</span>
+            <span className="text-xs font-mono font-bold text-physio-text-primary">
               {data.benefit.toFixed(2)}
             </span>
           </div>
-
-          {/* THE POSITIVE REINFORCEMENT */}
-          {data.nonGenomicBenefit > 0.5 && (
-            <div className="pl-2 border-l-2 border-[#06B6D4]/50 my-1">
-              <div className="flex justify-between items-center">
-                <span className="text-[9px] text-[#6B7280]">
-                  ↳ Receptor Load
-                </span>
-                <span className="text-[9px] font-mono text-[#9CA3AF]">
-                  {(data.benefit - data.nonGenomicBenefit).toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[9px] text-[#06B6D4] font-bold">
-                  ↳ Pathway Bypass
-                </span>
-                <span className="text-[9px] font-mono text-[#06B6D4]">
-                  +{data.nonGenomicBenefit.toFixed(2)}
-                </span>
-              </div>
-            </div>
-          )}
-
           <div className="flex justify-between items-center">
-            <span className="text-xs text-[#EF4444] font-medium">
-              Systemic Cost
-            </span>
-            <span className="text-sm font-mono font-bold text-[#F3F4F6]">
+            <span className="text-[10px] text-physio-accent-critical">Risk</span>
+            <span className="text-xs font-mono font-bold text-physio-text-primary">
               {data.risk.toFixed(2)}
             </span>
           </div>
-          <div className="h-px bg-[#374151]/50 my-1" />
+          <div className="h-px bg-physio-border-subtle my-1" />
           <div className="flex justify-between items-center">
-            <span className="text-xs text-[#9CA3AF]">Net Efficiency</span>
+            <span className="text-[10px] text-physio-text-secondary">Net Efficiency</span>
             <span
-              className={`text-sm font-mono font-bold ${
-                isProfitable ? "text-[#10B981]" : "text-[#EF4444]"
+              className={`text-xs font-mono font-bold ${
+                data.net > 0 ? "text-physio-accent-success" : "text-physio-accent-critical"
               }`}
             >
               {data.net > 0 ? "+" : ""}
               {data.net.toFixed(2)}
             </span>
           </div>
-        </div>
-      )}
-
-      {isSaturated && !isWasted && (
-        <div className="mt-3 py-1.5 px-2 bg-[#10B981]/10 border border-[#10B981]/20 rounded text-[10px] text-[#9CA3AF] flex items-start gap-1.5">
-          <span className="text-xs mt-0.5">ℹ️</span>
-          <span className="leading-tight">
-            AR Upregulation Active.
-            <br />
-            <span className="text-[#6B7280]">
-              Gains are still increasing, but efficiency is dropping. Risk is
-              compounding faster than growth.
-            </span>
-          </span>
-        </div>
-      )}
-
-      {data.saturationPenalty < 0.9 && (
-        <div className="mt-1 text-[10px] text-[#6B7280]">
-          Potential wasted: -{penaltyPct}% (Receptor Saturation)
         </div>
       )}
     </div>
@@ -240,7 +212,6 @@ const NetEffectChart = ({
       }
 
       // Detect Crossover (Risk > Benefit)
-      // We look for the first point where Risk exceeds Benefit significantly (to avoid noise at 0)
       if (foundCrossover === null && percent > 10 && risk > benefit) {
         foundCrossover = percent;
       }
@@ -309,7 +280,6 @@ const NetEffectChart = ({
       const loadRatio = totalWeeklyDose > 0 ? point.total / totalWeeklyDose : 0;
 
       // Time Penalty (The "Toxicity Avalanche")
-      // Matches stackEngine logic: > 8 weeks = exponential risk
       const timePenalty = week > 8 ? Math.pow(week / 8, 1.5) : 1.0;
 
       const finalTimePenalty =
@@ -327,23 +297,22 @@ const NetEffectChart = ({
     return dailyPoints;
   }, [stack, releaseData, userProfile, durationWeeks]);
 
-  // Determine Current Risk State (at 100%)
   const currentRisk = useMemo(() => {
     const currentPoint = data.find((d) => d.percent === 100);
     return currentPoint ? currentPoint.risk : 0;
   }, [data]);
 
-  const isDangerZone = currentRisk > 8.0; // Threshold for visual alarm
+  const isDangerZone = currentRisk > 8.0;
 
   if (stack.length === 0) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-[#0B0C10]">
+      <div className="absolute inset-0 flex items-center justify-center bg-physio-bg-core">
         <div className="text-center opacity-60">
-          <div className="text-6xl mb-4 grayscale opacity-50">🧬</div>
-          <h3 className="text-lg font-bold text-[#F3F4F6] mb-2">
+          <div className="text-4xl mb-4 grayscale opacity-50">🧬</div>
+          <h3 className="text-sm font-bold text-physio-text-primary mb-2">
             No Active Compounds
           </h3>
-          <p className="text-sm text-[#9CA3AF] mb-6 max-w-xs mx-auto">
+          <p className="text-xs text-physio-text-secondary mb-6 max-w-xs mx-auto">
             Select a compound from the library below to begin your simulation.
           </p>
           <button
@@ -353,10 +322,9 @@ const NetEffectChart = ({
                 ?.scrollIntoView({ behavior: "smooth" });
               window.dispatchEvent(new CustomEvent("highlight-library"));
             }}
-            className="px-6 py-2.5 bg-[#10B981] text-[#0B0C10] font-bold rounded-full hover:bg-[#34D399] transition-all active:scale-95 flex items-center gap-2 mx-auto shadow-lg"
+            className="px-4 py-2 bg-physio-accent-primary text-physio-bg-core font-bold rounded hover:bg-physio-accent-primary/90 transition-all text-xs"
           >
-            <span className="text-xl leading-none">+</span>
-            Add Compound
+            + Add Compound
           </button>
         </div>
       </div>
@@ -364,197 +332,150 @@ const NetEffectChart = ({
   }
 
   return (
-    <div className="absolute inset-0 w-full h-full flex flex-col bg-[#0B0C10] p-4 gap-4 overflow-y-auto">
-      {/* TOP SECTION: Dose Efficiency (Reimagined) */}
-      <div className="flex-1 min-h-[300px] bg-[#15171E] rounded-2xl shadow-lg border border-[#374151]/20 relative overflow-hidden">
-        <div className="absolute top-4 left-6 z-10">
-          <h3 className="text-sm font-bold text-[#F3F4F6] tracking-wide">
-            Dose Efficiency
-          </h3>
-          <p className="text-[10px] text-[#9CA3AF]">
-            Net Efficiency (Benefit - Risk) vs Intensity
-          </p>
-        </div>
-
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart
-            data={data}
-            margin={{ top: 40, right: 20, left: -20, bottom: 10 }}
-          >
-            <defs>
-              <linearGradient id="benefitFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={PALETTE.primary} stopOpacity={0.2} />
-                <stop offset="95%" stopColor={PALETTE.primary} stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="riskFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={PALETTE.error} stopOpacity={0.25} />
-                <stop offset="95%" stopColor={PALETTE.error} stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="netFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={PALETTE.secondary} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={PALETTE.secondary} stopOpacity={0} />
-              </linearGradient>
-              <pattern
-                id="wastedPattern"
-                patternUnits="userSpaceOnUse"
-                width="8"
-                height="8"
-                patternTransform="rotate(45)"
-              >
-                <rect
-                  width="4"
-                  height="8"
-                  transform="translate(0,0)"
-                  fill={PALETTE.error}
-                  opacity="0.1"
-                />
-              </pattern>
-            </defs>
-
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke={PALETTE.outline}
-              opacity={0.1}
-              vertical={false}
-            />
-
-            <XAxis
-              dataKey="percent"
-              type="number"
-              domain={[0, 150]}
-              tickFormatter={(val) => `${val}%`}
-              stroke={PALETTE.outline}
-              tick={{ fill: "#9CA3AF", fontSize: 12 }}
-              tickLine={false}
-              axisLine={false}
-              dy={5}
-            />
-            <YAxis hide domain={[0, (dataMax) => Math.max(dataMax, 6)]} />
-
-            <Tooltip
-              content={<CustomTooltip crossover={crossover} />}
-              cursor={{
-                stroke: isDangerZone ? PALETTE.error : PALETTE.primary,
-                strokeWidth: 1,
-                strokeDasharray: "3 3",
-              }}
-            />
-
-            {/* Highlight Optimal Zone */}
-            <ReferenceArea
-              x1={maxNetPercent - 10}
-              x2={maxNetPercent + 10}
-              fill={PALETTE.secondary}
-              fillOpacity={0.05}
-            />
-
-            {crossover !== null && (
-              <ReferenceArea
-                x1={crossover}
-                x2={150}
-                fill="url(#wastedPattern)"
-                opacity={1}
-              />
-            )}
-
-            {/* Background Context Lines */}
-            <Line
-              type="monotone"
-              dataKey="benefit"
-              stroke={PALETTE.primary}
-              strokeWidth={1}
-              strokeOpacity={0.4}
-              dot={false}
-              name="Benefit"
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="risk"
-              stroke={PALETTE.error}
-              strokeWidth={1}
-              strokeOpacity={0.4}
-              strokeDasharray="5 5"
-              dot={false}
-              name="Risk"
-              isAnimationActive={false}
-            />
-
-            {/* The Main Event: Net Efficiency */}
-            <Area
-              type="monotone"
-              dataKey="net"
-              stroke={PALETTE.secondary}
-              strokeWidth={3}
-              fill="url(#netFill)"
-              name="Net Efficiency"
-              isAnimationActive={false}
-            />
-
-            <ReferenceLine
-              x={100}
-              stroke={isDangerZone ? PALETTE.error : PALETTE.primary}
-              strokeWidth={isDangerZone ? 2 : 1}
-              strokeDasharray="3 3"
-              strokeOpacity={0.8}
+    <div className="absolute inset-0 w-full h-full flex flex-col bg-physio-bg-core p-2 gap-2 overflow-y-auto">
+      {/* TOP SECTION: Dose Efficiency */}
+      <div className="flex-1 min-h-[300px] bg-physio-bg-surface border border-physio-border-subtle flex flex-col">
+        <ChartHeader 
+          title="Dose Efficiency" 
+          subtitle="Net Efficiency (Benefit - Risk) vs Intensity"
+          legendItems={[
+            { label: "Benefit", color: PALETTE.primary, shape: "line" },
+            { label: "Risk", color: PALETTE.error, shape: "line" },
+            { label: "Net Eff.", color: PALETTE.secondary, shape: "area" },
+          ]}
+        />
+        <div className="flex-1 min-h-0 relative">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart
+              data={data}
+              margin={{ top: 20, right: 20, left: -20, bottom: 0 }}
             >
-              <div />
-            </ReferenceLine>
-          </ComposedChart>
-        </ResponsiveContainer>
+              <defs>
+                <linearGradient id="netFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={PALETTE.secondary} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={PALETTE.secondary} stopOpacity={0} />
+                </linearGradient>
+                <pattern
+                  id="wastedPattern"
+                  patternUnits="userSpaceOnUse"
+                  width="8"
+                  height="8"
+                  patternTransform="rotate(45)"
+                >
+                  <rect
+                    width="4"
+                    height="8"
+                    transform="translate(0,0)"
+                    fill={PALETTE.error}
+                    opacity="0.1"
+                  />
+                </pattern>
+              </defs>
 
-        {/* Floating Labels */}
-        <div className="absolute top-4 right-6 flex flex-col items-end gap-1 pointer-events-none">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-[#06B6D4] uppercase tracking-wider">
-              Net Efficiency
-            </span>
-            <div className="w-2 h-2 bg-[#06B6D4] rounded-full" />
-          </div>
-          <div className="flex items-center gap-2 opacity-50">
-            <span className="text-[10px] font-bold text-[#10B981] uppercase tracking-wider">
-              Benefit
-            </span>
-            <div className="w-2 h-2 bg-[#10B981] rounded-full" />
-          </div>
-          <div className="flex items-center gap-2 opacity-50">
-            <span className="text-[10px] font-bold text-[#EF4444] uppercase tracking-wider">
-              Risk
-            </span>
-            <div className="w-2 h-2 bg-[#EF4444] rounded-full" />
-          </div>
-        </div>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={PALETTE.grid}
+                opacity={0.5}
+                vertical={true}
+                horizontal={true}
+              />
 
-        <div className="absolute bottom-6 left-2/3 -translate-x-1/2 pointer-events-none">
-          <span
-            className={`text-[9px] font-bold px-3 py-1 rounded-full border transition-colors duration-300 shadow-sm ${
-              isDangerZone
-                ? "text-[#EF4444] bg-[#450A0A] border-[#7F1D1D]"
-                : "text-[#10B981] bg-[#064E3B] border-[#059669]"
-            }`}
-          >
-            CURRENT DOSE
-          </span>
+              <XAxis
+                dataKey="percent"
+                type="number"
+                domain={[0, 150]}
+                tickFormatter={(val) => `${val}%`}
+                stroke={PALETTE.grid}
+                tick={{ fill: PALETTE.textSecondary, fontSize: 10, fontFamily: 'Roboto Mono' }}
+                tickLine={false}
+                axisLine={false}
+                dy={5}
+              />
+              <YAxis 
+                hide={false} 
+                domain={[0, (dataMax) => Math.max(dataMax, 6)]} 
+                stroke={PALETTE.grid}
+                tick={{ fill: PALETTE.textSecondary, fontSize: 10, fontFamily: 'Roboto Mono' }}
+                tickLine={false}
+                axisLine={false}
+                width={30}
+              />
+
+              <Tooltip
+                content={<CustomTooltip crossover={crossover} />}
+                cursor={{
+                  stroke: PALETTE.textSecondary,
+                  strokeWidth: 1,
+                  strokeDasharray: "3 3",
+                }}
+              />
+
+              <ReferenceArea
+                x1={maxNetPercent - 10}
+                x2={maxNetPercent + 10}
+                fill={PALETTE.secondary}
+                fillOpacity={0.05}
+              />
+
+              {crossover !== null && (
+                <ReferenceArea
+                  x1={crossover}
+                  x2={150}
+                  fill="url(#wastedPattern)"
+                  opacity={1}
+                />
+              )}
+
+              <Line
+                type="monotone"
+                dataKey="benefit"
+                stroke={PALETTE.primary}
+                strokeWidth={1.5}
+                dot={false}
+                isAnimationActive={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="risk"
+                stroke={PALETTE.error}
+                strokeWidth={1.5}
+                strokeDasharray="3 3"
+                dot={false}
+                isAnimationActive={false}
+              />
+
+              <Area
+                type="monotone"
+                dataKey="net"
+                stroke={PALETTE.secondary}
+                strokeWidth={2}
+                fill="url(#netFill)"
+                isAnimationActive={false}
+              />
+
+              <ReferenceLine
+                x={100}
+                stroke={isDangerZone ? PALETTE.error : PALETTE.primary}
+                strokeWidth={1}
+                strokeDasharray="3 3"
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
-      {/* CONTROL BAR: Divider & Slider */}
-      <div className="flex items-center gap-6 bg-[#1F2937] p-4 rounded-xl shadow-md border border-[#374151]/20">
-        <div className="flex items-center gap-3 min-w-max">
-          <div className="p-2 bg-[#10B981]/10 rounded-lg text-[#10B981]">
-            ⏱️
-          </div>
+      {/* CONTROL BAR */}
+      <div className="flex items-center gap-4 bg-physio-bg-surface px-4 py-2 border border-physio-border-subtle">
+        <div className="flex items-center gap-2 min-w-max">
+          <span className="text-lg">⏱️</span>
           <div>
-            <h4 className="text-xs font-bold text-[#F3F4F6] uppercase tracking-wider">
+            <h4 className="text-[10px] font-bold text-physio-text-primary uppercase tracking-wider">
               Temporal Analysis
             </h4>
-            <p className="text-[10px] text-[#9CA3AF]">
-              Simulate accumulation & organ stress over time
-            </p>
           </div>
         </div>
 
-        <div className="h-8 w-px bg-[#374151]/30 mx-2" />
+        <div className="h-6 w-px bg-physio-border-subtle mx-2" />
 
         <div className="flex-1">
           <Slider
@@ -566,208 +487,208 @@ const NetEffectChart = ({
             unit="weeks"
             onChange={setDurationWeeks}
             markers={[
-              { value: 8, label: "Standard", tone: "accent" },
-              { value: 16, label: "Extended", tone: "warning" },
-              { value: 20, label: "Extreme", tone: "error" },
+              { value: 8, label: "Std", tone: "accent" },
+              { value: 16, label: "Ext", tone: "warning" },
+              { value: 20, label: "Max", tone: "error" },
             ]}
           />
         </div>
       </div>
 
       {/* BOTTOM SECTION: Time-Based Charts */}
-      <div className="flex-1 flex flex-col gap-4 min-h-[400px]">
+      <div className="flex-1 flex flex-col md:flex-row gap-2 min-h-[250px]">
         {/* Serum Release */}
-        <div className="flex-1 bg-[#15171E] rounded-2xl shadow-lg border border-[#374151]/20 relative overflow-hidden">
-          <div className="absolute top-4 left-6 z-10">
-            <h3 className="text-sm font-bold text-[#F3F4F6] tracking-wide">
-              Serum Release
-            </h3>
-            <p className="text-[10px] text-[#9CA3AF]">
-              Pharmacokinetics & Active Half-Lives (Log Scale)
-            </p>
-          </div>
-
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={releaseData}
-              margin={{ top: 40, right: 20, left: 20, bottom: 10 }}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke={PALETTE.outline}
-                opacity={0.1}
-                vertical={false}
-              />
-              <XAxis
-                dataKey="day"
-                type="number"
-                domain={[0, durationWeeks * 7]}
-                tickFormatter={(val) => {
-                  const week = Math.floor(val / 7);
-                  return val % 7 === 0 ? `W${week}` : "";
-                }}
-                ticks={Array.from(
-                  { length: durationWeeks + 1 },
-                  (_, i) => i * 7,
-                )}
-                stroke={PALETTE.outline}
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                dy={5}
-                interval={0}
-              />
-              <YAxis
-                scale="log"
-                domain={['auto', 'auto']}
-                ticks={serumTicks}
-                stroke={PALETTE.outline}
-                tick={{ fill: "#9CA3AF", fontSize: 12 }}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(val) => `${val}mg`}
-                width={50}
-              />
-              <Tooltip content={<ReleaseTooltip />} />
-
-              <Area
-                type="monotone"
-                dataKey="total"
-                stroke="none"
-                fill={PALETTE.primary}
-                fillOpacity={0.05}
-              />
-
-              {stack.map((item) => (
-                <Line
-                  key={item.compound}
-                  type="monotone"
-                  dataKey={item.compound}
-                  stroke={compoundData[item.compound]?.color || "#fff"}
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 4 }}
+        <div className="flex-1 bg-physio-bg-surface border border-physio-border-subtle flex flex-col">
+          <ChartHeader 
+            title="Serum Release" 
+            subtitle="Pharmacokinetics (Log Scale)"
+          />
+          <div className="flex-1 min-h-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={releaseData}
+                margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke={PALETTE.grid}
+                  opacity={0.5}
+                  vertical={true}
+                  horizontal={true}
                 />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
+                <XAxis
+                  dataKey="day"
+                  type="number"
+                  domain={[0, durationWeeks * 7]}
+                  tickFormatter={(val) => {
+                    const week = Math.floor(val / 7);
+                    return val % 7 === 0 ? `W${week}` : "";
+                  }}
+                  ticks={Array.from(
+                    { length: durationWeeks + 1 },
+                    (_, i) => i * 7,
+                  )}
+                  stroke={PALETTE.grid}
+                  tick={{ fill: PALETTE.textSecondary, fontSize: 10, fontFamily: 'Roboto Mono' }}
+                  tickLine={false}
+                  axisLine={false}
+                  dy={5}
+                  interval={0}
+                />
+                <YAxis
+                  scale="log"
+                  domain={['auto', 'auto']}
+                  ticks={serumTicks}
+                  stroke={PALETTE.grid}
+                  tick={{ fill: PALETTE.textSecondary, fontSize: 10, fontFamily: 'Roboto Mono' }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(val) => `${val}`}
+                  width={40}
+                />
+                <Tooltip content={<ReleaseTooltip />} cursor={{ stroke: PALETTE.textSecondary, strokeWidth: 1 }} />
+
+                <Area
+                  type="monotone"
+                  dataKey="total"
+                  stroke="none"
+                  fill={PALETTE.primary}
+                  fillOpacity={0.1}
+                />
+
+                {stack.map((item) => (
+                  <Line
+                    key={item.compound}
+                    type="monotone"
+                    dataKey={item.compound}
+                    stroke={compoundData[item.compound]?.color || "#fff"}
+                    strokeWidth={1.5}
+                    dot={false}
+                    activeDot={{ r: 3 }}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Cycle Evolution */}
-        <div className="flex-1 bg-[#15171E] rounded-2xl shadow-lg border border-[#374151]/20 relative overflow-hidden">
-          <div className="absolute top-4 left-6 z-10">
-            <h3 className="text-sm font-bold text-[#F3F4F6] tracking-wide">
-              Cycle Evolution
-            </h3>
-            <p className="text-[10px] text-[#9CA3AF]">
-              Benefit vs Risk Accumulation
-            </p>
+        <div className="flex-1 bg-physio-bg-surface border border-physio-border-subtle flex flex-col">
+          <ChartHeader 
+            title="Cycle Evolution" 
+            subtitle="Benefit vs Risk Accumulation"
+            legendItems={[
+              { label: "Anabolic", color: PALETTE.primary, shape: "line" },
+              { label: "Systemic", color: PALETTE.error, shape: "line" },
+            ]}
+          />
+          <div className="flex-1 min-h-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={evolutionData}
+                margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="riskZoneGradient" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor={PALETTE.error} stopOpacity={0.05} />
+                    <stop offset="100%" stopColor={PALETTE.error} stopOpacity={0.2} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke={PALETTE.grid}
+                  opacity={0.5}
+                  vertical={true}
+                  horizontal={true}
+                />
+                <XAxis
+                  dataKey="day"
+                  type="number"
+                  domain={[0, durationWeeks * 7]}
+                  tickFormatter={(val) => {
+                    const week = Math.floor(val / 7);
+                    return val % 7 === 0 ? `W${week}` : "";
+                  }}
+                  ticks={Array.from(
+                    { length: durationWeeks + 1 },
+                    (_, i) => i * 7,
+                  )}
+                  stroke={PALETTE.grid}
+                  tick={{ fill: PALETTE.textSecondary, fontSize: 10, fontFamily: 'Roboto Mono' }}
+                  tickLine={false}
+                  axisLine={false}
+                  dy={5}
+                  interval={0}
+                />
+                <YAxis hide />
+                <Tooltip
+                  cursor={{ stroke: PALETTE.textSecondary, strokeWidth: 1 }}
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload || !payload.length) return null;
+                    return (
+                      <div className="bg-physio-bg-core border border-physio-border-subtle p-3 rounded shadow-xl z-50">
+                        <p className="text-xs font-bold text-physio-text-secondary mb-2">
+                          Day {Math.floor(label)} (Week {Math.floor(label / 7)})
+                        </p>
+                        {payload.map((entry) => (
+                          <div
+                            key={entry.name}
+                            className="flex justify-between gap-4 text-xs"
+                          >
+                            <span style={{ color: entry.color }}>
+                              {entry.name}
+                            </span>
+                            <span className="font-mono font-bold text-physio-text-primary">
+                              {entry.value.toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }}
+                />
+
+                <Line
+                  type="monotone"
+                  dataKey="benefit"
+                  stroke={PALETTE.primary}
+                  strokeWidth={2}
+                  dot={false}
+                  name="Anabolic Power"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="risk"
+                  stroke={PALETTE.error}
+                  strokeWidth={2}
+                  dot={false}
+                  name="Systemic Risk"
+                />
+
+                <ReferenceArea
+                  x1={8 * 7}
+                  x2={durationWeeks * 7}
+                  fill="url(#riskZoneGradient)"
+                  opacity={1}
+                />
+                
+                <ReferenceLine
+                  x={8 * 7}
+                  stroke={PALETTE.warning}
+                  strokeDasharray="3 3"
+                  opacity={0.5}
+                  label={{
+                    value: "RISK ESCALATION",
+                    position: "insideTopRight",
+                    fill: PALETTE.warning,
+                    fontSize: 9,
+                    fontWeight: "bold",
+                    dy: -10,
+                  }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={evolutionData}
-              margin={{ top: 40, right: 20, left: 20, bottom: 10 }}
-            >
-              <defs>
-                <linearGradient id="riskZoneGradient" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor={PALETTE.error} stopOpacity={0.05} />
-                  <stop offset="100%" stopColor={PALETTE.error} stopOpacity={0.2} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke={PALETTE.outline}
-                opacity={0.1}
-                vertical={false}
-              />
-              <XAxis
-                dataKey="day"
-                type="number"
-                domain={[0, durationWeeks * 7]}
-                tickFormatter={(val) => {
-                  const week = Math.floor(val / 7);
-                  return val % 7 === 0 ? `W${week}` : "";
-                }}
-                ticks={Array.from(
-                  { length: durationWeeks + 1 },
-                  (_, i) => i * 7,
-                )}
-                stroke={PALETTE.outline}
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                dy={5}
-                interval={0}
-              />
-              <YAxis hide />
-              <Tooltip
-                content={({ active, payload, label }) => {
-                  if (!active || !payload || !payload.length) return null;
-                  return (
-                    <div className="bg-[#1F2937] border border-[#374151] p-3 rounded-xl shadow-xl z-50">
-                      <p className="text-xs font-bold text-[#9CA3AF] mb-2">
-                        Day {Math.floor(label)} (Week {Math.floor(label / 7)})
-                      </p>
-                      {payload.map((entry) => (
-                        <div
-                          key={entry.name}
-                          className="flex justify-between gap-4 text-xs"
-                        >
-                          <span style={{ color: entry.color }}>
-                            {entry.name}
-                          </span>
-                          <span className="font-mono font-bold text-[#F3F4F6]">
-                            {entry.value.toFixed(2)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                }}
-              />
-
-              <Line
-                type="monotone"
-                dataKey="benefit"
-                stroke={PALETTE.primary}
-                strokeWidth={2}
-                dot={false}
-                name="Anabolic Power"
-              />
-              <Line
-                type="monotone"
-                dataKey="risk"
-                stroke={PALETTE.error}
-                strokeWidth={2}
-                dot={false}
-                name="Systemic Risk"
-              />
-
-              {/* Risk Escalation Zone */}
-              <ReferenceArea
-                x1={8 * 7}
-                x2={durationWeeks * 7}
-                fill="url(#riskZoneGradient)"
-                opacity={1}
-              />
-              
-              <ReferenceLine
-                x={8 * 7}
-                stroke={PALETTE.error}
-                strokeDasharray="3 3"
-                opacity={0.8}
-                label={{
-                  value: "RISK ESCALATION",
-                  position: "insideTopRight",
-                  fill: PALETTE.error,
-                  fontSize: 10,
-                  fontWeight: "bold",
-                  dy: -10,
-                }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
         </div>
       </div>
     </div>
