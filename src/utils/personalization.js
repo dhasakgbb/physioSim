@@ -13,13 +13,18 @@ export const defaultCurveScales = {
 };
 
 export const defaultProfile = {
+  gender: "male",
   age: 30,
   bodyweight: 90,
+  bodyFat: 15,
   yearsTraining: 5,
   shbg: 30,
   aromatase: "moderate", // low | moderate | high
   anxiety: "moderate", // low | moderate | high
+  arSensitivity: "normal", // low_responder | normal | hyper_responder
   experience: "test_only", // none | test_only | multi_compound | blast_cruise
+  dietState: "maintenance", // cutting | maintenance | bulking
+  trainingStyle: "bodybuilding", // powerlifting | bodybuilding | crossfit
   curveScales: { ...defaultCurveScales },
   labMode: {
     enabled: false,
@@ -37,13 +42,19 @@ const experienceImpact = {
 const aromataseImpact = {
   low: -0.2,
   moderate: 0,
-  high: 0.35,
+  high: 0.6, // Tuned for ~1.5x risk multiplier
 };
 
 const anxietyImpact = {
   low: -0.1,
   moderate: 0,
-  high: 0.35,
+  high: 0.8, // Tuned for ~2.0x risk multiplier (Slow COMT)
+};
+
+const arSensitivityImpact = {
+  low_responder: 0.8,
+  normal: 1.0,
+  hyper_responder: 1.2, // 1.2x Hypertrophy Score
 };
 
 const aromatizingCompounds = new Set([
@@ -111,6 +122,7 @@ export const personalizeScore = ({
     experienceImpact[profile.experience] || experienceImpact.test_only;
   const aromataseDelta = aromataseImpact[profile.aromatase] ?? 0;
   const anxietyDelta = anxietyImpact[profile.anxiety] ?? 0;
+  const arSensitivity = arSensitivityImpact[profile.arSensitivity] ?? 1.0;
 
   const ageScale = getScale(profile, "ageImpact");
   const trainingScale = getScale(profile, "trainingImpact");
@@ -132,6 +144,9 @@ export const personalizeScore = ({
 
     // Novice users typically respond harder (less desensitization)
     adjustedValue *= 1 + experience.benefit * experienceScale;
+
+    // AR Sensitivity (CAG Repeats) - Genetic Multiplier
+    adjustedValue *= arSensitivity;
   } else {
     // Age compounds risk (cardio, hepatic, recovery)
     if (ageDelta > 0) {
@@ -218,13 +233,46 @@ export const buildPersonalizationNarrative = (profile = defaultProfile) => {
 
   if ((profile.aromatase || "moderate") === "high") {
     talkingPoints.push(
-      "High aromatase tendency — Estrogenic risk bands widened for Test/NPP/“wet” orals.",
+      "High aromatase (CYP19A1) — Estrogenic risk bands widened significantly (~1.5x).",
     );
   }
 
   if ((profile.anxiety || "moderate") === "high") {
     talkingPoints.push(
-      "High anxiety sensitivity — Tren & Halo risk curves steepen early (<300mg).",
+      "Slow COMT (High Anxiety) — Tren & Halo risk curves doubled (~2.0x).",
+    );
+  }
+
+  if (profile.arSensitivity === "hyper_responder") {
+    talkingPoints.push(
+      "Hyper-Responder (Low CAG) — Anabolic response multiplied by 1.2x.",
+    );
+  } else if (profile.arSensitivity === "low_responder") {
+    talkingPoints.push(
+      "Low Responder (High CAG) — Anabolic response dampened by 20%.",
+    );
+  }
+  if (profile.dietState === "cutting") {
+    talkingPoints.push(
+      "Caloric Deficit (Cutting) — Anabolism drops 30%. Anti-catabolic compounds (Tren/NPP) prioritized.",
+    );
+  } else if (profile.dietState === "bulking") {
+    talkingPoints.push(
+      "Caloric Surplus (Bulking) — Anabolism maximized, but hepatic/systemic stress increased.",
+    );
+  }
+
+  if (profile.trainingStyle === "powerlifting") {
+    talkingPoints.push(
+      "Powerlifting Focus — Strength compounds (Halo/Adrol) boosted 1.2x. Hypertrophy penalized.",
+    );
+  } else if (profile.trainingStyle === "crossfit") {
+    talkingPoints.push(
+      "CrossFit/Endurance — EQ/Tbol boosted. Tren/Adrol penalized for cardio stress.",
+    );
+  } else if (profile.trainingStyle === "bodybuilding") {
+    talkingPoints.push(
+      "Bodybuilding Focus — Hypertrophy boosted 1.2x via volume. Joint stress reduced.",
     );
   }
 

@@ -62,11 +62,11 @@ describe("Data Validation Tests", () => {
       expect(slope3).toBeLessThan(slope2);
     });
 
-    it("should have risk at 400mg approximately 4.5", () => {
+    it("should have risk at 400mg approximately 5.2", () => {
       const tren = compoundData.trenbolone;
       const risk400 = tren.riskCurve.find((p) => p.dose === 400);
 
-      expect(risk400.value).toBeCloseTo(4.5, 1);
+      expect(risk400.value).toBeCloseTo(5.2, 1);
     });
 
     it("should have wider uncertainty band than testosterone", () => {

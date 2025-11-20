@@ -46,23 +46,53 @@ const numericFields = [
 
 const selectFields = [
   {
-    name: "aromatase",
-    label: "Aromatase Tendency",
-    helper: "Self-reported: how easily you convert to estrogen.",
+    name: "arSensitivity",
+    label: "AR Sensitivity (CAG Repeats)",
+    helper: "Genetic response potential. Hyper-responders grow twice as fast.",
     options: [
-      { value: "low", label: "Low" },
-      { value: "moderate", label: "Moderate" },
-      { value: "high", label: "High" },
+      { value: "low_responder", label: "Low Responder (High CAG)" },
+      { value: "normal", label: "Normal" },
+      { value: "hyper_responder", label: "Hyper Responder (Low CAG)" },
+    ],
+  },
+  {
+    name: "aromatase",
+    label: "Aromatase (CYP19A1)",
+    helper: "Genetic estrogen conversion rate.",
+    options: [
+      { value: "low", label: "Low (Dry)" },
+      { value: "moderate", label: "Normal" },
+      { value: "high", label: "High (Wet)" },
     ],
   },
   {
     name: "anxiety",
-    label: "Anxiety Sensitivity",
-    helper: "Important for Tren/Halo neuro-psych sides.",
+    label: "Neuro Sensitivity (COMT)",
+    helper: "Dopamine breakdown rate. Slow COMT = High Anxiety.",
     options: [
-      { value: "low", label: "Low" },
-      { value: "moderate", label: "Moderate" },
-      { value: "high", label: "High" },
+      { value: "low", label: "Fast COMT (Resilient)" },
+      { value: "moderate", label: "Normal" },
+      { value: "high", label: "Slow COMT (Anxious)" },
+    ],
+  },
+  {
+    name: "dietState",
+    label: "Energy State (Diet)",
+    helper: "Calories dictate hormone function. Deficits crush anabolism.",
+    options: [
+      { value: "cutting", label: "Deficit (Cutting)" },
+      { value: "maintenance", label: "Maintenance" },
+      { value: "bulking", label: "Surplus (Bulking)" },
+    ],
+  },
+  {
+    name: "trainingStyle",
+    label: "Training Stimulus",
+    helper: "Steroids amplify the specific signal sent by training.",
+    options: [
+      { value: "bodybuilding", label: "Bodybuilding (Hypertrophy)" },
+      { value: "powerlifting", label: "Powerlifting (Strength)" },
+      { value: "crossfit", label: "CrossFit (Mixed/Endurance)" },
     ],
   },
   {
@@ -133,7 +163,10 @@ export const isProfileCustomized = (profile = defaultProfile) => {
     "shbg",
     "aromatase",
     "anxiety",
+    "arSensitivity",
     "experience",
+    "dietState",
+    "trainingStyle",
   ];
   return trackedKeys.some(
     (key) => (profile?.[key] ?? defaultProfile[key]) !== defaultProfile[key],
@@ -148,8 +181,14 @@ export const formatProfileSummary = (profile = defaultProfile) => {
     tokens.push(`${Math.round(Number(profile.bodyweight) * 2.2)} lb`);
   if (profile.yearsTraining) tokens.push(`${profile.yearsTraining}y training`);
   if (profile.shbg) tokens.push(`SHBG ${profile.shbg}`);
+  if (profile.arSensitivity && profile.arSensitivity !== "normal")
+    tokens.push(`CAG: ${profile.arSensitivity}`);
   if (profile.aromatase) tokens.push(`Arom ${profile.aromatase}`);
-  if (profile.anxiety) tokens.push(`Anxiety ${profile.anxiety}`);
+  if (profile.anxiety) tokens.push(`COMT ${profile.anxiety}`);
+  if (profile.dietState && profile.dietState !== "maintenance")
+    tokens.push(profile.dietState.toUpperCase());
+  if (profile.trainingStyle && profile.trainingStyle !== "bodybuilding")
+    tokens.push(profile.trainingStyle === "powerlifting" ? "PL" : "XFIT");
   if (profile.experience)
     tokens.push(experienceLabels[profile.experience] || profile.experience);
   return tokens.filter(Boolean).join(" • ") || "Using baseline defaults";

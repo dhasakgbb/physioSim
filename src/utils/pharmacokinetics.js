@@ -27,7 +27,11 @@ export const simulateSerum = (stack, durationWeeks = 28) => {
       const meta = compoundData[item.compound];
       if (!meta) return;
 
-      const hl = meta.halfLife || 24;
+      // Use ester-specific half-life if available, otherwise default
+      const esterKey = item.ester;
+      const esterData = meta.esters && meta.esters[esterKey];
+      const hl = esterData ? esterData.halfLife : (meta.halfLife || 24);
+
       const freqDays = item.frequency || 3.5;
       const freqHours = freqDays * 24;
 
@@ -88,12 +92,19 @@ export const simulateSerum = (stack, durationWeeks = 28) => {
 export const calculateFrontLoad = (
   compoundKey,
   weeklyDose,
-  frequencyDays = 3.5
+  frequencyDays = 3.5,
+  esterKey = null
 ) => {
   const meta = compoundData[compoundKey];
   if (!meta) return null;
 
-  const halfLifeDays = (meta.halfLife || 24) / 24;
+  // Use ester-specific half-life if available
+  let halfLifeHours = meta.halfLife || 24;
+  if (esterKey && meta.esters && meta.esters[esterKey]) {
+    halfLifeHours = meta.esters[esterKey].halfLife;
+  }
+
+  const halfLifeDays = halfLifeHours / 24;
 
   // Elimination rate constant (k)
   const k = Math.log(2) / halfLifeDays;

@@ -25,6 +25,9 @@ const Dashboard = () => {
     setViewMode,
     metrics,
     handleAddCompound,
+    setUserProfile,
+    durationWeeks,
+    setDurationWeeks,
   } = useStack();
 
   const [showDonation, setShowDonation] = useState(false);
@@ -39,10 +42,10 @@ const Dashboard = () => {
         headerControls={
           <div className="flex items-center gap-8">
             {/* Navigation Tabs */}
-            <div className="flex items-center gap-6 pt-0.5">
+            <div className="flex items-center gap-8 pt-0.5">
               <button
                 onClick={() => setViewMode("net")}
-                className={`relative py-2 text-sm font-medium transition-colors ${
+                className={`relative py-2 text-base font-medium transition-colors ${
                   viewMode === "net"
                     ? "text-physio-text-primary"
                     : "text-physio-text-tertiary hover:text-physio-text-secondary"
@@ -55,7 +58,7 @@ const Dashboard = () => {
               </button>
               <button
                 onClick={() => setViewMode("optimize")}
-                className={`relative py-2 text-sm font-medium transition-colors ${
+                className={`relative py-2 text-base font-medium transition-colors ${
                   viewMode === "optimize"
                     ? "text-physio-text-primary"
                     : "text-physio-text-tertiary hover:text-physio-text-secondary"
@@ -68,7 +71,7 @@ const Dashboard = () => {
               </button>
               <button
                 onClick={() => setViewMode("network")}
-                className={`relative py-2 text-sm font-medium transition-colors ${
+                className={`relative py-2 text-base font-medium transition-colors ${
                   viewMode === "network"
                     ? "text-physio-text-primary"
                     : "text-physio-text-tertiary hover:text-physio-text-secondary"
@@ -76,19 +79,6 @@ const Dashboard = () => {
               >
                 Signaling
                 {viewMode === "network" && (
-                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-physio-accent-primary rounded-t-full" />
-                )}
-              </button>
-              <button
-                onClick={() => setViewMode("pk")}
-                className={`relative py-2 text-sm font-medium transition-colors ${
-                  viewMode === "pk"
-                    ? "text-physio-text-primary"
-                    : "text-physio-text-tertiary hover:text-physio-text-secondary"
-                }`}
-              >
-                Stability
-                {viewMode === "pk" && (
                   <span className="absolute bottom-0 left-0 w-full h-0.5 bg-physio-accent-primary rounded-t-full" />
                 )}
               </button>
@@ -121,6 +111,7 @@ const Dashboard = () => {
               <OptimizerPane
                 stack={stack}
                 userProfile={userProfile}
+                onUpdateProfile={setUserProfile}
                 onApplyOptimization={(newStack) => {
                   setStack(newStack);
                   setViewMode("net");
@@ -130,6 +121,8 @@ const Dashboard = () => {
               <NetEffectChart
                 stack={stack}
                 userProfile={userProfile}
+                durationWeeks={durationWeeks}
+                setDurationWeeks={setDurationWeeks}
               />
             )}
           </ErrorBoundary>
@@ -144,7 +137,7 @@ const Dashboard = () => {
             <MechanismMonitor stack={stack} />
 
             {/* 3. THE VIRTUAL PHLEBOTOMIST: Lab Prediction */}
-            <LabReportCard stack={stack} />
+            <LabReportCard stack={stack} metrics={metrics} />
 
             {/* 4. THE ENGINE: Signaling */}
             <BiomarkerMatrix stack={stack} />

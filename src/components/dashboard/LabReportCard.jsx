@@ -1,150 +1,24 @@
 import React, { useMemo } from "react";
 import { compoundData } from "../../data/compoundData";
 
-const LabReportCard = ({ stack, totals }) => {
-  // Calculate predicted lab values based on stack
-  const labValues = useMemo(() => {
-    let hdl = 50; // Baseline mg/dL
-    let ldl = 100; // Baseline mg/dL
-    let hematocrit = 45; // Baseline %
-    let ast = 25; // Baseline U/L
-    let alt = 25; // Baseline U/L
-    let creatinine = 1.0; // Baseline mg/dL
-    let neuroRisk = 0; // Baseline Index
-    let estradiol = 25; // Baseline pg/mL
-    let prolactin = 6.0; // Baseline ng/mL
-    let shbg = 30; // Baseline nmol/L
-    let totalTestosterone = 600; // Baseline ng/dL
-    let freeTestosterone = 12; // Baseline pg/mL
+const LabReportCard = ({ stack, metrics }) => {
+  // Use centralized lab values from stackEngine
+  const labValues = metrics?.analytics?.projectedLabs || {
+    hdl: 50,
+    ldl: 100,
+    hematocrit: 45,
+    ast: 25,
+    alt: 25,
+    creatinine: 1.0,
+    neuroRisk: 0,
+    estradiol: 25,
+    prolactin: 6.0,
+    shbg: 30,
+    totalTestosterone: 600,
+    freeTestosterone: 12,
+  };
 
-    stack.forEach((item) => {
-      const meta = compoundData[item.compound];
-      const dose = item.dose;
-
-      // HDL Decline (all AAS suppress HDL)
-      if (meta.type === "injectable") {
-        // Bhasin et al: 600mg Test -> ~20% HDL drop.
-        // Updated logic: 0.02 * dose (500mg -> -10mg/dL).
-        // This aligns better with clinical reality (50 -> 40mg/dL on 500mg Test).
-        hdl -= dose * 0.02;
-      } else if (meta.type === "oral") {
-        // Orals are hepatic lipase suicide inhibitors. They CRUSH HDL.
-        // 50mg Anavar -> -50% HDL is common.
-        hdl -= dose * 0.5;
-      }
-
-      // LDL Increase
-      if (meta.type === "oral") {
-        ldl += dose * 0.3;
-      } else {
-        // Injectables have mild impact, but not zero.
-        ldl += dose * 0.02;
-      }
-
-      // Hematocrit (RBC boost)
-      if (meta.biomarkers?.rbc > 0) {
-        hematocrit += meta.biomarkers.rbc * (dose / 500) * 2; // Scale by dose
-      }
-
-      // Liver Enzymes (Orals)
-      if (meta.type === "oral") {
-        ast += dose * 0.8;
-        alt += dose * 1.0;
-      }
-
-      // Creatinine (Kidney stress - mainly Tren, high doses)
-      if (item.compound === "trenbolone") {
-        creatinine += dose * 0.0008;
-      }
-
-      // Neurotoxicity Accumulation
-      // Check for multiple property names to ensure we catch all neuro-active compounds
-      const neuroScore =
-        meta.biomarkers?.neurotoxicity ||
-        meta.biomarkers?.cns_drive ||
-        meta.biomarkers?.neuro ||
-        0;
-      if (neuroScore > 0) {
-        neuroRisk += neuroScore * (dose / 300);
-      }
-
-      // Estradiol (E2) Calculation
-      // Base assumption: Average Responder (No AI)
-      if (meta.flags?.aromatization) {
-        // ~500mg Test -> ~75pg/mL E2 (Average response)
-        // Previous (0.15) was "High Aromatizer". New (0.10) is "Average".
-        estradiol += dose * 0.1 * meta.flags.aromatization;
-      }
-      if (item.compound === "dianabol") {
-        // Methyl-E2 is potent but 1.5 was extreme. 1.0 is safer average.
-        estradiol += dose * 1.0;
-      }
-
-      // Prolactin Calculation (19-nors)
-      if (meta.biomarkers?.prolactin) {
-        // Scale: 300mg NPP -> +10ng/mL
-        prolactin += meta.biomarkers.prolactin * (dose / 100);
-      }
-
-      // AI Logic (Arimidex)
-      if (item.compound === "arimidex") {
-        // 1mg Arimidex/week reduces E2 by ~40pg/mL (Linear approx)
-        estradiol -= dose * 40;
-      }
-
-      // SPECIAL: Equipoise (Boldenone) "AI Effect"
-      if (item.compound === "eq") {
-        estradiol -= dose * 0.12;
-      }
-
-      // TESTOSTERONE & SHBG LOGIC
-      if (item.compound === "testosterone") {
-        totalTestosterone += dose * 7; // ~500mg -> 3500ng/dL
-      }
-
-      // SHBG Suppression (DHTs crush it)
-      if (meta.biomarkers?.shbg) {
-        // shbg biomarker is negative (e.g. -3).
-        // 50mg Proviron (-3) -> -15 nmol/L reduction
-        shbg += meta.biomarkers.shbg * (dose / 100) * 5;
-      }
-    });
-
-    // Clamp values to realistic ranges
-    hdl = Math.max(20, Math.min(hdl, 60));
-    ldl = Math.min(ldl, 200);
-    hematocrit = Math.min(hematocrit, 58);
-    ast = Math.min(ast, 150);
-    alt = Math.min(alt, 150);
-    creatinine = Math.min(creatinine, 2.0);
-    neuroRisk = Math.min(neuroRisk, 10.0);
-    estradiol = Math.max(5, estradiol);
-
-    // Clamp SHBG (Can't go below ~5 nmol/L realistically)
-    shbg = Math.max(5, shbg);
-
-    // Calculate Free Testosterone (The "Active" Hormone)
-    // Simplified Free Androgen Index (FAI) proxy
-    // As SHBG drops, % of Free Test rises.
-    // Baseline: 2% free. Crushed SHBG: ~6% free.
-    const freeTestRatio = 0.02 + (30 - shbg) * 0.0015;
-    freeTestosterone = totalTestosterone * freeTestRatio * 10; // x10 for pg/mL scaling approx
-
-    return {
-      hdl,
-      ldl,
-      hematocrit,
-      ast,
-      alt,
-      creatinine,
-      neuroRisk,
-      estradiol,
-      prolactin,
-      totalTestosterone,
-      freeTestosterone,
-      shbg,
-    };
-  }, [stack]);
+  const totals = metrics?.totals;
 
   const getStatus = (value, ranges) => {
     // Check for low critical/warning first (if defined)
@@ -248,20 +122,6 @@ const LabReportCard = ({ stack, totals }) => {
       </div>
 
       <div className="space-y-2.5">
-        {/* Recovery Score (New) */}
-        <div className="flex items-center justify-between py-2 px-3 rounded bg-physio-bg-core/50 border border-physio-border-subtle mb-4">
-          <div className="flex items-center gap-3 flex-1">
-            <span className="text-xs font-mono text-physio-text-tertiary uppercase w-24">
-              Est. Recovery
-            </span>
-            <span
-              className={`text-sm font-bold font-mono ${recoveryStatus.color}`}
-            >
-              {recoveryStatus.label}
-            </span>
-          </div>
-        </div>
-
         {/* HDL */}
         <LabRow
           label="HDL"

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { compoundData } from "../../data/compoundData";
 import { useStack } from "../../context/StackContext";
 import Card from "../ui/Card";
@@ -43,6 +43,18 @@ const PathwayGroup = ({ label, description, compounds, onSelect, color }) => (
 
 const CompoundDock = () => {
   const { handleAddCompound } = useStack();
+  const [highlighted, setHighlighted] = useState(false);
+
+  useEffect(() => {
+    const handleHighlight = () => {
+      setHighlighted(true);
+      setTimeout(() => setHighlighted(false), 2500);
+    };
+    window.addEventListener("highlight-library", handleHighlight);
+    return () =>
+      window.removeEventListener("highlight-library", handleHighlight);
+  }, []);
+
   const genomic = Object.entries(compoundData).filter(
     ([key, data]) => data.pathway === "ar_genomic",
   );
@@ -51,7 +63,14 @@ const CompoundDock = () => {
   );
 
   return (
-    <div className="flex gap-4 items-stretch pb-2 overflow-x-auto">
+    <div
+      className={`relative flex gap-4 items-stretch pb-2 overflow-x-auto transition-all duration-500 rounded-xl p-2 ${highlighted ? "bg-physio-accent-primary/10 ring-2 ring-physio-accent-primary shadow-[0_0_30px_rgba(99,102,241,0.3)]" : ""}`}
+    >
+      {highlighted && (
+        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-physio-accent-primary text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg animate-bounce z-50 whitespace-nowrap flex items-center gap-2">
+          <span>👇</span> Select a Compound to Begin
+        </div>
+      )}
       <PathwayGroup
         label="Genomic AR Agonists"
         description="Primary tissue builders. High receptor affinity. Diminishing returns if stacked heavily."

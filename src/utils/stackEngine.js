@@ -13,6 +13,7 @@ import {
 } from "../data/interactionMatrix.js";
 import { defaultProfile } from "./personalization.js";
 import { compoundData } from "../data/compoundData.js";
+import { COMPOUND_VECTORS } from "../data/pathwayMap.js";
 
 // ============================================================================
 // CONSTANTS & CONFIGURATION
@@ -30,9 +31,279 @@ const CONSTANTS = {
   EVIDENCE_BLEND: 0.4,
 };
 
+// Map "dirty" vector keys to clean Pathway Node keys (from SignalingNetwork)
+const PATHWAY_KEY_MAPPING = {
+  neuro: "non_genomic",
+  nitrogen: "ar_genomic",
+  igf1: "ar_genomic", // Simplified for viz
+  anti_e: "estrogen", // Special handling needed (negative)
+  rbc: "liver", // Simplified
+  dht: "non_genomic",
+};
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
+
+/**
+ * Calculates projected lab values based on active compounds.
+ * Centralized logic for "Virtual Phlebotomist".
+ */
+const calculateProjectedLabs = (activeCompounds, profile) => {
+  let hdl = 50; // Baseline mg/dL
+  let ldl = 100; // Baseline mg/dL
+  let hematocrit = 45; // Baseline %
+  let ast = 25; // Baseline U/L
+  let alt = 25; // Baseline U/L
+  let creatinine = 1.0; // Baseline mg/dL
+  let neuroRisk = 0; // Baseline Index
+  let estradiol = 25; // Baseline pg/mL
+  let prolactin = 6.0; // Baseline ng/mL
+  let shbg = 30; // Baseline nmol/L
+  let totalTestosterone = 600; // Baseline ng/dL
+  let freeTestosterone = 12; // Baseline pg/mL
+
+  activeCompounds.forEach(({ code, meta, weeklyDose }) => {
+    // Use weeklyDose for calculations to be consistent
+    const dose = weeklyDose; 
+
+    // HDL Decline (all AAS suppress HDL)
+    if (meta.type === "injectable") {
+      // Bhasin et al: 600mg Test -> ~20% HDL drop.
+      // Updated logic: 0.02 * dose (500mg -> -10mg/dL).
+      hdl -= dose * 0.02;
+    } else if (meta.type === "oral") {
+      // Orals are hepatic lipase suicide inhibitors. They CRUSH HDL.
+      // 50mg Anavar (350mg/wk) -> -50% HDL is common.
+      // Note: dose here is weekly. 350mg/wk * 0.08 = 28 drop.
+      hdl -= dose * 0.08; 
+    }
+
+    // LDL Increase
+    if (meta.type === "oral") {
+      ldl += dose * 0.05; // 350mg/wk -> +17
+    } else {
+      ldl += dose * 0.02;
+    }
+
+    // Hematocrit (RBC boost)
+    if (meta.biomarkers?.rbc > 0) {
+      hematocrit += meta.biomarkers.rbc * (dose / 500) * 2; 
+    }
+
+    // Liver Enzymes (Orals)
+    if (meta.type === "oral") {
+      ast += dose * 0.15; // 350mg/wk -> +52
+      alt += dose * 0.2;
+    }
+
+    // Creatinine (Kidney stress - mainly Tren, high doses)
+    if (code === "trenbolone") {
+      creatinine += dose * 0.0008;
+    }
+
+    // Neurotoxicity Accumulation
+    const neuroScore =
+      meta.biomarkers?.neurotoxicity ||
+      meta.biomarkers?.cns_drive ||
+      meta.biomarkers?.neuro ||
+      0;
+    if (neuroScore > 0) {
+      neuroRisk += neuroScore * (dose / 300);
+    }
+
+    // Estradiol (E2) Calculation
+    if (meta.flags?.aromatization) {
+      // ~500mg Test -> ~75pg/mL E2 (Average response)
+      estradiol += dose * 0.1 * meta.flags.aromatization;
+    }
+    if (code === "dianabol") {
+      estradiol += dose * 1.0;
+    }
+
+    // Prolactin Calculation (19-nors)
+    if (meta.biomarkers?.prolactin) {
+      prolactin += meta.biomarkers.prolactin * (dose / 100);
+    }
+
+    // AI Logic (Arimidex)
+    if (code === "arimidex") {
+      estradiol -= dose * 40;
+    }
+
+    // SPECIAL: Equipoise (Boldenone) "AI Effect"
+    if (code === "eq") {
+      estradiol -= dose * 0.12;
+    }
+
+    // TESTOSTERONE & SHBG LOGIC
+    if (code === "testosterone") {
+      totalTestosterone += dose * 7; // ~500mg -> 3500ng/dL
+    }
+
+    // SHBG Suppression (DHTs crush it)
+    if (meta.biomarkers?.shbg) {
+      // shbg biomarker is negative (e.g. -3).
+      shbg += meta.biomarkers.shbg * (dose / 100) * 5;
+    }
+  });
+
+  // Apply Profile Modifiers
+  if (profile.dietState === "bulking") {
+    ldl += 10; // Worse lipids on bulk
+    hdl -= 5;
+    ast += 5;
+  } else if (profile.dietState === "cutting") {
+    hdl += 2; // Better lipids on cut (usually)
+    ldl -= 5;
+  }
+
+  // Clamp values to realistic ranges
+  hdl = Math.max(10, Math.min(hdl, 80));
+  ldl = Math.min(ldl, 250);
+  hematocrit = Math.min(hematocrit, 60);
+  ast = Math.min(ast, 200);
+  alt = Math.min(alt, 200);
+  creatinine = Math.min(creatinine, 3.0);
+  neuroRisk = Math.min(neuroRisk, 10.0);
+  estradiol = Math.max(0, estradiol);
+  shbg = Math.max(2, shbg);
+
+  // Calculate Free Testosterone
+  const freeTestRatio = 0.02 + (30 - shbg) * 0.0015;
+  freeTestosterone = totalTestosterone * freeTestRatio * 10;
+
+  return {
+    hdl,
+    ldl,
+    hematocrit,
+    ast,
+    alt,
+    creatinine,
+    neuroRisk,
+    estradiol,
+    prolactin,
+    totalTestosterone,
+    freeTestosterone,
+    shbg,
+  };
+};
+
+/**
+ * Calculates signaling pathway loads for visualization.
+ * Centralized logic for "Signaling Network".
+ */
+const calculatePathwayLoads = (activeCompounds) => {
+  const pathwayLoads = {
+    ar_genomic: 0,
+    non_genomic: 0,
+    estrogen: 0,
+    prolactin: 0,
+    liver: 0,
+    cortisol: 0,
+    shbg: 0,
+    neuro: 0, // Added to track raw neuro load
+    heart: 0, // Added for VitalSigns consistency
+  };
+
+  activeCompounds.forEach(({ code, meta, weeklyDose }) => {
+    const vector = COMPOUND_VECTORS[code] || {};
+    // Normalize dose factor for visualization (similar to SignalingNetwork logic)
+    // SignalingNetwork used: dose / (oral ? 40 : 300)
+    // Here we have weeklyDose. 
+    // Oral 40mg/day = 280mg/wk. 280/280 = 1.
+    // Injectable 300mg/wk. 300/300 = 1.
+    // So we can divide weeklyDose by ~300 for a rough "unit" scalar.
+    const doseFactor = weeklyDose / 300;
+
+    // --- HEART LOGIC (Manual Calculation) ---
+    if (code === "eq" || code === "testosterone") {
+      pathwayLoads.heart += doseFactor * 1.5;
+    }
+    if (code === "trenbolone") {
+      pathwayLoads.heart += doseFactor * 2.5;
+    }
+    if (code === "anadrol" || code === "dianabol") {
+      pathwayLoads.heart += doseFactor * 2.0;
+    }
+
+    Object.entries(vector).forEach(([rawKey, rawStrength]) => {
+      const key = PATHWAY_KEY_MAPPING[rawKey] || rawKey;
+      const strength = Math.abs(rawStrength) * doseFactor;
+
+      if (pathwayLoads[key] !== undefined) {
+        pathwayLoads[key] += strength;
+      }
+    });
+  });
+
+  return pathwayLoads;
+};
+
+/**
+ * Calculates user-specific scalars based on biological profile.
+ * Implements "Doctor-Grade" simulation logic.
+ */
+const calculateUserScalars = (profile) => {
+  // 1. Body Composition (Capacity)
+  // LBM = Weight * (1 - BodyFat%)
+  // Normalized to 160lb LBM (Standard Reference Man)
+  const weight = profile.bodyweight || 90; // Default 90kg (~200lb)
+  const bodyFat = profile.bodyFat || 15; // Default 15%
+  const lbm = weight * 2.2 * (1 - bodyFat / 100); // Convert kg to lbs for formula
+  const capacityScalar = Math.max(0.5, lbm / 160); // Floor at 0.5x
+
+  // 2. Aromatase Activity (Estrogen Risk)
+  // Fat tissue contains aromatase. 12% is neutral.
+  // Formula: (BodyFat / 12)^1.5
+  const aromataseScalar = Math.pow(Math.max(5, bodyFat) / 12, 1.5);
+
+  // 3. Age Decay (Resilience)
+  // Age 25 is peak.
+  const age = profile.age || 30;
+  const agePenalty = Math.max(0, (age - 30) * 0.02); // General organ stress
+  const recoveryPenalty = Math.max(0, (age - 30) / 5); // HPTA recovery drag
+
+  // 4. Experience Level (Sensitivity)
+  let responseMultiplier = 1.0;
+  let sideEffectSensitivity = 1.0;
+  let saturationCeilingMult = 1.0;
+
+  switch (profile.experience) {
+    case 'none': // Virgin
+      responseMultiplier = 1.2;
+      sideEffectSensitivity = 1.5;
+      break;
+    case 'test_only': // Intermediate
+      responseMultiplier = 1.0;
+      sideEffectSensitivity = 1.0;
+      break;
+    case 'multi_compound': // Advanced
+      responseMultiplier = 0.9;
+      saturationCeilingMult = 1.5;
+      break;
+    case 'blast_cruise': // Pro
+      responseMultiplier = 0.8;
+      saturationCeilingMult = 2.0;
+      break;
+    default:
+      break;
+  }
+
+  // 5. Gender (Virilization)
+  const isFemale = profile.gender === 'female';
+
+  return {
+    capacityScalar,
+    aromataseScalar,
+    agePenalty,
+    recoveryPenalty,
+    responseMultiplier,
+    sideEffectSensitivity,
+    saturationCeilingMult,
+    isFemale
+  };
+};
 
 /**
  * Returns the full result schema with default zero values.
@@ -86,11 +357,15 @@ const getWeeklyDose = (dose, isOral) => {
 const calculateStabilityPenalty = (meta, esterKey, frequency, isOral) => {
   if (isOral) return 1.0; // Orals assumed daily/stable
 
-  const freq = frequency || 1; // Default 1 pin/week
+  // frequency is "Days Interval" (1=ED, 3.5=2x/Wk, 7=1x/Wk)
+  const intervalDays = frequency || 7; // Default to 1x/Wk (7 days) if undefined
+  
   const halfLifeHours =
     meta.esters?.[esterKey]?.halfLife || meta.halfLife || 24;
   const halfLifeDays = halfLifeHours / 24;
-  const injectionInterval = 7 / freq;
+  
+  // The injection interval is simply the frequency in days
+  const injectionInterval = intervalDays;
 
   let penalty = 1.0;
 
@@ -100,8 +375,10 @@ const calculateStabilityPenalty = (meta, esterKey, frequency, isOral) => {
   }
 
   // Extra penalty for volatile blends (e.g., Sustanon) if infrequent
+  // Previously: freq < 3 (pins/week). 3 pins/week = every 2.33 days.
+  // So if interval > 2.5 days, we penalize.
   const isVolatileBlend = meta.esters?.[esterKey]?.isBlend;
-  if (isVolatileBlend && freq < 3) {
+  if (isVolatileBlend && intervalDays > 2.5) {
     penalty += 0.2;
   }
 
@@ -181,7 +458,7 @@ const calculateGlobalPenalties = (activeCompounds, currentRisk) => {
 /**
  * Generates specific warnings for dangerous combinations.
  */
-const getInteractionWarnings = (compounds) => {
+const getInteractionWarnings = (compounds, profile = defaultProfile) => {
   const warnings = [];
   const codes = new Set(compounds);
 
@@ -280,6 +557,18 @@ const getInteractionWarnings = (compounds) => {
     });
   }
 
+  // 5. CrossFit Cardio Warning
+  if (profile.trainingStyle === "crossfit") {
+    const hasCardioKiller = codes.has("trenbolone") || codes.has("anadrol");
+    if (hasCardioKiller) {
+      warnings.push({
+        type: "performance",
+        level: "critical",
+        message: "⚠️ CARDIO CAPACITY WARNING: You are training for Endurance (CrossFit) but using Trenbolone or Anadrol. These compounds drastically reduce cardiovascular output (Tren Cough / Back Pumps). Your WOD times will suffer.",
+      });
+    }
+  }
+
   return warnings;
 };
 
@@ -298,6 +587,22 @@ export const evaluateStack = ({
   // 0. Validation & Normalization
   const { compounds, doses } = normalizeStackInput(stackInput);
   if (!compounds.length) return getEmptyResult();
+
+  // 0.5. Calculate User Scalars (The "Simulation" Layer)
+  const {
+    capacityScalar,
+    aromataseScalar,
+    agePenalty,
+    recoveryPenalty,
+    responseMultiplier,
+    sideEffectSensitivity,
+    saturationCeilingMult,
+    isFemale
+  } = calculateUserScalars(profile);
+
+  // Adjust Thresholds based on Scalars
+  const adjustedSaturationThreshold = CONSTANTS.SATURATION_THRESHOLD * capacityScalar * saturationCeilingMult;
+  const adjustedToxicityThreshold = CONSTANTS.TOXICITY_THRESHOLD * capacityScalar;
 
   // 1. State Initialization
   const state = {
@@ -318,7 +623,8 @@ export const evaluateStack = ({
     durationWeeks > 6 ? Math.pow(durationWeeks / 6, 1.5) : 1.0;
 
   // 2. HPTA Suppression is Linear over time (Recovery gets harder)
-  const suppressionPenalty = Math.max(0, (durationWeeks - 12) / 4) * 0.5;
+  // Apply Age-based Recovery Penalty here
+  const suppressionPenalty = (Math.max(0, (durationWeeks - 12) / 4) * 0.5) + recoveryPenalty;
 
   // SHBG Logic (Dose Dependent)
   let shbgCrushScore = 0;
@@ -374,6 +680,33 @@ export const evaluateStack = ({
     let benefitVal = benefitRes?.value ?? 0;
     let riskVal = riskRes?.value ?? 0;
 
+    // Apply Experience Multipliers
+    benefitVal *= responseMultiplier;
+    riskVal *= sideEffectSensitivity;
+
+    // Apply Aromatase Scalar (Body Fat Impact)
+    if (meta.flags?.aromatization > 0) {
+      riskVal *= aromataseScalar;
+    }
+
+    // Apply Gender Logic (The "Virilization Cliff")
+    if (isFemale) {
+      // Benefit: Females respond massively to small doses
+      benefitVal *= 10.0;
+
+      // Risk: Virilization Cliff
+      // If dose > 20mg/week (approx), risk skyrockets
+      // We replace the standard risk curve with this cliff
+      const virilizationThreshold = 20;
+      if (weeklyDose > virilizationThreshold) {
+         const excess = weeklyDose - virilizationThreshold;
+         // Exponential penalty: 50mg = (30)^1.5 approx 160 points of risk
+         riskVal = Math.pow(excess, 1.8) * 0.5; 
+      } else {
+         riskVal *= 0.5; // Low risk below threshold
+      }
+    }
+
     // Apply SHBG Bonus (Injectables only)
     if (meta.type === "injectable" && meta.pathway === "ar_genomic") {
       // Note: Benefit curves are pre-calibrated, but this boosts efficiency
@@ -393,6 +726,76 @@ export const evaluateStack = ({
     // Apply Oral Duration Penalty
     if (isOral) {
       riskVal *= oralDurationPenalty;
+    }
+
+    // Apply Diet State Logic (Cutting vs Bulking)
+    if (profile.dietState === "cutting") {
+      // Cutting: Anabolism drops 30% globally
+      // BUT Anti-catabolic compounds (Cortisol blockers) get a reprieve
+      // Tren (-3), NPP (-1), Test (0)
+      const cortisolScore = meta.biomarkers?.cortisol || 0;
+      let retentionBonus = 0;
+      
+      if (cortisolScore < 0) {
+        // Convert negative cortisol score to positive bonus
+        // -3 (Tren) -> 0.3 bonus -> 1.0 multiplier (No penalty)
+        // -1 (NPP) -> 0.1 bonus -> 0.8 multiplier
+        retentionBonus = Math.abs(cortisolScore) * 0.1;
+      }
+      
+      const cuttingMultiplier = 0.7 + retentionBonus;
+      benefitVal *= Math.min(cuttingMultiplier, 1.2); // Cap bonus at 1.2x
+      
+    } else if (profile.dietState === "bulking") {
+      // Bulking: Systemic stress increases due to caloric load
+      // Orals get hit harder (liver processing food + drugs)
+      if (isOral) {
+        riskVal *= 1.2;
+      } else {
+        riskVal *= 1.1;
+      }
+    }
+
+    // Apply Training Style Logic (The "Signal Director")
+    const trainingStyle = profile.trainingStyle || "bodybuilding";
+    const strengthCompounds = new Set(["halotestin", "anadrol", "dianabol", "trenbolone", "superdrol", "testosterone", "ment"]);
+    const enduranceCompounds = new Set(["eq", "turinabol", "primobolan", "testosterone", "winstrol", "anavar"]);
+    const neuroToxicCompounds = new Set(["trenbolone", "halotestin", "superdrol"]);
+
+    if (trainingStyle === "powerlifting") {
+      // Powerlifting: Strength is King.
+      // Strength compounds get a bonus. Pure hypertrophy compounds get a penalty.
+      if (strengthCompounds.has(code)) {
+        benefitVal *= 1.2;
+      } else {
+        benefitVal *= 0.8; // Penalty for non-strength compounds (e.g. Deca/EQ don't add raw force as well)
+      }
+      
+      // CNS Stress increases (Heavy loads + Neurotoxic drugs = Fried CNS)
+      if (neuroToxicCompounds.has(code)) {
+        riskVal *= 1.2;
+      }
+
+    } else if (trainingStyle === "bodybuilding") {
+      // Bodybuilding: Volume is King.
+      // Hypertrophy is the goal for EVERYTHING.
+      benefitVal *= 1.2; // Global bonus (Volume drives growth)
+      
+      // Joint Stress decreases (Lighter weights, better connection)
+      riskVal *= 0.9;
+
+    } else if (trainingStyle === "crossfit") {
+      // CrossFit: Endurance/Work Capacity is King.
+      if (enduranceCompounds.has(code)) {
+        benefitVal *= 1.2;
+      }
+      
+      // Cardio Capacity Warning (Tren/Anadrol)
+      if (code === "trenbolone" || code === "anadrol") {
+        riskVal *= 1.5; // Massive penalty for destroying cardio
+        // We'll add a specific warning later in the warnings section, 
+        // but here we mathematically penalize the score.
+      }
     }
 
     // F. Bucket Sorting
@@ -463,14 +866,14 @@ export const evaluateStack = ({
 
   // A. Genomic Saturation (Log-Logistic Upregulation)
   let genomicFactor = 1.0;
-  if (state.totalGenomicLoad > CONSTANTS.SATURATION_THRESHOLD) {
-    const excess = state.totalGenomicLoad - CONSTANTS.SATURATION_THRESHOLD;
+  if (state.totalGenomicLoad > adjustedSaturationThreshold) {
+    const excess = state.totalGenomicLoad - adjustedSaturationThreshold;
     // Logarithmic Diminishing Returns: Smooth transition from slope 1.0 to slope ~0
     // Formula: Threshold + Scale * ln(1 + excess/Scale)
     // Scale = 2500 pushes the "hard diminishing returns" out to ~4000mg+
     const scale = 2500;
     const dampenedExcess = scale * Math.log(1 + excess / scale);
-    const projectedTotal = CONSTANTS.SATURATION_THRESHOLD + dampenedExcess;
+    const projectedTotal = adjustedSaturationThreshold + dampenedExcess;
     genomicFactor = projectedTotal / state.totalGenomicLoad;
   }
 
@@ -479,8 +882,8 @@ export const evaluateStack = ({
 
   // B. Toxicity Avalanche
   let toxicityMultiplier = 1.0;
-  if (state.totalSystemicLoad > CONSTANTS.TOXICITY_THRESHOLD) {
-    const excessRisk = state.totalSystemicLoad - CONSTANTS.TOXICITY_THRESHOLD;
+  if (state.totalSystemicLoad > adjustedToxicityThreshold) {
+    const excessRisk = state.totalSystemicLoad - adjustedToxicityThreshold;
     toxicityMultiplier = 1 + Math.pow(excessRisk / 1500, 1.5);
   }
 
@@ -491,7 +894,11 @@ export const evaluateStack = ({
     state.activeCompounds,
     finalRisk,
   );
-  const adjustedRisk = finalRisk + protocolPenalty + suppressionPenalty;
+  
+  // Apply Age Penalty to final risk
+  const ageAdjustedRisk = finalRisk * (1 + agePenalty);
+
+  const adjustedRisk = ageAdjustedRisk + protocolPenalty + suppressionPenalty;
 
   // 2. Apply Time-Based Toxicity Scaling (The "Time Machine" Logic)
   // Liver/Kidney stress compounds over time.
@@ -508,11 +915,19 @@ export const evaluateStack = ({
   const brRatio =
     chronicRisk > 0.1 ? finalBenefit / chronicRisk : finalBenefit; // Prevent div/0
 
-  // 7. Construct Result
+  // 7. Calculate Analytics (Labs & Pathways)
+  const projectedLabs = calculateProjectedLabs(state.activeCompounds, profile);
+  const pathwayLoads = calculatePathwayLoads(state.activeCompounds);
+
+  // 8. Construct Result
   return {
     byCompound: state.byCompound,
     pairInteractions,
-    warnings: getInteractionWarnings(compounds),
+    warnings: getInteractionWarnings(compounds, profile),
+    analytics: {
+      projectedLabs,
+      pathwayLoads,
+    },
     totals: {
       baseBenefit: state.genomicBenefit + state.nonGenomicBenefit,
       baseRisk: state.rawRiskSum,

@@ -180,13 +180,17 @@ const SignalingNetwork = ({ stack, metrics }) => {
     stack.forEach((item) => {
       const vector = COMPOUND_VECTORS[item.compound] || {};
       const meta = compoundData[item.compound];
-      const doseFactor = item.dose / (meta.type === "oral" ? 40 : 300);
+      
+      // Standardize Dose Factor with Engine (Weekly Dose / 300)
+      const weeklyDose = meta.type === "oral" ? item.dose * 7 : item.dose;
+      const doseFactor = weeklyDose / 300;
 
       Object.entries(vector).forEach(([rawKey, rawStrength]) => {
         const key = KEY_MAPPING[rawKey] || rawKey;
         const strength = Math.abs(rawStrength) * doseFactor; // Handle negatives later if needed
 
         if (pathwayLoads[key] !== undefined) {
+          // We accumulate locally for link generation, but will override node intensity from metrics
           pathwayLoads[key] += strength;
 
           // Create Link
@@ -202,8 +206,13 @@ const SignalingNetwork = ({ stack, metrics }) => {
     });
 
     // Update Pathway Nodes with Intensity
+    // USE SINGLE SOURCE OF TRUTH if available
     pathwayNodes.forEach((node) => {
-      node.intensity = pathwayLoads[node.key];
+      if (metrics?.analytics?.pathwayLoads?.[node.key] !== undefined) {
+        node.intensity = metrics.analytics.pathwayLoads[node.key];
+      } else {
+        node.intensity = pathwayLoads[node.key];
+      }
     });
 
     // --- D. CALCULATE OUTPUT LOADS & LINKS (Pathway -> Output) ---

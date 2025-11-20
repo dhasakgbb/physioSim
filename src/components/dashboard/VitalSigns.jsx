@@ -3,62 +3,6 @@ import Card from "../ui/Card";
 import { getAncillaryProtocol } from "../../data/sideFxAndAncillaries";
 import { compoundData } from "../../data/compoundData";
 
-// Helper to calculate organ-specific loads from the stack analysis
-const calculateOrganLoad = (stack) => {
-  const loads = { heart: 0, liver: 0, mind: 0, estrogen: 0 };
-
-  stack.forEach((item) => {
-    const meta = compoundData[item.compound];
-    if (!meta) return;
-
-    // Normalize dose intensity
-    const doseFactor = item.dose / (meta.type === "oral" ? 50 : 400);
-
-    // --- LIVER LOGIC ---
-    // 1. Orals (Acute Toxicity)
-    if (meta.type === "oral") {
-      // Check toxicity tier if available, otherwise default based on category
-      const tier =
-        meta.toxicityTier || (meta.category === "oral_extreme" ? 4 : 2);
-      loads.liver += doseFactor * tier;
-    }
-
-    // 2. Trenbolone (Metabolic/Lipid Stress)
-    // Tren places a load of "2" (Moderate) vs Anadrol's "4" (Severe)
-    if (item.compound === "trenbolone") {
-      loads.liver += doseFactor * 2.0;
-    }
-
-    // --- MIND LOGIC ---
-    if (item.compound === "trenbolone" || item.compound === "halotestin") {
-      loads.mind += doseFactor * 3.0;
-    }
-    if (item.compound === "testosterone" && item.dose > 600) {
-      loads.mind += doseFactor * 1.0; // High Test aggression
-    }
-
-    // --- HEART LOGIC ---
-    if (item.compound === "eq" || item.compound === "testosterone")
-      loads.heart += doseFactor * 1.5;
-    if (item.compound === "trenbolone") loads.heart += doseFactor * 2.5; // Renal stress + BP
-    if (item.compound === "anadrol" || item.compound === "dianabol")
-      loads.heart += doseFactor * 2.0; // Water retention BP
-
-    // --- ESTROGEN LOGIC ---
-    if (["testosterone", "dianabol", "ment"].includes(item.compound)) {
-      loads.estrogen += doseFactor * 2.0;
-    }
-  });
-
-  // Cap values
-  return {
-    heart: Math.min(loads.heart, 10),
-    liver: Math.min(loads.liver, 10),
-    mind: Math.min(loads.mind, 10),
-    estrogen: Math.min(loads.estrogen, 10),
-  };
-};
-
 const LoadBar = ({ label, value, color }) => (
   <div className="flex items-center gap-4 text-sm">
     <span className="w-16 text-right text-physio-text-secondary font-medium">
@@ -67,7 +11,7 @@ const LoadBar = ({ label, value, color }) => (
     <div className="flex-1 h-2 bg-physio-bg-core rounded-full overflow-hidden border border-physio-border-subtle">
       <div
         className={`h-full rounded-full transition-all duration-500 ${color}`}
-        style={{ width: `${(value / 10) * 100}%` }}
+        style={{ width: `${Math.min((value / 20) * 100, 100)}%` }}
       />
     </div>
     <span className="w-6 text-right font-bold text-physio-text-primary">
@@ -83,20 +27,21 @@ const VitalSigns = ({
   showSafetyOnly = false,
 }) => {
   const { totalRisk, netScore, brRatio } = metrics.totals;
+  
+  // Use centralized pathway loads from stackEngine
+  const loads = metrics?.analytics?.pathwayLoads || {
+    heart: 0,
+    liver: 0,
+    neuro: 0,
+    estrogen: 0,
+  };
 
-  // Calculate Ancillaries & Loads
-  const ancillaries = useMemo(() => {
-    if (!stack || stack.length === 0) return null;
-    const formattedStack = stack.map((s) => ({
-      compound: s.compound,
-      dose: s.dose,
-      type: compoundData[s.compound]?.type,
-      category: compoundData[s.compound]?.category,
-    }));
-    return getAncillaryProtocol(formattedStack);
-  }, [stack]);
-
-  const organLoads = useMemo(() => calculateOrganLoad(stack), [stack]);
+  const organLoads = {
+    heart: loads.heart || 0,
+    liver: loads.liver || 0,
+    mind: loads.neuro || 0,
+    estrogen: loads.estrogen || 0,
+  };
 
   const riskLevel =
     totalRisk > 8

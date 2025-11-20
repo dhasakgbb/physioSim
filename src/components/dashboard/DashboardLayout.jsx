@@ -79,8 +79,8 @@ const DashboardLayout = ({
 
         {/* ZONE B: Center Stage (Visualization) */}
         <main className="flex-1 flex flex-col relative z-10 min-w-0 overflow-hidden">
-          <header className="hidden md:flex h-16 items-center justify-between px-8 border-b border-physio-border-subtle">
-            <div className="flex items-center gap-4">
+          <header className="hidden md:flex h-24 items-center justify-between px-8 border-b border-physio-border-subtle bg-[#0B0C10]">
+            <div className="flex items-center gap-4 scale-110 origin-left">
               <Logo />
             </div>
             {/* Global Toolbar (PDF, Share, etc) */}
