@@ -178,7 +178,7 @@ const CustomTooltip = ({ active, payload, label, crossover, critical }) => {
         </div>
       )}
 
-      {isSaturated && !isWasted && (
+      {isSaturated && !isCritical && (
         <div className="mt-3 py-1.5 px-2 bg-[#22C55E]/10 border border-[#22C55E]/25 rounded text-[10px] text-[#A1A1AA] flex items-start gap-1.5">
           <span className="text-xs mt-0.5">ℹ️</span>
           <span className="leading-tight">

@@ -208,13 +208,14 @@ const calculatePathwayLoads = (activeCompounds) => {
 
   activeCompounds.forEach(({ code, meta, weeklyDose }) => {
     const vector = COMPOUND_VECTORS[code] || {};
-    // Normalize dose factor for visualization (similar to SignalingNetwork logic)
-    // SignalingNetwork used: dose / (oral ? 40 : 300)
-    // Here we have weeklyDose. 
-    // Oral 40mg/day = 280mg/wk. 280/280 = 1.
-    // Injectable 300mg/wk. 300/300 = 1.
-    // So we can divide weeklyDose by ~300 for a rough "unit" scalar.
-    const doseFactor = weeklyDose / 300;
+    // Standardize Dose Factor with Engine (Weekly Dose / 300)
+    // Apply Non-Linear Saturation Curve (Power Law)
+    // Effect = Dose^0.85. This simulates receptor saturation / diminishing returns.
+    // 300mg -> 1.0
+    // 600mg -> 1.8 (not 2.0)
+    // 1000mg -> 2.7 (not 3.3)
+    const linearFactor = weeklyDose / 300;
+    const doseFactor = Math.pow(linearFactor, 0.85);
 
     // --- HEART LOGIC (Manual Calculation) ---
     if (code === "eq" || code === "testosterone") {
@@ -235,6 +236,14 @@ const calculatePathwayLoads = (activeCompounds) => {
         pathwayLoads[key] += strength;
       }
     });
+  });
+
+  // Apply Unit Scalar to convert "Engine Units" to UI Scale
+  // Calibrated so 1000mg+ stack sits at ~60-70% saturation
+  // 8 units (300mg Test) -> 100 mgEq
+  // Scalar = 12.5
+  Object.keys(pathwayLoads).forEach((key) => {
+    pathwayLoads[key] *= 12.5;
   });
 
   return pathwayLoads;

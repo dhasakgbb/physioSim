@@ -21,9 +21,14 @@ export const PATHWAY_NODES = {
     description: "Water retention & mood",
   },
   prolactin: {
-    label: "Progesterone/Prolactin",
+    label: "Prolactin",
     color: "#8b5cf6",
-    description: "19-nor pathway",
+    description: "Lactation & sexual side effects",
+  },
+  progesterone: {
+    label: "Progesterone",
+    color: "#7c3aed",
+    description: "19-nor pathway & mood",
   },
   liver: {
     label: "Hepatic Processing",
@@ -48,8 +53,8 @@ export const COMPOUND_VECTORS = {
   testosterone: { ar_genomic: 8, estrogen: 6, igf1: 5, shbg: 2, neuro: 3 },
 
   // --- 19-NORS ---
-  npp: { ar_genomic: 8, prolactin: 7, cortisol: 4, liver: 1 },
-  trenbolone: { ar_genomic: 10, cortisol: 9, prolactin: 6, neuro: 9, liver: 4 },
+  npp: { ar_genomic: 8, prolactin: 6, progesterone: 4, cortisol: 4, liver: 1 },
+  trenbolone: { ar_genomic: 10, progesterone: 8, cortisol: 9, prolactin: 6, neuro: 9, liver: 4 },
   ment: { ar_genomic: 10, estrogen: 9, prolactin: 6, igf1: 8 },
 
   // --- DHT DERIVATIVES ---

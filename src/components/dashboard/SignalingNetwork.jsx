@@ -213,6 +213,41 @@ const SignalingNetwork = ({ stack, metrics }) => {
       } else {
         node.intensity = pathwayLoads[node.key];
       }
+
+      // --- SPILLOVER LOGIC (AR > 500) ---
+      if (node.key === "ar_genomic" && node.intensity > 500) {
+        const excess = node.intensity - 500;
+        node.intensity = 500; // Cap the AR node
+
+        // Create Systemic Waste Node
+        const wasteNodeId = "path-systemic_waste";
+        let wasteNode = pathwayNodes.find((n) => n.id === wasteNodeId);
+        
+        if (!wasteNode) {
+          wasteNode = {
+            id: wasteNodeId,
+            type: "pathway",
+            key: "systemic_waste",
+            label: "Systemic Waste",
+            color: "#EF4444", // Red
+            y: node.y + ROW_HEIGHT * 0.8, // Offset slightly below AR
+            x: 1,
+            intensity: 0,
+          };
+          pathwayNodes.push(wasteNode);
+        }
+        
+        wasteNode.intensity += excess;
+
+        // Create Spillover Link (Visual only, from AR to Waste)
+        activeLinks.push({
+          source: node.id,
+          target: wasteNodeId,
+          value: excess,
+          color: "#EF4444",
+          type: "spillover",
+        });
+      }
     });
 
     // --- D. CALCULATE OUTPUT LOADS & LINKS (Pathway -> Output) ---
@@ -391,6 +426,7 @@ const SignalingNetwork = ({ stack, metrics }) => {
               : "opacity-100 transition-opacity duration-300"
           }
         >
+          <title>{`Signal Strength: ${link.value.toFixed(2)}`}</title>
           {/* Glow Effect for Highlighted */}
           {isHighlighted && (
             <path
@@ -525,8 +561,22 @@ const NodeCard = ({ node }) => {
     : "none";
   const border = node.intensity > 15 ? "#ef4444" : node.color || "#4b5563";
 
-  // Calculate saturation percentage (assuming 20 is max "safe" load for viz)
-  const saturation = Math.min((node.intensity / 20) * 100, 100);
+  // Calculate saturation percentage - pathway-specific limits
+  const pathwayLimits = {
+    ar_genomic: 500,
+    non_genomic: 200,
+    neuro: 200,
+    liver: 150,
+    estrogen: 150,
+    prolactin: 150,
+    progesterone: 150,
+    cortisol: 150,
+    shbg: 150,
+    heart: 150,
+  };
+  
+  const limit = pathwayLimits[node.key] || 200; // Default to 200 for unknown pathways
+  const saturation = Math.min((node.intensity / limit) * 100, 100);
   const isSaturated = saturation > 80;
 
   return (
@@ -535,6 +585,7 @@ const NodeCard = ({ node }) => {
         relative flex items-center justify-between px-4 py-3 rounded-2xl border bg-[#1e293b]/90 backdrop-blur-sm
         ${isInput ? "w-48" : "w-40"}
         transition-all duration-300
+        ${saturation > 90 ? "animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)] border-red-500/50" : ""}
       `}
       style={{
         borderColor: border,

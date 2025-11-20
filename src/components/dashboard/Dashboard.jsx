@@ -152,7 +152,7 @@ const Dashboard = () => {
             <VitalSigns metrics={steadyStateMetrics} stack={stack} showScoreOnly={true} />
 
             {/* 2. THE GOVERNOR: Saturation */}
-            <MechanismMonitor stack={stack} />
+            <MechanismMonitor stack={stack} metrics={steadyStateMetrics} />
 
             {/* 3. THE VIRTUAL PHLEBOTOMIST: Lab Prediction */}
             <LabReportCard stack={stack} metrics={metrics} />

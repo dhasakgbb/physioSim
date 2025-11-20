@@ -33,6 +33,11 @@ const SerumStabilityChart = ({ stack }) => {
     return (100 - variance).toFixed(0);
   }, [data]);
 
+  // Check for Orals to adjust resolution
+  const hasOrals = useMemo(() => {
+    return stack.some((item) => compoundData[item.compound]?.type === "oral");
+  }, [stack]);
+
   return (
     <div className="absolute inset-0 flex flex-col bg-physio-bg-core">
       <div className="flex items-center justify-between px-6 py-4 z-10 bg-physio-bg-surface backdrop-blur">
@@ -80,7 +85,7 @@ const SerumStabilityChart = ({ stack }) => {
               stroke="#52525b"
               fontSize={12}
               tickFormatter={(val) => `Day ${Math.floor(val)}`}
-              interval={48}
+              interval={hasOrals ? 0 : 6} // Daily ticks for orals, Weekly for injectables
               tickLine={false}
               axisLine={false}
             />

@@ -33,42 +33,33 @@ const SaturationGauge = ({ label, value, limit, warning }) => {
   );
 };
 
-const MechanismMonitor = ({ stack }) => {
+const MechanismMonitor = ({ stack, metrics }) => {
   const loads = useMemo(() => {
-    let arLoad = 0; // Genomic Load (weighted mg)
-    let cnsLoad = 0; // Non-Genomic Load (mg)
-    let liverLoad = 0; // Hepatic Load (mg)
+    // Use Engine Metrics if available (Single Source of Truth)
+    if (metrics?.analytics?.pathwayLoads) {
+      return {
+        arLoad: metrics.analytics.pathwayLoads.ar_genomic || 0,
+        cnsLoad: (metrics.analytics.pathwayLoads.non_genomic || 0) + (metrics.analytics.pathwayLoads.neuro || 0),
+        liverLoad: metrics.analytics.pathwayLoads.liver || 0,
+      };
+    }
+
+    // Fallback (should rarely be reached if Dashboard passes metrics)
+    let arLoad = 0; 
+    let cnsLoad = 0; 
+    let liverLoad = 0; 
 
     stack.forEach((item) => {
       const meta = compoundData[item.compound];
       if (!meta) return;
-
-      // AR Saturation Logic (Scientific Weighting)
-      if (meta.pathway === "ar_genomic") {
-        let affinityWeight = 1.0; // Baseline (Testosterone)
-
-        // Adjust for binding affinity constants (RBA)
-        if (meta.bindingAffinity === "low") affinityWeight = 0.5;
-        if (meta.bindingAffinity === "moderate") affinityWeight = 0.8;
-        if (meta.bindingAffinity === "high") affinityWeight = 1.25; // NPP
-        if (meta.bindingAffinity === "very_high") affinityWeight = 3.0; // Tren/Proviron
-
-        arLoad += item.dose * affinityWeight;
-      }
-
-      // CNS/Non-Genomic Logic
-      if (meta.pathway === "non_genomic") {
-        cnsLoad += item.dose;
-      }
-
-      // Hepatic proxy (C17-aa orals)
-      if (meta.type === "oral" && meta.category !== "support") {
-        liverLoad += item.dose;
-      }
+      // ... (Fallback logic could be kept or simplified, but for now keeping it minimal or just returning 0 to force metrics usage)
+       if (meta.pathway === "ar_genomic") arLoad += item.dose;
+       if (meta.pathway === "non_genomic") cnsLoad += item.dose;
+       if (meta.type === "oral") liverLoad += item.dose;
     });
 
     return { arLoad, cnsLoad, liverLoad };
-  }, [stack]);
+  }, [stack, metrics]);
 
   return (
     <div className="space-y-6">
@@ -81,21 +72,21 @@ const MechanismMonitor = ({ stack }) => {
         <SaturationGauge
           label="Androgen Receptor (AR)"
           value={loads.arLoad}
-          limit={1200}
+          limit={500} // Calibrated for 12.5x scalar (~2000mg total to hit 100%)
           warning="Receptor competition likely. Diminishing returns."
         />
 
         <SaturationGauge
           label="CNS / Non-Genomic"
           value={loads.cnsLoad}
-          limit={150}
+          limit={200} // Scaled for 12.5x engine values
           warning="High neurological strain. Toxicity risk."
         />
 
         <SaturationGauge
           label="Hepatic Capacity"
           value={loads.liverLoad}
-          limit={80}
+          limit={150} // Scaled for 12.5x engine values
           warning="Liver enzyme stress critical."
         />
       </div>
