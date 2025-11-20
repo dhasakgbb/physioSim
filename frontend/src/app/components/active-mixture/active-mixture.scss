@@ -1,0 +1,172 @@
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
+
+.panel-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.panel-header__title h2 {
+	margin: 0;
+	font-size: 1.5rem;
+	color: var(--holo-white);
+}
+
+.eyebrow {
+	font-size: 0.75rem;
+	letter-spacing: 0.3em;
+	text-transform: uppercase;
+	color: rgba(255, 255, 255, 0.6);
+	margin: 0 0 0.25rem;
+}
+
+.neon-button {
+	border: 1px solid rgba(92, 225, 230, 0.6);
+	background: rgba(92, 225, 230, 0.08);
+	color: var(--neon-cyan);
+	padding: 0.75rem 1.5rem;
+	border-radius: 999px;
+	text-transform: uppercase;
+	letter-spacing: 0.2em;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	cursor: pointer;
+	transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.neon-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.pulse-indicator {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: var(--neon-magenta);
+	box-shadow: 0 0 12px var(--neon-magenta);
+	animation: pulse 1.4s infinite;
+}
+
+@keyframes pulse {
+	0% {
+		transform: scale(1);
+		opacity: 1;
+	}
+	70% {
+		transform: scale(2);
+		opacity: 0;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+
+.duration-tile {
+	padding: 1rem 1.25rem;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 16px;
+	background: rgba(255, 255, 255, 0.02);
+}
+
+.duration-value {
+	display: flex;
+	align-items: baseline;
+	gap: 0.25rem;
+	font-size: 1.75rem;
+	color: var(--holo-white);
+}
+
+.duration-slider {
+	width: 100%;
+	margin: 1rem 0 0.5rem;
+}
+
+.duration-scale {
+	display: flex;
+	justify-content: space-between;
+	font-size: 0.75rem;
+	color: rgba(255, 255, 255, 0.5);
+}
+
+.compound-deck {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.compound-card {
+	border: 1px solid rgba(92, 225, 230, 0.15);
+	border-radius: 18px;
+	padding: 1.25rem;
+	background: rgba(1, 4, 12, 0.65);
+}
+
+.compound-card__header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 1rem;
+}
+
+.compound-card__header h3 {
+	margin: 0;
+	font-size: 1.1rem;
+}
+
+.dosage-chip {
+	padding: 0.35rem 0.9rem;
+	border-radius: 999px;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	font-size: 0.85rem;
+}
+
+.dosage-controls {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 80px;
+	gap: 0.75rem;
+	margin: 1rem 0 0.75rem;
+}
+
+.dosage-controls input[type='number'] {
+	background: rgba(0, 0, 0, 0.35);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 10px;
+	padding: 0.35rem 0.5rem;
+	color: var(--holo-white);
+}
+
+.compound-card__meta {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 0.75rem;
+	font-size: 0.8rem;
+}
+
+.compound-card__meta .label {
+	display: block;
+	font-size: 0.7rem;
+	text-transform: uppercase;
+	letter-spacing: 0.2em;
+	color: rgba(255, 255, 255, 0.45);
+	margin-bottom: 0.2rem;
+}
+
+.empty-state {
+	text-align: center;
+	color: rgba(255, 255, 255, 0.6);
+}
+
+.ghost {
+	margin-top: 0.5rem;
+	border: 1px dashed rgba(255, 255, 255, 0.2);
+	background: transparent;
+	color: var(--holo-white);
+	padding: 0.5rem 1rem;
+	border-radius: 999px;
+}

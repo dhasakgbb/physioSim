@@ -1,0 +1,138 @@
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
+
+.chart-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.chart-header h2 {
+	margin: 0;
+	font-size: 1.65rem;
+	color: var(--holo-white);
+}
+
+.badge {
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	padding: 0.35rem 0.85rem;
+	border-radius: 999px;
+	font-size: 0.8rem;
+}
+
+.chart-frame {
+	position: relative;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 22px;
+	padding: 1rem;
+	background: radial-gradient(circle at top, rgba(125, 255, 255, 0.08), rgba(0, 0, 0, 0.3));
+	min-height: 320px;
+}
+
+.chart-frame svg {
+	width: 100%;
+	height: 320px;
+}
+
+.chart-frame--loading svg {
+	opacity: 0.4;
+	filter: blur(0.5px);
+}
+
+.toxicity-area {
+	fill: rgba(255, 99, 132, 0.12);
+	stroke: none;
+}
+
+.serum-path {
+	fill: none;
+	stroke: url(#plasmaFill);
+	stroke-width: 3;
+	stroke-linecap: round;
+}
+
+.anabolic-path {
+	fill: none;
+	stroke: url(#anabolicStroke);
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-dasharray: 6 6;
+}
+
+.chart-empty,
+.chart-loader {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	text-align: center;
+	padding: 2rem;
+	border-radius: 22px;
+	background: rgba(0, 0, 0, 0.55);
+}
+
+.chart-loader span {
+	width: 60px;
+	height: 2px;
+	background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+	animation: sweep 1s infinite;
+}
+
+.chart-loader p {
+	margin-top: 0.75rem;
+	letter-spacing: 0.2em;
+	font-size: 0.75rem;
+	text-transform: uppercase;
+}
+
+@keyframes sweep {
+	0% {
+		transform: translateX(-40px);
+		opacity: 0;
+	}
+	50% {
+		opacity: 1;
+	}
+	100% {
+		transform: translateX(40px);
+		opacity: 0;
+	}
+}
+
+.chart-stats {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 1rem;
+}
+
+.chart-stats article {
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 16px;
+	padding: 1rem 1.25rem;
+	background: rgba(255, 255, 255, 0.03);
+}
+
+.chart-stats .label {
+	font-size: 0.7rem;
+	letter-spacing: 0.3em;
+	text-transform: uppercase;
+	color: rgba(255, 255, 255, 0.5);
+	margin-bottom: 0.4rem;
+}
+
+.chart-stats strong {
+	font-size: 1.4rem;
+	color: var(--holo-white);
+}
+
+.chart-stats small {
+	display: block;
+	margin-top: 0.35rem;
+	color: rgba(255, 255, 255, 0.5);
+	font-size: 0.75rem;
+}

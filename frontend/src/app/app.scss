@@ -1,0 +1,115 @@
+@use '../styles.scss' as *;
+
+:host {
+	display: block;
+	min-height: 100vh;
+}
+
+.grid-shell {
+	display: grid;
+	grid-template-columns: 340px minmax(480px, 1fr) 320px;
+	gap: 1.5rem;
+	padding: 2rem clamp(1.5rem, 4vw, 4rem);
+	position: relative;
+}
+
+.grid-shell__loading {
+	filter: saturate(0.5);
+	opacity: 0.85;
+}
+
+.panel {
+	background: rgba(3, 8, 25, 0.72);
+	border: 1px solid rgba(92, 225, 230, 0.2);
+	border-radius: 18px;
+	box-shadow: 0 0 24px rgba(0, 255, 196, 0.08);
+	padding: 1.5rem;
+	min-height: 420px;
+	position: relative;
+	overflow: hidden;
+}
+
+.panel::before {
+	content: '';
+	position: absolute;
+	inset: 1px;
+	border-radius: 16px;
+	border: 1px solid rgba(255, 255, 255, 0.04);
+	pointer-events: none;
+}
+
+.panel--center {
+	min-height: 520px;
+}
+
+.grid-shell__overlay {
+	position: absolute;
+	inset: 0;
+	border-radius: 22px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	backdrop-filter: blur(6px);
+	background: rgba(2, 5, 15, 0.65);
+	gap: 1rem;
+	text-transform: uppercase;
+	letter-spacing: 0.2em;
+	color: var(--neon-cyan);
+}
+
+.scanner {
+	width: 220px;
+	height: 2px;
+	background: linear-gradient(90deg, transparent, var(--neon-magenta), transparent);
+	animation: scan 1.2s infinite;
+}
+
+@keyframes scan {
+	0% {
+		transform: translateX(-120px);
+		opacity: 0;
+	}
+	50% {
+		opacity: 1;
+	}
+	100% {
+		transform: translateX(120px);
+		opacity: 0;
+	}
+}
+
+.status-bar {
+	display: flex;
+	gap: 1rem;
+	padding: 0 2rem 2rem;
+	align-items: center;
+}
+
+.status-pill {
+	padding: 0.65rem 1.5rem;
+	border-radius: 999px;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	background: rgba(255, 255, 255, 0.04);
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	font-size: 0.75rem;
+	color: var(--holo-white);
+	transition: border-color 0.3s ease, color 0.3s ease;
+}
+
+.status-pill--active {
+	border-color: rgba(92, 225, 230, 0.7);
+	color: var(--neon-cyan);
+}
+
+.status-pill--warning {
+	border-color: rgba(255, 99, 132, 0.6);
+	color: var(--alert-amber);
+}
+
+@media (max-width: 1200px) {
+	.grid-shell {
+		grid-template-columns: minmax(300px, 1fr);
+	}
+}
