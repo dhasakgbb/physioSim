@@ -22,6 +22,7 @@ export const defaultProfile = {
   aromatase: "moderate", // low | moderate | high
   anxiety: "moderate", // low | moderate | high
   arSensitivity: "normal", // low_responder | normal | hyper_responder
+  geneticPhenotype: null,
   experience: "test_only", // none | test_only | multi_compound | blast_cruise
   dietState: "maintenance", // cutting | maintenance | bulking
   trainingStyle: "bodybuilding", // powerlifting | bodybuilding | crossfit
@@ -51,10 +52,36 @@ const anxietyImpact = {
   high: 0.8, // Tuned for ~2.0x risk multiplier (Slow COMT)
 };
 
-const arSensitivityImpact = {
-  low_responder: 0.8,
-  normal: 1.0,
-  hyper_responder: 1.2, // 1.2x Hypertrophy Score
+export const GENETIC_ARCHETYPES = {
+  hyper_responder: {
+    key: "hyper_responder",
+    label: "Hyper-Responder (Low CAG + PDE7B AA)",
+    arMultiplier: 1.5,
+    metabolismMultiplier: 1.56,
+    narrative:
+      "Hyper-Responder (Low CAG) — 1.5x anabolic response and +56% serum uptake. Monitor toxicity closely.",
+  },
+  normal: {
+    key: "normal",
+    label: "Average Responder",
+    arMultiplier: 1.0,
+    metabolismMultiplier: 1.0,
+    narrative:
+      "Average Responder — Curves align with published clinical data.",
+  },
+  low_responder: {
+    key: "low_responder",
+    label: "Non-Responder (High CAG)",
+    arMultiplier: 0.7,
+    metabolismMultiplier: 0.9,
+    narrative:
+      "Non-Responder (High CAG) — Requires higher doses; toxicity climbs while ROI lags.",
+  },
+};
+
+export const getGeneticProfileConfig = (profile = defaultProfile) => {
+  const key = profile.geneticPhenotype || profile.arSensitivity || "normal";
+  return GENETIC_ARCHETYPES[key] || GENETIC_ARCHETYPES.normal;
 };
 
 const aromatizingCompounds = new Set([
@@ -122,7 +149,7 @@ export const personalizeScore = ({
     experienceImpact[profile.experience] || experienceImpact.test_only;
   const aromataseDelta = aromataseImpact[profile.aromatase] ?? 0;
   const anxietyDelta = anxietyImpact[profile.anxiety] ?? 0;
-  const arSensitivity = arSensitivityImpact[profile.arSensitivity] ?? 1.0;
+  const { arMultiplier } = getGeneticProfileConfig(profile);
 
   const ageScale = getScale(profile, "ageImpact");
   const trainingScale = getScale(profile, "trainingImpact");
@@ -146,7 +173,7 @@ export const personalizeScore = ({
     adjustedValue *= 1 + experience.benefit * experienceScale;
 
     // AR Sensitivity (CAG Repeats) - Genetic Multiplier
-    adjustedValue *= arSensitivity;
+    adjustedValue *= arMultiplier;
   } else {
     // Age compounds risk (cardio, hepatic, recovery)
     if (ageDelta > 0) {
@@ -214,6 +241,7 @@ export const buildPersonalizationNarrative = (profile = defaultProfile) => {
   const talkingPoints = [];
   const heavyTrainingScore = deriveHeavyTrainingScore(profile);
   const shbgDelta = deriveShbgDelta(profile);
+  const phenotype = getGeneticProfileConfig(profile);
 
   if (heavyTrainingScore > 0.4) {
     talkingPoints.push(
@@ -243,14 +271,8 @@ export const buildPersonalizationNarrative = (profile = defaultProfile) => {
     );
   }
 
-  if (profile.arSensitivity === "hyper_responder") {
-    talkingPoints.push(
-      "Hyper-Responder (Low CAG) — Anabolic response multiplied by 1.2x.",
-    );
-  } else if (profile.arSensitivity === "low_responder") {
-    talkingPoints.push(
-      "Low Responder (High CAG) — Anabolic response dampened by 20%.",
-    );
+  if (phenotype && phenotype.key !== "normal") {
+    talkingPoints.push(phenotype.narrative);
   }
   if (profile.dietState === "cutting") {
     talkingPoints.push(

@@ -23,7 +23,7 @@ const Input = ({
       <input
         id={inputId}
         className={`
-          w-full bg-physio-bg-core border border-physio-border-strong rounded-lg px-4 py-2.5
+          w-full bg-physio-bg-input border border-physio-border-strong rounded-lg px-4 py-2.5
           text-physio-text-primary placeholder-physio-text-muted
           focus:outline-none focus:border-physio-accent-primary focus:ring-1 focus:ring-physio-accent-primary/50
           disabled:opacity-50 disabled:cursor-not-allowed

@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import DashboardLayout from "./DashboardLayout";
-import CompoundDock from "./CompoundDock";
 import ActiveStackRail from "./ActiveStackRail";
 import NetEffectChart from "./NetEffectChart";
 import VitalSigns from "./VitalSigns";
@@ -11,7 +10,8 @@ import SignalingNetwork from "./SignalingNetwork";
 import LabReportCard from "./LabReportCard";
 import DonationModal from "../DonationModal";
 import ErrorBoundary from "../ui/ErrorBoundary";
-import { useStack } from "../../context/StackContext";
+import { useStack, VIEW_MODE_SLUGS } from "../../context/StackContext";
+import { evaluateStack } from "../../utils/stackEngine";
 import OptimizerPane from "./OptimizerPane";
 
 const Dashboard = () => {
@@ -24,7 +24,6 @@ const Dashboard = () => {
     viewMode,
     setViewMode,
     metrics,
-    handleAddCompound,
     setUserProfile,
     durationWeeks,
     setDurationWeeks,
@@ -32,7 +31,41 @@ const Dashboard = () => {
 
   const [showDonation, setShowDonation] = useState(false);
 
-  // 4. Render
+  const baseHref = (import.meta.env?.BASE_URL || "/").replace(/\/*$/, "/");
+
+  const buildViewHref = (mode) => {
+    const slug = VIEW_MODE_SLUGS[mode] || VIEW_MODE_SLUGS.net;
+    if (slug === VIEW_MODE_SLUGS.net) return baseHref;
+    return `${baseHref}?view=${slug}`;
+  };
+
+  const handleNavClick = (mode) => (event) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    if (mode !== viewMode) {
+      setViewMode(mode);
+    }
+  };
+
+  // Calculate Steady State Metrics (Fixed 12 Weeks) for the "Net Efficiency" Card
+  // This ensures the score doesn't jump around when the user plays with the time slider
+  const steadyStateMetrics = React.useMemo(() => {
+    return evaluateStack({
+      stackInput: stack,
+      profile: userProfile,
+      durationWeeks: 12, // Fixed standard duration
+    });
+  }, [stack, userProfile]);
+
   return (
     <>
       <DashboardLayout
@@ -43,45 +76,27 @@ const Dashboard = () => {
           <div className="flex items-center gap-8">
             {/* Navigation Tabs */}
             <div className="flex items-center gap-8 pt-0.5">
-              <button
-                onClick={() => setViewMode("net")}
-                className={`relative py-2 text-base font-medium transition-colors ${
-                  viewMode === "net"
-                    ? "text-physio-text-primary"
-                    : "text-physio-text-tertiary hover:text-physio-text-secondary"
-                }`}
-              >
-                Explore
-                {viewMode === "net" && (
-                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-physio-accent-primary rounded-t-full" />
-                )}
-              </button>
-              <button
-                onClick={() => setViewMode("optimize")}
-                className={`relative py-2 text-base font-medium transition-colors ${
-                  viewMode === "optimize"
-                    ? "text-physio-text-primary"
-                    : "text-physio-text-tertiary hover:text-physio-text-secondary"
-                }`}
-              >
-                Optimize
-                {viewMode === "optimize" && (
-                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-physio-accent-primary rounded-t-full" />
-                )}
-              </button>
-              <button
-                onClick={() => setViewMode("network")}
-                className={`relative py-2 text-base font-medium transition-colors ${
-                  viewMode === "network"
-                    ? "text-physio-text-primary"
-                    : "text-physio-text-tertiary hover:text-physio-text-secondary"
-                }`}
-              >
-                Signaling
-                {viewMode === "network" && (
-                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-physio-accent-primary rounded-t-full" />
-                )}
-              </button>
+              {[
+                { label: "Explore", mode: "net" },
+                { label: "Optimize", mode: "optimize" },
+                { label: "Signaling", mode: "network" },
+              ].map(({ label, mode }) => (
+                <a
+                  key={mode}
+                  href={buildViewHref(mode)}
+                  onClick={handleNavClick(mode)}
+                  className={`relative py-2 text-base font-medium transition-colors ${
+                    viewMode === mode
+                      ? "text-physio-text-primary"
+                      : "text-physio-text-tertiary hover:text-physio-text-secondary"
+                  }`}
+                >
+                  {label}
+                  {viewMode === mode && (
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-physio-accent-primary rounded-t-full" />
+                  )}
+                </a>
+              ))}
             </div>
 
             {/* Action Button (Material 3 Filled Tonal) */}
@@ -108,15 +123,18 @@ const Dashboard = () => {
             {viewMode === "network" ? (
               <SignalingNetwork stack={stack} metrics={metrics} />
             ) : viewMode === "optimize" ? (
-              <OptimizerPane
-                stack={stack}
-                userProfile={userProfile}
-                onUpdateProfile={setUserProfile}
-                onApplyOptimization={(newStack) => {
-                  setStack(newStack);
-                  setViewMode("net");
-                }}
-              />
+              <div className="flex flex-col h-full gap-4">
+                <div className="flex-1 min-h-0">
+                  <OptimizerPane
+                    stack={stack}
+                    userProfile={userProfile}
+                    onUpdateProfile={setUserProfile}
+                    onApplyOptimization={(newStack) => {
+                      setStack(newStack);
+                    }}
+                  />
+                </div>
+              </div>
             ) : (
               <NetEffectChart
                 stack={stack}
@@ -131,7 +149,7 @@ const Dashboard = () => {
         rightRail={
           <div className="space-y-6 pb-10">
             {/* 1. THE NORTH STAR: Score */}
-            <VitalSigns metrics={metrics} stack={stack} showScoreOnly={true} />
+            <VitalSigns metrics={steadyStateMetrics} stack={stack} showScoreOnly={true} />
 
             {/* 2. THE GOVERNOR: Saturation */}
             <MechanismMonitor stack={stack} />
@@ -146,8 +164,6 @@ const Dashboard = () => {
             <VitalSigns metrics={metrics} stack={stack} showSafetyOnly={true} />
           </div>
         }
-        // ZONE D: The Dock
-        bottomDock={<CompoundDock />}
       />
 
       {/* CompoundInspector - Render outside layout as overlay */}

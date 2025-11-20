@@ -33,12 +33,6 @@ export const compoundData = {
         weight: 0.7,
         slug: "Cyp",
       },
-      suspension: {
-        label: "Suspension",
-        halfLife: 1,
-        weight: 1.0,
-        slug: "Susp",
-      },
       sustanon: {
         label: "Sustanon 250",
         halfLife: 216,

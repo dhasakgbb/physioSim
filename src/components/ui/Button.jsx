@@ -2,15 +2,15 @@ import React from "react";
 
 const variants = {
   primary:
-    "bg-gradient-to-r from-physio-accent-primary to-physio-accent-secondary text-white shadow-neo-glow hover:brightness-110",
+    "bg-white text-black font-semibold border border-black/10 hover:bg-zinc-200/80",
   secondary:
-    "bg-physio-bg-surface border border-physio-border-strong text-physio-text-secondary hover:text-physio-text-primary hover:border-physio-accent-primary/50",
+    "bg-physio-bg-highlight border border-physio-border-strong text-physio-text-primary hover:bg-physio-bg-input",
   ghost:
-    "bg-transparent text-physio-text-secondary hover:text-physio-accent-primary hover:bg-physio-bg-highlight/30",
+    "bg-transparent text-physio-text-secondary hover:text-physio-accent-primary hover:bg-physio-bg-highlight/40",
   danger:
-    "bg-physio-accent-critical/10 text-physio-accent-critical border border-physio-accent-critical/20 hover:bg-physio-accent-critical/20",
+    "bg-physio-accent-critical/10 text-physio-accent-critical border border-physio-accent-critical/30 hover:bg-physio-accent-critical/20",
   success:
-    "bg-physio-accent-success/10 text-physio-accent-success border border-physio-accent-success/20 hover:bg-physio-accent-success/20",
+    "bg-physio-accent-success/10 text-physio-accent-success border border-physio-accent-success/30 hover:bg-physio-accent-success/20",
 };
 
 const sizes = {

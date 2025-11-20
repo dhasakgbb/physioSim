@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { evaluateStack } from "../../utils/stackEngine";
 import { simulateSerum } from "../../utils/pharmacokinetics";
+import { getGeneticProfileConfig } from "../../utils/personalization";
 import { defaultProfile } from "../../utils/personalization";
 import { compoundData } from "../../data/compoundData";
 import { COLORS } from "../../utils/theme";
@@ -21,24 +22,24 @@ import Slider from "../ui/Slider";
 
 // Scientific / Clinical Dark Theme
 const PALETTE = {
-  surface: "#0B0C10", // Deepest Background
-  surfaceContainer: "#15171E", // Card Background
-  surfaceContainerHigh: "#1F2937", // Hover/Active
-  primary: COLORS.benefit, // Emerald Green
-  secondary: "#06B6D4", // Cyan
-  tertiary: "#8B5CF6", // Violet
-  error: COLORS.risk, // Red
-  outline: "#374151", // Borders
-  onSurface: "#F3F4F6", // Primary Text
-  onSurfaceVariant: "#9CA3AF", // Secondary Text
+  surface: "#09090B",
+  surfaceContainer: "#18181B",
+  surfaceContainerHigh: "#27272A",
+  primary: COLORS.benefit,
+  secondary: "#3B82F6",
+  tertiary: "#94A3B8",
+  error: COLORS.risk,
+  outline: "#3F3F46",
+  onSurface: "#E4E4E7",
+  onSurfaceVariant: "#A1A1AA",
 };
 
 const ReleaseTooltip = ({ active, payload, label }) => {
   if (!active || !payload || !payload.length) return null;
 
   return (
-    <div className="bg-[#15171E] border border-[#374151] p-4 rounded-xl shadow-xl min-w-[200px]">
-      <p className="text-xs font-bold text-[#9CA3AF] mb-2">
+    <div className="bg-[#27272A] border border-[#3F3F46] p-4 rounded-xl shadow-xl min-w-[200px]">
+      <p className="text-xs font-bold text-[#A1A1AA] mb-2">
         Day {Math.floor(label)} (Week {Math.floor(label / 7)})
       </p>
       {payload.map((entry) => (
@@ -51,15 +52,15 @@ const ReleaseTooltip = ({ active, payload, label }) => {
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-xs text-[#9CA3AF] capitalize">
+            <span className="text-xs text-[#A1A1AA] capitalize">
               {entry.name === "total"
                 ? "Systemic Load"
                 : compoundData[entry.name]?.name || entry.name}
             </span>
           </div>
-          <span className="text-xs font-mono font-bold text-[#F3F4F6]">
+          <span className="text-xs font-mono font-bold text-[#E4E4E7]">
             {entry.value.toFixed(1)}{" "}
-            <span className="text-[9px] text-[#6B7280]">mg</span>
+            <span className="text-[9px] text-[#71717A]">mg</span>
           </span>
         </div>
       ))}
@@ -67,13 +68,17 @@ const ReleaseTooltip = ({ active, payload, label }) => {
   );
 };
 
-const CustomTooltip = ({ active, payload, label, crossover }) => {
+const CustomTooltip = ({ active, payload, label, crossover, critical }) => {
   if (!active || !payload || !payload.length) return null;
 
   const data = payload[0].payload;
   const isProfitable = data.net > 0;
   const isSaturated = data.saturation > 0.85;
-  const isWasted = crossover !== null && data.percent > crossover;
+  
+  // Zone Detection
+  const isCritical = critical !== null && data.mgEq >= critical;
+  const isDiminishing = !isCritical && crossover !== null && data.mgEq >= crossover;
+  
   const penaltyPct = Math.round(
     (1 - data.benefit / (data.benefit / (data.saturationPenalty || 1))) * 100,
   );
@@ -81,26 +86,40 @@ const CustomTooltip = ({ active, payload, label, crossover }) => {
   return (
     <div
       className={`backdrop-blur-md border p-4 rounded-xl shadow-xl min-w-[240px] transition-colors duration-300 ${
-        isWasted
+        isCritical
           ? "bg-[#EF4444]/10 border-[#EF4444]/50"
-          : "bg-[#15171E]/95 border-[#374151]"
+          : isDiminishing
+            ? "bg-[#F59E0B]/10 border-[#F59E0B]/50"
+            : "bg-[#27272A]/95 border-[#3F3F46]"
       }`}
     >
-      <p className="text-xs uppercase tracking-widest text-[#9CA3AF] mb-2">
-        Stack Intensity:{" "}
-        <span className="text-[#F3F4F6] font-bold">{label}%</span>
+      <p className="text-xs uppercase tracking-widest text-[#A1A1AA] mb-2">
+        Anabolic Load:{" "}
+        <span className="text-[#E4E4E7] font-bold">{Math.round(data.mgEq)} mgEq</span>
       </p>
 
-      {isWasted ? (
+      {isCritical ? (
         <div className="mb-3 p-2 bg-[#EF4444]/20 rounded border border-[#EF4444]/30">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-lg">🛑</span>
             <span className="text-xs font-bold text-[#EF4444] uppercase tracking-wider">
-              Wasted Zone
+              Critical Overload
             </span>
           </div>
-          <p className="text-xs text-[#F3F4F6] leading-tight">
-            Every mg added here reduces net growth. Risk exceeds benefit.
+          <p className="text-xs text-[#E4E4E7] leading-tight">
+            Toxicity significantly exceeds benefit. Immediate reduction recommended.
+          </p>
+        </div>
+      ) : isDiminishing ? (
+        <div className="mb-3 p-2 bg-[#F59E0B]/20 rounded border border-[#F59E0B]/30">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">⚠️</span>
+            <span className="text-xs font-bold text-[#F59E0B] uppercase tracking-wider">
+              Diminishing Returns
+            </span>
+          </div>
+          <p className="text-xs text-[#E4E4E7] leading-tight">
+            Risk is outpacing benefit. Efficiency is negative, but gains are still possible.
           </p>
         </div>
       ) : (
@@ -109,7 +128,7 @@ const CustomTooltip = ({ active, payload, label, crossover }) => {
             <span className="text-xs text-[#10B981] font-medium">
               Anabolic Signal
             </span>
-            <span className="text-sm font-mono font-bold text-[#F3F4F6]">
+            <span className="text-sm font-mono font-bold text-[#E4E4E7]">
               {data.benefit.toFixed(2)}
             </span>
           </div>
@@ -118,10 +137,10 @@ const CustomTooltip = ({ active, payload, label, crossover }) => {
           {data.nonGenomicBenefit > 0.5 && (
             <div className="pl-2 border-l-2 border-[#06B6D4]/50 my-1">
               <div className="flex justify-between items-center">
-                <span className="text-[9px] text-[#6B7280]">
+                <span className="text-[9px] text-[#71717A]">
                   ↳ Receptor Load
                 </span>
-                <span className="text-[9px] font-mono text-[#9CA3AF]">
+                <span className="text-[9px] font-mono text-[#A1A1AA]">
                   {(data.benefit - data.nonGenomicBenefit).toFixed(2)}
                 </span>
               </div>
@@ -140,13 +159,13 @@ const CustomTooltip = ({ active, payload, label, crossover }) => {
             <span className="text-xs text-[#EF4444] font-medium">
               Systemic Cost
             </span>
-            <span className="text-sm font-mono font-bold text-[#F3F4F6]">
+            <span className="text-sm font-mono font-bold text-[#E4E4E7]">
               {data.risk.toFixed(2)}
             </span>
           </div>
-          <div className="h-px bg-[#374151]/50 my-1" />
+          <div className="h-px bg-[#3F3F46]/50 my-1" />
           <div className="flex justify-between items-center">
-            <span className="text-xs text-[#9CA3AF]">Net Efficiency</span>
+            <span className="text-xs text-[#A1A1AA]">Net Efficiency</span>
             <span
               className={`text-sm font-mono font-bold ${
                 isProfitable ? "text-[#10B981]" : "text-[#EF4444]"
@@ -160,12 +179,12 @@ const CustomTooltip = ({ active, payload, label, crossover }) => {
       )}
 
       {isSaturated && !isWasted && (
-        <div className="mt-3 py-1.5 px-2 bg-[#10B981]/10 border border-[#10B981]/20 rounded text-[10px] text-[#9CA3AF] flex items-start gap-1.5">
+        <div className="mt-3 py-1.5 px-2 bg-[#22C55E]/10 border border-[#22C55E]/25 rounded text-[10px] text-[#A1A1AA] flex items-start gap-1.5">
           <span className="text-xs mt-0.5">ℹ️</span>
           <span className="leading-tight">
             AR Upregulation Active.
             <br />
-            <span className="text-[#6B7280]">
+            <span className="text-[#71717A]">
               Gains are still increasing, but efficiency is dropping. Risk is
               compounding faster than growth.
             </span>
@@ -174,7 +193,7 @@ const CustomTooltip = ({ active, payload, label, crossover }) => {
       )}
 
       {data.saturationPenalty < 0.9 && (
-        <div className="mt-1 text-[10px] text-[#6B7280]">
+        <div className="mt-1 text-[10px] text-[#71717A]">
           Potential wasted: -{penaltyPct}% (Receptor Saturation)
         </div>
       )}
@@ -187,17 +206,42 @@ const NetEffectChart = ({
   userProfile = defaultProfile,
   durationWeeks = 12,
   setDurationWeeks,
+  title,
+  simple = false,
 }) => {
   // 1. Generate Projection Data (Dose Response)
-  const { data, crossover } = useMemo(() => {
-    if (stack.length === 0) return { data: [], crossover: null };
+  const { data, crossover, critical, currentMgEq } = useMemo(() => {
+    if (stack.length === 0) return { data: [], crossover: null, currentMgEq: 0 };
+
+    // Calculate Current Total mgEq (100% Baseline)
+    let baselineMgEq = 0;
+    stack.forEach((item) => {
+      const meta = compoundData[item.compound];
+      // Weighting Logic: Very High = 3, High = 1.5, Moderate/Other = 1
+      const weight =
+        meta.bindingAffinity === "very_high"
+          ? 3
+          : meta.bindingAffinity === "high"
+            ? 1.5
+            : 1;
+      baselineMgEq += item.dose * weight;
+    });
+
+    // Define X-Axis Range: 0 to 1.5x Current Load
+    // If baseline is 0 (shouldn't happen with active stack), default to 1000
+    const maxMgEq = baselineMgEq > 0 ? baselineMgEq * 1.5 : 1000;
+    const stepSize = maxMgEq / 30; // Generate ~30 points for smooth curve
 
     const points = [];
     let foundCrossover = null;
+    let foundCritical = null;
 
-    // Sweep from 0% to 150% Intensity
-    for (let percent = 0; percent <= 150; percent += 5) {
-      const scalar = percent / 100;
+    // Sweep from 0 to maxMgEq
+    for (let mgEq = 0; mgEq <= maxMgEq; mgEq += stepSize) {
+      // Calculate scalar relative to baseline
+      // If baseline is 1000, and current mgEq is 500, scalar is 0.5
+      const scalar = baselineMgEq > 0 ? mgEq / baselineMgEq : 0;
+      const percent = scalar * 100; // Keep percent for internal logic if needed
 
       // Calculate hypothetical stack at this scalar
       const hypotheticalStack = stack.map((s) => ({
@@ -206,39 +250,34 @@ const NetEffectChart = ({
       }));
 
       // Run the Engine
+      // FIXED DURATION: We use 12 weeks as the standard "Steady State" reference
+      // This ensures the efficiency curve doesn't shift when the user changes the time slider
       const result = evaluateStack({
         stackInput: hypotheticalStack,
         profile: userProfile,
-        durationWeeks,
+        durationWeeks: 12, 
       });
 
-      // Calculate Saturation % for this point
-      let currentARLoad = 0;
-      hypotheticalStack.forEach((item) => {
-        const meta = compoundData[item.compound];
-        if (meta?.pathway === "ar_genomic") {
-          const weight =
-            meta.bindingAffinity === "very_high"
-              ? 3
-              : meta.bindingAffinity === "high"
-                ? 1.5
-                : 1;
-          currentARLoad += item.dose * weight;
-        }
-      });
-
-      const saturation = Math.min(currentARLoad / 1500, 1);
+      // Calculate Saturation % for this point (Visual only)
+      const saturation = Math.min(mgEq / 1500, 1); // 1500 mgEq is arbitrary saturation point
+      
       const benefit = result.totals.totalBenefit;
       const risk = result.totals.totalRisk;
 
-      // Detect Crossover (Risk > Benefit)
-      // We look for the first point where Risk exceeds Benefit significantly (to avoid noise at 0)
-      if (foundCrossover === null && percent > 10 && risk > benefit) {
-        foundCrossover = percent;
+      // Detect Zones
+      // 1. Diminishing Returns: Risk exceeds Benefit (Efficiency < 0)
+      if (foundCrossover === null && mgEq > 100 && risk > benefit) {
+        foundCrossover = mgEq;
+      }
+
+      // 2. Critical Overload: Risk exceeds Benefit by 30% (Significant toxicity)
+      if (foundCritical === null && mgEq > 100 && risk > benefit * 1.3) {
+        foundCritical = mgEq;
       }
 
       points.push({
-        percent,
+        mgEq, // New X-Axis Key
+        percent, // Kept for reference
         benefit: result.totals.totalBenefit,
         risk: result.totals.totalRisk,
         net: result.totals.netScore,
@@ -248,14 +287,21 @@ const NetEffectChart = ({
         nonGenomicBenefit: result.totals.nonGenomicBenefit || 0,
       });
     }
-    return { data: points, crossover: foundCrossover };
-  }, [stack, userProfile, durationWeeks]);
+    return { 
+      data: points, 
+      crossover: foundCrossover, 
+      critical: foundCritical,
+      currentMgEq: baselineMgEq 
+    };
+  }, [stack, userProfile]); // Removed durationWeeks dependency
 
   // 2. Generate Release Profile Data (Time Based)
+  const { metabolismMultiplier } = getGeneticProfileConfig(userProfile);
+
   const releaseData = useMemo(() => {
     if (stack.length === 0) return [];
-    return simulateSerum(stack, durationWeeks);
-  }, [stack, durationWeeks]);
+    return simulateSerum(stack, durationWeeks, { metabolismMultiplier });
+  }, [stack, durationWeeks, metabolismMultiplier]);
 
   const serumTicks = useMemo(() => {
     if (!releaseData.length) return [0, 100];
@@ -339,33 +385,46 @@ const NetEffectChart = ({
     return dailyPoints;
   }, [stack, releaseData, userProfile, durationWeeks]);
 
-  // Determine Current Risk State (at 100%)
+  // Determine Current Risk State (at Current Dose)
   const currentRisk = useMemo(() => {
-    const currentPoint = data.find((d) => d.percent === 100);
-    return currentPoint ? currentPoint.risk : 0;
-  }, [data]);
+    if (!data.length) return 0;
+    // Find closest point to currentMgEq
+    const closest = data.reduce((prev, curr) => {
+      return Math.abs(curr.mgEq - currentMgEq) < Math.abs(prev.mgEq - currentMgEq)
+        ? curr
+        : prev;
+    });
+    return closest ? closest.risk : 0;
+  }, [data, currentMgEq]);
 
   const isDangerZone = currentRisk > 8.0; // Threshold for visual alarm
 
   if (stack.length === 0) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-[#0B0C10]">
+      <div
+        className="absolute inset-0 flex items-center justify-center bg-[#09090B]"
+        data-testid="net-chart"
+      >
         <div className="text-center opacity-60">
           <div className="text-6xl mb-4 grayscale opacity-50">🧬</div>
-          <h3 className="text-lg font-bold text-[#F3F4F6] mb-2">
+          <h3 className="text-lg font-bold text-[#E4E4E7] mb-2">
             No Active Compounds
           </h3>
-          <p className="text-sm text-[#9CA3AF] mb-6 max-w-xs mx-auto">
-            Select a compound from the library below to begin your simulation.
+          <p className="text-sm text-[#A1A1AA] mb-6 max-w-xs mx-auto">
+            Deploy a compound from the Tactical Dropdown in the Active Mixture rail to initiate the sim.
           </p>
           <button
             onClick={() => {
-              document
-                .querySelector("footer")
-                ?.scrollIntoView({ behavior: "smooth" });
-              window.dispatchEvent(new CustomEvent("highlight-library"));
+              const selector = document.querySelector(
+                "[data-compound-selector]",
+              );
+              if (selector) {
+                selector.scrollIntoView({ behavior: "smooth", block: "center" });
+              }
+              window.dispatchEvent(new CustomEvent("highlight-selector"));
+              window.dispatchEvent(new CustomEvent("open-stack-drawer"));
             }}
-            className="px-6 py-2.5 bg-[#10B981] text-[#0B0C10] font-bold rounded-full hover:bg-[#34D399] transition-all active:scale-95 flex items-center gap-2 mx-auto shadow-lg"
+            className="px-6 py-2.5 bg-white text-black font-bold rounded-full hover:bg-zinc-200 transition-all active:scale-95 flex items-center gap-2 mx-auto shadow-lg"
           >
             <span className="text-xl leading-none">+</span>
             Add Compound
@@ -376,16 +435,19 @@ const NetEffectChart = ({
   }
 
   return (
-    <div className="absolute inset-0 w-full h-full flex flex-col bg-[#0B0C10] p-4 gap-4 overflow-y-auto">
+    <div
+      className="absolute inset-0 w-full h-full flex flex-col bg-[#09090B] p-4 gap-4 overflow-y-auto"
+      data-testid="net-chart"
+    >
       {/* TOP SECTION: Dose Response (Static) */}
-      <div className="flex-1 min-h-[300px] bg-[#15171E] rounded-2xl shadow-lg border border-[#374151]/20 relative overflow-hidden">
-        <div className="absolute top-4 left-6 z-10">
-          <h3 className="text-sm font-bold text-[#F3F4F6] tracking-wide">
-            Dose Efficiency
+      <div className="flex-1 min-h-[300px] bg-[#27272A] rounded-2xl shadow-lg border border-[#3F3F46]/30 relative overflow-hidden">
+        <div className="absolute top-4 left-6 z-10 flex flex-wrap items-baseline gap-3 pr-6">
+          <h3 className="text-sm font-bold text-[#E4E4E7] tracking-wide">
+            {title || "Dose Efficiency"}
           </h3>
-          <p className="text-[10px] text-[#9CA3AF]">
-            Benefit vs Risk at various doses (Steady State • Time Independent)
-          </p>
+          <span className="text-[11px] text-[#A1A1AA] font-medium tracking-[0.15em]">
+            Benefit vs Risk - Steady State
+          </span>
         </div>
 
         <ResponsiveContainer width="100%" height="100%">
@@ -417,6 +479,21 @@ const NetEffectChart = ({
                   opacity="0.1"
                 />
               </pattern>
+              <pattern
+                id="diminishingPattern"
+                patternUnits="userSpaceOnUse"
+                width="8"
+                height="8"
+                patternTransform="rotate(45)"
+              >
+                <rect
+                  width="4"
+                  height="8"
+                  transform="translate(0,0)"
+                  fill="#F59E0B"
+                  opacity="0.1"
+                />
+              </pattern>
             </defs>
 
             <CartesianGrid
@@ -427,20 +504,27 @@ const NetEffectChart = ({
             />
 
             <XAxis
-              dataKey="percent"
+              dataKey="mgEq"
               type="number"
-              domain={[0, 150]}
-              tickFormatter={(val) => `${val}%`}
+              domain={[0, "dataMax"]}
+              tickFormatter={(val) => `${Math.round(val)}`}
               stroke={PALETTE.outline}
-              tick={{ fill: "#9CA3AF", fontSize: 11 }}
+              tick={{ fill: "#A1A1AA", fontSize: 11 }}
               tickLine={false}
               axisLine={false}
               dy={5}
+              label={{ 
+                value: "Effective Anabolic Load (mgEq)", 
+                position: "insideBottom", 
+                offset: -5,
+                fill: "#52525B",
+                fontSize: 10
+              }}
             />
             <YAxis hide domain={[0, (dataMax) => Math.max(dataMax, 6)]} />
 
             <Tooltip
-              content={<CustomTooltip crossover={crossover} />}
+              content={<CustomTooltip crossover={crossover} critical={critical} />}
               cursor={{
                 stroke: isDangerZone ? PALETTE.error : PALETTE.primary,
                 strokeWidth: 1,
@@ -448,10 +532,21 @@ const NetEffectChart = ({
               }}
             />
 
+            {/* Diminishing Returns Zone (Amber) */}
             {crossover !== null && (
               <ReferenceArea
                 x1={crossover}
-                x2={150}
+                x2={critical || "dataMax"}
+                fill="url(#diminishingPattern)"
+                opacity={1}
+              />
+            )}
+
+            {/* Critical Overload Zone (Red) */}
+            {critical !== null && (
+              <ReferenceArea
+                x1={critical}
+                x2="dataMax"
                 fill="url(#wastedPattern)"
                 opacity={1}
               />
@@ -493,14 +588,40 @@ const NetEffectChart = ({
             />
 
             <ReferenceLine
-              x={100}
+              x={currentMgEq}
               stroke={isDangerZone ? PALETTE.error : PALETTE.primary}
               strokeWidth={isDangerZone ? 2 : 1}
               strokeDasharray="3 3"
               strokeOpacity={0.8}
-            >
-              <div />
-            </ReferenceLine>
+              label={({ viewBox }) => {
+                const x = viewBox.x;
+                const y = viewBox.height - 10; // Position near bottom
+                return (
+                  <g transform={`translate(${x},${y})`}>
+                    <rect
+                      x={-45}
+                      y={-10}
+                      width={90}
+                      height={20}
+                      rx={10}
+                      fill={isDangerZone ? "#450A0A" : "#064E3B"}
+                      stroke={isDangerZone ? "#7F1D1D" : "#059669"}
+                      strokeWidth={1}
+                    />
+                    <text
+                      x={0}
+                      y={3}
+                      textAnchor="middle"
+                      fill={isDangerZone ? "#EF4444" : "#10B981"}
+                      fontSize={9}
+                      fontWeight="bold"
+                    >
+                      CURRENT DOSE
+                    </text>
+                  </g>
+                );
+              }}
+            />
           </ComposedChart>
         </ResponsiveContainer>
 
@@ -519,37 +640,28 @@ const NetEffectChart = ({
             <div className="w-2 h-2 bg-[#EF4444] rounded-full" />
           </div>
         </div>
-
-        <div className="absolute bottom-6 left-2/3 -translate-x-1/2 pointer-events-none">
-          <span
-            className={`text-[9px] font-bold px-3 py-1 rounded-full border transition-colors duration-300 shadow-sm ${
-              isDangerZone
-                ? "text-[#EF4444] bg-[#450A0A] border-[#7F1D1D]"
-                : "text-[#10B981] bg-[#064E3B] border-[#059669]"
-            }`}
-          >
-            CURRENT DOSE
-          </span>
-        </div>
       </div>
 
-      {/* CONTROL BAR: Divider & Slider */}
-      <div className="flex items-center gap-6 bg-[#1F2937] p-4 rounded-xl shadow-md border border-[#374151]/20">
+      {/* CONTROL BAR: Divider & Slider - Hidden in Simple Mode */}
+      {!simple && (
+        <div className="contents">
+
+        <div className="flex items-center gap-6 bg-[#27272A] p-4 rounded-xl shadow-md border border-[#3F3F46]/30">
         <div className="flex items-center gap-3 min-w-max">
           <div className="p-2 bg-[#10B981]/10 rounded-lg text-[#10B981]">
             ⏱️
           </div>
           <div>
-            <h4 className="text-xs font-bold text-[#F3F4F6] uppercase tracking-wider">
+            <h4 className="text-xs font-bold text-[#E4E4E7] uppercase tracking-wider">
               Temporal Analysis
             </h4>
-            <p className="text-[10px] text-[#9CA3AF]">
+            <p className="text-[10px] text-[#A1A1AA]">
               Simulate accumulation & organ stress over time
             </p>
           </div>
         </div>
 
-        <div className="h-8 w-px bg-[#374151]/30 mx-2" />
+        <div className="h-8 w-px bg-[#3F3F46]/30 mx-2" />
 
         <div className="flex-1">
           <Slider
@@ -572,14 +684,14 @@ const NetEffectChart = ({
       {/* BOTTOM SECTION: Time-Based Charts */}
       <div className="flex-1 flex flex-col gap-4 min-h-[400px]">
         {/* Serum Release */}
-        <div className="flex-1 bg-[#15171E] rounded-2xl shadow-lg border border-[#374151]/20 relative overflow-hidden">
-          <div className="absolute top-4 left-6 z-10">
-            <h3 className="text-sm font-bold text-[#F3F4F6] tracking-wide">
+        <div className="flex-1 bg-[#27272A] rounded-2xl shadow-lg border border-[#3F3F46]/30 relative overflow-hidden">
+          <div className="absolute top-4 left-6 z-10 flex flex-wrap items-baseline gap-3 pr-6">
+            <h3 className="text-sm font-bold text-[#E4E4E7] tracking-wide">
               Serum Release
             </h3>
-            <p className="text-[10px] text-[#9CA3AF]">
+            <span className="text-[11px] text-[#A1A1AA] font-medium tracking-[0.15em]">
               Pharmacokinetics & Active Half-Lives
-            </p>
+            </span>
           </div>
 
           <ResponsiveContainer width="100%" height="100%">
@@ -617,7 +729,7 @@ const NetEffectChart = ({
                 domain={[0, "auto"]}
                 ticks={serumTicks}
                 stroke={PALETTE.outline}
-                tick={{ fill: "#9CA3AF", fontSize: 11 }}
+                tick={{ fill: "#A1A1AA", fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(val) => `${val}mg`}
@@ -649,14 +761,14 @@ const NetEffectChart = ({
         </div>
 
         {/* Cycle Evolution */}
-        <div className="flex-1 bg-[#15171E] rounded-2xl shadow-lg border border-[#374151]/20 relative overflow-hidden">
-          <div className="absolute top-4 left-6 z-10">
-            <h3 className="text-sm font-bold text-[#F3F4F6] tracking-wide">
+        <div className="flex-1 bg-[#27272A] rounded-2xl shadow-lg border border-[#3F3F46]/30 relative overflow-hidden">
+          <div className="absolute top-4 left-6 z-10 flex flex-wrap items-baseline gap-3 pr-6">
+            <h3 className="text-sm font-bold text-[#E4E4E7] tracking-wide">
               Cycle Evolution
             </h3>
-            <p className="text-[10px] text-[#9CA3AF]">
+            <span className="text-[11px] text-[#A1A1AA] font-medium tracking-[0.15em]">
               Benefit vs Risk Accumulation
-            </p>
+            </span>
           </div>
 
           <ResponsiveContainer width="100%" height="100%">
@@ -694,8 +806,8 @@ const NetEffectChart = ({
                 content={({ active, payload, label }) => {
                   if (!active || !payload || !payload.length) return null;
                   return (
-                    <div className="bg-[#1F2937] border border-[#374151] p-3 rounded-xl shadow-xl">
-                      <p className="text-xs font-bold text-[#9CA3AF] mb-2">
+                    <div className="bg-[#27272A] border border-[#3F3F46] p-3 rounded-xl shadow-xl">
+                      <p className="text-xs font-bold text-[#A1A1AA] mb-2">
                         Day {Math.floor(label)} (Week {Math.floor(label / 7)})
                       </p>
                       {payload.map((entry) => (
@@ -706,7 +818,7 @@ const NetEffectChart = ({
                           <span style={{ color: entry.color }}>
                             {entry.name}
                           </span>
-                          <span className="font-mono font-bold text-[#F3F4F6]">
+                          <span className="font-mono font-bold text-[#E4E4E7]">
                             {entry.value.toFixed(2)}
                           </span>
                         </div>
@@ -749,6 +861,9 @@ const NetEffectChart = ({
           </ResponsiveContainer>
         </div>
       </div>
+    </div>
+  )}
+
     </div>
   );
 };

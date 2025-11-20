@@ -1,5 +1,6 @@
 export const STORAGE_KEYS = Object.freeze({
   PROFILE: "physioSim:userProfile",
+  VIEW_MODE: "physioSim:viewMode",
   LAYOUT_FILTER_PREFS: "layoutFilterPrefs",
   INTERACTION_CONTROLS: "interactionControls",
   INTERACTION_FOCUS_PIN: "interactionFocusPin",
@@ -7,6 +8,7 @@ export const STORAGE_KEYS = Object.freeze({
 });
 
 export const PROFILE_STORAGE_KEY = STORAGE_KEYS.PROFILE;
+export const VIEW_MODE_STORAGE_KEY = STORAGE_KEYS.VIEW_MODE;
 export const LAYOUT_FILTER_PREFS_KEY = STORAGE_KEYS.LAYOUT_FILTER_PREFS;
 export const INTERACTION_CONTROL_STORAGE_KEY =
   STORAGE_KEYS.INTERACTION_CONTROLS;

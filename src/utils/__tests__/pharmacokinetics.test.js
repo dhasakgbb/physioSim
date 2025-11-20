@@ -48,5 +48,14 @@ describe('Pharmacokinetics Engine', () => {
       
       expect(week6Level).toBeGreaterThan(week1Level);
     });
+
+    it('applies metabolism multiplier to serum output', () => {
+      const stack = [{ compound: 'testosterone', dose: 500, frequency: 3.5 }];
+      const base = simulateSerum(stack, 4, { metabolismMultiplier: 1 });
+      const boosted = simulateSerum(stack, 4, { metabolismMultiplier: 1.56 });
+
+      const sampleIndex = 30; // ~5 days into the run
+      expect(boosted[sampleIndex].total).toBeGreaterThan(base[sampleIndex].total * 1.4);
+    });
   });
 });

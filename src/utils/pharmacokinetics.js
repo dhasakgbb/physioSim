@@ -6,9 +6,14 @@ import { compoundData } from "../data/compoundData";
  * @param {number} durationWeeks - Duration of the simulation in weeks
  * @returns {Array} - Array of data points { hour, day, [compound]: level, total }
  */
-export const simulateSerum = (stack, durationWeeks = 28) => {
+export const simulateSerum = (
+  stack,
+  durationWeeks = 28,
+  options = {},
+) => {
   const hoursTotal = durationWeeks * 7 * 24;
   const dataPoints = [];
+  const metabolismMultiplier = options.metabolismMultiplier ?? 1;
 
   // Track Depot (Oil in muscle) vs Active (Serum)
   let activeLevels = {};
@@ -66,8 +71,9 @@ export const simulateSerum = (stack, durationWeeks = 28) => {
       activeLevels[item.compound] *= Math.pow(0.5, 4 / hl);
 
       // Record Point
-      point[item.compound] = activeLevels[item.compound];
-      totalSystemicLoad += activeLevels[item.compound];
+      const observedLevel = activeLevels[item.compound] * metabolismMultiplier;
+      point[item.compound] = observedLevel;
+      totalSystemicLoad += observedLevel;
     });
 
     point.total = totalSystemicLoad;

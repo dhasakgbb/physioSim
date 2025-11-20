@@ -10,119 +10,17 @@ import {
   Legend,
 } from "recharts";
 import { compoundData } from "../../data/compoundData";
-
-<<<<<<< HEAD
 import { simulateSerum } from "../../utils/pharmacokinetics";
-=======
-const getAbsorptionRate = (ester, type) => {
-  // ka (absorption rate constant) approximations
-  // Lower ka = Slower absorption = Slower ramp up
-  // Previous values were too high, causing instant spikes.
-
-  if (type === "oral") return 2.0; // Peaks in ~2-3 hours
-  if (!ester) return 0.1; // Default injectable
-
-  const slug = ester.toLowerCase();
-
-  // Fast Esters (Prop, Ace) -> Peak ~12-18h
-  if (slug.includes("prop") || slug.includes("ace")) return 0.1;
-
-  // Medium Esters (Enanthate, Cyp) -> Peak ~24-36h
-  if (slug.includes("enanth") || slug.includes("cyp")) return 0.05;
-
-  // Slow Esters (Decanoate, Undec) -> Peak ~48-72h
-  if (slug.includes("dec") || slug.includes("undec")) return 0.03;
-
-  // Suspension -> Very Fast but not instant
-  if (slug.includes("susp")) return 1.5;
-
-  return 0.05;
-};
-
-const simulateSerum = (stack) => {
-  const hoursTotal = 28 * 24;
-  const dataPoints = [];
-
-  // State tracking for numerical simulation
-  let activeLevels = {};
-  let depotLevels = {}; // Track oil sitting in muscle
-
-  stack.forEach((c) => {
-    activeLevels[c.compound] = 0;
-    depotLevels[c.compound] = 0;
-  });
-
-  for (let hour = 0; hour <= hoursTotal; hour += 4) {
-    let totalSystemicLoad = 0;
-    let point = { hour, day: (hour / 24).toFixed(1) };
-
-    stack.forEach((item) => {
-      const meta = compoundData[item.compound];
-      if (!meta) return;
-
-      const hl = meta.halfLife || 24;
-      const isOral = meta.type === "oral";
-
-      // 1. INJECTION EVENT
-      // Calculate interval in hours based on frequency (days between pins)
-      // Note: item.frequency comes from ActiveStackRail as "Days Interval" (1=ED, 3.5=2x/Wk)
-      const intervalDays = item.frequency || 1;
-      const intervalHours = intervalDays * 24;
-
-      // Check if injection happens this hour
-      // We use a tolerance of 4 hours (one step)
-      if (hour % Math.round(intervalHours) < 4) {
-        // Calculate dose per pin
-        let dosePerPin;
-        if (isOral) {
-          // For Orals, item.dose is "mg/day" (Dose per administration)
-          // We inject the full pill dose at each interval
-          dosePerPin = item.dose;
-        } else {
-          // For Injectables, item.dose is "mg/week" (Total Weekly Dose)
-          // We inject a fraction based on frequency: WeeklyDose * (DaysInterval / 7)
-          dosePerPin = item.dose * (intervalDays / 7);
-        }
-
-        depotLevels[item.compound] += dosePerPin;
-      }
-
-      // 2. ABSORPTION: Transfer from Depot to Active
-      // Orals absorb instantly (gut). Injectables absorb from depot.
-      // We use the helper function to get ester-specific rates.
-      const esterKey = item.ester || meta.defaultEster;
-      const esterName = meta.esters?.[esterKey]?.slug || esterKey;
-      
-      let absorptionRate;
-      if (isOral) {
-        absorptionRate = 0.8; // Fast gut absorption
-      } else {
-        // Use the helper function for accurate ester kinetics
-        absorptionRate = getAbsorptionRate(esterName, meta.type);
-      }
-
-      const absorbed = depotLevels[item.compound] * absorptionRate;
-      depotLevels[item.compound] -= absorbed;
-      activeLevels[item.compound] += absorbed;
-
-      // 3. ELIMINATION: Decay the Active
-      // Decay factor for 4 hours: 0.5 ^ (4 / hl)
-      const decayFactor = Math.pow(0.5, 4 / hl);
-      activeLevels[item.compound] *= decayFactor;
-
-      point[item.compound] = activeLevels[item.compound];
-      totalSystemicLoad += activeLevels[item.compound];
-    });
-
-    point.total = totalSystemicLoad;
-    dataPoints.push(point);
-  }
-  return dataPoints;
-};
->>>>>>> 214304dbd217fafbaf27b2476fe628bc176d213b
+import { useStack } from "../../context/StackContext";
+import { getGeneticProfileConfig } from "../../utils/personalization";
 
 const SerumStabilityChart = ({ stack }) => {
-  const data = useMemo(() => simulateSerum(stack), [stack]);
+  const { userProfile } = useStack();
+  const { metabolismMultiplier } = getGeneticProfileConfig(userProfile);
+  const data = useMemo(
+    () => simulateSerum(stack, 28, { metabolismMultiplier }),
+    [stack, metabolismMultiplier],
+  );
 
   // Calculate Stability Score (using total variance)
   const stabilityScore = useMemo(() => {
@@ -137,15 +35,14 @@ const SerumStabilityChart = ({ stack }) => {
 
   return (
     <div className="absolute inset-0 flex flex-col bg-physio-bg-core">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-physio-border-subtle z-10 bg-physio-bg-surface/80 backdrop-blur">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between px-6 py-4 z-10 bg-physio-bg-surface backdrop-blur">
+        <div className="flex flex-wrap items-baseline gap-3">
           <h3 className="text-sm font-bold text-physio-text-primary uppercase tracking-wider">
             Serum Stability Simulator
           </h3>
-          <p className="text-xs text-physio-text-tertiary hidden lg:block">
-            Visualizing release rates based on half-lives and injection
-            frequency
-          </p>
+          <span className="text-xs text-physio-text-tertiary font-medium">
+            Pharmacokinetics & Active Half-Lives
+          </span>
         </div>
 
         <div className="flex items-center gap-3">
@@ -174,13 +71,13 @@ const SerumStabilityChart = ({ stack }) => {
           >
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke="#374151"
-              opacity={0.15}
+              stroke="#3F3F46"
+              opacity={0.2}
               vertical={false}
             />
             <XAxis
               dataKey="day"
-              stroke="#4b5563"
+              stroke="#52525b"
               fontSize={12}
               tickFormatter={(val) => `Day ${Math.floor(val)}`}
               interval={48}
@@ -191,13 +88,13 @@ const SerumStabilityChart = ({ stack }) => {
 
             <Tooltip
               contentStyle={{
-                backgroundColor: "#111827",
-                borderColor: "#374151",
+                backgroundColor: "#27272A",
+                borderColor: "#3F3F46",
                 borderRadius: "0.5rem",
               }}
               itemStyle={{ fontSize: "12px" }}
               labelStyle={{
-                color: "#9ca3af",
+                color: "#A1A1AA",
                 fontSize: "11px",
                 marginBottom: "5px",
               }}
@@ -236,7 +133,7 @@ const SerumStabilityChart = ({ stack }) => {
               type="monotone"
               dataKey="total"
               name="Total Load"
-              stroke="#ffffff"
+              stroke="#E4E4E7"
               strokeWidth={1}
               strokeDasharray="3 3"
               strokeOpacity={0.3}
@@ -248,7 +145,7 @@ const SerumStabilityChart = ({ stack }) => {
       </div>
 
       {/* Educational Footer - Absolute positioned at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 px-6 py-3 bg-physio-bg-surface/90 backdrop-blur border-t border-physio-border-subtle flex gap-4 overflow-x-auto z-10">
+      <div className="absolute bottom-0 left-0 right-0 px-6 py-3 bg-physio-bg-surface/90 backdrop-blur flex gap-4 overflow-x-auto z-10">
         {stack.map((item) => {
           const meta = compoundData[item.compound];
           return (

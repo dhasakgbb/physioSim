@@ -27,6 +27,7 @@ const VitalSigns = ({
   showSafetyOnly = false,
 }) => {
   const { totalRisk, netScore, brRatio } = metrics.totals;
+  const hasActiveStack = Array.isArray(stack) && stack.length > 0;
   
   // Use centralized pathway loads from stackEngine
   const loads = metrics?.analytics?.pathwayLoads || {
@@ -61,6 +62,28 @@ const VitalSigns = ({
   // Default to showing everything if no specific prop is passed
   const showAll = !showScoreOnly && !showSafetyOnly;
 
+  const scoreColor = !hasActiveStack
+    ? "text-physio-text-secondary"
+    : netScore > 0
+      ? "text-physio-accent-cyan"
+      : "text-physio-accent-warning";
+
+  const badgeStyles = !hasActiveStack
+    ? "bg-physio-bg-highlight border-physio-border-subtle text-physio-text-secondary"
+    : brRatio > 1.5
+      ? "bg-physio-accent-success/10 border-physio-accent-success/30 text-physio-accent-success"
+      : brRatio > 1.0
+        ? "bg-physio-accent-cyan/10 border-physio-accent-cyan/30 text-physio-accent-cyan"
+        : "bg-physio-accent-critical/10 border-physio-accent-critical/30 text-physio-accent-critical";
+
+  const badgeLabel = !hasActiveStack
+    ? "Awaiting Stack"
+    : brRatio > 1.5
+      ? "Optimized"
+      : brRatio > 1.0
+        ? "Sustainable"
+        : "Diminishing";
+
   return (
     <div className="space-y-6">
       {/* --- SECTION 1: THE NORTH STAR (SCORE) --- */}
@@ -78,9 +101,9 @@ const VitalSigns = ({
                 </p>
                 <div className="flex items-baseline gap-1">
                   <span
-                    className={`text-3xl font-bold ${netScore > 0 ? "text-physio-accent-cyan" : "text-physio-accent-warning"}`}
+                    className={`text-3xl font-bold ${scoreColor}`}
                   >
-                    {netScore > 0 ? "+" : ""}
+                    {hasActiveStack && netScore > 0 ? "+" : ""}
                     {netScore.toFixed(2)}
                   </span>
                   <span className="text-xs text-physio-text-secondary">
@@ -89,19 +112,9 @@ const VitalSigns = ({
                 </div>
               </div>
               <div
-                className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                  brRatio > 1.5
-                    ? "bg-physio-accent-success/10 border-physio-accent-success/30 text-physio-accent-success"
-                    : brRatio > 1.0
-                      ? "bg-physio-accent-cyan/10 border-physio-accent-cyan/30 text-physio-accent-cyan"
-                      : "bg-physio-accent-critical/10 border-physio-accent-critical/30 text-physio-accent-critical"
-                }`}
+                className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${badgeStyles}`}
               >
-                {brRatio > 1.5
-                  ? "Optimized"
-                  : brRatio > 1.0
-                    ? "Sustainable"
-                    : "Diminishing"}
+                {badgeLabel}
               </div>
             </div>
           </div>

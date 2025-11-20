@@ -48,10 +48,10 @@ const Slider = ({
 
       <div className="relative h-6 flex items-center">
         {/* Track Background */}
-        <div className="absolute w-full h-1 bg-physio-bg-highlight rounded-full overflow-hidden">
+        <div className="absolute w-full h-1 bg-physio-bg-input rounded-full overflow-hidden">
           {/* Fill */}
           <div
-            className="h-full bg-gradient-to-r from-physio-accent-primary to-physio-accent-secondary transition-all duration-100"
+            className="h-full bg-physio-accent-primary transition-all duration-100"
             style={{ width: `${percentage}%` }}
           />
         </div>
@@ -90,7 +90,7 @@ const Slider = ({
 
         {/* Custom Thumb (Visual Only - follows percentage) */}
         <div
-          className="absolute w-4 h-4 bg-physio-bg-core border-2 border-physio-accent-primary rounded-full shadow-neo-glow transform -translate-x-1/2 pointer-events-none transition-all duration-100"
+          className="absolute w-4 h-4 bg-white border-2 border-physio-accent-primary rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.45)] transform -translate-x-1/2 pointer-events-none transition-all duration-100"
           style={{ left: `${percentage}%` }}
         />
       </div>

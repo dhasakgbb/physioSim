@@ -20,13 +20,13 @@ describe("Advanced Personalization (Genetics & Diet)", () => {
       console.log(`Hyper Benefit: ${resHyper.totals.totalBenefit}`);
       console.log(`Low Benefit: ${resLow.totals.totalBenefit}`);
 
-      // Hyper should be ~1.2x Normal
+      // Hyper should be ~1.5x Normal
       expect(resHyper.totals.totalBenefit).toBeGreaterThan(resNormal.totals.totalBenefit);
-      expect(resHyper.totals.totalBenefit).toBeCloseTo(resNormal.totals.totalBenefit * 1.2, 1);
+      expect(resHyper.totals.totalBenefit).toBeCloseTo(resNormal.totals.totalBenefit * 1.5, 1);
 
-      // Low should be ~0.8x Normal
+      // Low should be ~0.7x Normal
       expect(resLow.totals.totalBenefit).toBeLessThan(resNormal.totals.totalBenefit);
-      expect(resLow.totals.totalBenefit).toBeCloseTo(resNormal.totals.totalBenefit * 0.8, 1);
+      expect(resLow.totals.totalBenefit).toBeCloseTo(resNormal.totals.totalBenefit * 0.7, 1);
     });
 
     it("Aromatase Activity (CYP19A1) scales estrogenic risk", () => {

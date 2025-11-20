@@ -6,30 +6,31 @@ export default {
       colors: {
         physio: {
           bg: {
-            core: "#030712", // Deepest Black/Blue
-            surface: "#111827", // Card Background
-            highlight: "#1f2937", // Hover State
-            glass: "rgba(17, 24, 39, 0.7)",
+            core: "#09090B", // Level 0 — Void
+            surface: "#18181B", // Level 1 — Sidebars
+            highlight: "#27272A", // Level 2 — Panels/Cards
+            input: "#3F3F46", // Level 3 — Controls
+            glass: "rgba(24, 24, 27, 0.85)",
           },
           text: {
-            primary: "#f9fafb", // High Emphasis
-            secondary: "#9ca3af", // Medium Emphasis
-            tertiary: "#6b7280", // Low Emphasis (NEW - Essential for labels)
-            muted: "#4b5563",
-            inverse: "#030712",
+            primary: "#E4E4E7",
+            secondary: "#A1A1AA",
+            tertiary: "#71717A",
+            muted: "#52525B",
+            inverse: "#09090B",
           },
           accent: {
-            primary: "#6366f1", // Indigo
-            secondary: "#8b5cf6", // Violet
-            success: "#10b981", // Emerald
-            warning: "#f59e0b", // Amber
-            critical: "#ef4444", // Red
-            cyan: "#06b6d4", // Cyan (Good for "Information")
-            mint: "#34d399", // Mint (Good for "Safe")
+            primary: "#3B82F6", // Tech Blue
+            secondary: "#F8FAFC", // Titanium White
+            success: "#22C55E",
+            warning: "#FBBF24",
+            critical: "#F87171",
+            cyan: "#38BDF8",
+            mint: "#A5F3FC",
           },
           border: {
-            subtle: "rgba(255, 255, 255, 0.08)", // Slightly lighter for visibility
-            strong: "rgba(255, 255, 255, 0.15)",
+            subtle: "#27272A",
+            strong: "#3F3F46",
           },
         },
       },

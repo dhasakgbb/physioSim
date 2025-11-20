@@ -72,7 +72,7 @@ const MechanismMonitor = ({ stack }) => {
 
   return (
     <div className="space-y-6">
-      <div className="p-5 bg-physio-bg-highlight/20 rounded-xl border border-physio-border-subtle">
+      <div className="p-5 bg-physio-bg-highlight/30 rounded-2xl hud-bracket">
         <h3 className="text-sm font-bold text-physio-text-primary mb-4 flex items-center gap-2">
           <span className="w-2 h-2 bg-physio-accent-secondary rounded-full animate-pulse"></span>
           Pathway Saturation Analysis

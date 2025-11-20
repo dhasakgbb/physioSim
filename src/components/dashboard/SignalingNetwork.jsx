@@ -453,7 +453,7 @@ const SignalingNetwork = ({ stack, metrics }) => {
             className="absolute inset-0 opacity-20 pointer-events-none"
             style={{
               backgroundImage:
-                "linear-gradient(#1f2937 1px, transparent 1px), linear-gradient(90deg, #1f2937 1px, transparent 1px)",
+                "linear-gradient(#27272A 1px, transparent 1px), linear-gradient(90deg, #27272A 1px, transparent 1px)",
               backgroundSize: "40px 40px",
             }}
           />

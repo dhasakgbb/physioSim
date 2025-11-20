@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { findPeakEfficiency, findOptimalConfiguration } from '../../utils/stackOptimizer';
 import { compoundData } from '../../data/compoundData';
 import Input from '../ui/Input';
+import { GENETIC_ARCHETYPES } from '../../utils/personalization';
 
 // Icons
 const IconEfficiency = () => (
@@ -62,7 +63,17 @@ const Select = ({ label, value, onChange, options, className = "" }) => (
   </div>
 );
 
-const PersonalizationSection = ({ profile, onUpdate }) => {
+const PersonalizationSection = ({ profile, onUpdate, dense = false }) => {
+    const phenotypeValue = profile.geneticPhenotype || profile.arSensitivity || 'normal';
+    const phenotypeMeta = GENETIC_ARCHETYPES[phenotypeValue] || GENETIC_ARCHETYPES.normal;
+
+    const handlePhenotypeChange = (value) => {
+      onUpdate({
+        ...profile,
+        arSensitivity: value,
+        geneticPhenotype: value,
+      });
+    };
   const [isEnabled, setIsEnabled] = useState(() => {
     return localStorage.getItem("personalizationEnabled") === "true";
   });
@@ -77,9 +88,15 @@ const PersonalizationSection = ({ profile, onUpdate }) => {
     onUpdate({ ...profile, [field]: value });
   };
 
+  const containerClasses = dense
+    ? "mt-4 pt-4 border-t border-physio-border-subtle/60 animate-fade-in"
+    : "mt-8 pt-8 border-t border-physio-border-subtle animate-fade-in";
+
+  const headerSpacing = dense ? "mb-4" : "mb-6";
+
   return (
-    <div className="mt-8 pt-8 border-t border-physio-border-subtle animate-fade-in">
-      <div className="flex items-center justify-between mb-6">
+    <div className={containerClasses} data-testid="optimizer-pane">
+      <div className={`flex items-center justify-between ${headerSpacing}`}>
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg transition-colors ${isEnabled ? 'bg-physio-accent-primary/10 text-physio-accent-primary' : 'bg-physio-bg-highlight text-physio-text-secondary'}`}>
             <IconUser />
@@ -198,15 +215,27 @@ const PersonalizationSection = ({ profile, onUpdate }) => {
           </div>
 
           <Select
-            label="AR Sensitivity (CAG Repeats)"
-            value={profile.arSensitivity || 'normal'}
-            onChange={(e) => handleChange('arSensitivity', e.target.value)}
+            label="Genetic Phenotype"
+            value={phenotypeValue}
+            onChange={(e) => handlePhenotypeChange(e.target.value)}
             options={[
-              { value: 'low_responder', label: 'Low Responder (High CAG)' },
-              { value: 'normal', label: 'Normal' },
-              { value: 'hyper_responder', label: 'Hyper Responder (Low CAG)' },
+              {
+                value: 'hyper_responder',
+                label: 'Hyper-Responder · Low CAG + PDE7B AA',
+              },
+              {
+                value: 'normal',
+                label: 'Average · Baseline Clinical Response',
+              },
+              {
+                value: 'low_responder',
+                label: 'Non-Responder · High CAG (Rusty Lock)',
+              },
             ]}
           />
+          <p className="text-[10px] text-physio-text-tertiary ml-1">
+            ROI Window: {phenotypeMeta.arMultiplier.toFixed(2)}x signal · {phenotypeMeta.metabolismMultiplier.toFixed(2)}x serum uptake
+          </p>
 
           <Select
             label="Energy State (Diet)"
@@ -263,25 +292,29 @@ const OptimizationCard = ({ title, subtitle, onClick, loading, active, disabled,
     iconColor = 'text-physio-accent-success';
   }
 
+  const interactiveGlow = disabled
+    ? ""
+    : "hover:border-physio-accent-primary hover:shadow-[0_0_22px_rgba(59,130,246,0.35)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-physio-accent-primary/60 focus-visible:outline-offset-2";
+
+  const stateClass = disabled
+    ? "opacity-50 cursor-not-allowed bg-physio-bg-surface border-physio-border-subtle"
+    : active
+      ? `${activeClass}`
+      : `${bgClass} ${borderClass}`;
+
   return (
     <button 
       onClick={onClick}
       disabled={loading || disabled}
-      className={`group relative flex flex-col items-start p-5 rounded-lg border text-left transition-all duration-200 w-full
-        ${disabled 
-          ? 'opacity-50 cursor-not-allowed bg-physio-bg-surface border-physio-border-subtle' 
-          : active 
-            ? activeClass 
-            : `${bgClass} ${borderClass} hover:bg-physio-bg-highlight hover:border-physio-text-secondary`
-        }
-      `}
+      className={`group cta-scan relative flex flex-col items-start p-5 rounded-lg border text-left transition-all duration-200 w-full overflow-hidden ${stateClass} ${interactiveGlow}`}
     >
+      <span className="scan-line" aria-hidden="true"></span>
       <div className="flex justify-between w-full items-center mb-2">
         <div className="flex items-center gap-3">
-          <span className={`${iconColor} transition-colors`}>
+          <span className={`${iconColor} transition-colors group-hover:text-physio-accent-primary`}>
             <Icon />
           </span>
-          <h3 className={`text-sm font-bold ${active ? iconColor : 'text-physio-text-primary'}`}>
+          <h3 className={`text-sm font-bold transition-colors ${active ? iconColor : 'text-physio-text-primary'} group-hover:text-physio-accent-primary`}>
             {title}
           </h3>
         </div>
@@ -292,7 +325,7 @@ const OptimizationCard = ({ title, subtitle, onClick, loading, active, disabled,
           </div>
         )}
       </div>
-      <p className="text-xs text-physio-text-secondary leading-relaxed pl-8">
+      <p className="text-xs text-physio-text-secondary leading-relaxed pl-8 transition-colors group-hover:text-physio-accent-primary/80">
         {subtitle}
       </p>
     </button>
@@ -417,9 +450,10 @@ const ResultPreview = ({ originalStack, optimizedStack, originalScore, newScore,
   );
 };
 
-const OptimizerPane = ({ stack, userProfile, onApplyOptimization, onUpdateProfile }) => {
+const OptimizerPane = ({ stack, userProfile, onApplyOptimization, onUpdateProfile, compact = false }) => {
   const [optimizing, setOptimizing] = useState(false);
   const [result, setResult] = useState(null);
+  const [personalizationOpen, setPersonalizationOpen] = useState(!compact);
 
   const handlePeakEfficiency = async () => {
     setOptimizing(true);
@@ -462,22 +496,34 @@ const OptimizerPane = ({ stack, userProfile, onApplyOptimization, onUpdateProfil
 
   const isEmpty = stack.length === 0;
 
+  const containerClasses = compact
+    ? "h-full bg-physio-bg-core/85 border border-physio-border-subtle rounded-2xl backdrop-blur-xl flex flex-col shadow-neo-lg"
+    : "absolute inset-0 bg-physio-bg-core flex flex-col";
+
+  const headerClasses = compact
+    ? "px-5 py-3 border-b border-physio-border-subtle/60 flex items-center justify-between"
+    : "px-8 py-6 border-b border-physio-border-subtle bg-physio-bg-surface/80 backdrop-blur z-10";
+
+  const contentClasses = compact
+    ? "flex-1 overflow-hidden px-5 py-4"
+    : "flex-1 overflow-y-auto p-8";
+
   return (
-    <div className="absolute inset-0 bg-physio-bg-core flex flex-col">
+    <div className={containerClasses} data-testid="optimizer-pane">
       {/* Header */}
-      <div className="px-8 py-6 border-b border-physio-border-subtle bg-physio-bg-surface/80 backdrop-blur z-10">
+      <div className={headerClasses}>
         <h2 className="text-base font-bold text-physio-text-primary tracking-wide">
           Protocol Optimization
         </h2>
-        <p className="text-xs text-physio-text-tertiary mt-1">
+        <p className={`text-xs text-physio-text-tertiary ${compact ? "ml-auto" : "mt-1"}`}>
           Select a solver to analyze and improve your current stack configuration.
         </p>
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className={contentClasses}>
         {isEmpty ? (
-          <div className="flex flex-col items-center justify-center h-64 text-center border border-dashed border-physio-border-subtle rounded-xl bg-physio-bg-surface/50">
+          <div className={`flex flex-col items-center justify-center ${compact ? "h-full" : "h-64"} text-center border border-dashed border-physio-border-subtle rounded-xl bg-physio-bg-surface/50`}>
             <div className="text-physio-text-tertiary mb-3">
               <IconEfficiency />
             </div>
@@ -487,9 +533,10 @@ const OptimizerPane = ({ stack, userProfile, onApplyOptimization, onUpdateProfil
             </p>
           </div>
         ) : (
-          <div className="max-w-2xl mx-auto space-y-4">
+          <div className={compact ? "h-full flex flex-col gap-4 overflow-y-auto pr-1" : "max-w-2xl mx-auto space-y-4"}>
             
             {/* 1. PEAK EFFICIENCY */}
+            <div className={compact ? "grid grid-cols-1 md:grid-cols-3 gap-3" : "space-y-4"}>
             <OptimizationCard 
               title="Peak Efficiency"
               subtitle="Adjust dosages to find the mathematical maximum Net Benefit (ROI)."
@@ -517,6 +564,7 @@ const OptimizerPane = ({ stack, userProfile, onApplyOptimization, onUpdateProfil
               loading={optimizing && result?.mode === 'absolute_max'}
               active={result?.mode === 'absolute_max' || (result?.loading && result?.mode === 'absolute_max')}
             />
+            </div>
 
             {/* PREVIEW AREA */}
             {result && !result.loading && result.isDifferent && (
@@ -550,7 +598,23 @@ const OptimizerPane = ({ stack, userProfile, onApplyOptimization, onUpdateProfil
             )}
 
             {/* PERSONALIZATION SECTION */}
-            <PersonalizationSection profile={userProfile} onUpdate={onUpdateProfile} />
+            {compact && (
+              <button
+                onClick={() => setPersonalizationOpen((prev) => !prev)}
+                className="flex items-center justify-between w-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-physio-text-secondary border border-physio-border-subtle rounded-lg bg-physio-bg-highlight/30 hover:border-physio-accent-primary hover:text-physio-accent-primary transition"
+              >
+                <span>Advanced Personalization</span>
+                <span>{personalizationOpen ? "−" : "+"}</span>
+              </button>
+            )}
+
+            {(!compact || personalizationOpen) && (
+              <PersonalizationSection
+                dense={compact}
+                profile={userProfile}
+                onUpdate={onUpdateProfile}
+              />
+            )}
 
           </div>
         )}
