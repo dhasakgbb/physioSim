@@ -1,0 +1,70 @@
+<section class="chart-header">
+	<div>
+		<p class="eyebrow">Serum telemetry</p>
+		<h2>Plasma envelope</h2>
+	</div>
+	<div class="badge" *ngIf="latestPoint as point">
+		Day {{ point.day }} · {{ point.serumConcentration | number: '1.0-0' }} ng/dL
+	</div>
+</section>
+
+<div class="chart-frame" [class.chart-frame--loading]="loading">
+	<svg
+		[attr.viewBox]="viewBoxAttr"
+		role="img"
+		aria-label="Simulation output chart"
+	>
+		<defs>
+			<linearGradient id="plasmaFill" x1="0%" x2="0%" y1="0%" y2="100%">
+				<stop offset="0%" stop-color="rgba(92,225,230,0.5)" />
+				<stop offset="100%" stop-color="rgba(92,225,230,0)" />
+			</linearGradient>
+			<linearGradient id="anabolicStroke" x1="0%" x2="100%" y1="0%" y2="0%">
+				<stop offset="0%" stop-color="var(--neon-magenta)" />
+				<stop offset="100%" stop-color="var(--neon-cyan)" />
+			</linearGradient>
+		</defs>
+
+		<path
+			*ngIf="toxicityPath"
+			class="toxicity-area"
+			[attr.d]="toxicityPath"
+		></path>
+		<path
+			*ngIf="serumPath"
+			class="serum-path"
+			[attr.d]="serumPath"
+		></path>
+		<path
+			*ngIf="anabolicPath"
+			class="anabolic-path"
+			[attr.d]="anabolicPath"
+		></path>
+	</svg>
+
+	<div class="chart-empty" *ngIf="!dataPoints.length && !loading">
+		No telemetry yet. Adjust the stack and pulse the solver.
+	</div>
+	<div class="chart-loader" *ngIf="loading">
+		<span></span>
+		<p>Streaming datapoints…</p>
+	</div>
+</div>
+
+<section class="chart-stats">
+	<article>
+		<p class="label">Peak serum</p>
+		<strong>{{ peakSerum | number: '1.0-0' }} ng/dL</strong>
+		<small>Envelope area {{ serumAUC | number: '1.0-0' }}</small>
+	</article>
+	<article>
+		<p class="label">Anabolic crest</p>
+		<strong>{{ peakAnabolic | number: '1.1-1' }} AU</strong>
+		<small>Relative gain channel</small>
+	</article>
+	<article>
+		<p class="label">Toxicity ceiling</p>
+		<strong>{{ maxToxicity | number: '1.1-1' }}%</strong>
+		<small>Keep it sub-35% for safety</small>
+	</article>
+</section>

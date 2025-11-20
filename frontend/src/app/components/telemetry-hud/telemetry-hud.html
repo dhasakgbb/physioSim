@@ -1,0 +1,32 @@
+<section class="hud">
+	<header class="hud__header">
+		<div>
+			<p class="eyebrow">Telemetry HUD</p>
+			<h2>Safety posture</h2>
+		</div>
+	</header>
+
+	<div class="hud__body" *ngIf="dataPoints.length; else hudEmpty">
+		<div class="gauge" aria-label="readiness gauge">
+			<div class="gauge__ring" [style.background]="readinessGradient">
+				<div class="gauge__core">
+					<span>{{ readinessScore | number: '1.0-0' }}%</span>
+					<small>readiness</small>
+				</div>
+			</div>
+			<p class="gauge__caption">Stability {{ volatilityScore | number: '1.0-0' }}%</p>
+		</div>
+
+		<ul class="metric-grid">
+			<li *ngFor="let metric of metricCards">
+				<p class="label">{{ metric.label }}</p>
+				<strong>{{ metric.value }}</strong>
+				<small>{{ metric.caption }}</small>
+			</li>
+		</ul>
+	</div>
+</section>
+
+<ng-template #hudEmpty>
+	<div class="hud-empty">Solve a stack to unlock telemetry.</div>
+</ng-template>

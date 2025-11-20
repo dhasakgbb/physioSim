@@ -1,0 +1,43 @@
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<!-- * * * * * * * * * * * The content below * * * * * * * * * * * -->
+<ng-container *ngIf="vm() as vm">
+  <main class="grid-shell" [class.grid-shell__loading]="vm.loading">
+    <section class="panel panel--left">
+      <app-active-mixture
+        [compounds]="vm.compounds"
+        [durationDays]="vm.durationDays"
+        [loading]="vm.loading"
+        (compoundUpdated)="onCompoundUpdated($event)"
+        (durationChanged)="onDurationChanged($event)"
+        (refreshRequested)="runSimulation()"
+      ></app-active-mixture>
+    </section>
+
+    <section class="panel panel--center">
+      <app-simulation-chart
+        [dataPoints]="vm.dataPoints"
+        [loading]="vm.loading"
+      ></app-simulation-chart>
+    </section>
+
+    <section class="panel panel--right">
+      <app-telemetry-hud [dataPoints]="vm.dataPoints"></app-telemetry-hud>
+    </section>
+
+    <div class="grid-shell__overlay" *ngIf="vm.loading">
+      <div class="scanner"></div>
+      <span>Calibrating solver…</span>
+    </div>
+  </main>
+
+  <section class="status-bar">
+    <div class="status-pill" [class.status-pill--active]="!vm.loading">
+      {{ vm.loading ? 'Streaming telemetry…' : 'Live link established' }}
+    </div>
+    <div class="status-pill status-pill--warning" *ngIf="vm.error as error">
+      {{ error }}
+    </div>
+  </section>
+</ng-container>
+
+<router-outlet />
