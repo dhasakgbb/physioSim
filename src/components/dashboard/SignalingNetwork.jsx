@@ -433,7 +433,7 @@ const SignalingNetwork = ({ stack, metrics }) => {
               d={pathData}
               fill="none"
               stroke={link.color}
-              strokeWidth={Math.max(link.value * 0.8, 2) + 6}
+              strokeWidth={Math.max((link.value / 12.5) * 0.8, 2) + 6}
               strokeOpacity={0.4}
               style={{ filter: "blur(6px)" }}
             />
@@ -445,8 +445,8 @@ const SignalingNetwork = ({ stack, metrics }) => {
             stroke={link.color}
             strokeWidth={
               isHighlighted
-                ? Math.max(link.value * 0.5, 1) + 2
-                : Math.max(link.value * 0.5, 1)
+                ? Math.max((link.value / 12.5) * 0.5, 1) + 2
+                : Math.max((link.value / 12.5) * 0.5, 1)
             }
             strokeOpacity={isDimmed ? 0.1 : 0.8}
             className="transition-all duration-300"
@@ -455,7 +455,7 @@ const SignalingNetwork = ({ stack, metrics }) => {
           {!isDimmed && (
             <circle r={isHighlighted ? 3 : 2} fill="#fff">
               <animateMotion
-                dur={`${Math.max(2000 - link.value * 100, 500)}ms`}
+                dur={`${Math.max(2000 - (link.value / 12.5) * 100, 500)}ms`}
                 repeatCount="indefinite"
                 path={pathData}
               />
