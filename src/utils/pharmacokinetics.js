@@ -54,9 +54,25 @@ export const simulateSerum = (stack, durationWeeks = 28) => {
       }
 
       // 2. ABSORPTION: Transfer from Depot to Active
-      // Fast esters (Prop) absorb fast (0.15), Slow esters (Deca) absorb slow (0.05)
-      // Orals (HL < 12) absorb almost instantly (0.8)
-      const absorptionRate = hl < 12 ? 0.8 : hl < 48 ? 0.15 : 0.05;
+      // We use a more precise approximation based on ester type if available
+      let absorptionRate;
+      const slug = (item.ester || meta.defaultEster || "").toLowerCase();
+      const isOral = meta.type === "oral";
+
+      if (isOral) {
+        absorptionRate = 2.0; // Fast gut absorption (Peaks in ~2-3 hours)
+      } else if (slug.includes("susp")) {
+        absorptionRate = 1.5; // Suspension: Very fast
+      } else if (slug.includes("prop") || slug.includes("ace")) {
+        absorptionRate = 0.1; // Fast Esters: Peak ~12-18h
+      } else if (slug.includes("enanth") || slug.includes("cyp")) {
+        absorptionRate = 0.05; // Medium Esters: Peak ~24-36h
+      } else if (slug.includes("dec") || slug.includes("undec")) {
+        absorptionRate = 0.03; // Slow Esters: Peak ~48-72h
+      } else {
+        // Fallback based on half-life if ester name not found
+        absorptionRate = hl < 24 ? 0.1 : 0.05;
+      }
 
       const absorbed = depotLevels[item.compound] * absorptionRate;
       depotLevels[item.compound] -= absorbed;

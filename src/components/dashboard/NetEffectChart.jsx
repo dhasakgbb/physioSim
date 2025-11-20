@@ -37,8 +37,8 @@ const ReleaseTooltip = ({ active, payload, label }) => {
   if (!active || !payload || !payload.length) return null;
 
   return (
-    <div className="bg-[#15171E] border border-[#374151] p-4 rounded-xl shadow-xl min-w-[200px]">
-      <p className="text-xs font-bold text-[#9CA3AF] mb-2">
+    <div className="bg-[#15171E] border border-[#374151] p-4 rounded-xl shadow-xl min-w-[200px] z-50">
+      <p className="text-sm font-bold text-[#9CA3AF] mb-2">
         Day {Math.floor(label)} (Week {Math.floor(label / 7)})
       </p>
       {payload.map((entry) => (
@@ -80,7 +80,7 @@ const CustomTooltip = ({ active, payload, label, crossover }) => {
 
   return (
     <div
-      className={`backdrop-blur-md border p-4 rounded-xl shadow-xl min-w-[240px] transition-colors duration-300 ${
+      className={`backdrop-blur-md border p-4 rounded-xl shadow-xl min-w-[240px] transition-colors duration-300 z-50 ${
         isWasted
           ? "bg-[#EF4444]/10 border-[#EF4444]/50"
           : "bg-[#15171E]/95 border-[#374151]"
@@ -189,11 +189,13 @@ const NetEffectChart = ({
   setDurationWeeks,
 }) => {
   // 1. Generate Projection Data (Dose Response)
-  const { data, crossover } = useMemo(() => {
-    if (stack.length === 0) return { data: [], crossover: null };
+  const { data, crossover, maxNetPercent } = useMemo(() => {
+    if (stack.length === 0) return { data: [], crossover: null, maxNetPercent: 0 };
 
     const points = [];
     let foundCrossover = null;
+    let maxNet = -Infinity;
+    let maxNetP = 0;
 
     // Sweep from 0% to 150% Intensity
     for (let percent = 0; percent <= 150; percent += 5) {
@@ -230,6 +232,12 @@ const NetEffectChart = ({
       const saturation = Math.min(currentARLoad / 1500, 1);
       const benefit = result.totals.totalBenefit;
       const risk = result.totals.totalRisk;
+      const net = result.totals.netScore;
+
+      if (net > maxNet) {
+        maxNet = net;
+        maxNetP = percent;
+      }
 
       // Detect Crossover (Risk > Benefit)
       // We look for the first point where Risk exceeds Benefit significantly (to avoid noise at 0)
@@ -248,7 +256,7 @@ const NetEffectChart = ({
         nonGenomicBenefit: result.totals.nonGenomicBenefit || 0,
       });
     }
-    return { data: points, crossover: foundCrossover };
+    return { data: points, crossover: foundCrossover, maxNetPercent: maxNetP };
   }, [stack, userProfile, durationWeeks]);
 
   // 2. Generate Release Profile Data (Time Based)
@@ -260,9 +268,8 @@ const NetEffectChart = ({
   const serumTicks = useMemo(() => {
     if (!releaseData.length) return [0, 100];
     const maxVal = Math.max(...releaseData.map((d) => d.total));
-    const stops = [0, 10, 50, 100, 250, 500, 1000, 1500, 2000, 3000];
-    const cutoff = stops.findIndex((s) => s >= maxVal * 1.1); // 10% headroom
-    return cutoff === -1 ? stops : stops.slice(0, cutoff + 1);
+    // Log scale ticks
+    return [1, 10, 50, 100, 250, 500, 1000, 2000, 5000].filter(t => t <= maxVal * 1.5);
   }, [releaseData]);
 
   // 3. Generate Time Evolution Data (Benefit vs Risk over Time)
@@ -270,7 +277,6 @@ const NetEffectChart = ({
     if (stack.length === 0 || releaseData.length === 0) return [];
 
     // Get Steady State Baseline (The "100%" point from Dose Response)
-    // We can re-run evaluateStack once for the base case to be sure
     const baseResult = evaluateStack({
       stackInput: stack,
       profile: userProfile,
@@ -278,14 +284,6 @@ const NetEffectChart = ({
     });
 
     const steadyStateBenefit = baseResult.totals.totalBenefit;
-    // We need the "Base Risk" BEFORE time penalties to scale it correctly over time
-    // evaluateStack returns the final risk including time penalties.
-    // Let's reverse-engineer the base risk or just use the rawRiskSum if exposed.
-    // Actually, let's just use the totalRisk and assume it scales.
-    // Better: The engine applies time penalty at the end.
-    // Let's approximate: Risk(t) = BaseRisk * Load(t) * TimeFactor(t)
-    // We can get BaseRisk from the 100% point in `data` if we look at it, but that also has time penalty?
-    // Let's just use the ratio approach.
 
     const totalWeeklyDose = stack.reduce((sum, item) => {
       const isOral =
@@ -308,21 +306,11 @@ const NetEffectChart = ({
       const week = point.day / 7;
 
       // Load Ratio: How much "stuff" is active vs the weekly dose
-      // Note: Serum levels can exceed weekly dose due to accumulation (half-life > 7 days)
-      // This is exactly what we want to capture.
       const loadRatio = totalWeeklyDose > 0 ? point.total / totalWeeklyDose : 0;
 
       // Time Penalty (The "Toxicity Avalanche")
       // Matches stackEngine logic: > 8 weeks = exponential risk
       const timePenalty = week > 8 ? Math.pow(week / 8, 1.5) : 1.0;
-
-      // Calculate Instantaneous Values
-      // We use the steady state benefit/risk (which includes some penalties)
-      // and scale them by the load ratio.
-      // We then apply the DYNAMIC time penalty on top of the risk.
-      // Note: baseResult.totals.totalRisk ALREADY includes the penalty for the FULL duration.
-      // We want to show the evolution. So we should probably strip the penalty first?
-      // Or just assume BaseRisk = Risk / FinalTimePenalty.
 
       const finalTimePenalty =
         durationWeeks > 8 ? Math.pow(durationWeeks / 8, 1.5) : 1.0;
@@ -377,14 +365,14 @@ const NetEffectChart = ({
 
   return (
     <div className="absolute inset-0 w-full h-full flex flex-col bg-[#0B0C10] p-4 gap-4 overflow-y-auto">
-      {/* TOP SECTION: Dose Response (Static) */}
+      {/* TOP SECTION: Dose Efficiency (Reimagined) */}
       <div className="flex-1 min-h-[300px] bg-[#15171E] rounded-2xl shadow-lg border border-[#374151]/20 relative overflow-hidden">
         <div className="absolute top-4 left-6 z-10">
           <h3 className="text-sm font-bold text-[#F3F4F6] tracking-wide">
             Dose Efficiency
           </h3>
           <p className="text-[10px] text-[#9CA3AF]">
-            Benefit vs Risk at various doses (Steady State • Time Independent)
+            Net Efficiency (Benefit - Risk) vs Intensity
           </p>
         </div>
 
@@ -401,6 +389,10 @@ const NetEffectChart = ({
               <linearGradient id="riskFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={PALETTE.error} stopOpacity={0.25} />
                 <stop offset="95%" stopColor={PALETTE.error} stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="netFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={PALETTE.secondary} stopOpacity={0.3} />
+                <stop offset="95%" stopColor={PALETTE.secondary} stopOpacity={0} />
               </linearGradient>
               <pattern
                 id="wastedPattern"
@@ -432,7 +424,7 @@ const NetEffectChart = ({
               domain={[0, 150]}
               tickFormatter={(val) => `${val}%`}
               stroke={PALETTE.outline}
-              tick={{ fill: "#9CA3AF", fontSize: 11 }}
+              tick={{ fill: "#9CA3AF", fontSize: 12 }}
               tickLine={false}
               axisLine={false}
               dy={5}
@@ -448,6 +440,14 @@ const NetEffectChart = ({
               }}
             />
 
+            {/* Highlight Optimal Zone */}
+            <ReferenceArea
+              x1={maxNetPercent - 10}
+              x2={maxNetPercent + 10}
+              fill={PALETTE.secondary}
+              fillOpacity={0.05}
+            />
+
             {crossover !== null && (
               <ReferenceArea
                 x1={crossover}
@@ -457,26 +457,13 @@ const NetEffectChart = ({
               />
             )}
 
-            <Area
-              type="monotone"
-              dataKey="risk"
-              stroke="none"
-              fill="url(#riskFill)"
-              isAnimationActive={false}
-            />
-            <Area
-              type="monotone"
-              dataKey="benefit"
-              stroke="none"
-              fill="url(#benefitFill)"
-              isAnimationActive={false}
-            />
-
+            {/* Background Context Lines */}
             <Line
               type="monotone"
               dataKey="benefit"
               stroke={PALETTE.primary}
-              strokeWidth={3}
+              strokeWidth={1}
+              strokeOpacity={0.4}
               dot={false}
               name="Benefit"
               isAnimationActive={false}
@@ -485,10 +472,22 @@ const NetEffectChart = ({
               type="monotone"
               dataKey="risk"
               stroke={PALETTE.error}
-              strokeWidth={3}
+              strokeWidth={1}
+              strokeOpacity={0.4}
               strokeDasharray="5 5"
               dot={false}
               name="Risk"
+              isAnimationActive={false}
+            />
+
+            {/* The Main Event: Net Efficiency */}
+            <Area
+              type="monotone"
+              dataKey="net"
+              stroke={PALETTE.secondary}
+              strokeWidth={3}
+              fill="url(#netFill)"
+              name="Net Efficiency"
               isAnimationActive={false}
             />
 
@@ -507,14 +506,20 @@ const NetEffectChart = ({
         {/* Floating Labels */}
         <div className="absolute top-4 right-6 flex flex-col items-end gap-1 pointer-events-none">
           <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-[#06B6D4] uppercase tracking-wider">
+              Net Efficiency
+            </span>
+            <div className="w-2 h-2 bg-[#06B6D4] rounded-full" />
+          </div>
+          <div className="flex items-center gap-2 opacity-50">
             <span className="text-[10px] font-bold text-[#10B981] uppercase tracking-wider">
-              Anabolic Output
+              Benefit
             </span>
             <div className="w-2 h-2 bg-[#10B981] rounded-full" />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 opacity-50">
             <span className="text-[10px] font-bold text-[#EF4444] uppercase tracking-wider">
-              Systemic Load
+              Risk
             </span>
             <div className="w-2 h-2 bg-[#EF4444] rounded-full" />
           </div>
@@ -578,7 +583,7 @@ const NetEffectChart = ({
               Serum Release
             </h3>
             <p className="text-[10px] text-[#9CA3AF]">
-              Pharmacokinetics & Active Half-Lives
+              Pharmacokinetics & Active Half-Lives (Log Scale)
             </p>
           </div>
 
@@ -606,22 +611,22 @@ const NetEffectChart = ({
                   (_, i) => i * 7,
                 )}
                 stroke={PALETTE.outline}
-                fontSize={10}
+                fontSize={12}
                 tickLine={false}
                 axisLine={false}
                 dy={5}
                 interval={0}
               />
               <YAxis
-                scale="sqrt"
-                domain={[0, "auto"]}
+                scale="log"
+                domain={['auto', 'auto']}
                 ticks={serumTicks}
                 stroke={PALETTE.outline}
-                tick={{ fill: "#9CA3AF", fontSize: 11 }}
+                tick={{ fill: "#9CA3AF", fontSize: 12 }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(val) => `${val}mg`}
-                width={40}
+                width={50}
               />
               <Tooltip content={<ReleaseTooltip />} />
 
@@ -664,6 +669,12 @@ const NetEffectChart = ({
               data={evolutionData}
               margin={{ top: 40, right: 20, left: 20, bottom: 10 }}
             >
+              <defs>
+                <linearGradient id="riskZoneGradient" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor={PALETTE.error} stopOpacity={0.05} />
+                  <stop offset="100%" stopColor={PALETTE.error} stopOpacity={0.2} />
+                </linearGradient>
+              </defs>
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke={PALETTE.outline}
@@ -683,7 +694,7 @@ const NetEffectChart = ({
                   (_, i) => i * 7,
                 )}
                 stroke={PALETTE.outline}
-                fontSize={10}
+                fontSize={12}
                 tickLine={false}
                 axisLine={false}
                 dy={5}
@@ -694,7 +705,7 @@ const NetEffectChart = ({
                 content={({ active, payload, label }) => {
                   if (!active || !payload || !payload.length) return null;
                   return (
-                    <div className="bg-[#1F2937] border border-[#374151] p-3 rounded-xl shadow-xl">
+                    <div className="bg-[#1F2937] border border-[#374151] p-3 rounded-xl shadow-xl z-50">
                       <p className="text-xs font-bold text-[#9CA3AF] mb-2">
                         Day {Math.floor(label)} (Week {Math.floor(label / 7)})
                       </p>
@@ -733,16 +744,26 @@ const NetEffectChart = ({
                 name="Systemic Risk"
               />
 
+              {/* Risk Escalation Zone */}
+              <ReferenceArea
+                x1={8 * 7}
+                x2={durationWeeks * 7}
+                fill="url(#riskZoneGradient)"
+                opacity={1}
+              />
+              
               <ReferenceLine
                 x={8 * 7}
                 stroke={PALETTE.error}
                 strokeDasharray="3 3"
-                opacity={0.5}
+                opacity={0.8}
                 label={{
-                  value: "Risk Escalation",
+                  value: "RISK ESCALATION",
                   position: "insideTopRight",
                   fill: PALETTE.error,
                   fontSize: 10,
+                  fontWeight: "bold",
+                  dy: -10,
                 }}
               />
             </LineChart>
@@ -754,4 +775,3 @@ const NetEffectChart = ({
 };
 
 export default NetEffectChart;
-
