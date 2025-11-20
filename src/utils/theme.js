@@ -1,13 +1,13 @@
 export const COLORS = {
-  benefit: "#8AB4F8", // Cornflower Blue
-  risk: "#F28B82", // Light Red
-  grid: "#3C4043", // Divider
-  textPrimary: "#E8EAED",
-  textSecondary: "#9AA0A6",
-  textTertiary: "#5F6368",
-  accentSuccess: "#81C995",
-  accentWarning: "#FBBC04",
-  accentCritical: "#F28B82",
-  accentCyan: "#78D9EC",
-  bgSurface: "#2D2E31",
+  benefit: "#10b981", // Emerald-500
+  risk: "#ef4444", // Red-500
+  grid: "#374151", // Gray-700
+  textPrimary: "#f3f4f6",
+  textSecondary: "#9ca3af",
+  textTertiary: "#6b7280",
+  accentSuccess: "#10b981",
+  accentWarning: "#f59e0b",
+  accentCritical: "#ef4444",
+  accentCyan: "#06b6d4",
+  bgSurface: "#1f2937",
 };
