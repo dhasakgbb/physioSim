@@ -13,6 +13,7 @@ const Slider = ({
   warningThreshold = null,
 }) => {
   const [localValue, setLocalValue] = useState(value);
+  const [isHovered, setIsHovered] = useState(false);
   const timeoutRef = useRef(null);
 
   useEffect(() => {
@@ -46,12 +47,18 @@ const Slider = ({
         </div>
       </div>
 
-      <div className="relative h-6 flex items-center">
+      <div
+        className="relative h-8 flex items-center group"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         {/* Track Background */}
-        <div className="absolute w-full h-1 bg-physio-bg-input rounded-full overflow-hidden">
+        <div className="absolute w-full h-2 bg-physio-bg-input rounded-full overflow-hidden group-hover:bg-physio-bg-input/80 transition-colors">
           {/* Fill */}
           <div
-            className="h-full bg-physio-accent-primary transition-all duration-100"
+            className={`h-full transition-all duration-100 ${
+              isHigh ? 'bg-physio-accent-critical' : 'bg-physio-accent-primary'
+            }`}
             style={{ width: `${percentage}%` }}
           />
         </div>
@@ -70,7 +77,9 @@ const Slider = ({
           return (
             <div
               key={idx}
-              className={`absolute w-1 h-2 ${colorClass} rounded-sm transform -translate-x-1/2 mt-3`}
+              className={`absolute w-1 h-2 ${colorClass} rounded-sm transform -translate-x-1/2 mt-4 transition-opacity ${
+                isHovered ? 'opacity-100' : 'opacity-60'
+              }`}
               style={{ left: `${markerPos}%`, top: "50%" }}
               title={`${marker.label}: ${marker.value}`}
             />
@@ -88,10 +97,18 @@ const Slider = ({
           className="absolute w-full h-full opacity-0 cursor-pointer z-10"
         />
 
-        {/* Custom Thumb (Visual Only - follows percentage) */}
+        {/* Custom Thumb (Larger with hover halo) */}
         <div
-          className="absolute w-4 h-4 bg-white border-2 border-physio-accent-primary rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.45)] transform -translate-x-1/2 pointer-events-none transition-all duration-100"
-          style={{ left: `${percentage}%` }}
+          className={`absolute rounded-full border-2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-all duration-200 ${
+            isHovered
+              ? 'w-6 h-6 shadow-[0_0_0_6px_rgba(59,130,246,0.15),0_6px_20px_rgba(0,0,0,0.3)] scale-110'
+              : 'w-5 h-5 shadow-[0_4px_12px_rgba(0,0,0,0.25)]'
+          } ${
+            isHigh
+              ? 'bg-white border-physio-accent-critical'
+              : 'bg-white border-physio-accent-primary'
+          }`}
+          style={{ left: `${percentage}%`, top: '50%' }}
         />
       </div>
     </div>

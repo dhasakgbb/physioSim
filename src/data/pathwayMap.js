@@ -1,48 +1,61 @@
+// Cool-toned categorical color palette for pathways
+const CATEGORICAL_COLORS = {
+  ar_genomic: '#3b82f6',    // Blue
+  neuro: '#0891b2',         // Teal
+  non_genomic: '#06b6d4',  // Cyan
+  estrogen: '#8b5cf6',     // Purple
+  prolactin: '#6366f1',    // Indigo
+  progesterone: '#7c3aed', // Violet
+  liver: '#0ea5e9',         // Sky blue
+  cortisol: '#0891b2',      // Teal
+  shbg: '#4f46e5',         // Blue violet
+};
+
 export const PATHWAY_NODES = {
-  // MECHANISMS (Middle Layer)
+  // MECHANISMS (Middle Layer) - Using categorical colors (cool tones)
   ar_genomic: {
     label: "Androgen Receptor",
-    color: "#10b981",
+    color: CATEGORICAL_COLORS.ar_genomic,
     description: "Primary muscle building pathway",
   },
   neuro: {
     label: "Neuro / CNS Stress",
-    color: "#f43f5e",
+    color: CATEGORICAL_COLORS.neuro,
     description: "Adrenergic signaling & toxicity",
   },
   non_genomic: {
     label: "Non-Genomic / CNS",
-    color: "#f59e0b",
+    color: CATEGORICAL_COLORS.non_genomic,
     description: "Rapid signaling & strength",
   },
   estrogen: {
     label: "Estrogen (E2)",
-    color: "#ec4899",
+    color: CATEGORICAL_COLORS.estrogen,
     description: "Water retention & mood",
   },
   prolactin: {
     label: "Prolactin",
-    color: "#8b5cf6",
+    color: CATEGORICAL_COLORS.prolactin,
     description: "Lactation & sexual side effects",
   },
   progesterone: {
     label: "Progesterone",
-    color: "#7c3aed",
+    color: CATEGORICAL_COLORS.progesterone,
     description: "19-nor pathway & mood",
   },
   liver: {
     label: "Hepatic Processing",
-    color: "#ef4444",
+    color: CATEGORICAL_COLORS.liver,
     description: "Toxicity filter",
   },
   cortisol: {
     label: "Glucocorticoid Block",
-    color: "#06b6d4",
+    color: CATEGORICAL_COLORS.cortisol,
     description: "Anti-catabolic shielding",
   },
   shbg: {
     label: "SHBG Suppression",
-    color: "#3b82f6",
+    color: CATEGORICAL_COLORS.shbg,
     description: "Free hormone amplifier",
   },
 };

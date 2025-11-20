@@ -224,18 +224,404 @@ const findOptimalConfiguration = (currentStack, userProfile, mode = 'safe') => {
   };
 };
 
+// ============================================================================
+// GENETIC ALGORITHM OPTIMIZATION
+// ============================================================================
+
+/**
+ * Genetic Algorithm for Stack Optimization
+ * Evolves populations of stacks to find optimal configurations
+ */
+const geneticAlgorithmOptimization = (availableCompounds, userProfile, options = {}) => {
+  const {
+    populationSize = 50,
+    generations = 100,
+    tournamentSize = 5,
+    crossoverRate = 0.8,
+    mutationRate = 0.1,
+    elitismRate = 0.1
+  } = options;
+
+  // Initialize population
+  let population = initializePopulation(availableCompounds, populationSize, userProfile);
+
+  for (let gen = 0; gen < generations; gen++) {
+    // Evaluate fitness
+    const evaluatedPopulation = population.map(stack => ({
+      stack,
+      fitness: evaluateStackFitness(stack, userProfile)
+    }));
+
+    // Sort by fitness (descending)
+    evaluatedPopulation.sort((a, b) => b.fitness.total - a.fitness.total);
+
+    // Elitism - keep best individuals
+    const eliteCount = Math.floor(populationSize * elitismRate);
+    const newPopulation = evaluatedPopulation.slice(0, eliteCount).map(item => item.stack);
+
+    // Generate rest of population through selection, crossover, mutation
+    while (newPopulation.length < populationSize) {
+      // Tournament selection
+      const parent1 = tournamentSelection(evaluatedPopulation, tournamentSize);
+      const parent2 = tournamentSelection(evaluatedPopulation, tournamentSize);
+
+      // Crossover
+      let offspring = parent1.stack;
+      if (Math.random() < crossoverRate) {
+        offspring = crossover(parent1.stack, parent2.stack);
+      }
+
+      // Mutation
+      if (Math.random() < mutationRate) {
+        offspring = mutate(offspring, availableCompounds);
+      }
+
+      newPopulation.push(offspring);
+    }
+
+    population = newPopulation;
+  }
+
+  // Return best solution
+  const bestSolution = population.map(stack => ({
+    stack,
+    fitness: evaluateStackFitness(stack, userProfile)
+  })).sort((a, b) => b.fitness.total - a.fitness.total)[0];
+
+  return {
+    optimizedStack: bestSolution.stack,
+    fitness: bestSolution.fitness,
+    algorithm: 'genetic_algorithm',
+    generations: generations,
+    populationSize: populationSize
+  };
+};
+
+/**
+ * Multi-Objective Genetic Algorithm (NSGA-II)
+ * Optimizes for multiple conflicting objectives: muscle gain vs side effects
+ */
+const multiObjectiveOptimization = (availableCompounds, userProfile, options = {}) => {
+  const {
+    populationSize = 100,
+    generations = 150,
+    tournamentSize = 5,
+    crossoverRate = 0.9,
+    mutationRate = 0.05
+  } = options;
+
+  let population = initializePopulation(availableCompounds, populationSize, userProfile);
+
+  for (let gen = 0; gen < generations; gen++) {
+    // Evaluate objectives for all individuals
+    const evaluatedPopulation = population.map(stack => ({
+      stack,
+      objectives: evaluateMultiObjectives(stack, userProfile)
+    }));
+
+    // Fast non-dominated sorting
+    const fronts = fastNonDominatedSort(evaluatedPopulation);
+
+    // Calculate crowding distance for each front
+    fronts.forEach(front => {
+      calculateCrowdingDistance(front);
+    });
+
+    // Select parents using tournament selection with crowding comparison
+    const newPopulation = [];
+    const combinedPopulation = [...fronts.flat()];
+
+    while (newPopulation.length < populationSize) {
+      const parent1 = crowdingTournamentSelection(combinedPopulation, tournamentSize);
+      const parent2 = crowdingTournamentSelection(combinedPopulation, tournamentSize);
+
+      // Crossover and mutation
+      let offspring = parent1.stack;
+      if (Math.random() < crossoverRate) {
+        offspring = crossover(parent1.stack, parent2.stack);
+      }
+
+      if (Math.random() < mutationRate) {
+        offspring = mutate(offspring, availableCompounds);
+      }
+
+      newPopulation.push(offspring);
+    }
+
+    population = newPopulation;
+  }
+
+  // Return Pareto front (non-dominated solutions)
+  const finalPopulation = population.map(stack => ({
+    stack,
+    objectives: evaluateMultiObjectives(stack, userProfile)
+  }));
+
+  const paretoFront = fastNonDominatedSort(finalPopulation)[0] || [];
+
+  return {
+    paretoFront: paretoFront.map(item => ({
+      stack: item.stack,
+      objectives: item.objectives,
+      fitness: item.objectives.muscleGain - item.objectives.sideEffects // Simple combined score
+    })),
+    algorithm: 'nsga2_multi_objective',
+    generations: generations,
+    populationSize: populationSize
+  };
+};
+
+// ============================================================================
+// GENETIC ALGORITHM UTILITIES
+// ============================================================================
+
+const initializePopulation = (availableCompounds, size, userProfile) => {
+  const population = [];
+
+  for (let i = 0; i < size; i++) {
+    const stack = [];
+    // Randomly select 2-5 compounds
+    const numCompounds = Math.floor(Math.random() * 4) + 2;
+    const selectedCompounds = shuffle([...availableCompounds]).slice(0, numCompounds);
+
+    selectedCompounds.forEach(compound => {
+      const meta = compoundData[compound];
+      const isOral = meta.type === 'oral';
+      const minDose = isOral ? 10 : 100;
+      const maxDose = isOral ? 100 : 800;
+
+      stack.push({
+        compound,
+        dose: Math.floor(Math.random() * (maxDose - minDose)) + minDose,
+        ester: meta.defaultEster || 'enanthate',
+        frequency: 3.5 // Default frequency
+      });
+    });
+
+    population.push(stack);
+  }
+
+  return population;
+};
+
+const evaluateStackFitness = (stack, userProfile) => {
+  const result = evaluateStack({ stackInput: stack, profile: userProfile });
+  return {
+    total: result.totals.netScore,
+    benefit: result.totals.totalBenefit,
+    risk: result.totals.totalRisk,
+    muscleGain: result.totals.totalBenefit,
+    sideEffects: result.totals.totalRisk
+  };
+};
+
+const evaluateMultiObjectives = (stack, userProfile) => {
+  const result = evaluateStack({ stackInput: stack, profile: userProfile });
+  return {
+    muscleGain: result.totals.totalBenefit,
+    sideEffects: result.totals.totalRisk,
+    netScore: result.totals.netScore,
+    efficiency: result.totals.netScore > 0 ? result.totals.totalBenefit / result.totals.totalRisk : 0
+  };
+};
+
+const tournamentSelection = (population, tournamentSize) => {
+  const tournament = [];
+  for (let i = 0; i < tournamentSize; i++) {
+    tournament.push(population[Math.floor(Math.random() * population.length)]);
+  }
+  return tournament.reduce((best, current) =>
+    current.fitness.total > best.fitness.total ? current : best
+  );
+};
+
+const crossover = (parent1, parent2) => {
+  const child = [];
+  const maxLength = Math.max(parent1.length, parent2.length);
+
+  for (let i = 0; i < maxLength; i++) {
+    if (i < parent1.length && i < parent2.length) {
+      // Blend doses from both parents
+      const dose1 = parent1[i].dose;
+      const dose2 = parent2[i].dose;
+      const blendedDose = Math.round((dose1 + dose2) / 2);
+
+      child.push({
+        ...parent1[i],
+        dose: Math.max(10, Math.min(1000, blendedDose)) // Clamp to reasonable range
+      });
+    } else if (i < parent1.length) {
+      child.push({ ...parent1[i] });
+    } else if (i < parent2.length) {
+      child.push({ ...parent2[i] });
+    }
+  }
+
+  return child;
+};
+
+const mutate = (stack, availableCompounds) => {
+  const mutatedStack = JSON.parse(JSON.stringify(stack));
+
+  // Randomly mutate one compound's dose
+  if (mutatedStack.length > 0) {
+    const randomIndex = Math.floor(Math.random() * mutatedStack.length);
+    const item = mutatedStack[randomIndex];
+    const meta = compoundData[item.compound];
+    const isOral = meta.type === 'oral';
+
+    // Gaussian mutation
+    const mutationStrength = isOral ? 20 : 100;
+    const newDose = item.dose + (Math.random() - 0.5) * mutationStrength * 2;
+
+    // Clamp to valid range
+    const minDose = isOral ? 10 : 50;
+    const maxDose = isOral ? 150 : 1200;
+    item.dose = Math.max(minDose, Math.min(maxDose, Math.round(newDose)));
+  }
+
+  return mutatedStack;
+};
+
+// ============================================================================
+// MULTI-OBJECTIVE OPTIMIZATION UTILITIES (NSGA-II)
+// ============================================================================
+
+const fastNonDominatedSort = (population) => {
+  const fronts = [[]];
+  const dominationCount = new Array(population.length).fill(0);
+  const dominatedSolutions = population.map(() => []);
+
+  // Calculate domination relationships
+  for (let i = 0; i < population.length; i++) {
+    for (let j = 0; j < population.length; j++) {
+      if (i === j) continue;
+
+      const obj1 = population[i].objectives;
+      const obj2 = population[j].objectives;
+
+      // Check if solution i dominates solution j
+      const iDominatesJ = (obj1.muscleGain >= obj2.muscleGain && obj1.sideEffects <= obj2.sideEffects) &&
+                         (obj1.muscleGain > obj2.muscleGain || obj1.sideEffects < obj2.sideEffects);
+
+      // Check if solution j dominates solution i
+      const jDominatesI = (obj2.muscleGain >= obj1.muscleGain && obj2.sideEffects <= obj1.sideEffects) &&
+                         (obj2.muscleGain > obj1.muscleGain || obj2.sideEffects < obj1.sideEffects);
+
+      if (iDominatesJ) {
+        dominatedSolutions[i].push(j);
+      } else if (jDominatesI) {
+        dominationCount[i]++;
+      }
+    }
+
+    if (dominationCount[i] === 0) {
+      population[i].rank = 0;
+      fronts[0].push(population[i]);
+    }
+  }
+
+  // Generate subsequent fronts
+  let currentFront = 0;
+  while (fronts[currentFront].length > 0) {
+    const nextFront = [];
+
+    for (const solution of fronts[currentFront]) {
+      const solutionIndex = population.indexOf(solution);
+
+      for (const dominatedIndex of dominatedSolutions[solutionIndex]) {
+        dominationCount[dominatedIndex]--;
+        if (dominationCount[dominatedIndex] === 0) {
+          population[dominatedIndex].rank = currentFront + 1;
+          nextFront.push(population[dominatedIndex]);
+        }
+      }
+    }
+
+    currentFront++;
+    if (nextFront.length > 0) {
+      fronts.push(nextFront);
+    }
+  }
+
+  return fronts;
+};
+
+const calculateCrowdingDistance = (front) => {
+  if (front.length === 0) return;
+
+  // Initialize crowding distance
+  front.forEach(solution => {
+    solution.crowdingDistance = 0;
+  });
+
+  // Sort by each objective and calculate crowding distance
+  const objectives = ['muscleGain', 'sideEffects'];
+
+  objectives.forEach(obj => {
+    // Sort front by objective
+    front.sort((a, b) => a.objectives[obj] - b.objectives[obj]);
+
+    // Set boundary solutions
+    front[0].crowdingDistance = Infinity;
+    front[front.length - 1].crowdingDistance = Infinity;
+
+    // Calculate crowding distance for intermediate solutions
+    if (front.length > 2) {
+      const objRange = front[front.length - 1].objectives[obj] - front[0].objectives[obj];
+
+      for (let i = 1; i < front.length - 1; i++) {
+        const distance = (front[i + 1].objectives[obj] - front[i - 1].objectives[obj]) / objRange;
+        front[i].crowdingDistance += distance;
+      }
+    }
+  });
+};
+
+const crowdingTournamentSelection = (population, tournamentSize) => {
+  const tournament = [];
+  for (let i = 0; i < tournamentSize; i++) {
+    tournament.push(population[Math.floor(Math.random() * population.length)]);
+  }
+
+  // Select winner based on rank and crowding distance
+  return tournament.reduce((winner, candidate) => {
+    if (candidate.rank < winner.rank) return candidate;
+    if (candidate.rank > winner.rank) return winner;
+    if (candidate.crowdingDistance > winner.crowdingDistance) return candidate;
+    return winner;
+  });
+};
+
+const shuffle = (array) => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
+// ============================================================================
+// MESSAGE HANDLER (UPDATED)
+// ============================================================================
+
 // Message Handler
 self.onmessage = (e) => {
   const { type, payload, id } = e.data;
-  
+
   try {
     let result;
     if (type === 'PEAK_EFFICIENCY') {
       result = findPeakEfficiency(payload.stack, payload.profile);
     } else if (type === 'OPTIMAL_CONFIG') {
       result = findOptimalConfiguration(payload.stack, payload.profile, payload.mode);
+    } else if (type === 'GENETIC_ALGORITHM') {
+      result = geneticAlgorithmOptimization(payload.availableCompounds, payload.profile, payload.options);
+    } else if (type === 'MULTI_OBJECTIVE') {
+      result = multiObjectiveOptimization(payload.availableCompounds, payload.profile, payload.options);
     }
-    
+
     self.postMessage({ type: 'SUCCESS', id, payload: result });
   } catch (error) {
     self.postMessage({ type: 'ERROR', id, error: error.message });

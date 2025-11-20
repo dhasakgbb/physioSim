@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import DashboardLayout from "./DashboardLayout";
 import ActiveStackRail from "./ActiveStackRail";
 import NetEffectChart from "./NetEffectChart";
+import SerumStabilityChart from "./SerumStabilityChart";
 import VitalSigns from "./VitalSigns";
 import MechanismMonitor from "./MechanismMonitor";
 import BiomarkerMatrix from "./BiomarkerMatrix";
@@ -30,8 +31,14 @@ const Dashboard = () => {
   } = useStack();
 
   const [showDonation, setShowDonation] = useState(false);
+  const [timeScrubData, setTimeScrubData] = useState(null);
+  const [chartMode, setChartMode] = useState('dose'); // 'dose' or 'serum'
 
   const baseHref = (import.meta.env?.BASE_URL || "/").replace(/\/*$/, "/");
+
+  const handleTimeScrub = (dataPoint) => {
+    setTimeScrubData(dataPoint);
+  };
 
   const buildViewHref = (mode) => {
     const slug = VIEW_MODE_SLUGS[mode] || VIEW_MODE_SLUGS.net;
@@ -136,12 +143,49 @@ const Dashboard = () => {
                 </div>
               </div>
             ) : (
-              <NetEffectChart
-                stack={stack}
-                userProfile={userProfile}
-                durationWeeks={durationWeeks}
-                setDurationWeeks={setDurationWeeks}
-              />
+              <div className="flex flex-col h-full">
+                {/* Chart Mode Toggle */}
+                <div className="flex items-center gap-2 px-6 py-3 bg-physio-bg-surface/80 backdrop-blur border-b border-physio-border-subtle">
+                  <button
+                    onClick={() => setChartMode('dose')}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                      chartMode === 'dose'
+                        ? 'bg-physio-accent-primary text-white shadow-sm'
+                        : 'bg-physio-bg-highlight/50 text-physio-text-secondary hover:bg-physio-bg-highlight'
+                    }`}
+                  >
+                    Dose Response
+                  </button>
+                  <button
+                    onClick={() => setChartMode('serum')}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                      chartMode === 'serum'
+                        ? 'bg-physio-accent-primary text-white shadow-sm'
+                        : 'bg-physio-bg-highlight/50 text-physio-text-secondary hover:bg-physio-bg-highlight'
+                    }`}
+                  >
+                    Serum Release
+                  </button>
+                </div>
+
+                {/* Chart Content */}
+                <div className="flex-1 min-h-0">
+                  {chartMode === 'dose' ? (
+                    <NetEffectChart
+                      stack={stack}
+                      userProfile={userProfile}
+                      durationWeeks={durationWeeks}
+                      setDurationWeeks={setDurationWeeks}
+                      onTimeScrub={handleTimeScrub}
+                    />
+                  ) : (
+                    <SerumStabilityChart
+                      stack={stack}
+                      onTimeScrub={handleTimeScrub}
+                    />
+                  )}
+                </div>
+              </div>
             )}
           </ErrorBoundary>
         }
@@ -149,7 +193,12 @@ const Dashboard = () => {
         rightRail={
           <div className="space-y-6 pb-10">
             {/* 1. THE NORTH STAR: Score */}
-            <VitalSigns metrics={steadyStateMetrics} stack={stack} showScoreOnly={true} />
+            <VitalSigns
+              metrics={steadyStateMetrics}
+              stack={stack}
+              showScoreOnly={true}
+              timeScrubData={timeScrubData}
+            />
 
             {/* 2. THE GOVERNOR: Saturation */}
             <MechanismMonitor stack={stack} metrics={steadyStateMetrics} />

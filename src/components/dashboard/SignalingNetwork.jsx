@@ -6,6 +6,33 @@ import { PATHWAY_NODES, COMPOUND_VECTORS } from "../../data/pathwayMap";
 const ROW_HEIGHT = 110; // Increased to prevent overlap
 const COL_WIDTH_PERCENT = 33;
 
+// --- Cool-toned Categorical Color Palette (Blues, Teals, Violets) ---
+const CATEGORICAL_COLORS = {
+  // Pathway colors (cool tones for categorical distinction)
+  ar_genomic: '#3b82f6',    // Blue - primary muscle pathway
+  non_genomic: '#06b6d4',  // Cyan - rapid signaling
+  estrogen: '#8b5cf6',     // Purple - hormonal modulation
+  prolactin: '#6366f1',    // Indigo - lactogenic effects
+  liver: '#0ea5e9',         // Sky blue - metabolic processing
+  cortisol: '#0891b2',      // Teal - stress modulation
+  shbg: '#7c3aed',         // Violet - binding modulation
+};
+
+// Status colors (reserved exclusively for semantic meaning)
+const STATUS_COLORS = {
+  success: '#10b981',      // Green - good/normal
+  warning: '#f59e0b',      // Orange - caution/warning
+  danger: '#ef4444',       // Red - bad/critical
+  neutral: '#6b7280',      // Gray - neutral/inactive
+};
+
+// Interactive highlighting colors (bright for emphasis)
+const HIGHLIGHT_COLORS = {
+  primary: '#3b82f6',      // Bright blue for active elements
+  secondary: '#06b6d4',    // Bright cyan for related elements
+  muted: 'rgba(255,255,255,0.1)', // Subtle for inactive elements
+};
+
 // Map "dirty" vector keys to clean Pathway Node keys
 const KEY_MAPPING = {
   neuro: "non_genomic",
@@ -28,10 +55,10 @@ const OUTCOME_MAP = {
 };
 
 const OUTCOME_NODES = {
-  muscle: { label: "Hypertrophy", color: "#10b981" },
-  fat_loss: { label: "Lipolysis", color: "#f59e0b" },
-  mood: { label: "Neuro/Mood", color: "#8b5cf6" },
-  stress: { label: "Systemic Load", color: "#ef4444" },
+  muscle: { label: "Hypertrophy", color: STATUS_COLORS.success },
+  fat_loss: { label: "Lipolysis", color: STATUS_COLORS.warning },
+  mood: { label: "Neuro/Mood", color: STATUS_COLORS.neutral },
+  stress: { label: "Systemic Load", color: STATUS_COLORS.danger },
 };
 
 const CircularProgress = ({
@@ -404,11 +431,14 @@ const SignalingNetwork = ({ stack, metrics }) => {
       const startX = start.x + startOffset;
       const endX = end.x - endOffset;
 
-      // Bezier Control Points
-      const cp1x = startX + (endX - startX) * 0.5;
-      const cp1y = start.y;
-      const cp2x = startX + (endX - startX) * 0.5;
-      const cp2y = end.y;
+      // Tighter Bezier Control Points for cable-like curves
+      const curveTension = 0.3; // Reduced from 0.5 for tighter curves
+      const verticalOffset = 25; // Small vertical offset for cable-like appearance
+
+      const cp1x = startX + (endX - startX) * curveTension;
+      const cp1y = start.y + (start.y < end.y ? verticalOffset : -verticalOffset);
+      const cp2x = endX - (endX - startX) * curveTension;
+      const cp2y = end.y + (end.y < start.y ? verticalOffset : -verticalOffset);
 
       const pathData = `M ${startX} ${start.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${endX} ${end.y}`;
 
@@ -432,7 +462,7 @@ const SignalingNetwork = ({ stack, metrics }) => {
             <path
               d={pathData}
               fill="none"
-              stroke={link.color}
+              stroke={HIGHLIGHT_COLORS.primary}
               strokeWidth={Math.max(link.value * 0.8, 2) + 6}
               strokeOpacity={0.4}
               style={{ filter: "blur(6px)" }}
@@ -442,13 +472,13 @@ const SignalingNetwork = ({ stack, metrics }) => {
           <path
             d={pathData}
             fill="none"
-            stroke={link.color}
+            stroke={isHighlighted ? link.color : HIGHLIGHT_COLORS.muted}
             strokeWidth={
               isHighlighted
                 ? Math.max(link.value * 0.5, 1) + 2
                 : Math.max(link.value * 0.5, 1)
             }
-            strokeOpacity={isDimmed ? 0.1 : 0.8}
+            strokeOpacity={isDimmed ? 0.05 : (isHighlighted ? 0.9 : 0.6)}
             className="transition-all duration-300"
           />
           {/* Animated Particle (only if active) */}
@@ -460,6 +490,23 @@ const SignalingNetwork = ({ stack, metrics }) => {
                 path={pathData}
               />
             </circle>
+          )}
+
+          {/* Inline Percentage Label */}
+          {link.value > 5 && !isDimmed && (
+            <text
+              x={startX + (endX - startX) * 0.5}
+              y={Math.min(start.y, end.y) + Math.abs(end.y - start.y) * 0.5}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              className="fill-white font-bold text-xs pointer-events-none select-none"
+              style={{
+                filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))',
+                fontSize: Math.max(10, Math.min(14, link.value * 0.3)),
+              }}
+            >
+              {Math.round(link.value)}%
+            </text>
           )}
         </g>
       );
@@ -555,12 +602,6 @@ const SignalingNetwork = ({ stack, metrics }) => {
 const NodeCard = ({ node }) => {
   const isInput = node.type === "input";
 
-  // Dynamic styles based on intensity
-  const glow = node.intensity
-    ? `0 0 ${Math.min(node.intensity * 2, 20)}px ${node.color}40`
-    : "none";
-  const border = node.intensity > 15 ? "#ef4444" : node.color || "#4b5563";
-
   // Calculate saturation percentage - pathway-specific limits
   const pathwayLimits = {
     ar_genomic: 500,
@@ -574,46 +615,100 @@ const NodeCard = ({ node }) => {
     shbg: 150,
     heart: 150,
   };
-  
+
   const limit = pathwayLimits[node.key] || 200; // Default to 200 for unknown pathways
   const saturation = Math.min((node.intensity / limit) * 100, 100);
   const isSaturated = saturation > 80;
 
+  // Dynamic node sizing based on load intensity
+  const baseWidth = isInput ? 192 : 160; // Base widths in pixels (w-48 = 192px, w-40 = 160px)
+  const intensityFactor = Math.max(0.7, Math.min(1.0, 0.7 + (saturation / 100) * 0.3)); // Scale from 0.7x to 1.0x
+  const dynamicWidth = Math.round(baseWidth * intensityFactor);
+  const dynamicHeight = Math.round(48 * intensityFactor); // Base height is 48px (py-3)
+
+  // Dynamic styles based on intensity
+  const glowIntensity = Math.min(node.intensity * 1.5, 25);
+  const glow = node.intensity
+    ? `0 0 ${glowIntensity}px ${node.color}60`
+    : "none";
+  const border = node.intensity > 15 ? "#ef4444" : node.color || "#4b5563";
+
+  // Breathing animation for nodes near capacity
+  const breathingAnimation = saturation > 70 ? "animate-pulse" : "";
+  const breathingIntensity = saturation > 80 ? 0.8 : saturation > 70 ? 0.4 : 0;
+
   return (
     <div
       className={`
-        relative flex items-center justify-between px-4 py-3 rounded-2xl border bg-[#1e293b]/90 backdrop-blur-sm
-        ${isInput ? "w-48" : "w-40"}
-        transition-all duration-300
-        ${saturation > 90 ? "animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)] border-red-500/50" : ""}
+        relative flex items-center justify-between rounded-2xl border bg-[#1e293b]/90 backdrop-blur-sm
+        transition-all duration-500 ease-out
+        ${saturation > 90 ? "shadow-[0_0_20px_rgba(239,68,68,0.6)] border-red-500/60" : ""}
+        ${saturation > 60 ? "shadow-[0_0_12px_rgba(59,130,246,0.4)]" : ""}
+        ${breathingAnimation}
       `}
       style={{
+        width: `${dynamicWidth}px`,
+        padding: `${Math.round(12 * intensityFactor)}px`,
+        minHeight: `${dynamicHeight}px`,
         borderColor: border,
-        boxShadow: glow,
-        transform: isSaturated ? "scale(1.02)" : "scale(1)",
+        boxShadow: saturation > 70
+          ? `${glow}, 0 0 ${breathingIntensity * 30}px rgba(239, 68, 68, ${breathingIntensity})`
+          : glow,
+        transform: isSaturated ? "scale(1.05)" : "scale(1)",
+        opacity: saturation > 10 ? 1 : 0.7, // Fade out very low intensity nodes
+        animationDuration: saturation > 80 ? "2s" : saturation > 70 ? "3s" : "4s",
       }}
     >
       <div className="flex flex-col w-full">
         <div className="flex justify-between items-center mb-1">
-          <span className="text-xs font-bold text-physio-text-primary truncate pr-2">
+          <span
+            className={`font-bold text-physio-text-primary truncate pr-2 ${
+              intensityFactor > 0.85 ? 'text-sm' : 'text-xs'
+            }`}
+            style={{
+              fontSize: intensityFactor > 0.9 ? '14px' : intensityFactor > 0.8 ? '13px' : '12px'
+            }}
+          >
             {node.label}
           </span>
+          {/* Intensity indicator dots */}
+          {saturation > 20 && (
+            <div className="flex gap-0.5">
+              {Array.from({ length: Math.min(3, Math.floor(saturation / 30)) }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-1 h-1 rounded-full ${
+                    isSaturated ? 'bg-red-400' : 'bg-physio-accent-primary'
+                  }`}
+                  style={{
+                    opacity: 0.6 + (i * 0.2), // Gradient effect
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {node.intensity !== undefined && (
           <div className="w-full">
-            <div className="flex justify-between text-[9px] text-physio-text-tertiary mb-0.5">
+            <div className="flex justify-between text-[9px] text-physio-text-tertiary mb-1">
               <span>Load</span>
               <span className={isSaturated ? "text-red-400 font-bold" : ""}>
                 {Math.round(saturation)}%
               </span>
             </div>
-            <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
+            <div
+              className="w-full bg-gray-800 rounded-full overflow-hidden"
+              style={{ height: `${Math.max(2, Math.round(6 * intensityFactor))}px` }}
+            >
               <div
-                className={`h-full rounded-full transition-all duration-500 ${isSaturated ? "animate-pulse" : ""}`}
+                className={`h-full rounded-full transition-all duration-500 ${
+                  isSaturated ? "animate-pulse" : ""
+                } ${saturation > 80 ? "shadow-[0_0_6px_rgba(239,68,68,0.8)]" : ""}`}
                 style={{
                   width: `${saturation}%`,
                   backgroundColor: isSaturated ? "#ef4444" : node.color,
+                  boxShadow: saturation > 60 ? `0 0 ${saturation > 80 ? 8 : 4}px ${node.color}80` : 'none',
                 }}
               />
             </div>

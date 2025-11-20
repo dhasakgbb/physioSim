@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { findPeakEfficiency, findOptimalConfiguration } from '../../utils/stackOptimizer';
+import {
+  findPeakEfficiency,
+  findOptimalConfiguration,
+  findGeneticAlgorithmSolution,
+  findMultiObjectiveSolutions,
+  findAdvancedOptimization
+} from '../../utils/stackOptimizer';
 import { compoundData } from '../../data/compoundData';
 import Input from '../ui/Input';
 import { GENETIC_ARCHETYPES } from '../../utils/personalization';
@@ -271,7 +277,7 @@ const PersonalizationSection = ({ profile, onUpdate, dense = false }) => {
   );
 };
 
-const OptimizationCard = ({ title, subtitle, onClick, loading, active, disabled, variant = 'default' }) => {
+const OptimizationCard = ({ title, subtitle, onClick, loading, active, disabled, variant = 'default', carbonHeader = false }) => {
   
   let borderClass = 'border-physio-border-subtle';
   let bgClass = 'bg-physio-bg-surface';
@@ -287,6 +293,10 @@ const OptimizationCard = ({ title, subtitle, onClick, loading, active, disabled,
     activeClass = 'bg-physio-accent-critical/10 border-physio-accent-critical/50';
     iconColor = 'text-physio-accent-critical';
     Icon = IconDanger;
+  } else if (variant === 'ai') {
+    activeClass = 'bg-gradient-to-br from-physio-accent-primary/10 to-physio-accent-secondary/10 border-physio-accent-primary/50';
+    iconColor = 'text-physio-accent-primary';
+    Icon = IconEfficiency; // Could add a custom AI icon later
   } else if (active) {
     activeClass = 'bg-physio-accent-success/10 border-physio-accent-success/50';
     iconColor = 'text-physio-accent-success';
@@ -294,12 +304,14 @@ const OptimizationCard = ({ title, subtitle, onClick, loading, active, disabled,
 
   const interactiveGlow = disabled
     ? ""
-    : "hover:border-physio-accent-primary hover:shadow-[0_0_22px_rgba(59,130,246,0.35)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-physio-accent-primary/60 focus-visible:outline-offset-2";
+    : active
+      ? "ring-2 ring-offset-2 ring-offset-physio-bg-core shadow-[0_0_32px_rgba(59,130,246,0.4)]"
+      : "hover:border-physio-accent-primary hover:shadow-[0_0_22px_rgba(59,130,246,0.35)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-physio-accent-primary/60 focus-visible:outline-offset-2";
 
   const stateClass = disabled
     ? "opacity-50 cursor-not-allowed bg-physio-bg-surface border-physio-border-subtle"
     : active
-      ? `${activeClass}`
+      ? `${activeClass} border-2`
       : `${bgClass} ${borderClass}`;
 
   return (
@@ -317,6 +329,13 @@ const OptimizationCard = ({ title, subtitle, onClick, loading, active, disabled,
           <h3 className={`text-sm font-bold transition-colors ${active ? iconColor : 'text-physio-text-primary'} group-hover:text-physio-accent-primary`}>
             {title}
           </h3>
+          {active && !loading && (
+            <div className="flex items-center justify-center w-5 h-5 bg-physio-accent-success rounded-full shadow-sm">
+              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          )}
         </div>
         {loading && (
           <div className="flex items-center gap-2">
@@ -356,25 +375,73 @@ const ResultPreview = ({ originalStack, optimizedStack, originalScore, newScore,
     titleText = 'REDLINE PROTOCOL FOUND';
   }
 
-  const items = optimizedStack.map((item, index) => {
-    const oldItem = originalStack[index];
-    const meta = compoundData[item.compound];
-    const isChanged = item.dose !== oldItem.dose;
-    
-    return {
-      name: meta?.name || item.compound,
-      oldDose: oldItem.dose,
-      newDose: item.dose,
-      isChanged
-    };
-  });
+  // Handle different stack structures (AI optimization vs traditional)
+  const isAIResult = type === 'genetic_algorithm' || type === 'multi_objective';
 
-  items.sort((a, b) => (b.isChanged ? 1 : 0) - (a.isChanged ? 1 : 0));
+  let items;
+  if (isAIResult) {
+    // For AI results, show all compounds in the optimized stack
+    items = optimizedStack.map((item) => {
+      const meta = compoundData[item.compound];
+      const originalItem = originalStack.find(o => o.compound === item.compound);
+
+      return {
+        name: meta?.name || item.compound,
+        oldDose: originalItem?.dose || 0,
+        newDose: item.dose,
+        isChanged: !originalItem || item.dose !== originalItem.dose,
+        isNew: !originalItem,
+        isRemoved: false
+      };
+    });
+
+    // Mark removed compounds
+    originalStack.forEach((item) => {
+      if (!optimizedStack.find(o => o.compound === item.compound)) {
+        const meta = compoundData[item.compound];
+        items.push({
+          name: meta?.name || item.compound,
+          oldDose: item.dose,
+          newDose: 0,
+          isChanged: true,
+          isNew: false,
+          isRemoved: true
+        });
+      }
+    });
+  } else {
+    // Traditional optimization - assume same compounds, different doses
+    items = optimizedStack.map((item, index) => {
+      const oldItem = originalStack[index];
+      const meta = compoundData[item.compound];
+      const isChanged = item.dose !== oldItem.dose;
+
+      return {
+        name: meta?.name || item.compound,
+        oldDose: oldItem.dose,
+        newDose: item.dose,
+        isChanged,
+        isNew: false,
+        isRemoved: false
+      };
+    });
+  }
+
+  items.sort((a, b) => {
+    // Sort by: new additions, changes, removals
+    if (a.isNew && !b.isNew) return -1;
+    if (!a.isNew && b.isNew) return 1;
+    if (a.isRemoved && !b.isRemoved) return 1;
+    if (!a.isRemoved && b.isRemoved) return -1;
+    if (a.isChanged && !b.isChanged) return -1;
+    if (!a.isChanged && b.isChanged) return 1;
+    return 0;
+  });
 
   return (
     <div className={`mt-6 bg-physio-bg-surface rounded-lg border ${borderColor} overflow-hidden animate-fade-in shadow-lg`}>
       {/* Header */}
-      <div className={`px-6 py-4 border-b ${isDeathWish ? 'border-physio-accent-critical/30 bg-physio-accent-critical/5' : isMaxSafe ? 'border-physio-accent-warning/20 bg-physio-accent-warning/5' : 'border-physio-border-subtle bg-physio-bg-highlight/30'} flex justify-between items-start`}>
+      <div className={`px-6 py-4 border-b ${carbonHeader ? 'carbon-header' : isDeathWish ? 'border-physio-accent-critical/30 bg-physio-accent-critical/5' : isMaxSafe ? 'border-physio-accent-warning/20 bg-physio-accent-warning/5' : 'border-physio-border-subtle bg-physio-bg-highlight/30'} flex justify-between items-start`}>
         <div>
           <h4 className={`text-sm font-bold ${isDeathWish ? 'text-physio-accent-critical' : 'text-physio-text-primary'}`}>
              {titleText}
@@ -410,25 +477,53 @@ const ResultPreview = ({ originalStack, optimizedStack, originalScore, newScore,
 
       {/* Changes List */}
       <div className="px-6 py-4 space-y-3">
-        {items.map((item, i) => (
-          <div key={i} className={`flex justify-between items-center text-xs border-b border-physio-border-subtle/50 last:border-0 pb-2 last:pb-0 ${!item.isChanged ? 'opacity-50' : ''}`}>
-            <span className="font-medium text-physio-text-primary">
-              {item.name}
-              {!item.isChanged && <span className="ml-2 text-[10px] text-physio-text-tertiary uppercase tracking-wider">(Optimal)</span>}
-            </span>
-            <div className="flex items-center gap-3 font-mono">
-              {item.isChanged ? (
-                <>
-                  <span className="text-physio-text-tertiary">{item.oldDose}mg</span>
-                  <span className="text-physio-text-secondary">→</span>
-                  <span className={`${accentColor} font-bold`}>{item.newDose}mg</span>
-                </>
-              ) : (
-                <span className="text-physio-text-tertiary">{item.newDose}mg</span>
-              )}
+        {items.map((item, i) => {
+          let changeType = '';
+          let changeColor = accentColor;
+
+          if (item.isNew) {
+            changeType = 'NEW';
+            changeColor = 'text-green-400';
+          } else if (item.isRemoved) {
+            changeType = 'REMOVED';
+            changeColor = 'text-red-400';
+          } else if (item.isChanged) {
+            changeType = 'CHANGED';
+          }
+
+          return (
+            <div key={i} className={`flex justify-between items-center text-xs border-b border-physio-border-subtle/50 last:border-0 pb-2 last:pb-0 ${!item.isChanged && !item.isNew && !item.isRemoved ? 'opacity-50' : ''}`}>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-physio-text-primary">
+                  {item.name}
+                </span>
+                {changeType && (
+                  <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${changeColor} bg-current/10`}>
+                    {changeType}
+                  </span>
+                )}
+                {!item.isChanged && !item.isNew && !item.isRemoved && (
+                  <span className="text-[10px] text-physio-text-tertiary uppercase tracking-wider">(Optimal)</span>
+                )}
+              </div>
+              <div className="flex items-center gap-3 font-mono">
+                {item.isRemoved ? (
+                  <span className="text-physio-text-tertiary line-through">{item.oldDose}mg</span>
+                ) : item.isNew ? (
+                  <span className={`${changeColor} font-bold`}>+{item.newDose}mg</span>
+                ) : item.isChanged ? (
+                  <>
+                    <span className="text-physio-text-tertiary">{item.oldDose}mg</span>
+                    <span className="text-physio-text-secondary">→</span>
+                    <span className={`${accentColor} font-bold`}>{item.newDose}mg</span>
+                  </>
+                ) : (
+                  <span className="text-physio-text-tertiary">{item.newDose}mg</span>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       
       {/* Actions */}
@@ -489,6 +584,54 @@ const OptimizerPane = ({ stack, userProfile, onApplyOptimization, onUpdateProfil
       setResult(res);
     } catch (error) {
       console.error("Optimization failed:", error);
+    } finally {
+      setOptimizing(false);
+    }
+  };
+
+  const handleGeneticAlgorithm = async () => {
+    setOptimizing(true);
+    setResult({ type: 'genetic_algorithm', loading: true });
+    try {
+      const availableCompounds = Object.keys(compoundData);
+      const res = await findGeneticAlgorithmSolution(availableCompounds, userProfile, {
+        populationSize: 50,
+        generations: 100
+      });
+      setResult({
+        ...res,
+        type: 'genetic_algorithm',
+        isDifferent: true
+      });
+    } catch (error) {
+      console.error("Genetic algorithm optimization failed:", error);
+    } finally {
+      setOptimizing(false);
+    }
+  };
+
+  const handleMultiObjective = async () => {
+    setOptimizing(true);
+    setResult({ type: 'multi_objective', loading: true });
+    try {
+      const availableCompounds = Object.keys(compoundData);
+      const res = await findMultiObjectiveSolutions(availableCompounds, userProfile, {
+        populationSize: 100,
+        generations: 150
+      });
+
+      // For multi-objective, show the first (best balanced) solution initially
+      const bestSolution = res.paretoFront[0];
+      setResult({
+        ...res,
+        optimizedStack: bestSolution.stack,
+        type: 'multi_objective',
+        isDifferent: true,
+        paretoFront: res.paretoFront,
+        objectives: bestSolution.objectives
+      });
+    } catch (error) {
+      console.error("Multi-objective optimization failed:", error);
     } finally {
       setOptimizing(false);
     }
@@ -556,7 +699,7 @@ const OptimizerPane = ({ stack, userProfile, onApplyOptimization, onUpdateProfil
             />
 
             {/* 3. ABSOLUTE MAX POWER */}
-            <OptimizationCard 
+            <OptimizationCard
               variant="critical"
               title="Redline"
               subtitle="Ignore tolerance caps. Maximize Anabolic Signal until receptors fully saturate."
@@ -564,6 +707,38 @@ const OptimizerPane = ({ stack, userProfile, onApplyOptimization, onUpdateProfil
               loading={optimizing && result?.mode === 'absolute_max'}
               active={result?.mode === 'absolute_max' || (result?.loading && result?.mode === 'absolute_max')}
             />
+            </div>
+
+            {/* ADVANCED OPTIMIZATION ALGORITHMS */}
+            <div className="mt-6 pt-6 border-t border-physio-border-subtle/60">
+              <h4 className="text-xs font-bold text-physio-text-secondary uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span className="text-physio-accent-primary">🤖</span>
+                Advanced Algorithms
+              </h4>
+
+              <div className={compact ? "grid grid-cols-1 md:grid-cols-2 gap-3" : "grid grid-cols-1 md:grid-cols-2 gap-4"}>
+                {/* 4. GENETIC ALGORITHM */}
+                <OptimizationCard
+                  variant="ai"
+                  carbonHeader={true}
+                  title="Genetic Algorithm"
+                  subtitle="Evolutionary optimization using population-based search to find optimal stacks."
+                  onClick={handleGeneticAlgorithm}
+                  loading={optimizing && result?.type === 'genetic_algorithm'}
+                  active={result?.type === 'genetic_algorithm' || (result?.loading && result?.type === 'genetic_algorithm')}
+                />
+
+                {/* 5. MULTI-OBJECTIVE OPTIMIZATION */}
+                <OptimizationCard
+                  variant="ai"
+                  carbonHeader={true}
+                  title="Multi-Objective"
+                  subtitle="Find Pareto-optimal solutions balancing muscle gain vs side effects."
+                  onClick={handleMultiObjective}
+                  loading={optimizing && result?.type === 'multi_objective'}
+                  active={result?.type === 'multi_objective' || (result?.loading && result?.type === 'multi_objective')}
+                />
+              </div>
             </div>
 
             {/* PREVIEW AREA */}

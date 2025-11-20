@@ -3,20 +3,110 @@ import Card from "../ui/Card";
 import { getAncillaryProtocol } from "../../data/sideFxAndAncillaries";
 import { compoundData } from "../../data/compoundData";
 
-const LoadBar = ({ label, value, color }) => (
-  <div className="flex items-center gap-4 text-sm">
-    <span className="w-16 text-right text-physio-text-secondary font-medium">
-      {label}
-    </span>
-    <div className="flex-1 h-2 bg-physio-bg-core rounded-full overflow-hidden border border-physio-border-subtle">
-      <div
-        className={`h-full rounded-full transition-all duration-500 ${color}`}
-        style={{ width: `${Math.min((value / 20) * 100, 100)}%` }}
-      />
+// Reference ranges for common biomarkers
+const BIOMARKER_RANGES = {
+  // Lipid Panel
+  total_cholesterol: { min: 0, max: 300, optimal: { min: 100, max: 200 }, unit: "mg/dL" },
+  ldl: { min: 0, max: 200, optimal: { min: 0, max: 100 }, unit: "mg/dL" },
+  hdl: { min: 30, max: 100, optimal: { min: 40, max: 100 }, unit: "mg/dL" },
+  triglycerides: { min: 0, max: 400, optimal: { min: 0, max: 150 }, unit: "mg/dL" },
+
+  // Liver Function
+  alt: { min: 7, max: 56, optimal: { min: 7, max: 40 }, unit: "U/L" },
+  ast: { min: 10, max: 40, optimal: { min: 10, max: 35 }, unit: "U/L" },
+  alp: { min: 44, max: 147, optimal: { min: 44, max: 129 }, unit: "U/L" },
+  bilirubin: { min: 0.1, max: 1.2, optimal: { min: 0.1, max: 1.0 }, unit: "mg/dL" },
+
+  // Hormonal Panel
+  testosterone: { min: 300, max: 1000, optimal: { min: 600, max: 900 }, unit: "ng/dL" },
+  cortisol: { min: 5, max: 25, optimal: { min: 10, max: 20 }, unit: "µg/dL" },
+  shbg: { min: 10, max: 50, optimal: { min: 15, max: 40 }, unit: "nmol/L" },
+  prolactin: { min: 2, max: 18, optimal: { min: 2, max: 15 }, unit: "ng/mL" },
+
+  // Metabolic
+  glucose: { min: 70, max: 140, optimal: { min: 80, max: 100 }, unit: "mg/dL" },
+  insulin: { min: 2, max: 25, optimal: { min: 5, max: 15 }, unit: "µIU/mL" },
+};
+
+// Visual reference range indicator (Material Design style)
+const ReferenceRangeIndicator = ({ value, range, label }) => {
+  const { min, max, optimal, unit } = range;
+  const rangeWidth = max - min;
+  const optimalWidth = optimal.max - optimal.min;
+  const optimalStart = ((optimal.min - min) / rangeWidth) * 100;
+  const valuePosition = Math.max(0, Math.min(100, ((value - min) / rangeWidth) * 100));
+
+  // Determine status color
+  let statusColor = 'text-physio-accent-success'; // Green - optimal
+  if (value < optimal.min || value > optimal.max) {
+    statusColor = 'text-physio-accent-warning'; // Orange - suboptimal
+  }
+  if (value < min || value > max * 1.5) {
+    statusColor = 'text-physio-accent-critical'; // Red - concerning
+  }
+
+  return (
+    <div className="flex items-center gap-3 flex-1">
+      {/* Range visualization */}
+      <div className="flex-1 relative h-6 flex items-center">
+        {/* Full range background */}
+        <div className="absolute inset-0 h-1 bg-physio-bg-core rounded-full border border-physio-border-subtle" />
+
+        {/* Optimal range highlight */}
+        <div
+          className="absolute h-1 bg-physio-accent-success/30 rounded-full"
+          style={{
+            left: `${optimalStart}%`,
+            width: `${(optimalWidth / rangeWidth) * 100}%`
+          }}
+        />
+
+        {/* Value marker */}
+        <div
+          className={`absolute w-2 h-2 rounded-full border-2 border-white shadow-sm ${statusColor.replace('text-', 'bg-')}`}
+          style={{ left: `${valuePosition}%`, top: '50%', transform: 'translate(-50%, -50%)' }}
+        />
+      </div>
+
+      {/* Value display */}
+      <div className="flex items-baseline gap-1 min-w-0">
+        <span className={`font-bold text-sm ${statusColor}`}>
+          {value.toFixed(1)}
+        </span>
+        <span className="text-xs text-physio-text-tertiary">
+          {unit}
+        </span>
+      </div>
     </div>
-    <span className="w-6 text-right font-bold text-physio-text-primary">
-      {value.toFixed(1)}
-    </span>
+  );
+};
+
+// Grouped biomarker display
+const BiomarkerGroup = ({ title, biomarkers, icon }) => (
+  <div className="space-y-3 p-4 rounded-lg bg-physio-bg-surface/30 border border-physio-border-subtle/50 hover:bg-physio-bg-surface/50 transition-colors">
+    <h4 className="text-xs uppercase tracking-widest text-physio-text-primary font-bold border-b border-physio-border-subtle pb-2 flex items-center gap-2">
+      {icon && <span className="text-physio-accent-primary text-sm">{icon}</span>}
+      {title}
+    </h4>
+    <div className="space-y-1">
+      {biomarkers.map((biomarker, idx) => {
+        const range = BIOMARKER_RANGES[biomarker.id];
+        if (!range) return null;
+
+        return (
+          <div key={idx} className="flex items-center gap-3 py-1 px-2 rounded hover:bg-physio-bg-highlight/20 transition-colors">
+            <span className="w-16 text-right text-sm text-physio-text-secondary font-medium truncate">
+              {biomarker.label}
+            </span>
+            <ReferenceRangeIndicator
+              value={biomarker.value}
+              range={range}
+              label={biomarker.label}
+            />
+          </div>
+        );
+      })}
+    </div>
   </div>
 );
 
@@ -25,10 +115,21 @@ const VitalSigns = ({
   stack,
   showScoreOnly = false,
   showSafetyOnly = false,
+  timeScrubData = null,
 }) => {
-  const { totalRisk, netScore, brRatio } = metrics.totals;
+  // Use time-scrubbed data if available
+  const displayMetrics = timeScrubData ? {
+    totals: {
+      totalBenefit: timeScrubData.benefit || timeScrubData.total || 0,
+      totalRisk: timeScrubData.risk || 0,
+      netScore: timeScrubData.netScore || (timeScrubData.benefit - timeScrubData.risk) || 0,
+      totalAnabolicLoad: timeScrubData.mgEq || timeScrubData.total || 0
+    }
+  } : metrics;
+
+  const { totalRisk, netScore, brRatio } = displayMetrics.totals;
   const hasActiveStack = Array.isArray(stack) && stack.length > 0;
-  
+
   // Use centralized pathway loads from stackEngine
   const loads = metrics?.analytics?.pathwayLoads || {
     heart: 0,
@@ -85,7 +186,19 @@ const VitalSigns = ({
         : "Diminishing";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Time-Scrub Indicator */}
+      {timeScrubData && (
+        <div className="absolute top-2 right-2 z-10 bg-physio-accent-primary/90 text-white px-2 py-1 rounded text-xs font-bold shadow-lg animate-fade-in">
+          {timeScrubData.day !== undefined
+            ? `Day ${Math.round(timeScrubData.day)}`
+            : timeScrubData.mgEq !== undefined
+              ? `${Math.round(timeScrubData.mgEq)} mgEq`
+              : 'TIME SCRUB'
+          }
+        </div>
+      )}
+
       {/* --- SECTION 1: THE NORTH STAR (SCORE) --- */}
       {(showAll || showScoreOnly) && (
         <Card
@@ -128,18 +241,18 @@ const VitalSigns = ({
               </p>
               <div className="flex items-baseline gap-1">
                 <span className="text-xl font-bold text-physio-accent-success">
-                  {metrics.totals.totalBenefit.toFixed(1)}
+                  {displayMetrics.totals.totalBenefit.toFixed(1)}
                 </span>
                 <span className="text-[9px] text-physio-text-tertiary">
                   / 15.0
                 </span>
               </div>
               <p className="text-[9px] font-medium text-physio-text-secondary mt-1">
-                {metrics.totals.totalBenefit > 10
+                {displayMetrics.totals.totalBenefit > 10
                   ? "ELITE TIER"
-                  : metrics.totals.totalBenefit > 7
+                  : displayMetrics.totals.totalBenefit > 7
                     ? "ADVANCED"
-                    : metrics.totals.totalBenefit > 4
+                    : displayMetrics.totals.totalBenefit > 4
                       ? "INTERMEDIATE"
                       : "SPORTS TRT"}
               </p>
@@ -152,18 +265,18 @@ const VitalSigns = ({
               </p>
               <div className="flex items-baseline gap-1">
                 <span className="text-xl font-bold text-physio-accent-critical">
-                  {metrics.totals.totalRisk.toFixed(1)}
+                  {displayMetrics.totals.totalRisk.toFixed(1)}
                 </span>
                 <span className="text-[9px] text-physio-text-tertiary">
                   / 15.0
                 </span>
               </div>
               <p className="text-[9px] font-medium text-physio-text-secondary mt-1">
-                {metrics.totals.totalRisk > 10
+                {displayMetrics.totals.totalRisk > 10
                   ? "HAZARDOUS"
-                  : metrics.totals.totalRisk > 7
+                  : displayMetrics.totals.totalRisk > 7
                     ? "HIGH RISK"
-                    : metrics.totals.totalRisk > 4
+                    : displayMetrics.totals.totalRisk > 4
                       ? "MANAGEABLE"
                       : "SAFE"}
               </p>
@@ -176,12 +289,12 @@ const VitalSigns = ({
       {(showAll || showSafetyOnly) && (
         <>
           {/* NEW: Clinical Warnings (The "Doctor's Note") */}
-          {metrics.warnings && metrics.warnings.length > 0 && (
+          {displayMetrics.warnings && displayMetrics.warnings.length > 0 && (
             <div className="space-y-2 mb-4">
               <h4 className="text-xs uppercase tracking-widest text-physio-accent-critical font-bold border-b border-physio-accent-critical/30 pb-2 flex items-center gap-2">
                 <span>⚠️ Clinical Contraindications</span>
               </h4>
-              {metrics.warnings.map((warn, idx) => (
+              {displayMetrics.warnings.map((warn, idx) => (
                 <div
                   key={idx}
                   className={`p-3 rounded-lg border text-xs ${
@@ -199,33 +312,53 @@ const VitalSigns = ({
             </div>
           )}
 
-          {/* Organ Load Breakdown */}
-          <div className="space-y-3">
-            <h4 className="text-xs uppercase tracking-widest text-physio-text-tertiary font-bold border-b border-physio-border-subtle pb-2">
-              Systemic Burden Breakdown
-            </h4>
-            <div className="space-y-2">
-              <LoadBar
-                label="Heart"
-                value={organLoads.heart}
-                color="bg-physio-accent-warning"
-              />
-              <LoadBar
-                label="Liver"
-                value={organLoads.liver}
-                color="bg-physio-accent-critical"
-              />
-              <LoadBar
-                label="Neuro"
-                value={organLoads.mind}
-                color="bg-physio-accent-secondary"
-              />
-              <LoadBar
-                label="Hormonal"
-                value={organLoads.estrogen}
-                color="bg-physio-accent-primary"
-              />
-            </div>
+          {/* Biomarker Panels - Grouped by System */}
+          <div className="space-y-6">
+            {/* Lipid Profile */}
+            <BiomarkerGroup
+              title="Lipid Profile"
+              icon="🫀"
+              biomarkers={[
+                { id: 'total_cholesterol', label: 'Total Chol', value: 185 },
+                { id: 'ldl', label: 'LDL', value: 105 },
+                { id: 'hdl', label: 'HDL', value: 55 },
+                { id: 'triglycerides', label: 'Triglycerides', value: 95 }
+              ]}
+            />
+
+            {/* Liver Function */}
+            <BiomarkerGroup
+              title="Liver Function"
+              icon="🫘"
+              biomarkers={[
+                { id: 'alt', label: 'ALT', value: 32 },
+                { id: 'ast', label: 'AST', value: 28 },
+                { id: 'alp', label: 'ALP', value: 85 },
+                { id: 'bilirubin', label: 'Bilirubin', value: 0.8 }
+              ]}
+            />
+
+            {/* Hormonal Panel */}
+            <BiomarkerGroup
+              title="Hormonal Panel"
+              icon="⚡"
+              biomarkers={[
+                { id: 'testosterone', label: 'Testosterone', value: 650 },
+                { id: 'cortisol', label: 'Cortisol', value: 18 },
+                { id: 'shbg', label: 'SHBG', value: 25 },
+                { id: 'prolactin', label: 'Prolactin', value: 8 }
+              ]}
+            />
+
+            {/* Metabolic Indicators */}
+            <BiomarkerGroup
+              title="Metabolic Health"
+              icon="🔥"
+              biomarkers={[
+                { id: 'glucose', label: 'Glucose', value: 92 },
+                { id: 'insulin', label: 'Insulin', value: 8 }
+              ]}
+            />
           </div>
 
           {/* Ancillary Checklist (HIDDEN) */}
@@ -236,7 +369,7 @@ const VitalSigns = ({
                 <h4 className="text-xs font-bold text-physio-accent-warning uppercase tracking-wide">
                   Required Support
                 </h4>
-                <span className="text-xs font-mono text-physio-text-secondary">
+                <span className="text-xs text-physio-text-secondary">
                   ${ancillaries.totalWeeklyCost}/wk
                 </span>
               </div>

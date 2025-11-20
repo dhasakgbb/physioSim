@@ -8,19 +8,82 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  ReferenceLine,
 } from "recharts";
 import { compoundData } from "../../data/compoundData";
 import { simulateSerum } from "../../utils/pharmacokinetics";
 import { useStack } from "../../context/StackContext";
 import { getGeneticProfileConfig } from "../../utils/personalization";
 
-const SerumStabilityChart = ({ stack }) => {
+const SerumStabilityChart = ({ stack, onTimeScrub }) => {
   const { userProfile } = useStack();
   const { metabolismMultiplier } = getGeneticProfileConfig(userProfile);
+  const [playheadPosition, setPlayheadPosition] = React.useState(null);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const chartRef = React.useRef(null);
+
   const data = useMemo(
     () => simulateSerum(stack, 28, { metabolismMultiplier }),
     [stack, metabolismMultiplier],
   );
+
+  // Handle playhead interactions
+  const handleMouseDown = (event) => {
+    if (!chartRef.current) return;
+    setIsDragging(true);
+    updatePlayheadPosition(event);
+  };
+
+  const handleMouseMove = (event) => {
+    if (isDragging) {
+      updatePlayheadPosition(event);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const updatePlayheadPosition = (event) => {
+    if (!chartRef.current) return;
+
+    const rect = chartRef.current.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const chartWidth = rect.width - 40; // Account for margins
+    const relativeX = Math.max(0, Math.min(1, x / chartWidth));
+
+    // Convert to day value (data spans 28 days)
+    const dayPosition = relativeX * 28;
+
+    setPlayheadPosition(dayPosition);
+
+    // Call the callback to update Virtual Phlebotomist
+    if (onTimeScrub) {
+      // Find the closest data point
+      const closestPoint = data.reduce((closest, point) => {
+        return Math.abs(point.day - dayPosition) < Math.abs(closest.day - dayPosition)
+          ? point
+          : closest;
+      });
+      onTimeScrub(closestPoint);
+    }
+  };
+
+  React.useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleMouseMove);
+      document.addEventListener('touchend', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleMouseMove);
+      document.removeEventListener('touchend', handleMouseUp);
+    };
+  }, [isDragging]);
 
   // Calculate Stability Score (using total variance)
   const stabilityScore = useMemo(() => {
@@ -69,7 +132,13 @@ const SerumStabilityChart = ({ stack }) => {
       </div>
 
       <div className="flex-1 w-full min-h-0 relative pb-12">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          ref={chartRef}
+          onMouseDown={handleMouseDown}
+          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        >
           <LineChart
             data={data}
             margin={{ top: 20, right: 30, left: 30, bottom: 20 }}
@@ -145,6 +214,23 @@ const SerumStabilityChart = ({ stack }) => {
               dot={false}
               isAnimationActive={false}
             />
+
+            {/* Interactive Playhead */}
+            {playheadPosition !== null && (
+              <ReferenceLine
+                x={playheadPosition}
+                stroke="#3B82F6"
+                strokeWidth={2}
+                strokeDasharray="none"
+                label={{
+                  value: `Day ${Math.round(playheadPosition)}`,
+                  position: "topRight",
+                  fill: "#3B82F6",
+                  fontSize: 10,
+                  offset: 10
+                }}
+              />
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>

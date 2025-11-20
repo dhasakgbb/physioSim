@@ -19,7 +19,7 @@ const DashboardLayout = ({
 
   return (
     <div
-      className={`flex flex-col h-screen bg-physio-bg-core text-physio-text-primary overflow-hidden ${className}`}
+      className={`flex flex-col h-screen void-background text-physio-text-primary overflow-hidden ${className}`}
     >
       {/* Mobile/Tablet Header (Visible < XL) */}
       <div className="xl:hidden flex items-center justify-between px-4 py-3 bg-physio-bg-surface z-40">
@@ -45,7 +45,7 @@ const DashboardLayout = ({
       {/* Main Workspace (Zones A, B, C) */}
       <div className="flex-1 flex min-h-0 relative">
         {/* ZONE A: Active Stack Rail (Desktop: Fixed / Mobile: Drawer) */}
-        <aside className="hidden xl:flex w-80 flex-col bg-physio-bg-surface z-20">
+        <aside className="hidden xl:flex w-80 flex-col brushed-metal z-20 border-r border-physio-border-subtle">
           <div className="flex-1 min-h-0">{leftRail}</div>
         </aside>
 
@@ -86,7 +86,7 @@ const DashboardLayout = ({
         </main>
 
         {/* ZONE C: Vitals & Intel (Desktop: Fixed / Mobile: Drawer) */}
-        <aside className="hidden xl:flex w-80 min-w-[320px] flex-col bg-physio-bg-surface z-20">
+        <aside className="hidden xl:flex w-80 min-w-[320px] flex-col brushed-metal z-20 border-l border-physio-border-subtle">
           <div className="p-4">
             <h2 className="text-xs font-bold text-physio-text-tertiary uppercase tracking-widest">
               Projected Vitals

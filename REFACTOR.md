@@ -1,6 +1,85 @@
-We are burning the old JavaScript codebase to the ground and building a new, industrial-grade simulation engine from the ashes. We will use the "Google Enterprise Stack" (Angular + Go + gRPC) to create a system that looks exactly like your Cyberpunk UI but runs with the precision of a flight simulator.The Architecture: "The Google Stack"Frontend: Angular 19 (Stable/Next) using Signals for zero-latency reactivity.Backend: Go (Golang) 1.23 for concurrent physics/math processing.Protocol: gRPC (Protobuf) for binary data contracts (replacing JSON).Visuals: Apache ECharts (Canvas) for rendering 60fps simulations.Phase 0: The Foundation (The Monorepo)Goal: Establish the folder structure and the strict Data Contracts.Directory Setup: Create a workspace that houses both the client and server.Plaintext/physiosim-enterprise
-├── /proto          # The Single Source of Truth (API definitions)
-├── /backend        # Go Server (The Engine)
-├── /frontend       # Angular Client (The Cockpit)
-└── /tools          # Build scripts / Makefile
-The Contract (physiosim.proto):We define the data structures once.Action: Define message Compound, message Cycle, and service SimulationEngine.Math Upgrade: Include fields for ka (Absorption Rate) and ke (Elimination Rate) in the definitions now, so the math works later.Phase 1: The Engine (Go Backend)Goal: Build the math solver that runs the Bateman and Hill equations.Initialize Go Module: Set up the server shell.Implement the "Science" Package:Create pkg/pharmacokinetics/bateman.go.Task: Implement the Bateman Function (Double-Exponential) to model the "ramp up" of esters accurately.Task: Implement Michaelis-Menten logic for the toxicity saturation curves.The Solver Loop:Create the logic that sums overlapping curves (Superposition).Optimization: Use Go's goroutines to prepare for the Monte Carlo solver (calculating 10,000 cycles in parallel).gRPC Server: Expose the Simulate() function via a gRPC port (e.g., :50051).Phase 2: The Cockpit (Angular Frontend)Goal: Re-create the Cyberpunk UI using modern components.Initialize Angular 19: Set up a strict-mode project.The "Asset Heist" (Copying the Look):Fonts: Copy your sci-fi fonts (JetBrains Mono, Orbitron) to /assets.CSS: Port your existing color variables (--neon-cyan, --void-black) into the global styles.scss.Component Architecture:Left Panel: ActiveMixtureComponent. Re-build the "Tactical Dropdown" here.Center Panel: SimulationChartComponent. Initialize ECharts here.Right Panel: TelemetryHudComponent. Re-build the Radar/Gauge charts here.State Management:Use Angular Signals (input(), computed()) to manage the state. Do not use Redux/NgRx yet; Signals are faster for this use case.Phase 3: The Connection (gRPC-Web)Goal: Make the Frontend talk to the Backend.Generate Clients: Use protoc to generate the TypeScript client code from your .proto file.The Proxy: Since browsers can't speak raw gRPC, set up an Envoy Proxy (Docker container) or use the Go library improbable-eng/grpc-web to wrap the server.Wiring: Connect the Angular Signal (User Input) $\to$ gRPC Client $\to$ Go Backend $\to$ EChart.Phase 4: The Feature Migration (Feature Parity)Goal: Ensure everything the old app did, the new app does better.The "Tactical Dropdown": Implement the search logic for compounds.The Slider Logic: Re-implement the hybrid "Input + Slider" control. Ensure dragging it triggers the gRPC stream instantly.The Optimization Panel: Build the "Text-Only" Mode Selector we designed. Connect it to the Go Monte Carlo solver.Phase 5: The Scientific Validation (QA)Goal: Verify the new math is actually better.The "Spike" Test: Plot Testosterone Propionate vs. Testosterone Undecanoate.Pass: Propionate spikes fast (Day 1). Undecanoate humps slowly (Day 5-7).Fail: Both look like simple decay curves.The "Crash" Test: Input a massive dose (2000mg Orals).Pass: The Toxicity score skyrockets exponentially (Michaelis-Menten saturation).Fail: Toxicity scales linearly.The "Ignition" PromptHere is the first instruction to give the LLM to start Phase 0 and Phase 1. This sets up the workspace and the backend.Prompt:"We are initiating Operation Iron Phoenix. We are building the PhysioSim Enterprise platform from scratch.Architecture:Root: Monorepo structure.Backend: Go (Golang) 1.23.Frontend: Angular 19.Communication: gRPC (Protobuf).Step 1: Define the Contract (Phase 0)Create a file named proto/physiosim/v1/engine.proto.It must define:enum EsterType (Enanthate, Propionate, etc.).message Compound (ID, Name, Dosage, EsterType, Absorption_K, Elimination_K).message SimulationRequest (List of Compounds, Duration).message DataPoint (Day, SerumConcentration, AnabolicScore, ToxicityScore).service SimulationEngine with a single RPC: RunSimulation.Step 2: Initialize the Backend (Phase 1)Create a Go module (backend/).Generate the Go structs from the .proto file.Create pkg/math/bateman.go. Implement the Bateman Function for pharmacokinetics:func CalculateConcentration(dose float64, ka float64, ke float64, time float64) float64Set up a basic gRPC server in cmd/server/main.go that listens on port 50051.Output: Provide the .proto file content and the Go bateman.go logic."
+This is the **PhysioSim v2.0 Design Standard**.
+
+This document bridges the gap between "looking cool" and "production engineering." It is designed to be handed directly to a frontend developer. It solves the "Tech Debt" issue by enforcing a **strict Design Token system**—if a value isn't in the token list, it doesn't exist in the code.
+
+### 1. Core Design Philosophy: "The Linear Standard"
+We are moving away from "Neon Gaming UI" to **"Pro-Grade Bio-Engineering."**
+* **Principle A: Borders, not Backgrounds.** We do not use different background colors to separate sections. We use a single deep background and separate content with 1px subtle borders.
+* **Principle B: Inner Glows.** Active elements don't drop shadows *outwards*; they glow *inwards* or emit a subtle colored light, mimicking an OLED screen.
+* **Principle C: Information Density.** We use the "Compact" scale. No wasted whitespace.
+
+---
+
+### 2. The Design Tokens (Source of Truth)
+**Action:** Delete all current hardcoded colors. Copy these into your `tailwind.config.js` or CSS Variables root.
+
+#### **A. The "OLED Gunmetal" Palette**
+* `bg-main`: `#0B0C0E` (The void. Not pure black, but 98% black.)
+* `bg-surface`: `#13151A` (The card surface. Slightly cooler grey.)
+* `bg-surface-hover`: `#1A1D23` (Interaction state.)
+* `border-subtle`: `rgba(255, 255, 255, 0.06)` (The default separator.)
+* `border-highlight`: `rgba(255, 255, 255, 0.12)` (Hover borders.)
+
+#### **B. The "Bio-Luminescent" Accents**
+* `primary-indigo`: `#5E6AD2` (Use for "Optimize" buttons and sliders.)
+* `signal-green`: `#27D796` (Use for "Normal" range and positive deltas.)
+* `signal-orange`: `#F3A041` (Use for Warnings.)
+* `signal-red`: `#E05555` (Use for Critical/Redline.)
+
+#### **C. Effects (The "Secret Sauce")**
+* `glass-panel`: `backdrop-filter: blur(12px); background: rgba(19, 21, 26, 0.7);`
+* `glow-primary`: `box-shadow: 0px 0px 12px rgba(94, 106, 210, 0.4);`
+* `glow-green`: `box-shadow: 0px 0px 12px rgba(39, 215, 150, 0.3);`
+
+---
+
+### 3. Component Specifications
+
+#### **A. The "Active Mixture" Rail (Left Sidebar)**
+* **Transformation:** Currently, it feels like a separate widget. We will integrate it as a "Command Strip."
+* **Styling:**
+    * **Input Cards:** Remove the distinct background. Use a `border-subtle` outline.
+    * **Sliders:**
+        * **Track:** 2px height, color `#2A2E35`.
+        * **Thumb:** 12px circle, `primary-indigo` fill, with `glow-primary`.
+        * **Interaction:** On hover, the thumb scales to 14px and the glow intensity doubles.
+    * **Typography:** Compound names (e.g., "Anavar") in **Inter** (Sans), dosage numbers in **JetBrains Mono** (Code).
+
+#### **B. The "Virtual Phlebotomist" (Right Rail)**
+* **Transformation:** Convert the "List of text" into a **"Bento Grid" of micro-charts.**
+* **New Layout:**
+    * Create small 120px wide x 60px tall "Cells" for each vital.
+    * **Visual:**
+        * Top Left: Label (`LDL`).
+        * Top Right: Live Value (`111`).
+        * Bottom: A **Bullet Chart** (Horizontal bar).
+            * Background Bar: Dark Grey (Range).
+            * Foreground Bar: White (Current Value).
+            * Vertical Tick: The "Max Safe" limit.
+    * **Logic:** If the white bar passes the vertical tick, the bar turns `signal-orange` and glows.
+
+#### **C. The Sankey Diagram (Center Stage)**
+* **Transformation:** "Cables, not Ribbons."
+* **Style:**
+    * **Nodes:** Small pills with `border-highlight` and `bg-surface`.
+    * **Lines:** Reduce opacity to 20% by default.
+    * **Hover Effect:** When hovering "NPP", all unrelated lines fade to 5% opacity. The "NPP" lines surge to 80% opacity and turn `primary-indigo`.
+    * **Motion:** Add a slow "pulse" animation (2s duration) to any node exceeding 85% capacity.
+
+---
+
+### 4. Implementation & Migration Plan (Removing Tech Debt)
+
+To ensure we don't just pile new code on top of old code, follow this "Strangler Fig" refactoring path:
+
+* **Phase 1: The Purge**
+    * Search your codebase for `box-shadow`. Remove all "drop shadows" (shadows that go downwards). Replace them with the `glow-*` classes defined above.
+    * Search for `border-radius`. Replace all values > `12px` with `8px` (Standard) or `4px` (Tight).
+    * Delete any CSS class that references a hardcoded color like `#000000` or `#121212`. Replace with `var(--bg-main)`.
+
+* **Phase 2: The "Ghost" Wireframe**
+    * For the Empty State (Image 4), implement a background SVG pattern of faint grid lines and chemical hexagons (opacity 2%). This prevents the "Black Void" feeling without adding noise.
+
+* **Phase 3: Component Isolation**
+    * Build the **"Phlebotomist Cell"** as a React/Vue component in isolation. It must take `value`, `min`, `max`, and `label` as props. Once perfect, swap out the entire Right Rail.
+

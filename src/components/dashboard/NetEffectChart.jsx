@@ -208,7 +208,70 @@ const NetEffectChart = ({
   setDurationWeeks,
   title,
   simple = false,
+  onTimeScrub, // Callback for playhead position changes
 }) => {
+  const [playheadPosition, setPlayheadPosition] = React.useState(null);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const chartRef = React.useRef(null);
+
+  // Handle playhead interactions
+  const handleMouseDown = (event) => {
+    if (!chartRef.current) return;
+    setIsDragging(true);
+    updatePlayheadPosition(event);
+  };
+
+  const handleMouseMove = (event) => {
+    if (isDragging) {
+      updatePlayheadPosition(event);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const updatePlayheadPosition = (event) => {
+    if (!chartRef.current) return;
+
+    const rect = chartRef.current.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const chartWidth = rect.width - 40; // Account for margins
+    const relativeX = Math.max(0, Math.min(1, x / chartWidth));
+
+    // Convert to mgEq value
+    const maxMgEq = data.length > 0 ? Math.max(...data.map(d => d.mgEq)) : 1000;
+    const mgEqPosition = relativeX * maxMgEq;
+
+    setPlayheadPosition(mgEqPosition);
+
+    // Call the callback to update Virtual Phlebotomist
+    if (onTimeScrub) {
+      // Find the closest data point
+      const closestPoint = data.reduce((closest, point) => {
+        return Math.abs(point.mgEq - mgEqPosition) < Math.abs(closest.mgEq - mgEqPosition)
+          ? point
+          : closest;
+      });
+      onTimeScrub(closestPoint);
+    }
+  };
+
+  React.useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleMouseMove);
+      document.addEventListener('touchend', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleMouseMove);
+      document.removeEventListener('touchend', handleMouseUp);
+    };
+  }, [isDragging]);
   // 1. Generate Projection Data (Dose Response)
   const { data, crossover, critical, currentMgEq } = useMemo(() => {
     if (stack.length === 0) return { data: [], crossover: null, currentMgEq: 0 };
@@ -450,7 +513,13 @@ const NetEffectChart = ({
           </span>
         </div>
 
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          ref={chartRef}
+          onMouseDown={handleMouseDown}
+          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        >
           <ComposedChart
             data={data}
             margin={{ top: 40, right: 20, left: -20, bottom: 10 }}
@@ -549,6 +618,23 @@ const NetEffectChart = ({
                 x2="dataMax"
                 fill="url(#wastedPattern)"
                 opacity={1}
+              />
+            )}
+
+            {/* Interactive Playhead */}
+            {playheadPosition !== null && (
+              <ReferenceLine
+                x={playheadPosition}
+                stroke="#3B82F6"
+                strokeWidth={2}
+                strokeDasharray="none"
+                label={{
+                  value: `${Math.round(playheadPosition)} mgEq`,
+                  position: "topRight",
+                  fill: "#3B82F6",
+                  fontSize: 10,
+                  offset: 10
+                }}
               />
             )}
 

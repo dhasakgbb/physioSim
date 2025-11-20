@@ -5,20 +5,39 @@
 @tailwind utilities;
 
 :root {
-  --color-bg-core: #09090b;
-  --color-bg-surface: #18181b;
-  --color-bg-panel: #27272a;
-  --color-bg-input: #3f3f46;
-  --color-text-primary: #e4e4e7;
-  --color-text-secondary: #a1a1aa;
-  --color-accent-primary: #3b82f6;
+  /* Gunmetal/Carbon Base Palette */
+  --color-bg-core: #0a0a0c;         /* Deep void */
+  --color-bg-void: #0d0d0f;         /* Data visualization area */
+  --color-bg-console: #1a1c20;      /* Control surfaces - brushed metal */
+  --color-bg-surface: #1e2024;      /* Cards and panels */
+  --color-bg-panel: #24262a;        /* Elevated surfaces */
+  --color-bg-input: #2a2c30;        /* Form elements */
+  --color-bg-highlight: #2f3135;    /* Interactive states */
+
+  /* Text Hierarchy */
+  --color-text-primary: #f1f5f9;    /* Tungsten white */
+  --color-text-secondary: #94a3b8;  /* Cool gray */
+  --color-text-tertiary: #64748b;   /* Muted */
+  --color-text-muted: #475569;      /* Subtle */
+
+  /* Electric Blue Accent System */
+  --color-accent-primary: #00d4ff;    /* Electric blue */
+  --color-accent-secondary: #0891b2; /* Deep cyan */
+  --color-accent-success: #10b981;   /* Emerald */
+  --color-accent-warning: #f59e0b;   /* Amber */
+  --color-accent-critical: #ef4444;  /* Red */
+
+  /* Tactical Outlines */
+  --color-border-subtle: #374151;
+  --color-border-strong: #4b5563;
+  --color-border-accent: #00d4ff;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: var(--color-bg-core);
+  background: var(--color-bg-core);
   color: var(--color-text-primary);
   font-family:
     "Outfit",
@@ -28,6 +47,102 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+}
+
+/* Gunmetal/Carbon Textures */
+.brushed-metal {
+  background: linear-gradient(135deg,
+    var(--color-bg-console) 0%,
+    #141619 50%,
+    var(--color-bg-console) 100%);
+  position: relative;
+}
+
+.brushed-metal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px),
+    radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 4px 4px;
+  background-position: 0 0, 2px 2px;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Carbon Fiber Pattern */
+.carbon-fiber {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,0.03) 2px,
+      rgba(255,255,255,0.03) 4px
+    ),
+    linear-gradient(135deg, var(--color-bg-panel) 0%, var(--color-bg-surface) 100%);
+  position: relative;
+}
+
+.carbon-fiber::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    rgba(255,255,255,0.02) 25%,
+    transparent 50%,
+    rgba(255,255,255,0.01) 75%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* Tactical Void Background */
+.void-background {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(0, 212, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 60%, rgba(0, 212, 255, 0.02) 0%, transparent 50%),
+    var(--color-bg-void);
+}
+
+/* Carbon Fiber Headers */
+.carbon-header {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 1px,
+      rgba(255,255,255,0.04) 1px,
+      rgba(255,255,255,0.04) 3px
+    ),
+    linear-gradient(135deg, var(--color-bg-panel) 0%, var(--color-bg-surface) 100%);
+  position: relative;
+}
+
+.carbon-header::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,0.02) 0%,
+    transparent 25%,
+    transparent 75%,
+    rgba(255,255,255,0.01) 100%
+  );
+  pointer-events: none;
 }
 
 /* Custom Scrollbar for Webkit */
