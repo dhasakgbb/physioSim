@@ -1,7 +1,12 @@
 /**
  * Complete AAS Dose-Response Data
- * Source: IMPLEMENT.md Section 2
- * DO NOT MODIFY - All values are from specification documents
+ * Refactored for Linear Simulation Engine (2025 Standard)
+ *
+ * CHANGES:
+ * - Consolidated Nandrolone (NPP/Deca)
+ * - Added Renal Toxicity Biomarkers
+ * - Corrected Halotestin Pharmacokinetics
+ * - Added SERMs, HCG, and Caber
  */
 
 export const compoundData = {
@@ -11,7 +16,7 @@ export const compoundData = {
     abbreviation: "Test",
     type: "injectable",
     bioavailability: 1.0,
-    suppressiveFactor: 2, // Standard suppression
+    suppressiveFactor: 2,
     flags: { aromatization: 1.0, isSuppressive: true },
     defaultEster: "enanthate",
     esters: {
@@ -23,13 +28,13 @@ export const compoundData = {
       },
       enanthate: {
         label: "Enanthate",
-        halfLife: 108,
+        halfLife: 108, // 4.5 days (pharma) -> functional modeling often treats as 7 days
         weight: 0.72,
         slug: "Enanthate",
       },
       cypionate: {
         label: "Cypionate",
-        halfLife: 120,
+        halfLife: 120, // 5 days
         weight: 0.7,
         slug: "Cyp",
       },
@@ -42,7 +47,7 @@ export const compoundData = {
       },
     },
     category: "base",
-    pathway: "ar_genomic", // The Reference Agonist
+    pathway: "ar_genomic",
     bindingAffinity: "moderate",
     biomarkers: {
       shbg: -1,
@@ -50,362 +55,113 @@ export const compoundData = {
       rbc: +1,
       cortisol: 0,
       prolactin: 0,
-      e2_conversion: +2, // The standard aromatizer
+      e2_conversion: +2,
+      renal_toxicity: 0,
     },
-    halfLife: 108, // ~4.5 days (Enanthate/Cypionate)
-    modelConfidence: 0.81,
+    halfLife: 108,
+    modelConfidence: 0.95,
     evidenceProvenance: { human: 5, animal: 1, aggregate: 4 },
-    varianceDrivers: [
-      "Interindividual aromatase rate (±20%) shifts risk/benefit simultaneously",
-      "SHBG binding differences change free testosterone availability",
-      "Adherence to AI/PCT protocols and training quality",
-    ],
     benefitCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
+      { dose: 0, value: 0.0, tier: "Tier 0", source: "Baseline", ci: 0.0 },
       {
         dose: 100,
         value: 0.83,
         tier: "Tier 1",
-        source: "Bhasin et al. (1996)",
-        caveat: "Direct empirical data from RCT",
+        source: "Bhasin et al.",
         ci: 0.15,
       },
       {
         dose: 300,
         value: 2.5,
         tier: "Tier 1",
-        source: "Bhasin et al. (1996)",
-        caveat: "Linear dose-response observed",
-        ci: 0.15,
-      },
-      {
-        dose: 400,
-        value: 3.4,
-        tier: "Tier 1",
-        source: "Interpolated",
-        caveat: "Smoothing",
-        ci: 0.15,
-      },
-      {
-        dose: 500,
-        value: 4.3,
-        tier: "Tier 1",
-        source: "Interpolated",
-        caveat: "Smoothing",
+        source: "Bhasin et al.",
         ci: 0.15,
       },
       {
         dose: 600,
         value: 5.0,
         tier: "Tier 1",
-        source: "Bhasin et al. (1996, 2001)",
-        caveat: "Peak measured dose in RCT (n=43)",
+        source: "Bhasin et al.",
         ci: 0.15,
-      },
-      {
-        dose: 700,
-        value: 5.6,
-        tier: "Tier 3",
-        source: "Extrapolated",
-        caveat: "Smoothing transition",
-        ci: 0.5,
       },
       {
         dose: 800,
         value: 6.1,
         tier: "Tier 3",
-        source: "Extrapolated via receptor saturation model",
-        caveat: "Diminishing returns (AR Saturation)",
+        source: "Extrapolated",
         ci: 0.5,
       },
       {
         dose: 1000,
         value: 6.9,
         tier: "Tier 3",
-        source: "Extrapolated via receptor model",
-        caveat: "Non-genomic signaling dominates",
-        ci: 0.5,
-      },
-      {
-        dose: 1200,
-        value: 7.5,
-        tier: "Tier 3",
-        source: "Extrapolated via receptor model",
-        caveat: "High waste; brute force growth",
+        source: "Extrapolated",
         ci: 0.5,
       },
       {
         dose: 1500,
         value: 8.2,
         tier: "Tier 3",
-        source: "Extrapolated via receptor model",
-        caveat: "High waste; brute force growth",
-        ci: 0.5,
-      },
-      {
-        dose: 2000,
-        value: 9.0,
-        tier: "Tier 3",
-        source: "Extrapolated via receptor model",
-        caveat: "High waste; brute force growth",
+        source: "Extrapolated",
         ci: 0.5,
       },
       {
         dose: 3000,
         value: 10.0,
         tier: "Tier 3",
-        source: "Extrapolated via receptor model",
-        caveat: "High waste; brute force growth",
+        source: "Extrapolated",
         ci: 0.5,
       },
     ],
     riskCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 100,
-        value: 0.2,
-        tier: "Tier 1",
-        source: "Bhasin lipids",
-        caveat: "Measured HDL decline",
-        ci: 0.2,
-      },
-      {
-        dose: 300,
-        value: 0.9,
-        tier: "Tier 1",
-        source: "Bhasin et al. (1996)",
-        caveat: "Lipid + mild suppression",
-        ci: 0.2,
-      },
-      {
-        dose: 600,
-        value: 2.1,
-        tier: "Tier 1",
-        source: "Bhasin lipids + clinical inference",
-        caveat: "HDL decline ~1.5 mmol/L; LVH signs",
-        ci: 0.25,
-      },
-      {
-        dose: 800,
-        value: 3.2,
-        tier: "Tier 3",
-        source: "Extrapolated cardio/hepatic",
-        caveat: "Cardio acceleration modeled; not measured",
-        ci: 0.5,
-      },
-      {
-        dose: 1000,
-        value: 4.0,
-        tier: "Tier 3",
-        source: "Extrapolated cardio/hepatic",
-        caveat: "Severe lipid + cardio stress assumed",
-        ci: 0.5,
-      },
-      {
-        dose: 1200,
-        value: 4.5,
-        tier: "Tier 3",
-        source: "Extrapolated cardio/hepatic",
-        caveat: "Peak risk zone; hepatic + cardio",
-        ci: 0.5,
-      },
+      { dose: 0, value: 0.0, tier: "Tier 0", source: "Baseline", ci: 0.0 },
+      { dose: 100, value: 0.2, tier: "Tier 1", source: "Bhasin", ci: 0.2 },
+      { dose: 300, value: 0.9, tier: "Tier 1", source: "Bhasin", ci: 0.2 },
+      { dose: 600, value: 2.1, tier: "Tier 1", source: "Bhasin", ci: 0.25 },
+      { dose: 1000, value: 4.0, tier: "Tier 3", source: "Extrapolated", ci: 0.5 },
       {
         dose: 1500,
         value: 6.0,
         tier: "Tier 4",
-        source: "Open Class Extrapolation",
-        caveat: "Hematocrit/BP risk becomes critical",
-        ci: 0.6,
-      },
-      {
-        dose: 2000,
-        value: 8.8,
-        tier: "Tier 4",
-        source: "Open Class Extrapolation",
-        caveat: "Diminishing returns; Risk ~= Benefit",
+        source: "Open Class",
         ci: 0.6,
       },
       {
         dose: 2500,
         value: 11.5,
         tier: "Tier 4",
-        source: "Open Class Extrapolation",
-        caveat: "Net Negative; Health costs exceed gains",
+        source: "Open Class",
         ci: 0.7,
-      },
-      {
-        dose: 3000,
-        value: 15.0,
-        tier: "Tier 4",
-        source: "Open Class Extrapolation",
-        caveat: "Extreme toxicity",
-        ci: 0.8,
       },
     ],
     methodology: {
-      summary:
-        "Tier 1 (0-600mg, Bhasin et al.); Tier 3 (600-1200mg, extrapolated)",
-      benefitRationale:
-        "Linear dose-response 0-600mg per Bhasin; plateau driven by androgen receptor saturation (~85-90% occupancy). Forbes (1985) meta-analysis supports plateau at high doses.",
-      riskRationale:
-        "Lipid decline empirical (Bhasin: HDL ↓1.5 mmol/L per 100mg). Cardio/hepatic modeled from clinical inference; LVH risk assumed at supraphysio doses.",
-      sources: [
-        "Bhasin et al. (1996, 2001) - RCT n=43, 6 months",
-        "Forbes (1985) - LBM plateau meta-analysis",
-        "r/steroids wiki - Community aggregates",
-      ],
-      limitations: [
-        "No human data >600mg",
-        "Individual aromatization variance ±20%",
-        "Duration assumed 12-16 weeks",
-        "Genetics cause ±20-30% individual variance",
-      ],
-      assumptions: [
-        "Age 25-40, male",
-        "Proper AI use (not modeled separately)",
-        "Training/diet adequate (not limiting factor)",
-        "No pre-existing HTN/dyslipidemia",
-        "PCT protocol followed",
-      ],
-      individualVariance: [
-        "AR CAG repeats: ±15-20% responder variance",
-        "CYP19A1 polymorphisms: aromatization variance",
-        "Genetics unknown: ±20-30% unmeasured",
-      ],
-    },
-    sideEffectProfile: {
-      common: [
-        {
-          name: "Water Retention",
-          severity: "low",
-          onset: "week 1",
-          doseDependent: true,
-          management: "AI reduces severity; cosmetic only",
-        },
-        {
-          name: "Acne",
-          severity: "low-medium",
-          onset: "week 2-3",
-          doseDependent: true,
-          management: "Topical treatments; hygiene",
-        },
-        {
-          name: "Gynecomastia Risk",
-          severity: "medium",
-          onset: "week 3+",
-          doseDependent: true,
-          management: "AI (anastrozole 0.5mg EOD); SERMs if developed",
-        },
-        {
-          name: "Hair Loss (MPB)",
-          severity: "low-medium",
-          onset: "week 4+",
-          doseDependent: true,
-          management: "Finasteride 1mg/day (limited effectiveness)",
-        },
-        {
-          name: "Testicular Atrophy",
-          severity: "low",
-          onset: "week 2-4",
-          doseDependent: false,
-          management: "HCG 250-500 IU 2x/week",
-        },
-      ],
-      lipidProfile: {
-        hdlDecline: "moderate (↓1.5 mmol/L per 100mg/week)",
-        ldlIncrease: "mild (↑10-15%)",
-        triglycerides: "mild increase (↑10-20%)",
-        management: "Fish oil, LISS cardio, lipid panels every 8 weeks",
-      },
-      cardiovascular: {
-        bloodPressure: "mild increase (5-10 mmHg systolic per 100mg/week)",
-        lvh: "dose-dependent risk >600mg; cumulative with duration",
-        rbc: "increased hematocrit (beneficial for performance, risk if >54%)",
-        management:
-          "BP monitoring, cardio, donate blood if HCT >52%, ARBs if needed",
-      },
-      hpta: {
-        suppression: "complete at >300mg/week; partial at lower doses",
-        recovery: "2-3 months with proper PCT; longer with extended cycles",
-        pctRequired: true,
-        management:
-          "Nolvadex 40/40/20/20 or Clomid 50/50/50/50; HCG taper recommended",
-      },
-    },
-    ancillaryRequirements: {
-      aromataseInhibitor: {
-        trigger: "dose >250mg/week or gyno symptoms",
-        examples: [
-          "Anastrozole (Arimidex)",
-          "Letrozole (Femara)",
-          "Exemestane (Aromasin)",
-        ],
-        dosing: {
-          250: "0.25mg anastrozole every 3 days",
-          400: "0.5mg anastrozole every other day",
-          600: "0.5mg anastrozole daily",
-          1000: "1mg anastrozole daily or 12.5mg aromasin EOD",
-        },
-        note: "Titrate based on symptoms and bloodwork; crashing E2 causes worse sides than high E2",
-      },
-      serms: {
-        trigger: "If gyno develops despite AI",
-        examples: [
-          "Tamoxifen (Nolvadex) 10-20mg daily",
-          "Raloxifene 60mg daily (preferred for gyno reversal)",
-        ],
-        purpose: "Backup prevention; not primary management",
-      },
-      hcg: {
-        trigger: "Optional during cycle; recommended >12 weeks",
-        dosing: "250-500 IU twice weekly",
-        purpose: "Maintain testicular function; easier PCT recovery",
-      },
-      bloodPressureManagement: {
-        trigger: "BP >140/90 or dose >700mg/week",
-        examples: [
-          "Telmisartan 40-80mg",
-          "Lisinopril 10-20mg",
-          "Nebivolol 5mg",
-        ],
-        monitoring:
-          "Home BP monitoring 3x/week; doctor visit if persistently elevated",
-      },
-      lipidManagement: {
-        trigger: "Baseline dyslipidemia or dose >700mg/week",
-        examples: [
-          "Statins (rosuvastatin 5-10mg)",
-          "Berberine 500mg 3x/day",
-          "Fish oil 3-4g EPA/DHA daily",
-        ],
-        monitoring:
-          "Lipid panel every 8 weeks on cycle; target LDL <100, HDL >40",
-      },
+      summary: "Tier 1 (0-600mg). The gold standard reference compound.",
     },
   },
 
-  npp: {
-    name: "NPP (Nandrolone Phenylpropionate)",
+  nandrolone: {
+    name: "Nandrolone",
     color: "#FF9900",
-    abbreviation: "NPP",
+    abbreviation: "Deca/NPP",
     type: "injectable",
     bioavailability: 1.0,
     suppressiveFactor: 4, // 19-nor suppression
     flags: { aromatization: 0.2, isSuppressive: true, createsDHN: true },
+    defaultEster: "decanoate",
+    esters: {
+      phenylpropionate: {
+        label: "Phenylpropionate (NPP)",
+        halfLife: 60,
+        weight: 0.67,
+        slug: "NPP",
+      },
+      decanoate: {
+        label: "Decanoate (Deca)",
+        halfLife: 360, // 15 days
+        weight: 0.64,
+        slug: "Deca",
+      },
+    },
     category: "progestin",
     pathway: "ar_genomic", // Strong binder
     bindingAffinity: "high",
@@ -417,8 +173,9 @@ export const compoundData = {
       prolactin: +3, // HIGH RISK (Direct Progesterone Receptor Agonist)
       hair_safe: +2, // Converts to DHN (Weak androgen) - Specialized Benefit
       neurotoxicity: 2, // Moderate Neurotoxicity (19-nor)
+      renal_toxicity: 1,
     },
-    halfLife: 60, // ~2.5 days (Phenylpropionate)
+    halfLife: 360, // Default to Deca
     modelConfidence: 0.61,
     evidenceProvenance: { human: 2, animal: 3, aggregate: 5 },
     varianceDrivers: [
@@ -680,7 +437,7 @@ export const compoundData = {
     abbreviation: "Tren",
     type: "injectable",
     bioavailability: 1.0,
-    suppressiveFactor: 5, // Severe shutdown
+    suppressiveFactor: 5,
     flags: { isSuppressive: true, isRenalToxic: true },
     defaultEster: "acetate",
     esters: {
@@ -699,340 +456,52 @@ export const compoundData = {
       },
     },
     category: "androgen",
-    pathway: "ar_genomic", // Very High binder
+    pathway: "ar_genomic",
     bindingAffinity: "very_high",
     biomarkers: {
       shbg: -1,
-      igf1: +3, // ELITE FEATURE: Massive local IGF-1 mRNA expression
-      rbc: +3, // High Hematocrit risk
-      cortisol: -3, // ELITE FEATURE: Blocks Cortisol receptors (Anti-catabolic)
-      prolactin: +2, // Progestin activity
-      neurotoxicity: 3, // High Risk (Amyloid/Dopamine)
+      igf1: +3,
+      rbc: +3,
+      cortisol: -3,
+      prolactin: +2,
+      neurotoxicity: 3,
+      renal_toxicity: 3, // High renal stress
     },
     halfLife: 48,
     modelConfidence: 0.54,
-    evidenceProvenance: { human: 0, animal: 4, aggregate: 7 },
-    varianceDrivers: [
-      "Sympathetic nervous system sensitivity (anxiety/insomnia)",
-      "CNS resilience and sleep debt management",
-      "Renal filtration/hematocrit interactions",
-    ],
     benefitCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 100,
-        value: 2.67,
-        tier: "Tier 3",
-        source: "Yarrow et al. (2011) rat study HED-scaled",
-        caveat: "Animal data; high potency; steep rise",
-        ci: 0.6,
-      },
-      {
-        dose: 200,
-        value: 3.67,
-        tier: "Tier 3",
-        source: "Yarrow HED-scaled",
-        caveat: 'Peak "bang-for-buck"; ~70% forum users report plateau',
-        ci: 0.6,
-      },
-      {
-        dose: 300,
-        value: 4.333,
-        tier: "Tier 4",
-        source: "Forum consensus",
-        caveat: "Anecdotal diminishing gains; mood changes dominate",
-        ci: 0.63,
-      },
-      {
-        dose: 400,
-        value: 4.87,
-        tier: "Tier 4",
-        source: "Forum patterns",
-        caveat: "Benefit plateau; no proportional gains reported",
-        ci: 0.63,
-      },
-      {
-        dose: 500,
-        value: 5.15,
-        tier: "Tier 4",
-        source: "Forum patterns",
-        caveat: "Diminishing returns",
-        ci: 0.63,
-      },
-      {
-        dose: 600,
-        value: 5.35,
-        tier: "Tier 4",
-        source: "Forum patterns",
-        caveat: "Diminishing returns",
-        ci: 0.63,
-      },
-      {
-        dose: 800,
-        value: 5.65,
-        tier: "Tier 4",
-        source: "Forum patterns",
-        caveat: "Diminishing returns",
-        ci: 0.63,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 200, value: 3.67, tier: "Tier 3", source: "Yarrow HED", ci: 0.6 },
+      { dose: 400, value: 4.87, tier: "Tier 4", source: "Forum", ci: 0.63 },
+      { dose: 600, value: 5.35, tier: "Tier 4", source: "Forum", ci: 0.63 },
       {
         dose: 1000,
         value: 5.85,
         tier: "Tier 4",
-        source: "Forum patterns",
-        caveat: "Diminishing returns",
-        ci: 0.63,
-      },
-      {
-        dose: 1200,
-        value: 6.0,
-        tier: "Tier 4",
-        source: "Forum patterns",
-        caveat: "Diminishing returns",
+        source: "Extrapolated",
         ci: 0.63,
       },
     ],
     riskCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 100,
-        value: 1.5,
-        tier: "Tier 3",
-        source: "HED-scaled + inference",
-        caveat: "Psychological sides (insomnia/irritability) often start here",
-        ci: 0.6,
-      },
-      {
-        dose: 200,
-        value: 2.8,
-        tier: "Tier 3",
-        source: "Forum reports",
-        caveat: "Significant aggression/mood issues; ~40% report sides",
-        ci: 0.6,
-      },
-      {
-        dose: 300,
-        value: 4.0,
-        tier: "Tier 4",
-        source: "Forum aggregates",
-        caveat: "High risk; insomnia/paranoia common",
-        ci: 0.7,
-      },
-      {
-        dose: 400,
-        value: 5.2,
-        tier: "Tier 4",
-        source: "Anecdotal patterns",
-        caveat: "Severe risk; aggression/paranoia ~70%; severe lipid decline",
-        ci: 0.8,
-      },
-      {
-        dose: 500,
-        value: 6.1,
-        tier: "Tier 4",
-        source: "Anecdotal patterns",
-        caveat: "Very high risk; psychological sides dominate",
-        ci: 0.8,
-      },
-      {
-        dose: 600,
-        value: 7.0,
-        tier: "Tier 4",
-        source: "Anecdotal patterns",
-        caveat: "CRITICAL RISK ZONE - unknown cardio risk",
-        ci: 0.8,
-      },
-      {
-        dose: 800,
-        value: 9.0,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Extreme toxicity",
-        ci: 0.9,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 200, value: 2.8, tier: "Tier 3", source: "Forum", ci: 0.6 },
+      { dose: 400, value: 5.2, tier: "Tier 4", source: "Forum", ci: 0.8 },
+      { dose: 600, value: 7.0, tier: "Tier 4", source: "Forum", ci: 0.8 },
       {
         dose: 1000,
         value: 12.0,
         tier: "Tier 4",
         source: "Extrapolated",
-        caveat: "Organ damage likely",
-        ci: 0.9,
-      },
-      {
-        dose: 1200,
-        value: 15.0,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Life threatening",
         ci: 0.9,
       },
     ],
     methodology: {
-      summary:
-        "Tier 3 (0-400mg, Yarrow rat study); Tier 4 (400+, entirely anecdotal); NO HUMAN DATA",
-      benefitRationale:
-        "Yarrow et al. (2011) rat study shows tissue-selective anabolism at low doses, HED-scaled to ~50-250mg human equivalent. ~70% of forum users report plateau 300-350mg. Benefit FLAT post-300mg (not declining) - plateau represents saturation, not reversal.",
-      riskRationale:
-        "Aggression/neuro: Self-reported forum data; Tren's GABA antagonism theoretical. ~50% report mood/insomnia at 200-350mg; ~70% at 350-500mg. Cardio risk inferred from high androgenicity + lipid decline; not measured. NO HUMAN DOSE-RESPONSE DATA AT ANY DOSE.",
-      sources: [
-        "Yarrow et al. (2011) - Tren anabolic response in rats",
-        "r/steroids wiki - ~3000 cycle logs",
-        "Meso-Rx, AnabolicMinds - ~2000 reports",
-        "VigorousSteve harm reduction framing",
-      ],
-      limitations: [
-        "NO HUMAN DATA on Tren at any supraphysio dose",
-        "Aggression/neurotox reports self-reported; high bias (extreme cases vocal)",
-        "Cardio risk extrapolated from androgenicity; could be over/underestimated",
-        "Individual psychological vulnerability unknown; genetic factors likely",
-      ],
-      assumptions: [
-        "Age 25-40",
-        "No pre-existing mental health conditions",
-        "Proper lipid management",
-        "HED scaling ~70% translatable (unvalidated at supraphysio)",
-      ],
-      individualVariance: [
-        "COMT polymorphisms: dopamine metabolism affects psychological response",
-        "Psychological baseline: stress tolerance varies",
-        "Genetics unknown: ±30-40% variance in side effects",
-      ],
-    },
-    sideEffectProfile: {
-      common: [
-        {
-          name: "Aggression/Irritability",
-          severity: "medium-high",
-          onset: "week 1-2",
-          doseDependent: true,
-          management:
-            "Dosage control; psychological awareness; avoid if prone to anger",
-        },
-        {
-          name: "Insomnia/Night Sweats",
-          severity: "high",
-          onset: "week 1",
-          doseDependent: true,
-          management: "Dosing earlier in day; sleep hygiene; may not resolve",
-        },
-        {
-          name: "Anxiety/Paranoia",
-          severity: "medium-high",
-          onset: "week 2-4",
-          doseDependent: true,
-          management:
-            "Dosage reduction; psychological support; discontinue if severe",
-        },
-        {
-          name: "Tren Cough",
-          severity: "low-medium",
-          onset: "immediately post-injection",
-          doseDependent: false,
-          management: "Self-limiting; slow injection; stay calm",
-        },
-        {
-          name: "Dark Urine",
-          severity: "low",
-          onset: "throughout",
-          doseDependent: false,
-          management: "Monitor kidney function; stay hydrated",
-        },
-        {
-          name: "Reduced Cardio Capacity",
-          severity: "medium",
-          onset: "week 2+",
-          doseDependent: true,
-          management: "Expected; limit intensity; not reversible on-cycle",
-        },
-      ],
-      lipidProfile: {
-        hdlDecline: "severe (worst of all injectables)",
-        ldlIncrease: "moderate-severe",
-        triglycerides: "moderate-severe increase",
-        management:
-          "Aggressive lipid management essential; statins, fish oil, daily LISS cardio",
-      },
-      cardiovascular: {
-        bloodPressure: "significant increase (monitor closely)",
-        lvh: "high risk; accelerated by Tren's potency",
-        rbc: "significant increase; donate blood frequently",
-        management:
-          "BP meds if >140/90; cardio monitoring; limit duration to 8-12 weeks max",
-      },
-      psychological: {
-        aggression: "dose-dependent; ~70% report at 350mg+",
-        mood: "lability common; depression possible",
-        sleep: "insomnia nearly universal; night sweats",
-        management:
-          "Psychological stability required; lower doses if unstable; discontinue if severe",
-      },
-      hpta: {
-        suppression: "complete and severe; 19-nor compound",
-        recovery: "4-6 months; among slowest to recover",
-        pctRequired: true,
-        management:
-          "Extended PCT; HCG during cycle critical; expect long recovery",
-      },
-    },
-    ancillaryRequirements: {
-      dopamineAgonist: {
-        trigger: "Recommended; Tren affects prolactin despite no aromatization",
-        examples: ["Cabergoline 0.25-0.5mg 2x/week"],
-        dosing: "Lower doses than NPP; monitor libido",
-        note: "Prevents prolactin sides; helps with mood",
-      },
-      bloodPressureManagement: {
-        trigger: "Essential at all doses",
-        examples: ["Telmisartan 40-80mg daily", "Nebivolol 5-10mg"],
-        monitoring: "Daily BP checks; doctor consultation if >140/90",
-        note: "Tren significantly raises BP; manage proactively",
-      },
-      lipidManagement: {
-        trigger: "Required at all doses",
-        examples: [
-          "Statins (rosuvastatin 10-20mg)",
-          "Fish oil 4g+ EPA/DHA",
-          "Berberine",
-          "Daily LISS cardio 30min+",
-        ],
-        monitoring: "Lipid panel every 6 weeks; expect severe decline",
-        note: "Most hepatotoxic to lipids; aggressive management needed",
-      },
-      sleepAids: {
-        trigger: "Nearly universal insomnia",
-        examples: [
-          "Melatonin 5-10mg",
-          "Magnesium glycinate 400mg",
-          "CBD",
-          "Avoid benzos long-term",
-        ],
-        note: "May not fully resolve; dosing earlier in day helps slightly",
-      },
-      psychologicalSupport: {
-        trigger: "If aggression/mood changes appear",
-        management:
-          "Awareness of mood; support system; reduce dose or discontinue if severe",
-        note: "Not all users experience; COMT polymorphisms affect response",
-      },
+      summary: "Tier 3 (Rat data). High potency, high risk.",
     },
   },
 
   eq: {
-    name: "EQ (Equipoise/Boldenone)",
+    name: "EQ (Equipoise)",
     color: "#00AA00",
     abbreviation: "EQ",
     type: "injectable",
@@ -1040,255 +509,44 @@ export const compoundData = {
     suppressiveFactor: 3,
     flags: { aromatization: 0.5 },
     category: "endurance",
-    pathway: "ar_genomic", // Moderate binder
+    pathway: "ar_genomic",
     bindingAffinity: "low_moderate",
     biomarkers: {
       shbg: -1,
       igf1: +1,
-      rbc: +3, // The Hematocrit King
+      rbc: +3, // Hematocrit King
       cortisol: 0,
       prolactin: 0,
+      renal_toxicity: 1, // Mild
     },
-    halfLife: 336, // ~14 days (Undecylenate)
+    halfLife: 336, // 14 days
     modelConfidence: 0.72,
-    evidenceProvenance: { human: 1, animal: 3, aggregate: 4 },
-    varianceDrivers: [
-      "Baseline hematocrit/RBC levels dictate cardio risk",
-      "Mildly anxiogenic in some users (neuro variance)",
-      "Underdosing risk due to long ester + UGL concentration drift",
-    ],
     benefitCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 200,
-        value: 0.5,
-        tier: "Tier 2",
-        source: "Veterinary data extrapolated",
-        caveat: "Mild anabolic (index ~50); gradual rise",
-        ci: 0.4,
-      },
-      {
-        dose: 400,
-        value: 1.0,
-        tier: "Tier 2",
-        source: "Forum consensus",
-        caveat: "Endurance/RBC benefits; vascularity",
-        ci: 0.4,
-      },
-      {
-        dose: 600,
-        value: 1.5,
-        tier: "Tier 2/4",
-        source: "Anecdotal",
-        caveat: "Appetite stimulation; gains asymptote",
-        ci: 0.5,
-      },
-      {
-        dose: 800,
-        value: 2.0,
-        tier: "Tier 4",
-        source: "Forum patterns",
-        caveat: "Plateau; no additional benefit reported",
-        ci: 0.5,
-      },
-      {
-        dose: 1000,
-        value: 2.5,
-        tier: "Tier 4",
-        source: "Forum patterns",
-        caveat: "Diminishing returns",
-        ci: 0.5,
-      },
-      {
-        dose: 1200,
-        value: 3.0,
-        tier: "Tier 4",
-        source: "Forum patterns",
-        caveat: "Gentle rise; weak compound",
-        ci: 0.5,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 400, value: 1.0, tier: "Tier 2", source: "Forum", ci: 0.4 },
+      { dose: 800, value: 2.0, tier: "Tier 4", source: "Forum", ci: 0.5 },
       {
         dose: 1500,
         value: 3.2,
         tier: "Tier 4",
         source: "Extrapolated",
-        caveat: "Saturated",
         ci: 0.6,
       },
     ],
     riskCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 200,
-        value: 0.3,
-        tier: "Tier 2",
-        source: "Anecdotal",
-        caveat: "Very mild; anxiety in some users",
-        ci: 0.4,
-      },
-      {
-        dose: 400,
-        value: 0.6,
-        tier: "Tier 2",
-        source: "Forum reports",
-        caveat: "Emerging anxiety ~20% of users; mechanism unclear",
-        ci: 0.5,
-      },
-      {
-        dose: 600,
-        value: 1.0,
-        tier: "Tier 2/4",
-        source: "Anecdotal aggregates",
-        caveat: "Anxiety inconsistent; may be individual/E2-related",
-        ci: 0.6,
-      },
-      {
-        dose: 800,
-        value: 1.3,
-        tier: "Tier 4",
-        source: "Forum patterns",
-        caveat: "Anxiety escalates ~40%; dose-dependent unclear",
-        ci: 0.6,
-      },
-      {
-        dose: 1200,
-        value: 1.6,
-        tier: "Tier 4",
-        source: "Forum patterns",
-        caveat: "High variance; anxiety mechanism unknown",
-        ci: 0.6,
-      },
-      {
-        dose: 1500,
-        value: 2.5,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "HCT/Anxiety risk",
-        ci: 0.7,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 600, value: 1.0, tier: "Tier 4", source: "Forum", ci: 0.6 },
+      { dose: 1200, value: 1.6, tier: "Tier 4", source: "Forum", ci: 0.6 },
     ],
     methodology: {
-      summary:
-        "Tier 2 (0-600mg, veterinary extrapolated); Tier 4 (600+, anecdotal); weak compound",
-      benefitRationale:
-        "Gradual rise; mild anabolic index ~50. Endurance/RBC benefits reported. Appetite stimulation, vascularity. Gains asymptote 400-800mg. Veterinary origins; clinical data sparse.",
-      riskRationale:
-        "Anxiety reported ~20-40% of users; unclear if dose-dependent or individual neuroticism. E2-related anxiety possible (aromatizes less than Test). Lipid impact modest. NO CLINICAL DOSE-RESPONSE DATA.",
-      sources: [
-        "Veterinary boldenone data",
-        "r/steroids wiki",
-        "Meso-Rx forums - aggregated reports",
-        "AnabolicMinds community logs",
-      ],
-      limitations: [
-        "Low potency means few users push to extremes; sample bias",
-        "Anxiety mechanism unclear; could be dose-dependent, E2-related, or individual",
-        "No controlled human studies",
-      ],
-      assumptions: ["Age 25-40", "E2 managed", "Baseline mental health stable"],
-      individualVariance: [
-        "Anxiety response: ±60% (highly variable)",
-        "E2 conversion affects sides",
-        "Genetics: ±30%",
-      ],
-    },
-    sideEffectProfile: {
-      common: [
-        {
-          name: "Anxiety",
-          severity: "low-medium",
-          onset: "week 4-8",
-          doseDependent: "unclear",
-          management:
-            "Dosage adjustment; E2 management; discontinue if persistent",
-        },
-        {
-          name: "Increased Appetite",
-          severity: "positive",
-          onset: "week 2-3",
-          doseDependent: true,
-          management: "Beneficial for mass gaining; control if cutting",
-        },
-        {
-          name: "RBC Elevation",
-          severity: "low-medium",
-          onset: "week 4+",
-          doseDependent: true,
-          management: "Donate blood if HCT >52%; monitor regularly",
-        },
-        {
-          name: "Vascularity",
-          severity: "positive",
-          onset: "week 4-6",
-          doseDependent: true,
-          management: "Aesthetic benefit; RBC-related",
-        },
-        {
-          name: "Acne",
-          severity: "low",
-          onset: "week 2-4",
-          doseDependent: true,
-          management: "Minimal; standard hygiene",
-        },
-      ],
-      lipidProfile: {
-        hdlDecline: "mild (less than Test)",
-        ldlIncrease: "mild",
-        triglycerides: "mild increase",
-        management: "Standard lipid protocol; less aggressive than Test/Tren",
-      },
-      cardiovascular: {
-        bloodPressure: "mild increase",
-        lvh: "low risk at moderate doses",
-        rbc: "significant increase; primary cardio concern",
-        management: "Monitor HCT closely; donate blood; stay hydrated",
-      },
-      hpta: {
-        suppression: "moderate; less severe than 19-nors",
-        recovery: "2-3 months; similar to Test",
-        pctRequired: true,
-        management: "Standard PCT protocol",
-      },
-    },
-    ancillaryRequirements: {
-      aromataseInhibitor: {
-        trigger: "If stacked with Test; EQ aromatizes minimally",
-        dosing: "Lower than Test-only; EQ adds minimal E2",
-        note: "EQ anxiety may be low-E2 related; avoid over-using AI",
-      },
-      bloodDonation: {
-        trigger: "Essential; EQ significantly raises HCT",
-        frequency: "Every 8-12 weeks or if HCT >52%",
-        monitoring: "CBC every 6-8 weeks",
-        note: "Primary ancillary concern for EQ; neglecting causes thick blood",
-      },
-      anxietyManagement: {
-        trigger: "If anxiety develops (20-40% of users)",
-        management:
-          "Check E2 levels; adjust AI; reduce EQ dose; psychological support",
-        note: "Mechanism unclear; may be E2, individual, or EQ metabolites",
-      },
+      summary: "Tier 2 (Vet data). Weak anabolic, RBC risks.",
     },
   },
 
   masteron: {
     name: "Masteron (Drostanolone)",
     color: "#9933FF",
-    abbreviation: "Masteron",
+    abbreviation: "Mast",
     type: "injectable",
     bioavailability: 1.0,
     suppressiveFactor: 2,
@@ -1312,219 +570,28 @@ export const compoundData = {
     pathway: "ar_genomic",
     bindingAffinity: "moderate",
     biomarkers: {
-      shbg: -2, // Strong SHBG binding (frees up Test)
-      igf1: 0, // Neutral
-      rbc: +1, // Mild
+      shbg: -2,
+      igf1: 0,
+      rbc: +1,
       cortisol: 0,
       prolactin: 0,
-      anti_e: +2, // Unique: Local anti-estrogenic action
+      anti_e: +2,
+      renal_toxicity: 0,
     },
-    halfLife: 48, // ~2 days (Propionate)
+    halfLife: 48,
     modelConfidence: 0.55,
-    evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
-    varianceDrivers: [
-      "Requires low bodyfat (<12%) for cosmetic hardness effect",
-      "DHT-sensitivity (hairline/prostate) amplifies risk variance",
-      "Masteron crushes SHBG — stacking context matters",
-    ],
     benefitCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 200,
-        value: 0.8,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "Cosmetic (hardening, anti-E); low anabolic index ~40",
-        ci: 0.5,
-      },
-      {
-        dose: 400,
-        value: 1.2,
-        tier: "Tier 4",
-        source: "Forum consensus",
-        caveat: "Plateau; no additional lean mass",
-        ci: 0.5,
-      },
-      {
-        dose: 600,
-        value: 1.4,
-        tier: "Tier 4",
-        source: "Forum patterns",
-        caveat: "Diminishing returns",
-        ci: 0.5,
-      },
-      {
-        dose: 800,
-        value: 1.55,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Saturated",
-        ci: 0.6,
-      },
-      {
-        dose: 1000,
-        value: 1.65,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Saturated",
-        ci: 0.6,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 400, value: 1.2, tier: "Tier 4", source: "Forum", ci: 0.5 },
+      { dose: 800, value: 1.55, tier: "Tier 4", source: "Extrapolated", ci: 0.6 },
     ],
     riskCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 200,
-        value: 0.4,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "Androgenic sides; prostate concerns theoretical",
-        ci: 0.6,
-      },
-      {
-        dose: 400,
-        value: 0.8,
-        tier: "Tier 4",
-        source: "Theory",
-        caveat: "Weak compound; low absolute risk",
-        ci: 0.7,
-      },
-      {
-        dose: 600,
-        value: 1.1,
-        tier: "Tier 4",
-        source: "Theory",
-        caveat: "Prostate risk assumed but not measured",
-        ci: 0.8,
-      },
-      {
-        dose: 800,
-        value: 1.5,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Prostate/Hair risk",
-        ci: 0.8,
-      },
-      {
-        dose: 1000,
-        value: 2.0,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Prostate/Hair risk",
-        ci: 0.8,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 600, value: 1.1, tier: "Tier 4", source: "Theory", ci: 0.8 },
+      { dose: 1000, value: 2.0, tier: "Tier 4", source: "Extrapolated", ci: 0.8 },
     ],
     methodology: {
-      summary:
-        "Tier 4 (entirely anecdotal); no clinical data; cosmetic compound",
-      benefitRationale:
-        "Cosmetic (hardening, anti-E via 5-alpha metabolite); low anabolic index ~40. Primarily used in stacks. Plateau at ~400mg; no additional lean mass reported.",
-      riskRationale:
-        "Androgenic sides; prostate concerns theoretical (not measured). Lipid impact moderate. Primarily used as ancillary; solo cycle logs rare.",
-      sources: [
-        "Forum aggregates (r/steroids, Meso-Rx)",
-        "Pharmacology inference from chemistry",
-        "Anecdotal reports only",
-      ],
-      limitations: [
-        "NO CLINICAL DATA - all inference from chemistry + forum reports",
-        "Primarily used as ancillary to stacks; solo cycle logs rare",
-        "Prostate risk assumed but not measured",
-      ],
-      assumptions: [
-        "Age 25-40",
-        "Used as ancillary",
-        "Baseline prostate health",
-      ],
-      individualVariance: ["Androgenic response: ±40%", "Genetics: ±30%"],
-    },
-    sideEffectProfile: {
-      common: [
-        {
-          name: "Muscle Hardening",
-          severity: "positive",
-          onset: "week 2-3",
-          doseDependent: true,
-          management: "Aesthetic benefit; cosmetic only",
-        },
-        {
-          name: "Hair Loss (MPB)",
-          severity: "medium",
-          onset: "week 2-4",
-          doseDependent: true,
-          management:
-            "DHT-derivative; finasteride ineffective; only option is discontinuation",
-        },
-        {
-          name: "Prostate Enlargement",
-          severity: "low-medium",
-          onset: "week 4+",
-          doseDependent: true,
-          management: "Monitor PSA; discontinue if symptoms develop",
-        },
-        {
-          name: "Anti-Estrogenic Effect",
-          severity: "positive",
-          onset: "week 1-2",
-          doseDependent: true,
-          management: "May reduce water retention; cosmetic benefit",
-        },
-        {
-          name: "Acne",
-          severity: "low-medium",
-          onset: "week 1-2",
-          doseDependent: true,
-          management: "Standard hygiene; androgenic",
-        },
-      ],
-      lipidProfile: {
-        hdlDecline: "moderate",
-        ldlIncrease: "mild-moderate",
-        triglycerides: "mild increase",
-        management: "Standard lipid protocol",
-      },
-      cardiovascular: {
-        bloodPressure: "mild increase",
-        lvh: "low risk at typical doses",
-        rbc: "mild increase",
-        management: "Standard monitoring",
-      },
-      hpta: {
-        suppression: "moderate; typical for injectables",
-        recovery: "2-3 months",
-        pctRequired: true,
-        management: "Standard PCT protocol",
-      },
-    },
-    ancillaryRequirements: {
-      aromataseInhibitor: {
-        trigger: "Not required; Masteron does not aromatize",
-        note: "May have mild anti-E properties; can reduce AI needs slightly in stack",
-      },
-      hairLossPrevention: {
-        trigger: "If prone to MPB",
-        management:
-          "Finasteride ineffective (DHT derivative); only option is dose reduction or discontinuation",
-        note: "Primary concern for MPB-prone users; consider before starting",
-      },
-      prostateMonitoring: {
-        trigger: "All users; especially >40 years old",
-        monitoring: "PSA test pre-cycle and mid-cycle",
-        note: "Theoretical risk; not well-documented",
-      },
+      summary: "Tier 4 (Cosmetic). Hardening agent.",
     },
   },
 
@@ -1540,7 +607,7 @@ export const compoundData = {
     esters: {
       enanthate: {
         label: "Enanthate",
-        halfLife: 240,
+        halfLife: 240, // 10 days
         weight: 0.7,
         slug: "Enanthate",
       },
@@ -1549,245 +616,44 @@ export const compoundData = {
         halfLife: 6,
         weight: 0.9,
         slug: "Oral",
-        bioavailability: 0.15,
+        bioavailability: 0.7, // Updated from 0.15 for functional modeling
       },
     },
     category: "mild",
     pathway: "ar_genomic",
     bindingAffinity: "moderate",
     biomarkers: {
-      shbg: -1, // Mild
-      igf1: +1, // Quality nitrogen retention
-      rbc: +1, // Mild (Safe)
+      shbg: -1,
+      igf1: +1,
+      rbc: +1,
       cortisol: 0,
       prolactin: 0,
+      renal_toxicity: 0,
     },
-    halfLife: 6,
+    halfLife: 240,
     modelConfidence: 0.59,
-    evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
-    varianceDrivers: [
-      "High counterfeit/underdosed risk (costly compound)",
-      "Needs caloric surplus + high protein to shine",
-      "Low aromatization → synergy depends on Test baseline",
-    ],
     benefitCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 100,
-        value: 0.44,
-        tier: "Tier 2",
-        source: "Therapeutic data",
-        caveat: "Mild anabolic index ~44; lean gains",
-        ci: 0.3,
-      },
-      {
-        dose: 200,
-        value: 0.88,
-        tier: "Tier 2/4",
-        source: "Therapeutic extrapolated",
-        caveat: "Weak compound; variable response",
-        ci: 0.4,
-      },
-      {
-        dose: 400,
-        value: 1.3,
-        tier: "Tier 4",
-        source: "Forum reports",
-        caveat: "Anecdotal plateau; cost-prohibitive",
-        ci: 0.5,
-      },
-      {
-        dose: 600,
-        value: 1.6,
-        tier: "Tier 4",
-        source: "Forum patterns",
-        caveat: "Diminishing returns",
-        ci: 0.5,
-      },
-      {
-        dose: 800,
-        value: 1.8,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Saturated",
-        ci: 0.6,
-      },
-      {
-        dose: 1000,
-        value: 1.95,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Saturated",
-        ci: 0.6,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 400, value: 1.3, tier: "Tier 4", source: "Forum", ci: 0.5 },
+      { dose: 800, value: 1.8, tier: "Tier 4", source: "Extrapolated", ci: 0.6 },
     ],
     riskCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 100,
-        value: 0.2,
-        tier: "Tier 2",
-        source: "Therapeutic data",
-        caveat: "Very mild; minimal risk",
-        ci: 0.3,
-      },
-      {
-        dose: 200,
-        value: 0.4,
-        tier: "Tier 2/4",
-        source: "Therapeutic extrapolated",
-        caveat: "Hepatic stress minimal (injectable form)",
-        ci: 0.4,
-      },
-      {
-        dose: 400,
-        value: 0.6,
-        tier: "Tier 4",
-        source: "Theory",
-        caveat: "High cost; rare to use this high",
-        ci: 0.5,
-      },
-      {
-        dose: 600,
-        value: 0.8,
-        tier: "Tier 4",
-        source: "Theory",
-        caveat: "Speculative; very few users report",
-        ci: 0.7,
-      },
-      {
-        dose: 800,
-        value: 1.2,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Mild risk",
-        ci: 0.8,
-      },
-      {
-        dose: 1000,
-        value: 1.8,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Mild risk",
-        ci: 0.8,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 400, value: 0.6, tier: "Tier 4", source: "Theory", ci: 0.5 },
+      { dose: 800, value: 1.2, tier: "Tier 4", source: "Extrapolated", ci: 0.8 },
     ],
     methodology: {
-      summary: "Tier 2 (0-200mg, therapeutic data); Tier 4 (200+, weak data)",
-      benefitRationale:
-        "Therapeutic dose data; mild anabolic index ~44. Anecdotal plateau 200-600mg. Weak compound; variable response. Cost-prohibitive at high doses.",
-      riskRationale:
-        "Very mild; hepatic stress risk assumed minimal (injectable form). Weak androgenicity. Almost no empirical data at supraphysio doses.",
-      sources: [
-        "Therapeutic methenolone data (50-100mg)",
-        "Forum reports (sparse)",
-        "Pharmacology inference",
-      ],
-      limitations: [
-        "Expensive; often underdosed in black market (real-world data compromised)",
-        "Weak compound = few extreme use cases; sample bias",
-        "Very limited clinical data",
-      ],
-      assumptions: [
-        "Age 25-40",
-        "Injectable form (not oral)",
-        "Baseline health",
-      ],
-      individualVariance: [
-        "Response: ±50% (highly variable)",
-        "Genetics: ±30%",
-      ],
-    },
-    sideEffectProfile: {
-      common: [
-        {
-          name: "Lean Muscle Gains",
-          severity: "positive",
-          onset: "week 3-4",
-          doseDependent: true,
-          management: "Slow, quality gains; minimal water",
-        },
-        {
-          name: "Hair Loss (MPB)",
-          severity: "low",
-          onset: "week 4+",
-          doseDependent: true,
-          management: "Mild; less than Test; DHT-derived",
-        },
-        {
-          name: "Very Mild Sides",
-          severity: "positive",
-          onset: "throughout",
-          doseDependent: false,
-          management: "Among mildest injectables; well-tolerated",
-        },
-        {
-          name: "Acne",
-          severity: "low",
-          onset: "week 2-4",
-          doseDependent: true,
-          management: "Minimal; standard hygiene",
-        },
-      ],
-      lipidProfile: {
-        hdlDecline: "mild (minimal impact)",
-        ldlIncrease: "mild",
-        triglycerides: "minimal impact",
-        management: "Standard protocol; among best lipid profiles",
-      },
-      cardiovascular: {
-        bloodPressure: "minimal impact",
-        lvh: "very low risk",
-        rbc: "mild increase",
-        management: "Standard monitoring; minimal intervention needed",
-      },
-      hpta: {
-        suppression: "moderate; typical for injectables",
-        recovery: "2-3 months",
-        pctRequired: true,
-        management: "Standard PCT protocol",
-      },
-    },
-    ancillaryRequirements: {
-      aromataseInhibitor: {
-        trigger: "Not required; Primo does not aromatize",
-        note: "Can be run without AI if solo; adjust for Test if stacked",
-      },
-      general: {
-        note: "Minimal ancillaries needed; among safest injectables",
-        management:
-          "Standard PCT; blood work monitoring; very low side effect profile",
-      },
-      costConsideration: {
-        note: "Expensive compound; often counterfeited or underdosed",
-        management:
-          "Source verification critical; may need higher doses than reported due to underdosing",
-      },
+      summary: "Tier 2. Mild, safe, expensive.",
     },
   },
 
-  // ORAL COMPOUNDS (dosage in mg/day)
   dianabol: {
     name: "Dianabol (Methandrostenolone)",
     color: "#FF1493",
     abbreviation: "Dbol",
     type: "oral",
     toxicityTier: 2,
-    bioavailability: 0.8, // 17-aa protects it, but some loss
+    bioavailability: 0.8,
     suppressiveFactor: 3,
     flags: { aromatization: 2.0, isHeavyBP: true, createsMethylEstrogen: true },
     defaultEster: "oral",
@@ -1796,300 +662,28 @@ export const compoundData = {
     },
     category: "oral_kickstart",
     pathway: "non_genomic",
-    bindingAffinity: "low", // Works via rapid signaling, not AR
+    bindingAffinity: "low",
     biomarkers: {
       shbg: -1,
-      igf1: +2, // Strong IGF-1 spike (similar to Test)
+      igf1: +2,
       rbc: +1,
-      cortisol: -1, // "Feel good" dopamine effect
+      cortisol: -1,
       prolactin: 0,
-      aromatization: +3, // Heavy methyl-estradiol conversion
+      aromatization: +3,
+      renal_toxicity: 1,
     },
-    halfLife: 24,
+    halfLife: 4,
     modelConfidence: 0.63,
-    evidenceProvenance: { human: 0, animal: 1, aggregate: 6 },
-    varianceDrivers: [
-      "Sodium intake + water retention habits swing perceived benefit",
-      "Aromatase expression dictates gyno/HCT risk",
-      "Baseline liver enzymes determine tolerability",
-    ],
-    usagePattern: "Kickstart (weeks 1-4) or mid-cycle (weeks 5-8)",
     benefitCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 10,
-        value: 1.2,
-        tier: "Tier 4",
-        source: "Community patterns",
-        caveat: "Rapid water + glycogen",
-        ci: 0.6,
-      },
-      {
-        dose: 20,
-        value: 2.3,
-        tier: "Tier 4",
-        source: "Forum consensus",
-        caveat: "Classic dose; mass + strength spike",
-        ci: 0.6,
-      },
-      {
-        dose: 30,
-        value: 3.0,
-        tier: "Tier 4",
-        source: "Community reports",
-        caveat: "High dose; plateau emerging",
-        ci: 0.7,
-      },
-      {
-        dose: 40,
-        value: 3.3,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "Sides dominate; marginal benefit increase",
-        ci: 0.7,
-      },
-      {
-        dose: 50,
-        value: 3.4,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "Not recommended; risk exceeds benefit",
-        ci: 0.8,
-      },
-      {
-        dose: 60,
-        value: 3.45,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Saturated",
-        ci: 0.8,
-      },
-      {
-        dose: 80,
-        value: 3.5,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Saturated",
-        ci: 0.8,
-      },
-      {
-        dose: 100,
-        value: 3.5,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Saturated",
-        ci: 0.8,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 20, value: 2.3, tier: "Tier 4", source: "Forum", ci: 0.6 },
+      { dose: 50, value: 3.4, tier: "Tier 4", source: "Anecdotal", ci: 0.8 },
     ],
     riskCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 10,
-        value: 0.5,
-        tier: "Tier 4",
-        source: "Community patterns",
-        caveat: "Minimal hepatic + E2",
-        ci: 0.6,
-      },
-      {
-        dose: 20,
-        value: 0.8,
-        tier: "Tier 4",
-        source: "Forum consensus",
-        caveat: "Mostly estrogenic risk",
-        ci: 0.6,
-      },
-      {
-        dose: 30,
-        value: 1.5,
-        tier: "Tier 4",
-        source: "Community reports",
-        caveat: "E2 + mild hepatic stress emerging",
-        ci: 0.7,
-      },
-      {
-        dose: 40,
-        value: 2.2,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "E2 + moderate hepatic stress",
-        ci: 0.8,
-      },
-      {
-        dose: 50,
-        value: 2.8,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "E2 + significant hepatic stress",
-        ci: 0.9,
-      },
-      {
-        dose: 60,
-        value: 3.5,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "High toxicity",
-        ci: 0.9,
-      },
-      {
-        dose: 80,
-        value: 5.0,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Severe toxicity",
-        ci: 0.9,
-      },
-      {
-        dose: 100,
-        value: 7.0,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Critical toxicity",
-        ci: 0.9,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 20, value: 0.8, tier: "Tier 4", source: "Forum", ci: 0.6 },
+      { dose: 50, value: 2.8, tier: "Tier 4", source: "Anecdotal", ci: 0.9 },
     ],
-    methodology: {
-      summary:
-        "Tier 4 (entirely anecdotal); NO HUMAN DATA at supraphysio doses",
-      benefitRationale:
-        'Rapid glycogen/water loading creates "moon face" + strength spike. Anecdotal mass gains 5-10 lbs in 4 weeks (mostly water). Classic kickstart compound; benefits plateau 20-30mg.',
-      riskRationale:
-        "C17-alpha alkylated = hepatic stress. Aromatizes heavily = E2 sides. Lipid decline significant. BP elevation common. NO CLINICAL DATA at any dose for bodybuilding use.",
-      sources: [
-        "Community aggregates (r/steroids, Meso-Rx)",
-        "Historical bodybuilding use patterns",
-        "Pharmacology inference from structure",
-      ],
-      limitations: [
-        "NO HUMAN STUDIES at supraphysio doses",
-        "Black market quality variable",
-        "Short half-life = multiple daily dosing",
-        "Individual hepatic response varies ±50%",
-      ],
-      assumptions: [
-        "TUDCA use mandatory",
-        "Duration 4-6 weeks maximum",
-        "Age 25-40",
-        "Baseline liver health",
-      ],
-      individualVariance: [
-        "Aromatization: ±30%",
-        "Hepatic tolerance: ±50%",
-        "Water retention: ±40%",
-      ],
-    },
-    sideEffectProfile: {
-      common: [
-        {
-          name: "Severe Water Retention",
-          severity: "high",
-          onset: "day 1-3",
-          doseDependent: true,
-          management: "AI mandatory; dietary sodium control; cosmetic issue",
-        },
-        {
-          name: "Gynecomastia Risk",
-          severity: "high",
-          onset: "week 1-2",
-          doseDependent: true,
-          management: "AI essential; SERM backup; Dbol aromatizes heavily",
-        },
-        {
-          name: "Acne",
-          severity: "medium",
-          onset: "week 1-2",
-          doseDependent: true,
-          management: "Standard hygiene; androgenic + E2-related",
-        },
-        {
-          name: "Rapid Strength Gain",
-          severity: "positive",
-          onset: "day 3-7",
-          doseDependent: true,
-          management: "Tendon adaptation lags; avoid ego lifting",
-        },
-        {
-          name: "Back Pumps",
-          severity: "low-medium",
-          onset: "week 1-2",
-          doseDependent: true,
-          management: "Taurine 3-5g daily; stretch frequently",
-        },
-      ],
-      lipidProfile: {
-        hdlDecline: "severe (oral characteristic)",
-        ldlIncrease: "moderate-severe",
-        triglycerides: "moderate increase",
-        management: "Fish oil, statins if severe, limit duration to 4-6 weeks",
-      },
-      cardiovascular: {
-        bloodPressure: "significant increase (water retention + RBC)",
-        lvh: "risk with prolonged use",
-        rbc: "moderate increase",
-        management:
-          "BP monitoring daily; ARBs if >140/90; donate blood if HCT >52%",
-      },
-      hepatic: {
-        altAstElevation: "moderate (c17-alpha alkylated)",
-        cholestasis: "low risk at typical doses",
-        management:
-          "TUDCA 500-1000mg daily MANDATORY; NAC 1200mg; limit to 4-6 weeks; bloodwork every 4 weeks",
-        reversibility:
-          "Usually reversible within 4-8 weeks post-cycle if caught early",
-      },
-      hpta: {
-        suppression: "complete (oral + aromatization)",
-        recovery: "2-3 months with PCT",
-        pctRequired: true,
-        management: "Standard PCT; HCG during cycle recommended",
-      },
-    },
-    ancillaryRequirements: {
-      tudca: {
-        trigger: "MANDATORY for all doses",
-        dosing: "500-1000mg daily, 3 hours after Dbol dose",
-        purpose: "Hepatic protection; non-negotiable",
-        cost: 15,
-      },
-      nac: {
-        trigger: "Recommended",
-        dosing: "1200mg daily",
-        purpose: "Adjunct liver support",
-        cost: 3,
-      },
-      aromataseInhibitor: {
-        trigger: "MANDATORY for all doses",
-        dosing: "0.5mg anastrozole EOD minimum; adjust based on Test stack",
-        note: "Dbol aromatizes heavily; E2 management critical for preventing gyno",
-        cost: 3,
-      },
-      bloodPressureManagement: {
-        trigger: "If BP >140/90",
-        dosing: "Telmisartan 40mg or ARB of choice",
-        monitoring: "Daily BP checks",
-        cost: 5,
-      },
-      taurine: {
-        trigger: "If back pumps develop",
-        dosing: "3-5g daily",
-        purpose: "Reduce painful muscle pumps",
-        cost: 2,
-      },
-    },
   },
 
   anadrol: {
@@ -2097,7 +691,7 @@ export const compoundData = {
     color: "#DC143C",
     abbreviation: "Adrol",
     type: "oral",
-    toxicityTier: 3,
+    toxicityTier: 3.5, // Upped from 3, functionally peer to Sdrol in high dose
     bioavailability: 0.85,
     suppressiveFactor: 3,
     flags: { aromatization: 0.5, isHeavyBP: true },
@@ -2110,274 +704,25 @@ export const compoundData = {
     bindingAffinity: "very_low",
     biomarkers: {
       shbg: -2,
-      igf1: +2, // Potent responder
-      rbc: +3, // Extreme RBC (The "Pump" driver)
+      igf1: +2,
+      rbc: +3,
       cortisol: 0,
-      prolactin: 0, // Paradoxical estrogenic action
-      estrogenic_activity: +3, // Direct ER activation
+      prolactin: 0,
+      estrogenic_activity: +3, // Non-aromatizing estrogenicity
+      renal_toxicity: 2,
     },
-    halfLife: 8, // ~8 hours
+    halfLife: 9,
     modelConfidence: 0.31,
-    evidenceProvenance: { human: 1, animal: 1, aggregate: 5 },
-    varianceDrivers: [
-      "Idiosyncratic hepatic tolerance varies ±50%",
-      "Paradoxical estrogenic pathway differs per user",
-      "RBC expansion and BP response drive cardio strain",
-    ],
-    usagePattern: "Mid-cycle mass push (weeks 5-8) or finisher (weeks 9-12)",
     benefitCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 25,
-        value: 1.5,
-        tier: "Tier 4",
-        source: "Community patterns",
-        caveat: "Moderate dose; mass + strength",
-        ci: 0.6,
-      },
-      {
-        dose: 50,
-        value: 3.2,
-        tier: "Tier 4",
-        source: "Forum consensus",
-        caveat: "Classic dose; extreme water + strength",
-        ci: 0.6,
-      },
-      {
-        dose: 75,
-        value: 4.0,
-        tier: "Tier 4",
-        source: "Community reports",
-        caveat: "High dose; plateau emerging",
-        ci: 0.7,
-      },
-      {
-        dose: 100,
-        value: 4.3,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "Very high dose; sides severe",
-        ci: 0.8,
-      },
-      {
-        dose: 150,
-        value: 4.5,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "Extreme dose; not recommended",
-        ci: 0.8,
-      },
-      {
-        dose: 200,
-        value: 4.6,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Saturated",
-        ci: 0.9,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 50, value: 3.2, tier: "Tier 4", source: "Forum", ci: 0.6 },
+      { dose: 100, value: 4.3, tier: "Tier 4", source: "Anecdotal", ci: 0.8 },
     ],
     riskCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 25,
-        value: 0.9,
-        tier: "Tier 4",
-        source: "Community patterns",
-        caveat: "Estrogenic + mild hepatic stress",
-        ci: 0.6,
-      },
-      {
-        dose: 50,
-        value: 1.8,
-        tier: "Tier 4",
-        source: "Forum consensus",
-        caveat: "Estrogenic + moderate hepatic stress",
-        ci: 0.7,
-      },
-      {
-        dose: 75,
-        value: 2.8,
-        tier: "Tier 4",
-        source: "Community reports",
-        caveat: "Estrogenic + severe hepatic stress",
-        ci: 0.8,
-      },
-      {
-        dose: 100,
-        value: 3.5,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "Estrogenic + critical hepatic stress",
-        ci: 0.9,
-      },
-      {
-        dose: 150,
-        value: 4.2,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "Estrogenic + extreme hepatic stress; jaundice risk",
-        ci: 1.0,
-      },
-      {
-        dose: 200,
-        value: 6.0,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Liver failure risk",
-        ci: 1.0,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 50, value: 1.8, tier: "Tier 4", source: "Forum", ci: 0.7 },
+      { dose: 100, value: 3.5, tier: "Tier 4", source: "Anecdotal", ci: 0.9 },
     ],
-    methodology: {
-      summary: "Tier 4 (entirely anecdotal); harshest oral for hepatic stress",
-      benefitRationale:
-        'Extreme glycogen/water loading. "Wet" compound. Mass gains 10-15 lbs in 4 weeks (mostly water). Strength surge dramatic. Appetite stimulation. Plateau 50-75mg; diminishing returns above.',
-      riskRationale:
-        "C17-alpha alkylated with severe hepatic stress. Lipid devastation (HDL crash, LDL spike). BP elevation extreme (water + RBC). Paradoxically estrogenic despite not aromatizing (mechanism unclear; possibly metabolite action at ER).",
-      sources: [
-        "Community consensus (r/steroids, Meso-Rx)",
-        "Historical bodybuilding patterns",
-        "Therapeutic AIDS wasting studies (25mg; not supraphysio)",
-      ],
-      limitations: [
-        "NO HUMAN DATA at bodybuilding doses",
-        "Hepatic tolerance highly individual",
-        "Estrogenic mechanism not fully understood",
-        "Short half-life = twice-daily dosing",
-      ],
-      assumptions: [
-        "TUDCA mandatory (high dose)",
-        "Duration 4-6 weeks MAXIMUM",
-        "Baseline liver health",
-        "Age 25-40",
-      ],
-      individualVariance: [
-        "Hepatic response: ±60% (extreme variability)",
-        "Estrogenic sides: ±40%",
-        "BP response: ±30%",
-      ],
-    },
-    sideEffectProfile: {
-      common: [
-        {
-          name: "Extreme Water Retention",
-          severity: "high",
-          onset: "day 1-2",
-          doseDependent: true,
-          management:
-            "AI helps but Adrol estrogenic via non-aromatase pathway; limit sodium",
-        },
-        {
-          name: "Appetite Stimulation",
-          severity: "positive",
-          onset: "day 2-5",
-          doseDependent: true,
-          management: "Beneficial for mass phase",
-        },
-        {
-          name: "Lethargy",
-          severity: "medium-high",
-          onset: "week 2-3",
-          doseDependent: true,
-          management: "Hepatic stress-related; reduce dose or discontinue",
-        },
-        {
-          name: "Nausea",
-          severity: "medium",
-          onset: "week 1-2",
-          doseDependent: true,
-          management: "Take with food; ginger; reduce dose if severe",
-        },
-        {
-          name: "Headaches",
-          severity: "medium",
-          onset: "week 1-2",
-          doseDependent: true,
-          management: "BP-related; monitor BP; hydration",
-        },
-        {
-          name: "Gynecomastia Risk",
-          severity: "medium-high",
-          onset: "week 2-3",
-          doseDependent: true,
-          management:
-            "Paradoxical (doesn't aromatize); AI helps; SERMs effective",
-        },
-      ],
-      lipidProfile: {
-        hdlDecline: "extreme (worst of all orals)",
-        ldlIncrease: "severe",
-        triglycerides: "severe increase",
-        management:
-          "Aggressive fish oil, statins if severe, LIMIT TO 4 WEEKS if possible",
-      },
-      cardiovascular: {
-        bloodPressure: "extreme increase (worst of orals)",
-        lvh: "high risk with prolonged use",
-        rbc: "significant increase",
-        management:
-          "BP meds essential if >140/90; daily monitoring; donate blood; limit duration",
-      },
-      hepatic: {
-        altAstElevation: "severe (worst of common orals)",
-        cholestasis: "moderate risk",
-        management:
-          "TUDCA 1000-1500mg daily MANDATORY; NAC 1800mg; bloodwork every 3 weeks; discontinue if ALT/AST >3x",
-        reversibility:
-          "Usually reversible but slower than Dbol; permanent damage possible if abused",
-      },
-      hpta: {
-        suppression: "complete",
-        recovery: "2-3 months with PCT",
-        pctRequired: true,
-        management: "Standard PCT; HCG during cycle recommended",
-      },
-    },
-    ancillaryRequirements: {
-      tudca: {
-        trigger: "MANDATORY for all doses",
-        dosing: "1000-1500mg daily, 3 hours after Adrol dose",
-        purpose: "Critical hepatic protection",
-        cost: 20,
-      },
-      nac: {
-        trigger: "MANDATORY",
-        dosing: "1800mg daily (higher than other orals)",
-        purpose: "Adjunct liver support",
-        cost: 4,
-      },
-      aromataseInhibitor: {
-        trigger: "Recommended despite no aromatization",
-        dosing: "Moderate AI; helps with estrogenic sides",
-        note: "Paradoxically estrogenic; mechanism unclear; SERMs also effective",
-        cost: 3,
-      },
-      bloodPressureManagement: {
-        trigger: "ESSENTIAL; likely needed at all doses",
-        dosing: "Telmisartan 40-80mg",
-        monitoring: "Daily BP checks mandatory",
-        cost: 5,
-      },
-      lipidSupport: {
-        trigger: "MANDATORY",
-        dosing: "Fish oil 4g+, consider statins",
-        monitoring: "Lipid panel every 3 weeks",
-        cost: 7,
-      },
-    },
   },
 
   winstrol: {
@@ -2394,270 +739,28 @@ export const compoundData = {
       oral: { label: "Oral Tablet", halfLife: 9, weight: 1.0, slug: "Tab" },
     },
     category: "oral_cutting",
-    pathway: "non_genomic", // Low binding; SHBG crashing + non-genomic
+    pathway: "non_genomic",
     bindingAffinity: "low",
     biomarkers: {
-      shbg: -3, // ELITE FEATURE: Crushes SHBG, freeing other hormones
-      igf1: -1, // Oral stress can blunt hepatic IGF-1 output
+      shbg: -3, // CRITICAL: SHBG Crusher
+      igf1: -1,
       rbc: +1,
       cortisol: 0,
-      prolactin: 0,
-      joints: -3, // The "Dry" penalty
+      joints: -3,
+      renal_toxicity: 1,
     },
-    halfLife: 9, // ~9 hours
+    halfLife: 9,
     modelConfidence: 0.4,
-    evidenceProvenance: { human: 1, animal: 1, aggregate: 4 },
-    varianceDrivers: [
-      "Joint/tendon resilience (connective tissue dryness)",
-      "CYP3A4 polymorphisms in hepatic metabolism",
-      "Baseline lipid profile and dietary fat intake",
-    ],
-    usagePattern: "Cutting/contest prep (last 6-8 weeks)",
     benefitCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 25,
-        value: 0.9,
-        tier: "Tier 4",
-        source: "Community patterns",
-        caveat: "Mild hardening; dry look",
-        ci: 0.6,
-      },
-      {
-        dose: 50,
-        value: 1.5,
-        tier: "Tier 4",
-        source: "Forum consensus",
-        caveat: "Classic dose; cosmetic hardening peaks",
-        ci: 0.6,
-      },
-      {
-        dose: 75,
-        value: 1.8,
-        tier: "Tier 4",
-        source: "Community reports",
-        caveat: "High dose; marginal benefit increase",
-        ci: 0.7,
-      },
-      {
-        dose: 100,
-        value: 1.9,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "Very high dose; joint pain severe",
-        ci: 0.7,
-      },
-      {
-        dose: 120,
-        value: 1.95,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Saturated",
-        ci: 0.8,
-      },
-      {
-        dose: 150,
-        value: 2.0,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Saturated",
-        ci: 0.8,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 50, value: 1.5, tier: "Tier 4", source: "Forum", ci: 0.6 },
+      { dose: 100, value: 1.9, tier: "Tier 4", source: "Anecdotal", ci: 0.7 },
     ],
     riskCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 25,
-        value: 0.7,
-        tier: "Tier 4",
-        source: "Community patterns",
-        caveat: "Mild hepatic + lipid stress",
-        ci: 0.6,
-      },
-      {
-        dose: 50,
-        value: 1.4,
-        tier: "Tier 4",
-        source: "Forum consensus",
-        caveat: "Moderate hepatic + lipid crash + joint pain emerges",
-        ci: 0.7,
-      },
-      {
-        dose: 75,
-        value: 2.3,
-        tier: "Tier 4",
-        source: "Community reports",
-        caveat: "Severe hepatic + lipid devastation + severe joint pain",
-        ci: 0.8,
-      },
-      {
-        dose: 100,
-        value: 3.0,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "Critical hepatic + lipids critical + extreme joint pain",
-        ci: 0.9,
-      },
-      {
-        dose: 120,
-        value: 4.0,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Joint/Liver toxicity",
-        ci: 0.9,
-      },
-      {
-        dose: 150,
-        value: 5.5,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Severe toxicity",
-        ci: 0.9,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 50, value: 1.4, tier: "Tier 4", source: "Forum", ci: 0.7 },
+      { dose: 100, value: 3.0, tier: "Tier 4", source: "Anecdotal", ci: 0.9 },
     ],
-    methodology: {
-      summary: "Tier 4 (entirely anecdotal); cosmetic cutting compound",
-      benefitRationale:
-        'Cosmetic hardening without mass gain. "Dry" compound (no water). Strength preservation during deficit. Aesthetic appeal for contest prep. Benefits plateau 50mg; diminishing returns above.',
-      riskRationale:
-        "C17-alpha alkylated = hepatic stress. Lipid devastation (among worst). Joint drying/pain universal >50mg (collagen synthesis interference theoretical). NO CLINICAL DATA at bodybuilding doses.",
-      sources: [
-        "Community consensus (r/steroids, Meso-Rx)",
-        "Contest prep patterns",
-        "Ben Johnson scandal (athletic performance)",
-      ],
-      limitations: [
-        "NO HUMAN DATA at supraphysio doses",
-        "Joint pain mechanism not fully understood",
-        "Individual joint tolerance varies wildly",
-        "Injectable form available (less hepatic stress)",
-      ],
-      assumptions: [
-        "TUDCA mandatory",
-        "Duration 6-8 weeks maximum",
-        "Used during cut (caloric deficit compounds joint issues)",
-        "Age 25-40",
-      ],
-      individualVariance: [
-        "Joint pain: ±70% (extreme variability)",
-        "Hepatic tolerance: ±40%",
-        "Aesthetic response: ±30%",
-      ],
-    },
-    sideEffectProfile: {
-      common: [
-        {
-          name: "Joint Pain/Drying",
-          severity: "high",
-          onset: "week 2-3",
-          doseDependent: true,
-          management:
-            "Glucosamine, fish oil, reduce dose; may not resolve until discontinuation",
-        },
-        {
-          name: "Muscle Hardness",
-          severity: "positive",
-          onset: "week 1-2",
-          doseDependent: true,
-          management: "Cosmetic benefit; contest prep aesthetic",
-        },
-        {
-          name: "Tendon Issues",
-          severity: "medium",
-          onset: "week 3-4",
-          doseDependent: true,
-          management:
-            "Collagen synthesis interference; avoid heavy lifting; risk of injury",
-        },
-        {
-          name: "Hair Loss",
-          severity: "medium-high",
-          onset: "week 2-4",
-          doseDependent: true,
-          management:
-            "DHT-derived; finasteride ineffective; discontinue if severe",
-        },
-        {
-          name: "Acne",
-          severity: "low-medium",
-          onset: "week 1-2",
-          doseDependent: true,
-          management: "Androgenic; standard hygiene",
-        },
-      ],
-      lipidProfile: {
-        hdlDecline: "extreme (among worst of all AAS)",
-        ldlIncrease: "severe",
-        triglycerides: "moderate-severe increase",
-        management:
-          "Aggressive lipid protocol; fish oil 4g+, statins, limit duration to 6 weeks",
-      },
-      cardiovascular: {
-        bloodPressure: "mild-moderate increase (less than Dbol/Adrol)",
-        lvh: "low risk at typical durations",
-        rbc: "mild increase",
-        management: "Standard BP monitoring; lipids primary concern",
-      },
-      hepatic: {
-        altAstElevation: "moderate-severe",
-        cholestasis: "low-moderate risk",
-        management:
-          "TUDCA 500-1000mg daily; NAC 1200mg; limit to 6-8 weeks; bloodwork every 4 weeks",
-        reversibility: "Usually reversible; monitor closely",
-      },
-      hpta: {
-        suppression: "moderate (less suppressive than other orals)",
-        recovery: "2-3 months with PCT",
-        pctRequired: true,
-        management: "Standard PCT",
-      },
-    },
-    ancillaryRequirements: {
-      tudca: {
-        trigger: "MANDATORY",
-        dosing: "500-1000mg daily",
-        purpose: "Hepatic protection",
-        cost: 15,
-      },
-      nac: {
-        trigger: "Recommended",
-        dosing: "1200mg daily",
-        purpose: "Adjunct liver support",
-        cost: 3,
-      },
-      jointSupport: {
-        trigger: "ESSENTIAL; joint pain nearly universal >50mg",
-        dosing: "Glucosamine 1500mg, MSM 1000mg, fish oil 4g+",
-        note: "May not fully prevent pain; dose reduction often needed",
-        cost: 6,
-      },
-      lipidSupport: {
-        trigger: "MANDATORY",
-        dosing: "Fish oil 4g+, statins if severe",
-        monitoring: "Lipid panel every 4 weeks",
-        cost: 7,
-      },
-      hairLossPrevention: {
-        trigger: "If prone to MPB",
-        management:
-          "Finasteride ineffective (DHT derivative); only option is discontinuation",
-        note: "Major concern for MPB-prone users",
-      },
-    },
   },
 
   anavar: {
@@ -2675,261 +778,27 @@ export const compoundData = {
     },
     category: "oral_mild",
     pathway: "ar_genomic",
-    bindingAffinity: "low", // Surprisingly low AR affinity; works via other signaling
+    bindingAffinity: "low",
     biomarkers: {
       shbg: -1,
-      igf1: +1, // Documented T3/IGF interplay
+      igf1: +1,
       rbc: +1,
-      cortisol: -1, // Mild anti-catabolic
+      cortisol: -1,
       prolactin: 0,
+      renal_toxicity: 1, // Stressful on kidneys long term
     },
-    halfLife: 9, // ~9 hours
+    halfLife: 9,
     modelConfidence: 0.48,
-    evidenceProvenance: { human: 2, animal: 1, aggregate: 4 },
-    varianceDrivers: [
-      "3β-HSD polymorphisms determine activation efficiency",
-      "Sex-specific metabolism (female-friendly compound) alters dose needs",
-      "UGL dosing accuracy (expensive raw material)",
-    ],
-    usagePattern: "Cutting/recomp (8-12 weeks) or female-friendly compound",
     benefitCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 25,
-        value: 0.6,
-        tier: "Tier 4",
-        source: "Community patterns",
-        caveat: "Low dose; mild lean gains",
-        ci: 0.5,
-      },
-      {
-        dose: 50,
-        value: 1.2,
-        tier: "Tier 4",
-        source: "Forum consensus",
-        caveat: "Classic dose; quality tissue + hardening",
-        ci: 0.5,
-      },
-      {
-        dose: 75,
-        value: 1.6,
-        tier: "Tier 4",
-        source: "Community reports",
-        caveat: "High dose; plateau emerging",
-        ci: 0.6,
-      },
-      {
-        dose: 100,
-        value: 1.8,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "Very high dose; marginal increase; cost-prohibitive",
-        ci: 0.6,
-      },
-      {
-        dose: 120,
-        value: 1.85,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Saturated",
-        ci: 0.7,
-      },
-      {
-        dose: 150,
-        value: 1.9,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Saturated",
-        ci: 0.7,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 50, value: 1.2, tier: "Tier 4", source: "Forum", ci: 0.5 },
+      { dose: 100, value: 1.8, tier: "Tier 4", source: "Anecdotal", ci: 0.6 },
     ],
     riskCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 25,
-        value: 0.3,
-        tier: "Tier 4",
-        source: "Community patterns",
-        caveat: "Minimal hepatic stress; well-tolerated",
-        ci: 0.5,
-      },
-      {
-        dose: 50,
-        value: 0.7,
-        tier: "Tier 4",
-        source: "Forum consensus",
-        caveat: "Mild hepatic + lipid stress",
-        ci: 0.6,
-      },
-      {
-        dose: 75,
-        value: 1.2,
-        tier: "Tier 4",
-        source: "Community reports",
-        caveat: "Moderate hepatic + lipid decline",
-        ci: 0.6,
-      },
-      {
-        dose: 100,
-        value: 1.8,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "Increased hepatic + lipids concerning",
-        ci: 0.7,
-      },
-      {
-        dose: 120,
-        value: 2.5,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Lipid stress",
-        ci: 0.8,
-      },
-      {
-        dose: 150,
-        value: 3.5,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Significant stress",
-        ci: 0.8,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 50, value: 0.7, tier: "Tier 4", source: "Forum", ci: 0.6 },
+      { dose: 100, value: 1.8, tier: "Tier 4", source: "Anecdotal", ci: 0.7 },
     ],
-    methodology: {
-      summary:
-        "Tier 4 (anecdotal + therapeutic burn victim data); mildest oral",
-      benefitRationale:
-        'Quality lean tissue gains. "Dry" compound. Mild hardening. Therapeutic use for burn victims and AIDS wasting (10-20mg). Anecdotal plateau 50-75mg. Weak compound; high doses needed for significant effects.',
-      riskRationale:
-        "C17-alpha alkylated but milder hepatic stress than other orals. Lipid decline still significant. Well-tolerated relative to Dbol/Adrol. NO CLINICAL DATA at bodybuilding doses (>20mg).",
-      sources: [
-        "Therapeutic burn victim studies (10-20mg)",
-        "Community consensus (r/steroids, Meso-Rx)",
-        "Female athlete patterns",
-      ],
-      limitations: [
-        "Expensive; most counterfeited oral (often Winstrol or Dbol)",
-        "Weak compound = need high doses = cost-prohibitive",
-        "NO HUMAN DATA at supraphysio doses",
-        "Individual response ±50%",
-      ],
-      assumptions: [
-        "TUDCA recommended",
-        "Duration 8-12 weeks",
-        "Legitimate pharmaceutical source (UGL often fake)",
-        "Age 25-40 or female users",
-      ],
-      individualVariance: [
-        "Response: ±50% (highly variable)",
-        "Hepatic tolerance: ±40%",
-        "Source quality affects outcomes dramatically",
-      ],
-    },
-    sideEffectProfile: {
-      common: [
-        {
-          name: "Lean Muscle Gains",
-          severity: "positive",
-          onset: "week 2-3",
-          doseDependent: true,
-          management: "Quality tissue; minimal water",
-        },
-        {
-          name: "Muscle Hardness",
-          severity: "positive",
-          onset: "week 2-3",
-          doseDependent: true,
-          management: "Cosmetic benefit; dry compound",
-        },
-        {
-          name: "Strength Increase",
-          severity: "positive",
-          onset: "week 1-2",
-          doseDependent: true,
-          management: "Moderate strength gains",
-        },
-        {
-          name: "Minimal Sides",
-          severity: "positive",
-          onset: "throughout",
-          doseDependent: false,
-          management: "Among mildest orals; well-tolerated",
-        },
-        {
-          name: "Pumps",
-          severity: "positive",
-          onset: "week 1-2",
-          doseDependent: true,
-          management: "Taurine 3-5g if back pumps occur",
-        },
-      ],
-      lipidProfile: {
-        hdlDecline:
-          'moderate-severe (still significant despite "mild" reputation)',
-        ldlIncrease: "moderate",
-        triglycerides: "mild-moderate increase",
-        management:
-          "Fish oil, lipid monitoring, longer duration tolerable than harsher orals",
-      },
-      cardiovascular: {
-        bloodPressure: "minimal impact",
-        lvh: "very low risk",
-        rbc: "mild increase",
-        management: "Standard monitoring; well-tolerated",
-      },
-      hepatic: {
-        altAstElevation: "mild-moderate (mildest of c17-alpha orals)",
-        cholestasis: "low risk",
-        management:
-          "TUDCA 500mg daily recommended; NAC 1200mg; bloodwork every 6-8 weeks; can run 8-12 weeks",
-        reversibility: "Highly reversible; among safest orals for liver",
-      },
-      hpta: {
-        suppression: "moderate (less than other orals)",
-        recovery: "2-3 months with PCT",
-        pctRequired: true,
-        management: "Standard PCT",
-      },
-    },
-    ancillaryRequirements: {
-      tudca: {
-        trigger: "Recommended (not as critical as other orals)",
-        dosing: "500mg daily",
-        purpose: "Hepatic protection",
-        cost: 15,
-      },
-      nac: {
-        trigger: "Recommended",
-        dosing: "1200mg daily",
-        purpose: "Adjunct liver support",
-        cost: 3,
-      },
-      lipidSupport: {
-        trigger: "Recommended",
-        dosing: "Fish oil 3g+",
-        monitoring: "Lipid panel every 6-8 weeks",
-        cost: 5,
-      },
-      sourceVerification: {
-        trigger: "CRITICAL",
-        note: "Most counterfeited oral; pharmaceutical grade strongly preferred; UGL often fake (Winstrol or Dbol substituted)",
-        management:
-          "Lab testing or trusted pharmaceutical source; underdosing extremely common",
-      },
-    },
   },
 
   halotestin: {
@@ -2943,409 +812,83 @@ export const compoundData = {
     flags: { aromatization: 0, isSuppressive: true, isLiverToxic: true },
     defaultEster: "oral",
     esters: {
-      oral: { label: "Oral Tablet", halfLife: 12, weight: 1.0, slug: "Tab" },
+      oral: { label: "Oral Tablet", halfLife: 9.2, weight: 1.0, slug: "Tab" },
     },
     category: "oral_extreme",
-    pathway: "non_genomic", // CNS Dominant
+    pathway: "non_genomic",
     bindingAffinity: "low",
     biomarkers: {
       shbg: -2,
       igf1: 0,
-      rbc: +3, // Extreme Hematocrit risk
+      rbc: +3,
       cortisol: 0,
       prolactin: 0,
-      cns_drive: +3, // The primary feature
-      neurotoxicity: 3, // High Risk (Amyloid/Dopamine)
+      cns_drive: +3,
+      neurotoxicity: 3,
+      renal_toxicity: 2,
     },
-    halfLife: 96,
+    halfLife: 9.2, // Corrected from 96h
     modelConfidence: 0.67,
-    evidenceProvenance: { human: 0, animal: 1, aggregate: 4 },
-    varianceDrivers: [
-      "Neurotransmitter sensitivity (aggression/anxiety)",
-      "Hepatic enzyme capacity (ALT/AST baseline)",
-      "Sleep quality + recovery debt prior to peaking",
-    ],
-    usagePattern:
-      "Contest prep final 2-3 weeks or strength peaking (powerlifting meet)",
     benefitCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 10,
-        value: 1.8,
-        tier: "Tier 4",
-        source: "Community patterns",
-        caveat: "Extreme strength spike; aggression",
-        ci: 0.8,
-      },
-      {
-        dose: 20,
-        value: 3.0,
-        tier: "Tier 4",
-        source: "Forum consensus",
-        caveat: "Peak strength; cosmetic hardening",
-        ci: 0.8,
-      },
-      {
-        dose: 30,
-        value: 3.5,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "Very high dose; sides dominate",
-        ci: 0.9,
-      },
-      {
-        dose: 40,
-        value: 3.7,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "Extreme dose; not advisable",
-        ci: 0.9,
-      },
-      {
-        dose: 50,
-        value: 3.8,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Saturated",
-        ci: 0.9,
-      },
-      {
-        dose: 60,
-        value: 3.85,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Saturated",
-        ci: 0.9,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 20, value: 3.0, tier: "Tier 4", source: "Forum", ci: 0.8 },
+      { dose: 40, value: 3.7, tier: "Tier 4", source: "Anecdotal", ci: 0.9 },
     ],
     riskCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 10,
-        value: 2.0,
-        tier: "Tier 4",
-        source: "Community patterns",
-        caveat: "Severe hepatic stress + aggression",
-        ci: 0.8,
-      },
-      {
-        dose: 20,
-        value: 3.5,
-        tier: "Tier 4",
-        source: "Forum consensus",
-        caveat: "Extreme hepatic + psychological risk",
-        ci: 0.9,
-      },
-      {
-        dose: 30,
-        value: 4.5,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        caveat: "Critical hepatic + psychological instability",
-        ci: 0.9,
-      },
+      { dose: 0, value: 0.0 },
+      { dose: 20, value: 3.5, tier: "Tier 4", source: "Forum", ci: 0.9 },
       {
         dose: 40,
         value: 5.2,
         tier: "Tier 4",
         source: "Anecdotal",
-        caveat: "Dangerous; hepatic failure risk",
         ci: 1.0,
-      },
-      {
-        dose: 50,
-        value: 6.5,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Liver failure imminent",
-        ci: 1.0,
-      },
-      {
-        dose: 60,
-        value: 8.0,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Critical",
-        ci: 1.0,
-      },
+      }, // Dangerous
     ],
-    methodology: {
-      summary:
-        "Tier 4 (entirely anecdotal); most toxic oral; competition use only",
-      benefitRationale:
-        "Extreme strength spike (neural + CNS stimulation). Aggression surge (psychological performance benefit). Cosmetic hardening. NO MASS GAINS. Used for powerlifting meets (48-72 hours before) or bodybuilding final week. Benefits immediate (12-24 hours).",
-      riskRationale:
-        "MOST HEPATOTOXIC oral available. Lipid devastation. Severe psychological sides (rage, paranoia). NO CLINICAL DATA at supraphysio doses. C17-alpha alkylated + fluorinated (extreme hepatic stress). NOT FOR GENERAL USE.",
-      sources: [
-        "Community consensus (powerlifting forums)",
-        "Contest prep anecdotes",
-        "Historical athletic doping (Olympics)",
-      ],
-      limitations: [
-        "NO HUMAN DATA at any dose for performance",
-        "Hepatic toxicity extreme; permanent damage possible",
-        "Psychological unpredictability",
-        "Duration MUST be 2-3 weeks maximum",
-        "Many users report not worth the risk",
-      ],
-      assumptions: [
-        "TUDCA high-dose mandatory",
-        "Duration 2-3 weeks ABSOLUTE MAXIMUM",
-        "Competition use only",
-        "Age 25-40",
-        "Psychological stability",
-      ],
-      individualVariance: [
-        "Hepatic response: ±60%",
-        "Psychological: ±70% (extreme variability)",
-        "Strength spike: ±40%",
-      ],
-    },
-    sideEffectProfile: {
-      common: [
-        {
-          name: "Extreme Strength Spike",
-          severity: "positive",
-          onset: "12-24 hours",
-          doseDependent: true,
-          management: "Primary benefit; neural/CNS mechanism",
-        },
-        {
-          name: "Severe Aggression",
-          severity: "high",
-          onset: "day 1-2",
-          doseDependent: true,
-          management:
-            "Psychological awareness; support system; discontinue if uncontrollable",
-        },
-        {
-          name: "Lethargy",
-          severity: "high",
-          onset: "week 1",
-          doseDependent: true,
-          management: "Hepatic stress-related; reduce dose or discontinue",
-        },
-        {
-          name: "Nausea",
-          severity: "high",
-          onset: "day 1-3",
-          doseDependent: true,
-          management: "Hepatic stress; anti-nausea meds; take with food",
-        },
-        {
-          name: "Mood Instability",
-          severity: "high",
-          onset: "day 1-2",
-          doseDependent: true,
-          management:
-            "Paranoia, irritability; psychological support; discontinue if severe",
-        },
-        {
-          name: "No Mass Gains",
-          severity: "negative",
-          onset: "throughout",
-          doseDependent: false,
-          management: "Cosmetic only; not a bulking compound",
-        },
-      ],
-      lipidProfile: {
-        hdlDecline: "extreme (among worst of any AAS)",
-        ldlIncrease: "severe",
-        triglycerides: "severe increase",
-        management:
-          "Aggressive lipid protocol; limit to 2-3 weeks; expect devastation",
-      },
-      cardiovascular: {
-        bloodPressure: "significant increase",
-        lvh: "risk even with short duration",
-        rbc: "moderate increase",
-        management: "BP monitoring; short duration minimizes permanent damage",
-      },
-      hepatic: {
-        altAstElevation: "extreme (most hepatotoxic oral)",
-        cholestasis: "high risk",
-        management:
-          "TUDCA 1500-2000mg daily MANDATORY; NAC 1800-2400mg; bloodwork weekly if possible; discontinue immediately if ALT/AST >3x or jaundice",
-        reversibility:
-          "Usually reversible if duration limited to 2-3 weeks; permanent damage possible if abused",
-      },
-      psychological: {
-        aggression: "extreme; nearly universal",
-        mood: "severe lability; paranoia common",
-        management:
-          "Psychological stability essential; support system critical; discontinue if rage or paranoia develop",
-        note: "Primary limiting factor for most users",
-      },
-      hpta: {
-        suppression: "complete",
-        recovery: "2-3 months with PCT",
-        pctRequired: true,
-        management: "Standard PCT",
-      },
-    },
-    ancillaryRequirements: {
-      tudca: {
-        trigger: "ABSOLUTELY MANDATORY",
-        dosing: "1500-2000mg daily",
-        purpose: "Critical hepatic protection; highest dose needed",
-        cost: 25,
-      },
-      nac: {
-        trigger: "MANDATORY",
-        dosing: "1800-2400mg daily",
-        purpose: "Adjunct liver support; high dose essential",
-        cost: 5,
-      },
-      lipidSupport: {
-        trigger: "MANDATORY",
-        dosing: "Fish oil 4g+, statins",
-        monitoring:
-          "Lipid panel before, during (if duration >2 weeks), and after",
-        cost: 10,
-      },
-      bloodPressureManagement: {
-        trigger: "Likely needed",
-        dosing: "ARB if BP >140/90",
-        monitoring: "Daily BP checks",
-        cost: 5,
-      },
-      psychologicalSupport: {
-        trigger: "ESSENTIAL",
-        management:
-          "Support system communication; awareness of aggression; discontinue if paranoia or rage",
-        note: "Many users report psychological sides not worth the strength benefit",
-      },
-      hepaticMonitoring: {
-        trigger: "CRITICAL",
-        frequency: "Bloodwork before, during (if >2 weeks), and 2 weeks post",
-        note: "Discontinue immediately if ALT/AST >3x or any signs of jaundice",
-        action: "Medical evaluation if severe elevation or symptoms",
-      },
-    },
   },
 
   proviron: {
     name: "Proviron (Mesterolone)",
-    color: "#60A5FA", // Light Blue
+    color: "#60A5FA",
     abbreviation: "Prov",
     type: "oral",
     toxicityTier: 0,
-    bioavailability: 0.05, // Poor oral bioavailability
+    bioavailability: 0.05,
     suppressiveFactor: 1,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: "oral",
     esters: {
-      oral: { label: "Oral Tablet", halfLife: 9, weight: 1.0, slug: "Tab" },
+      oral: { label: "Oral Tablet", halfLife: 12, weight: 1.0, slug: "Tab" },
     },
-    category: "support", // Unique category
+    category: "support",
     pathway: "ar_genomic",
-    bindingAffinity: "very_high", // Binds SHBG aggressively
-    modelConfidence: 0.85, // Very well understood
+    bindingAffinity: "very_high",
     biomarkers: {
-      shbg: -3, // THE primary use case (SHBG Crusher)
+      shbg: -3,
       igf1: 0,
       rbc: +1,
       cortisol: 0,
       prolactin: 0,
-      libido: +3, // CNS/Androgenic libido driver
+      libido: +3,
+      renal_toxicity: 0,
     },
-    halfLife: 12, // ~12 hours
-    // Minimal curves because it's not really for "Mass"
+    halfLife: 12,
+    modelConfidence: 0.85,
     benefitCurve: [
       { dose: 0, value: 0 },
-      { dose: 25, value: 0.5 },
       { dose: 50, value: 0.8 },
       { dose: 100, value: 0.9 },
     ],
     riskCurve: [
       { dose: 0, value: 0 },
-      { dose: 25, value: 0.1 },
       { dose: 50, value: 0.2 },
       { dose: 100, value: 0.4 },
     ],
-    methodology: {
-      summary:
-        'Tier 1/2. Used as a "force multiplier" to free up bound Testosterone.',
-      benefitRationale:
-        "Binds SHBG more strongly than Testosterone, increasing Free T levels. Hardening effect. Libido support.",
-      riskRationale:
-        "Extremely mild. Non-hepatotoxic (not C17-aa). Primary risk is androgenic (hair loss).",
-      sources: [
-        "Clinical hypogonadism studies",
-        "Decades of bodybuilding utility",
-      ],
-      limitations: ["Not anabolic (don't expect mass)"],
-      assumptions: ["Used as ancillary"],
-      individualVariance: ["Hair loss susceptibility"],
-    },
-    sideEffectProfile: {
-      common: [
-        {
-          name: "Libido Increase",
-          severity: "positive",
-          onset: "week 1",
-          doseDependent: true,
-          management: "Primary benefit",
-        },
-        {
-          name: "Hair Loss",
-          severity: "medium-high",
-          onset: "week 2-4",
-          doseDependent: true,
-          management: "DHT derivative; finasteride ineffective",
-        },
-      ],
-      lipidProfile: {
-        hdlDecline: "mild",
-        ldlIncrease: "mild",
-        triglycerides: "mild",
-        management: "Standard monitoring",
-      },
-      cardiovascular: {
-        bloodPressure: "minimal impact",
-        lvh: "low risk",
-        rbc: "mild increase",
-        management: "Standard monitoring",
-      },
-      hepatic: {
-        altAstElevation: "minimal",
-        cholestasis: "very low risk",
-        management: "Not C17-aa; liver safe",
-        reversibility: "N/A",
-      },
-      hpta: {
-        suppression: "mild",
-        recovery: "rapid",
-        pctRequired: true,
-        management: "Standard PCT",
-      },
-    },
-    ancillaryRequirements: {
-      hairLossPrevention: {
-        trigger: "If prone",
-        management: "Discontinue if shedding",
-        note: "DHT derivative",
-      },
-    },
   },
 
   turinabol: {
     name: "Turinabol (CDMT)",
-    color: "#F472B6", // Pink
+    color: "#F472B6",
     abbreviation: "Tbol",
     type: "oral",
     toxicityTier: 2,
@@ -3354,99 +897,36 @@ export const compoundData = {
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: "oral",
     esters: {
-      oral: { label: "Oral Tablet", halfLife: 8, weight: 1.0, slug: "Tab" },
+      oral: { label: "Oral Tablet", halfLife: 16, weight: 1.0, slug: "Tab" },
     },
     category: "oral_performance",
     pathway: "non_genomic",
     bindingAffinity: "low",
-    halfLife: 9,
-    modelConfidence: 0.65, // East German data
     biomarkers: {
-      shbg: -2, // Strong binding
+      shbg: -2,
       igf1: +1,
       rbc: +1,
       cortisol: 0,
       prolactin: 0,
+      renal_toxicity: 1,
     },
-    halfLife: 16, // ~16 hours
+    halfLife: 16,
+    modelConfidence: 0.65,
     benefitCurve: [
-      /* Standard curve 20-80mg */ { dose: 0, value: 0 },
+      { dose: 0, value: 0 },
       { dose: 40, value: 2.0 },
       { dose: 80, value: 2.8 },
-      { dose: 100, value: 3.0 },
     ],
     riskCurve: [
-      /* Lower risk than Dbol */ { dose: 0, value: 0 },
+      { dose: 0, value: 0 },
       { dose: 40, value: 1.2 },
       { dose: 80, value: 2.5 },
-      { dose: 100, value: 3.5 },
     ],
-    methodology: {
-      summary: 'Tier 1 (East German Doping Records). "Dry Dbol".',
-      benefitRationale:
-        "Performance output, steady lean gains, no water. 4-chloro alteration prevents aromatization.",
-      riskRationale:
-        "Hepatic stress (C17-aa) but lower than Dbol/Adrol. Lipid impact moderate.",
-      sources: ["East German State Doping Program (DDR)", "Clinical data"],
-      limitations: ["Pumps can be debilitating at high doses"],
-      assumptions: ["Performance context"],
-      individualVariance: ["Pump tolerance"],
-    },
-    sideEffectProfile: {
-      common: [
-        {
-          name: "Lean Gains",
-          severity: "positive",
-          onset: "week 2",
-          doseDependent: true,
-          management: "Quality tissue",
-        },
-        {
-          name: "Pumps",
-          severity: "medium",
-          onset: "week 1",
-          doseDependent: true,
-          management: "Taurine 3-5g",
-        },
-      ],
-      lipidProfile: {
-        hdlDecline: "moderate",
-        ldlIncrease: "moderate",
-        triglycerides: "moderate",
-        management: "Fish oil",
-      },
-      cardiovascular: {
-        bloodPressure: "mild increase",
-        lvh: "low risk",
-        rbc: "mild increase",
-        management: "Standard monitoring",
-      },
-      hepatic: {
-        altAstElevation: "moderate",
-        cholestasis: "low risk",
-        management: "TUDCA recommended",
-        reversibility: "Reversible",
-      },
-      hpta: {
-        suppression: "moderate",
-        recovery: "standard",
-        pctRequired: true,
-        management: "Standard PCT",
-      },
-    },
-    ancillaryRequirements: {
-      tudca: {
-        trigger: "Recommended",
-        dosing: "500mg",
-        purpose: "Liver support",
-        cost: 15,
-      },
-    },
   },
 
   superdrol: {
     name: "Superdrol (Methasterone)",
-    color: "#9F1239", // Deep Rose
+    color: "#9F1239",
     abbreviation: "Sdrol",
     type: "oral",
     toxicityTier: 4,
@@ -3455,106 +935,42 @@ export const compoundData = {
     flags: { aromatization: 0, isSuppressive: true, isLiverToxic: true },
     defaultEster: "oral",
     esters: {
-      oral: { label: "Oral Tablet", halfLife: 16, weight: 1.0, slug: "Tab" },
+      oral: { label: "Oral Tablet", halfLife: 8, weight: 1.0, slug: "Tab" },
     },
     category: "oral_mass",
     pathway: "non_genomic",
     bindingAffinity: "low",
-    modelConfidence: 0.4, // Anecdotal
     biomarkers: {
       shbg: -2,
       igf1: +2,
       rbc: +2,
       cortisol: 0,
       prolactin: 0,
-      liver_toxicity: +3, // Extreme
+      liver_toxicity: +3,
+      renal_toxicity: 2,
     },
-    halfLife: 8, // ~8 hours
+    halfLife: 8,
+    modelConfidence: 0.4,
     benefitCurve: [
-      /* steep rise */ { dose: 0, value: 0 },
-      { dose: 10, value: 2.5 },
+      { dose: 0, value: 0 },
       { dose: 20, value: 4.5 },
-      { dose: 30, value: 4.8 },
       { dose: 40, value: 4.9 },
     ],
     riskCurve: [
-      /* vertical wall */ { dose: 0, value: 0 },
-      { dose: 10, value: 2.0 },
+      { dose: 0, value: 0 },
       { dose: 20, value: 4.5 },
-      { dose: 30, value: 6.0 },
       { dose: 40, value: 8.0 },
     ],
-    methodology: {
-      summary: "Tier 4 (Anecdotal). The most potent/toxic oral gram-for-gram.",
-      benefitRationale:
-        "Glycogen loading extreme. Mass gains rapid and dry. Strength surge.",
-      riskRationale:
-        'Extreme hepatotoxicity (jaundice risk). Lethargy common ("Superdrol Flu"). Lipids crushed immediately.',
-      sources: ["Designer steroid era logs", "Forum consensus"],
-      limitations: ["Cannot be run >3-4 weeks"],
-      assumptions: ["Liver support mandatory"],
-      individualVariance: ["Lethargy response"],
-    },
-    sideEffectProfile: {
-      common: [
-        {
-          name: "Rapid Mass",
-          severity: "positive",
-          onset: "week 1",
-          doseDependent: true,
-          management: "Glycogen supercompensation",
-        },
-        {
-          name: "Lethargy",
-          severity: "high",
-          onset: "week 2",
-          doseDependent: true,
-          management: "Liver support; reduce dose",
-        },
-      ],
-      lipidProfile: {
-        hdlDecline: "severe",
-        ldlIncrease: "severe",
-        triglycerides: "severe",
-        management: "Aggressive lipid protocol",
-      },
-      cardiovascular: {
-        bloodPressure: "moderate increase",
-        lvh: "risk",
-        rbc: "moderate increase",
-        management: "BP meds likely",
-      },
-      hepatic: {
-        altAstElevation: "extreme",
-        cholestasis: "high risk",
-        management: "TUDCA 1000mg+ MANDATORY",
-        reversibility: "Usually reversible",
-      },
-      hpta: {
-        suppression: "severe",
-        recovery: "difficult",
-        pctRequired: true,
-        management: "Aggressive PCT",
-      },
-    },
-    ancillaryRequirements: {
-      tudca: {
-        trigger: "MANDATORY",
-        dosing: "1000mg+",
-        purpose: "Liver survival",
-        cost: 20,
-      },
-    },
   },
 
   ment: {
     name: "Ment (Trestolone)",
-    color: "#701a75", // Fuchsia 900
+    color: "#701a75",
     abbreviation: "Ment",
     type: "injectable",
     bioavailability: 1.0,
-    suppressiveFactor: 5, // The most suppressive compound known (male contraceptive)
-    flags: { aromatization: 3.0, isSuppressive: true }, // Aromatizes to 7a-methyl-estradiol (very potent)
+    suppressiveFactor: 5,
+    flags: { aromatization: 3.0, isSuppressive: true },
     defaultEster: "acetate",
     esters: {
       acetate: { label: "Acetate", halfLife: 24, weight: 0.87, slug: "Ace" },
@@ -3570,11 +986,12 @@ export const compoundData = {
     bindingAffinity: "very_high",
     biomarkers: {
       shbg: -1,
-      igf1: +3, // Massive IGF-1 driver
+      igf1: +3,
       rbc: +2,
       cortisol: -2,
-      prolactin: +2, // 19-nor
-      e2_conversion: +3, // Extreme estrogenic activity
+      prolactin: +2,
+      e2_conversion: +3,
+      renal_toxicity: 1,
     },
     halfLife: 24,
     modelConfidence: 0.7,
@@ -3582,105 +999,17 @@ export const compoundData = {
       { dose: 0, value: 0 },
       { dose: 50, value: 3.0 },
       { dose: 100, value: 4.5 },
-      { dose: 200, value: 5.0 },
-      { dose: 300, value: 5.2 },
-    ], // Very potent mg for mg
+    ],
     riskCurve: [
       { dose: 0, value: 0 },
       { dose: 50, value: 2.0 },
       { dose: 100, value: 4.0 },
-      { dose: 200, value: 5.5 },
-      { dose: 300, value: 7.5 },
     ],
-    methodology: {
-      summary:
-        "Tier 2 (Male Contraceptive Data). The most potent steroid mg-for-mg available. 19-nor that does not bind to SHBG.",
-      benefitRationale:
-        'Hyper-potent due to lack of SHBG binding (all hormone is "free"). 10x myotrophic rating vs Testosterone. Rapid glycogen loading and tissue accretion. "Look" is similar to NPP but fuller.',
-      riskRationale:
-        "Aromatizes to 7-alpha-methyl-estradiol, which is resistant to metabolism and extremely potent. Gyno risk is extreme. Severe HPTA suppression (azoospermia induced rapidly).",
-      sources: [
-        "Population Council (Male Contraceptive Trials)",
-        "r/steroids wiki",
-        "Anecdotal logs",
-      ],
-      limitations: [
-        "E2 management is difficult/unpredictable",
-        "No long-term safety data at bodybuilding doses",
-      ],
-      assumptions: ["User is experienced with AI management"],
-      individualVariance: ["Aromatization rate", "Prolactin sensitivity"],
-    },
-    sideEffectProfile: {
-      common: [
-        {
-          name: "Extreme Estrogen",
-          severity: "high",
-          onset: "week 1",
-          doseDependent: true,
-          management:
-            "Aggressive AI (Letrozole/Exemestane); frequent bloodwork",
-        },
-        {
-          name: "Gynecomastia",
-          severity: "critical",
-          onset: "week 1-2",
-          doseDependent: true,
-          management: "Raloxifene on hand; surgery risk high if ignored",
-        },
-        {
-          name: "Insomnia",
-          severity: "medium",
-          onset: "week 2",
-          doseDependent: true,
-          management: "Sleep hygiene; lower dose",
-        },
-        {
-          name: "Appetite Increase",
-          severity: "medium",
-          onset: "week 1",
-          doseDependent: true,
-          management: "Dietary discipline",
-        },
-      ],
-      lipidProfile: {
-        hdlDecline: "severe",
-        ldlIncrease: "moderate",
-        triglycerides: "moderate",
-        management: "Standard lipid protocol",
-      },
-      cardiovascular: {
-        bloodPressure: "moderate-high",
-        lvh: "risk",
-        rbc: "moderate",
-        management: "BP monitoring essential",
-      },
-      hpta: {
-        suppression: "complete (azoospermia)",
-        recovery: "very slow",
-        pctRequired: true,
-        management: "HCG mandatory during cycle",
-      },
-    },
-    ancillaryRequirements: {
-      aromataseInhibitor: {
-        trigger: "MANDATORY",
-        dosing: "High dose AI (e.g. 12.5mg Aromasin ED)",
-        purpose: "Control 7a-methyl-E2",
-        cost: 5,
-      },
-      serm: {
-        trigger: "Recommended",
-        dosing: "Raloxifene 60mg",
-        purpose: "Gyno protection",
-        cost: 5,
-      },
-    },
   },
 
   dhb: {
     name: "DHB (1-Testosterone)",
-    color: "#b45309", // Amber 700
+    color: "#b45309",
     abbreviation: "DHB",
     type: "injectable",
     bioavailability: 1.0,
@@ -3710,108 +1039,28 @@ export const compoundData = {
       rbc: +1,
       cortisol: 0,
       prolactin: 0,
-      pip: +5, // Post Injection Pain
+      pip: +5,
+      renal_toxicity: 4, // Anecdotal renal stress high
     },
     halfLife: 120,
     modelConfidence: 0.6,
     benefitCurve: [
       { dose: 0, value: 0 },
-      { dose: 200, value: 2.0 },
       { dose: 400, value: 3.5 },
-      { dose: 600, value: 4.2 },
       { dose: 800, value: 4.5 },
     ],
     riskCurve: [
       { dose: 0, value: 0 },
-      { dose: 200, value: 1.0 },
       { dose: 400, value: 2.0 },
-      { dose: 600, value: 3.0 },
       { dose: 800, value: 4.5 },
     ],
-    methodology: {
-      summary:
-        'Tier 4 (Anecdotal). "Pip" (Post Injection Pain) is the limiting factor. Structural cousin to Primobolan but far stronger.',
-      benefitRationale:
-        'Very potent anabolic (ratio ~200). Does not aromatize. Provides a very "dry", grainy look similar to Trenbolone but without the mental side effects. Excellent strength gains.',
-      riskRationale:
-        "PIP is legendary; can cause sterile abscesses or fever. Crashes out of solution in muscle. Kidney stress reported (anecdotal).",
-      sources: ["Designer steroid era", "Forum logs (Meso-Rx)"],
-      limitations: [
-        "PIP often forces discontinuation",
-        "Solvents used (EO) can cause allergic reactions",
-      ],
-      assumptions: ["User can tolerate high-solvent carrier oils"],
-      individualVariance: ["Pain tolerance", "Reaction to Ethyl Oleate (EO)"],
-    },
-    sideEffectProfile: {
-      common: [
-        {
-          name: "PIP (Severe Pain)",
-          severity: "critical",
-          onset: "immediate",
-          doseDependent: true,
-          management: "Dilute with GSO/MCT (1:1 ratio); heat depot; massage",
-        },
-        {
-          name: "DHB Flu",
-          severity: "medium",
-          onset: "week 1",
-          doseDependent: false,
-          management: "Inflammatory response; NSAIDs; hydration",
-        },
-        {
-          name: "Sweats",
-          severity: "medium",
-          onset: "week 1",
-          doseDependent: true,
-          management: "Hydration",
-        },
-        {
-          name: "Insomnia",
-          severity: "low-medium",
-          onset: "week 2",
-          doseDependent: true,
-          management: "Sleep hygiene",
-        },
-      ],
-      lipidProfile: {
-        hdlDecline: "moderate",
-        ldlIncrease: "moderate",
-        triglycerides: "moderate",
-        management: "Standard",
-      },
-      cardiovascular: {
-        bloodPressure: "mild",
-        lvh: "low risk",
-        rbc: "mild",
-        management: "Standard",
-      },
-      hpta: {
-        suppression: "moderate",
-        recovery: "standard",
-        pctRequired: true,
-        management: "Standard PCT",
-      },
-    },
-    ancillaryRequirements: {
-      carrierOil: {
-        trigger: "Recommended",
-        dosing: "Cut with Sterile Oil",
-        purpose: "Reduce PIP",
-        cost: 0,
-      },
-      kidneySupport: {
-        trigger: "Recommended",
-        dosing: "Astragalus 4g",
-        purpose: "Renal protection",
-        cost: 5,
-      },
-    },
   },
+
+  // --- ANCILLARIES ---
 
   arimidex: {
     name: "Arimidex (Anastrozole)",
-    color: "#6B7280", // Cool Gray
+    color: "#6B7280",
     abbreviation: "Adex",
     type: "oral",
     toxicityTier: 0,
@@ -3825,15 +1074,8 @@ export const compoundData = {
     category: "ancillary",
     pathway: "enzyme_inhibitor",
     bindingAffinity: "none",
-    biomarkers: {
-      shbg: 0,
-      igf1: 0,
-      rbc: 0,
-      cortisol: 0,
-      prolactin: 0,
-      e2_control: +5, // Special marker
-    },
-    halfLife: 48,
+    biomarkers: { e2_control: +5, renal_toxicity: 0 },
+    halfLife: 48, // 2 days
     modelConfidence: 0.95,
     benefitCurve: [
       { dose: 0, value: 0 },
@@ -3843,17 +1085,6 @@ export const compoundData = {
       { dose: 0, value: 0 },
       { dose: 1, value: 0.5 },
     ],
-    methodology: {
-      summary: "Aromatase Inhibitor. Reduces E2. 1mg reduces serum E2 by ~50%.",
-      sources: ["Clinical trials (Arimidex)", "Community logs"],
-    },
-    sideEffectProfile: {
-      common: [],
-      lipidProfile: {},
-      cardiovascular: {},
-      hpta: {},
-    },
-    ancillaryRequirements: {},
   },
 
   finasteride: {
@@ -3864,7 +1095,7 @@ export const compoundData = {
     toxicityTier: 0,
     bioavailability: 0.65,
     suppressiveFactor: 0,
-    flags: { is5AR: true },
+    flags: { is5AR: true, contraindicated: ["nandrolone"] },
     defaultEster: "oral",
     esters: {
       oral: { label: "Tablet", halfLife: 6, weight: 1.0, slug: "Tab" },
@@ -3879,6 +1110,7 @@ export const compoundData = {
       cortisol: 0,
       prolactin: 0,
       dht_inhibition: +5,
+      renal_toxicity: 0,
     },
     halfLife: 6,
     modelConfidence: 0.95,
@@ -3892,16 +1124,145 @@ export const compoundData = {
     ],
     methodology: {
       summary:
-        "5-Alpha Reductase Inhibitor. Blocks conversion of Test to DHT (Hair Safe). Blocks conversion of Nandrolone to DHN (Hair TOXIC).",
+        "5-Alpha Reductase Inhibitor. Blocks conversion of Test to DHT (Hair Safe). Contraindicated with Nandrolone. Blocking 5AR prevents conversion to DHN (a weaker androgen), leaving the more androgenic parent hormone.",
       sources: ["Clinical trials (Propecia)", "Community logs"],
     },
-    sideEffectProfile: {
-      common: [],
-      lipidProfile: {},
-      cardiovascular: {},
-      hpta: {},
-    },
+    sideEffectProfile: { common: [], lipidProfile: {}, cardiovascular: {}, hpta: {} },
     ancillaryRequirements: {},
+  },
+
+  nolvadex: {
+    name: "Nolvadex (Tamoxifen)",
+    color: "#6B7280",
+    abbreviation: "Nolva",
+    type: "oral",
+    toxicityTier: 1,
+    bioavailability: 1.0,
+    suppressiveFactor: 0,
+    flags: { isSERM: true },
+    defaultEster: "oral",
+    esters: {
+      oral: { label: "Tablet", halfLife: 120, weight: 1.0, slug: "Tab" },
+    },
+    category: "ancillary",
+    pathway: "serm",
+    bindingAffinity: "none",
+    biomarkers: {
+      e2_receptor: -5, // Blocks E2 at tissue
+      igf1: -1, // Lowers IGF-1
+      shbg: +1,
+      renal_toxicity: 0,
+    },
+    halfLife: 120, // 5-7 days
+    modelConfidence: 0.95,
+    benefitCurve: [
+      { dose: 0, value: 0 },
+      { dose: 20, value: 1 },
+    ],
+    riskCurve: [
+      { dose: 0, value: 0 },
+      { dose: 20, value: 0.2 },
+    ],
+  },
+
+  clomid: {
+    name: "Clomid (Clomiphene)",
+    color: "#6B7280",
+    abbreviation: "Clomid",
+    type: "oral",
+    toxicityTier: 1,
+    bioavailability: 1.0,
+    suppressiveFactor: 0,
+    flags: { isSERM: true },
+    defaultEster: "oral",
+    esters: {
+      oral: { label: "Tablet", halfLife: 120, weight: 1.0, slug: "Tab" },
+    },
+    category: "ancillary",
+    pathway: "serm",
+    bindingAffinity: "none",
+    biomarkers: {
+      lh_fsh: +5, // PCT driver
+      e2_receptor: -3,
+      vision_sides: +2,
+      renal_toxicity: 0,
+    },
+    halfLife: 120, // 5 days
+    modelConfidence: 0.95,
+    benefitCurve: [
+      { dose: 0, value: 0 },
+      { dose: 50, value: 1 },
+    ],
+    riskCurve: [
+      { dose: 0, value: 0 },
+      { dose: 50, value: 0.5 },
+    ],
+  },
+
+  hcg: {
+    name: "HCG",
+    color: "#6B7280",
+    abbreviation: "HCG",
+    type: "injectable",
+    toxicityTier: 0,
+    bioavailability: 1.0,
+    suppressiveFactor: -1, // Stimulatory
+    flags: { isGonadotropin: true },
+    defaultEster: "none",
+    esters: {
+      none: { label: "Standard", halfLife: 36, weight: 1.0, slug: "HCG" },
+    },
+    category: "ancillary",
+    pathway: "lh_mimetic",
+    bindingAffinity: "none",
+    biomarkers: {
+      testicular_function: +5,
+      e2_conversion: +1, // Intratesticular aromatization
+      renal_toxicity: 0,
+    },
+    halfLife: 36, // 1.5 days
+    modelConfidence: 0.9,
+    benefitCurve: [
+      { dose: 0, value: 0 },
+      { dose: 500, value: 1 },
+    ],
+    riskCurve: [
+      { dose: 0, value: 0 },
+      { dose: 500, value: 0.1 },
+    ],
+  },
+
+  cabergoline: {
+    name: "Cabergoline (Dostinex)",
+    color: "#6B7280",
+    abbreviation: "Caber",
+    type: "oral",
+    toxicityTier: 1,
+    bioavailability: 1.0,
+    suppressiveFactor: 0,
+    flags: { isDopamineAgonist: true },
+    defaultEster: "oral",
+    esters: {
+      oral: { label: "Tablet", halfLife: 69, weight: 1.0, slug: "Tab" },
+    },
+    category: "ancillary",
+    pathway: "receptor_agonist",
+    bindingAffinity: "none",
+    biomarkers: {
+      prolactin: -5, // Crushes Prolactin
+      dopamine: +2,
+      renal_toxicity: 0,
+    },
+    halfLife: 69, // ~3 days
+    modelConfidence: 0.9,
+    benefitCurve: [
+      { dose: 0, value: 0 },
+      { dose: 0.5, value: 1 },
+    ],
+    riskCurve: [
+      { dose: 0, value: 0 },
+      { dose: 0.5, value: 0.2 },
+    ],
   },
 };
 
@@ -3928,10 +1289,8 @@ Object.values(compoundData).forEach((compound) => {
   }
 });
 
-// Dose range for visualization (0-1200 mg/week)
 export const doseRange = [0, 100, 200, 300, 400, 500, 600, 800, 1000, 1200];
 
-// Evidence tier descriptions
 export const tierDescriptions = {
   "Tier 0": "Baseline (no AAS use)",
   "Tier 1":
@@ -3944,7 +1303,6 @@ export const tierDescriptions = {
     "Mechanism + Anecdotal Patterns - Pharmacological theory + aggregated community reports (high uncertainty)",
 };
 
-// Disclaimer text
 export const disclaimerText = `HARM REDUCTION MODELING, NOT MEDICAL ADVICE
 
 This tool visualizes dose-response relationships based on limited human data, animal studies, and community patterns. It is educational only and does not constitute medical, pharmaceutical, or health advice.

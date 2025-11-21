@@ -1,17 +1,42 @@
-import { compoundData } from "../data/compoundData";
+import { compoundData } from "../data/compoundData.js";
+
+const DEFAULT_DURATION_DAYS = 42;
+
+const getHalfLifeHours = (meta, esterKey) => {
+  if (!meta) return 24;
+  if (esterKey && meta.esters && meta.esters[esterKey]?.halfLife) {
+    return meta.esters[esterKey].halfLife;
+  }
+  return meta.halfLife || 24;
+};
+
+export const getSteadyStateDurationDays = (stack = []) => {
+  if (!Array.isArray(stack) || stack.length === 0) return DEFAULT_DURATION_DAYS;
+  const longestHalfLifeDays = stack.reduce((max, item) => {
+    const meta = compoundData[item.compound];
+    if (!meta) return max;
+    const halfLifeHours = getHalfLifeHours(meta, item.ester);
+    return Math.max(max, halfLifeHours / 24);
+  }, 0);
+
+  if (longestHalfLifeDays <= 0) return DEFAULT_DURATION_DAYS;
+
+  // Roughly 5-6 half-lives to reach >97% steady state.
+  const steadyStateDays = longestHalfLifeDays * 6;
+  return Math.min(Math.max(steadyStateDays, 28), 140);
+};
 
 /**
  * Simulates serum levels for a stack of compounds over time.
  * @param {Array} stack - Array of compound objects { compound, dose, frequency, ester }
- * @param {number} durationWeeks - Duration of the simulation in weeks
  * @returns {Array} - Array of data points { hour, day, [compound]: level, total }
  */
 export const simulateSerum = (
   stack,
-  durationWeeks = 28,
   options = {},
 ) => {
-  const hoursTotal = durationWeeks * 7 * 24;
+  const durationDays = options.durationDays || getSteadyStateDurationDays(stack);
+  const hoursTotal = durationDays * 24;
   const dataPoints = [];
   const metabolismMultiplier = options.metabolismMultiplier ?? 1;
 
@@ -26,16 +51,14 @@ export const simulateSerum = (
 
   for (let hour = 0; hour <= hoursTotal; hour += 4) {
     let totalSystemicLoad = 0;
-    let point = { hour, day: (hour / 24).toFixed(1) };
+    let point = { hour, day: Number((hour / 24).toFixed(2)) };
 
     stack.forEach((item) => {
       const meta = compoundData[item.compound];
       if (!meta) return;
 
-      // Use ester-specific half-life if available, otherwise default
       const esterKey = item.ester;
-      const esterData = meta.esters && meta.esters[esterKey];
-      const hl = esterData ? esterData.halfLife : (meta.halfLife || 24);
+      const hl = getHalfLifeHours(meta, esterKey);
 
       const freqDays = item.frequency || 3.5;
       const freqHours = freqDays * 24;
@@ -59,9 +82,16 @@ export const simulateSerum = (
       }
 
       // 2. ABSORPTION: Transfer from Depot to Active
-      // Fast esters (Prop) absorb fast (0.15), Slow esters (Deca) absorb slow (0.05)
-      // Orals (HL < 12) absorb almost instantly (0.8)
-      const absorptionRate = hl < 12 ? 0.8 : hl < 48 ? 0.15 : 0.05;
+      // Continuous Absorption Model (Doctor-Grade)
+      // We model the absorption rate (ka) as inversely proportional to the ester's half-life.
+      // Shorter esters (Prop) release faster. Longer esters (Deca) release slower.
+      // Formula: ka ~= 3.0 / halfLifeHours.
+      // Calibration:
+      // - Prop (24h): 3/24 = 0.125 (Close to old 0.15)
+      // - Enanthate (108h): 3/108 = 0.027 (Slower than old 0.05, more realistic smoothing)
+      // - Undecanoate (800h): 3/800 = 0.00375 (Very slow trickle)
+      // - Orals (<12h): 0.8 (Instant)
+      const absorptionRate = hl < 12 ? 0.8 : 3.0 / hl;
 
       const absorbed = depotLevels[item.compound] * absorptionRate;
       depotLevels[item.compound] -= absorbed;

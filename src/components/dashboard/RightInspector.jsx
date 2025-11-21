@@ -1,11 +1,11 @@
 import React, { useMemo } from "react";
 
 const DEFAULT_LABS = {
-  hdl: 45,
-  ldl: 115,
-  ast: 32,
-  alt: 35,
-  estradiol: 28,
+  hdl: 60, // Healthy baseline: strong HDL
+  ldl: 90, // Near-optimal LDL
+  ast: 22, // Typical reference AST
+  alt: 24, // Typical reference ALT
+  estradiol: 24, // Neutral E2 midpoint
 };
 
 const LAB_BLUEPRINT = [
@@ -16,17 +16,6 @@ const LAB_BLUEPRINT = [
   { id: "estradiol", label: "Estradiol", unit: "pg/mL", min: 20, max: 40 },
 ];
 
-const SATURATION_LIMITS = {
-  androgen: 500,
-  nonGenomic: 200,
-  hepatic: 150,
-};
-
-const clampPercent = (value, limit) => {
-  if (!limit || limit <= 0) return 0;
-  return Math.min(100, Math.round((value / limit) * 100));
-};
-
 export const RightInspector = ({ metrics, steadyStateMetrics, scrubbedPoint = null }) => {
   const totals = steadyStateMetrics?.totals || metrics?.totals || {
     netScore: 0,
@@ -34,33 +23,6 @@ export const RightInspector = ({ metrics, steadyStateMetrics, scrubbedPoint = nu
   };
 
   const { netScore = 0, totalRisk = 0 } = totals;
-
-  const saturationRows = useMemo(() => {
-    const pathwayLoads = metrics?.analytics?.pathwayLoads || {};
-    return [
-      {
-        id: "ar",
-        label: "Androgen (AR)",
-        percent: clampPercent(pathwayLoads.ar_genomic || 0, SATURATION_LIMITS.androgen),
-        color: "bg-indigo-500",
-      },
-      {
-        id: "nonGenomic",
-        label: "Non-Genomic",
-        percent: clampPercent(
-          (pathwayLoads.non_genomic || 0) + (pathwayLoads.neuro || 0),
-          SATURATION_LIMITS.nonGenomic,
-        ),
-        color: "bg-purple-500",
-      },
-      {
-        id: "hepatic",
-        label: "Hepatic Load",
-        percent: clampPercent(pathwayLoads.liver || 0, SATURATION_LIMITS.hepatic),
-        color: "bg-orange-500",
-      },
-    ];
-  }, [metrics]);
 
   const vitalsData = useMemo(() => {
     const labs = {
@@ -87,19 +49,10 @@ export const RightInspector = ({ metrics, steadyStateMetrics, scrubbedPoint = nu
 
   return (
     <div className="flex flex-col h-full bg-[#0F1115] border-l border-white/5 overflow-y-auto scrollbar-hide">
-      <div className="p-4 border-b border-white/5">
-        <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4">
-          Receptor Saturation
-        </h3>
-        {saturationRows.map((row) => (
-          <SaturationRow key={row.id} label={row.label} percent={row.percent} color={row.color} />
-        ))}
-      </div>
-
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-4">
+      <div className="p-5">
+        <div className="mb-4 flex items-center justify-between">
           <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
-            Projected Labs (Week 12)
+            Projected Labs (Steady State)
           </h3>
           {scrubLabel && (
             <span className="text-[10px] font-bold text-indigo-300 px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/30">
@@ -107,7 +60,7 @@ export const RightInspector = ({ metrics, steadyStateMetrics, scrubbedPoint = nu
             </span>
           )}
         </div>
-        <div className="space-y-5">
+        <div className="space-y-3 pr-1">
           {vitalsData.map((vital) => (
             <BulletChart key={vital.id} data={vital} />
           ))}
@@ -116,18 +69,6 @@ export const RightInspector = ({ metrics, steadyStateMetrics, scrubbedPoint = nu
     </div>
   );
 };
-
-const SaturationRow = ({ label, percent, color }) => (
-  <div className="mb-3 last:mb-0">
-    <div className="flex justify-between text-xs mb-1.5">
-      <span className="text-gray-400">{label}</span>
-      <span className="font-mono text-gray-300">{percent}%</span>
-    </div>
-    <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-      <div className={`h-full rounded-full ${color}`} style={{ width: `${percent}%` }} />
-    </div>
-  </div>
-);
 
 const BulletChart = ({ data }) => {
   const { value, max, min, inverse } = data;
@@ -141,15 +82,24 @@ const BulletChart = ({ data }) => {
   const gradientClass = getThermalGradient(fillPercent);
   const isHot = fillPercent >= 80;
 
-  return (
-    <div className="grid grid-cols-[80px_1fr_50px] gap-3 items-center group">
-      <span className="text-xs font-medium text-gray-400 group-hover:text-gray-200 transition-colors truncate">
-        {data.label}
-      </span>
+  const rangeLabel = Number.isFinite(min) && Number.isFinite(max)
+    ? `${min}-${max} ${data.unit}`
+    : data.unit;
 
-      <div className="relative h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+  return (
+    <div className="grid h-8 grid-cols-[minmax(0,1fr)_72px_48px] items-center gap-3 min-w-0">
+      <div className="min-w-0 leading-tight">
+        <p className="text-[11px] font-medium text-gray-300 truncate whitespace-nowrap" title={data.label}>
+          {data.label}
+        </p>
+        <p className="text-[9px] text-gray-500 truncate whitespace-nowrap" title={rangeLabel || data.label}>
+          {rangeLabel}
+        </p>
+      </div>
+
+      <div className="relative h-1 w-full rounded-full bg-white/10 overflow-hidden">
         <div
-          className="absolute top-[-2px] bottom-[-2px] w-0.5 bg-gray-600 z-10"
+          className="absolute top-[-2px] bottom-[-2px] w-px bg-gray-600/70 z-10"
           style={{ left: `${markerPosition}%` }}
         />
         <div
@@ -158,14 +108,14 @@ const BulletChart = ({ data }) => {
         />
         {(isDanger || isHot) && (
           <div
-            className="absolute top-0 right-0 h-full w-6 bg-rose-400/50 blur-lg opacity-70 pointer-events-none"
+            className="pointer-events-none absolute top-[-2px] right-0 h-[8px] w-3 bg-rose-400/50 blur-lg opacity-70"
             aria-hidden
           />
         )}
       </div>
 
       <span
-        className={`text-right font-mono text-xs ${
+        className={`text-left font-mono text-xs tabular-nums pl-1 ${
           isDanger || isHot ? "text-rose-400" : "text-gray-300"
         }`}
       >

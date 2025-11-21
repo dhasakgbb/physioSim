@@ -10,10 +10,10 @@ import {
   YAxis,
 } from "recharts";
 import { useStack } from "../../context/StackContext";
-import { useSimulation } from "../../context/SimulationContext";
 import { getGeneticProfileConfig } from "../../utils/personalization";
-import { simulateSerum } from "../../utils/pharmacokinetics";
+import { simulateSerum, getSteadyStateDurationDays } from "../../utils/pharmacokinetics";
 import { evaluateStack } from "../../utils/stackEngine";
+import { compoundData } from "../../data/compoundData";
 
 const useDebouncedCallback = (callback, delay = 75) => {
   const timeoutRef = React.useRef(null);
@@ -40,7 +40,6 @@ const sanitizeNumber = (value, fallback = 0) => (Number.isFinite(value) ? value 
 
 const CycleEvolutionChart = ({ onTimeScrub }) => {
   const { stack, userProfile } = useStack();
-  const { cycleDuration = 12 } = useSimulation();
   const { metabolismMultiplier } = getGeneticProfileConfig(userProfile);
   const [playheadPosition, setPlayheadPosition] = React.useState(null);
   const [isDragging, setIsDragging] = React.useState(false);
@@ -58,16 +57,48 @@ const CycleEvolutionChart = ({ onTimeScrub }) => {
       .join("|");
   }, [stack]);
 
+  const steadyStateDays = React.useMemo(
+    () => getSteadyStateDurationDays(stack),
+    [stack],
+  );
+
+  const toxicityVelocity = React.useMemo(() => {
+    let velocity = 0.01; // Base biological drift (1% per week)
+
+    stack.forEach((item) => {
+      const comp = compoundData[item.compoundId];
+      if (!comp) return;
+
+      // 1. Baseline Compound Stress (Tier based)
+      // Default Injectables to Tier 1, Orals to Tier 2 if undefined
+      const defaultTier = comp.type === "oral" ? 2 : 1;
+      const tier = comp.toxicityTier ?? defaultTier;
+      velocity += tier * 0.01;
+
+      // 2. Specific Organ Stressors
+      if (comp.flags?.isRenalToxic) velocity += 0.03; // Tren/DHB penalty
+      if (comp.flags?.isLiverToxic || tier >= 3) velocity += 0.03; // Hepatotoxicity penalty
+
+      // 3. Neurotoxicity (CNS stress accumulation)
+      const neuro = comp.biomarkers?.neurotoxicity || 0;
+      velocity += neuro * 0.01;
+    });
+
+    return velocity;
+  }, [stack]);
+
+  const CHART_DURATION_DAYS = 168; // 24 weeks
+
   const releaseKey = React.useMemo(
-    () => `${stackSignature}|${cycleDuration}|${metabolismMultiplier}`,
-    [stackSignature, cycleDuration, metabolismMultiplier],
+    () => `${stackSignature}|${CHART_DURATION_DAYS}|${metabolismMultiplier}`,
+    [stackSignature, CHART_DURATION_DAYS, metabolismMultiplier],
   );
 
   const releaseData = React.useMemo(() => {
     if (!stack.length) return [];
     const cache = releaseCacheRef.current;
     if (cache.has(releaseKey)) return cache.get(releaseKey);
-    const simulated = simulateSerum(stack, cycleDuration, { metabolismMultiplier }) || [];
+    const simulated = simulateSerum(stack, { metabolismMultiplier, durationDays: CHART_DURATION_DAYS }) || [];
     const sorted = simulated
       .map((point) => ({
         ...point,
@@ -77,55 +108,49 @@ const CycleEvolutionChart = ({ onTimeScrub }) => {
       .sort((a, b) => a.day - b.day);
     cache.set(releaseKey, sorted);
     return sorted;
-  }, [stack, cycleDuration, metabolismMultiplier, releaseKey]);
+  }, [stack, metabolismMultiplier, releaseKey, CHART_DURATION_DAYS]);
 
   const evolutionData = React.useMemo(() => {
     if (!stack.length || !releaseData.length) return [];
     const baseResult = evaluateStack({
       stackInput: stack,
       profile: userProfile,
-      durationWeeks: cycleDuration,
     });
 
     const steadyStateBenefit = sanitizeNumber(baseResult.totals.totalBenefit, 0);
     const finalRisk = sanitizeNumber(baseResult.totals.totalRisk, 0);
-
-    const totalWeeklyDose = stack.reduce((sum, item) => {
-      const isOral =
-        item.compound === "dianabol" ||
-        item.compound === "anadrol" ||
-        item.compound === "winstrol" ||
-        item.compound === "anavar" ||
-        item.compound === "turinabol" ||
-        item.compound === "proviron" ||
-        item.compound === "halotestin" ||
-        item.compound === "superdrol";
-      return sum + (isOral ? item.dose * 7 : item.dose);
-    }, 0);
-
-    const finalTimePenalty = cycleDuration > 8 ? Math.pow(cycleDuration / 8, 1.5) : 1;
-    const baseRisk = finalTimePenalty > 0 ? finalRisk / finalTimePenalty : finalRisk;
+    const maxSystemicLoad = releaseData.reduce(
+      (max, point) => Math.max(max, point.total),
+      0,
+    );
 
     const downsampleStep = 6; // every 24h if simulateSerum resolves 4h steps
     const dailyPoints = [];
 
     for (let i = 0; i < releaseData.length; i += downsampleStep) {
       const point = releaseData[i];
-      const loadRatio = totalWeeklyDose > 0 ? point.total / totalWeeklyDose : 0;
+      const loadRatio = maxSystemicLoad > 0 ? point.total / maxSystemicLoad : 0;
       const week = point.day / 7;
-      const timePenalty = week > 8 ? Math.pow(week / 8, 1.5) : 1;
+
+      // Model Cumulative Organ Stress: Risk increases over time based on compound selection
+      // Dynamic velocity calculated from stack profile
+      const toxicityDrift = 1 + (week * toxicityVelocity);
+
+      // Model Receptor Downregulation / Myostatin: Benefit decays slightly over time
+      // -1.5% benefit per week (diminishing returns)
+      const fatigueFactor = Math.max(0.5, 1 - (week * 0.015));
 
       dailyPoints.push({
         day: point.day,
         week,
-        benefit: steadyStateBenefit * loadRatio,
-        risk: baseRisk * loadRatio * timePenalty,
+        benefit: steadyStateBenefit * loadRatio * fatigueFactor,
+        risk: finalRisk * loadRatio * toxicityDrift,
         loadRatio,
       });
     }
 
     return dailyPoints;
-  }, [stack, releaseData, userProfile, cycleDuration]);
+  }, [stack, releaseData, userProfile]);
 
   const updatePlayheadPosition = (event) => {
     if (!chartRef.current) return;
@@ -139,8 +164,8 @@ const CycleEvolutionChart = ({ onTimeScrub }) => {
     const x = clientX - rect.left;
     const chartWidth = Math.max(rect.width - 40, 1);
     const relativeX = Math.max(0, Math.min(1, x / chartWidth));
-    const maxDay = cycleDuration * 7;
-    const dayPosition = relativeX * maxDay;
+    const domainDay = releaseData.length ? releaseData[releaseData.length - 1].day : steadyStateDays;
+    const dayPosition = relativeX * domainDay;
     setPlayheadPosition(dayPosition);
 
     if (onTimeScrub && evolutionData.length) {
@@ -181,6 +206,8 @@ const CycleEvolutionChart = ({ onTimeScrub }) => {
   const maxBenefit = evolutionData.reduce((max, point) => Math.max(max, point.benefit), 0);
   const maxRisk = evolutionData.reduce((max, point) => Math.max(max, point.risk), 0);
   const yMax = Math.max(10, Math.max(maxBenefit, maxRisk) * 1.2);
+  const domainMaxDay = releaseData.length ? releaseData[releaseData.length - 1].day : steadyStateDays;
+  const adaptationMarker = Math.min(domainMaxDay, steadyStateDays);
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden rounded-3xl border border-white/5 bg-[#050507] p-4">
@@ -217,7 +244,7 @@ const CycleEvolutionChart = ({ onTimeScrub }) => {
             <XAxis
               dataKey="day"
               type="number"
-              domain={[0, cycleDuration * 7]}
+              domain={[0, domainMaxDay || 1]}
               tickFormatter={formatWeekTick}
               stroke="#4b5563"
               tickLine={false}
@@ -255,17 +282,19 @@ const CycleEvolutionChart = ({ onTimeScrub }) => {
               isAnimationActive={false}
             />
 
-            <ReferenceLine
-              x={8 * 7}
-              stroke="#F97316"
-              strokeDasharray="3 3"
-              label={{
-                value: "Adaptation Wall",
-                position: "insideTopRight",
-                fill: "#F97316",
-                fontSize: 10,
-              }}
-            />
+            {adaptationMarker > 0 && (
+              <ReferenceLine
+                x={adaptationMarker}
+                stroke="#F97316"
+                strokeDasharray="3 3"
+                label={{
+                  value: "Steady State",
+                  position: "insideTopRight",
+                  fill: "#F97316",
+                  fontSize: 10,
+                }}
+              />
+            )}
 
             {playheadPosition !== null && (
               <ReferenceLine

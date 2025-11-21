@@ -11,6 +11,8 @@ const Slider = ({
   className = "",
   markers = [],
   warningThreshold = null,
+  accentColor = "#6366f1",
+  showValue = true,
 }) => {
   const [localValue, setLocalValue] = useState(value);
   const [isHovered, setIsHovered] = useState(false);
@@ -28,24 +30,30 @@ const Slider = ({
 
   const percentage = ((localValue - min) / (max - min)) * 100;
   const isHigh = warningThreshold !== null && localValue >= warningThreshold;
+  const safeColor = accentColor || "#6366f1";
+  const trackColor = isHigh ? "#f43f5e" : safeColor;
 
   return (
     <div className={`w-full ${className}`}>
-      <div className="flex justify-between items-end mb-2">
-        {label && (
-          <label className="text-xs font-semibold text-physio-text-secondary uppercase tracking-wider">
-            {label}
-          </label>
-        )}
-        <div
-          className={`font-mono text-sm font-bold transition-colors ${isHigh ? "text-rose" : "text-primary"}`}
-        >
-          {localValue}{" "}
-          <span className="text-physio-text-tertiary text-xs font-sans font-normal">
-            {unit}
-          </span>
+      {(label || showValue) && (
+        <div className="flex justify-between items-end mb-2">
+          {label && (
+            <label className="text-xs font-semibold text-physio-text-secondary uppercase tracking-wider">
+              {label}
+            </label>
+          )}
+          {showValue && (
+            <div
+              className={`font-mono text-sm font-bold transition-colors ${isHigh ? "text-rose" : "text-primary"}`}
+            >
+              {localValue}{" "}
+              <span className="text-physio-text-tertiary text-xs font-sans font-normal">
+                {unit}
+              </span>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       <div
         className="relative h-8 flex items-center group"
@@ -56,10 +64,14 @@ const Slider = ({
         <div className="absolute w-full h-2 rounded-full overflow-hidden transition-colors bg-white/10 group-hover:bg-white/15">
           {/* Fill */}
           <div
-            className={`h-full transition-all duration-100 ${
-              isHigh ? 'bg-rose' : 'bg-indigo'
-            }`}
-            style={{ width: `${percentage}%` }}
+            className="h-full transition-all duration-100"
+            style={{
+              width: `${percentage}%`,
+              backgroundColor: trackColor,
+              boxShadow: isHigh
+                ? "0 0 10px rgba(244,63,94,0.45)"
+                : `0 0 10px ${trackColor}55`,
+            }}
           />
         </div>
 
@@ -100,11 +112,16 @@ const Slider = ({
         {/* Custom Thumb (Primary Indigo with glow) */}
         <div
           className={`absolute rounded-full transform -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-all duration-200 border border-white/20 ${
-            isHovered ? 'w-6 h-6 scale-110 shadow-glow-indigo' : 'w-5 h-5'
-          } ${
-            isHigh ? 'bg-rose' : 'bg-indigo'
+            isHovered ? 'w-6 h-6 scale-110' : 'w-5 h-5'
           }`}
-          style={{ left: `${percentage}%`, top: '50%' }}
+          style={{
+            left: `${percentage}%`,
+            top: '50%',
+            backgroundColor: trackColor,
+            boxShadow: isHigh
+              ? "0 0 12px rgba(244,63,94,0.55)"
+              : `0 0 12px ${trackColor}55`,
+          }}
         />
       </div>
     </div>

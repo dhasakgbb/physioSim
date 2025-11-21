@@ -92,11 +92,15 @@ const CompoundSelector = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="absolute top-24 left-0 right-0 px-4 z-40" data-compound-selector>
-      <div
-        ref={panelRef}
-        className="bg-[#13151A] border border-white/10 rounded-2xl shadow-[0_35px_80px_rgba(0,0,0,0.75)] backdrop-blur-xl p-4"
-      >
+    <div
+      className="absolute left-0 top-[96px] z-50 h-[calc(100%-96px)] w-full bg-[#0F1115] border-t border-white/5"
+      data-compound-selector
+    >
+      <div className="h-full overflow-y-auto px-4 py-4">
+        <div
+          ref={panelRef}
+          className="bg-[#13151A] border border-white/10 rounded-2xl shadow-[0_35px_80px_rgba(0,0,0,0.75)] backdrop-blur-xl p-4"
+        >
         <div className="flex items-center justify-between pb-4 border-b border-white/5">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-gray-500">
@@ -115,57 +119,58 @@ const CompoundSelector = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        <div className="mt-4">
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Type to filter arsenal"
-            className="w-full rounded-lg border border-white/10 bg-[#1A1D23] px-3 py-2 text-sm text-gray-200 placeholder:text-gray-500 focus:outline-none focus:border-white/40 focus:bg-[#1F232B]"
-          />
-        </div>
+          <div className="mt-4">
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Type to filter arsenal"
+              className="w-full rounded-lg border border-white/10 bg-[#1A1D23] px-3 py-2 text-sm text-gray-200 placeholder:text-gray-500 focus:outline-none focus:border-white/40 focus:bg-[#1F232B]"
+            />
+          </div>
 
-        <div className="max-h-72 overflow-y-auto pr-1 mt-4 space-y-3 scrollbar-hide">
-          {filteredGroups.length === 0 && (
-            <div className="text-center py-6 text-xs uppercase tracking-[0.3em] text-gray-500">
-              No match in arsenal
-            </div>
-          )}
+          <div className="max-h-[60vh] overflow-y-auto pr-1 mt-4 space-y-3 scrollbar-hide">
+            {filteredGroups.length === 0 && (
+              <div className="text-center py-6 text-xs uppercase tracking-[0.3em] text-gray-500">
+                No match in arsenal
+              </div>
+            )}
 
-          {filteredGroups.map((group) => (
-            <div key={group.id}>
-              <div className="sticky top-0 z-10 text-[10px] tracking-[0.35em] text-gray-500/80 bg-[#13151A] py-1 px-2 border-b border-white/5">
-                {group.label}
+            {filteredGroups.map((group) => (
+              <div key={group.id}>
+                <div className="sticky top-0 z-10 text-[10px] tracking-[0.35em] text-gray-500/80 bg-[#13151A] py-1 px-2 border-b border-white/5">
+                  {group.label}
+                </div>
+                <div className="flex flex-col">
+                  {group.options.map((option) => (
+                    <button
+                      key={option.key}
+                      onClick={() => handleSelect(option.key)}
+                      className="w-full flex items-center justify-between text-left px-3 py-3 border border-transparent rounded-xl text-sm text-white hover:border-white/10 hover:bg-white/5 transition-all"
+                    >
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider">
+                          {option.name}
+                        </p>
+                        <p className="text-[10px] text-gray-500 mt-1">
+                          {getPathwayLabel(option.pathway)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-gray-400">
+                          {option.abbreviation}
+                        </span>
+                        <span
+                          className="w-2 h-8 rounded-full"
+                          style={{ backgroundColor: option.color }}
+                        />
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-col">
-                {group.options.map((option) => (
-                  <button
-                    key={option.key}
-                    onClick={() => handleSelect(option.key)}
-                    className="w-full flex items-center justify-between text-left px-3 py-3 border border-transparent rounded-xl text-sm text-white hover:border-white/10 hover:bg-white/5 transition-all"
-                  >
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-wider">
-                        {option.name}
-                      </p>
-                      <p className="text-[10px] text-gray-500 mt-1">
-                        {getPathwayLabel(option.pathway)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono text-gray-400">
-                        {option.abbreviation}
-                      </span>
-                      <span
-                        className="w-2 h-8 rounded-full"
-                        style={{ backgroundColor: option.color }}
-                      />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -191,6 +196,24 @@ const StackCard = ({ item, autoExpand }) => {
   const isOral = meta.type === "oral";
   const unit = isOral ? "mg/day" : "mg/wk";
   const max = isOral ? 150 : 2500;
+  const [doseInput, setDoseInput] = useState(String(item.dose));
+
+  useEffect(() => {
+    setDoseInput(String(item.dose));
+  }, [item.dose]);
+
+  const commitDoseInput = () => {
+    const numeric = Number(doseInput);
+    if (!Number.isFinite(numeric)) {
+      setDoseInput(String(item.dose));
+      return;
+    }
+    const clamped = Math.max(0, Math.min(max, numeric));
+    if (clamped !== item.dose) {
+      updateDose(item.compound, clamped);
+    }
+    setDoseInput(String(clamped));
+  };
 
   const esterOptions = React.useMemo(() => {
     if (!meta.esters) return [];
@@ -212,12 +235,12 @@ const StackCard = ({ item, autoExpand }) => {
     <div className="border-b border-physio-border-subtle last:border-b-0">
       {/* Compact Row (48px) */}
       <div
-        className="flex items-center h-12 px-4 hover:bg-physio-bg-highlight/30 cursor-pointer transition-colors group"
+        className="flex items-center h-11 w-full gap-2.5 px-3 hover:bg-physio-bg-highlight/30 cursor-pointer transition-colors group"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         {/* Expand/Collapse Chevron */}
         <button
-          className="flex items-center justify-center w-6 h-6 text-physio-text-tertiary hover:text-physio-text-primary transition-colors mr-3"
+          className="flex items-center justify-center w-6 h-6 text-physio-text-tertiary hover:text-physio-text-primary transition-colors"
         >
           <svg
             className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
@@ -231,28 +254,28 @@ const StackCard = ({ item, autoExpand }) => {
 
         {/* Color Indicator */}
         <div
-          className="w-3 h-3 rounded-full mr-3 flex-shrink-0"
+          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
           style={{ backgroundColor: meta.color }}
         />
 
         {/* Compound Name */}
-        <div className="flex-1 min-w-[8rem] pr-3 overflow-hidden">
-          <span className="text-sm font-medium text-physio-text-primary font-sans leading-tight break-words">
-            {meta.name}
+        <div className="flex-1 min-w-0 flex items-center pr-2">
+          <span className="text-sm font-medium text-gray-200 truncate">
+            {meta.name || item.compound}
           </span>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex shrink-0 items-center gap-1 pr-1 ml-4">
           <button
             onClick={(e) => {
               e.stopPropagation();
               setInspectedCompound(item.compound);
             }}
-            className="p-1 rounded hover:bg-physio-bg-highlight text-physio-text-tertiary hover:text-physio-accent-primary transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded text-gray-500 hover:bg-white/10 hover:text-white transition-colors"
             title="View compound details"
           >
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </button>
@@ -262,10 +285,10 @@ const StackCard = ({ item, autoExpand }) => {
               e.stopPropagation();
               removeCompound(item.compound);
             }}
-            className="p-1 rounded hover:bg-physio-accent-critical/10 text-physio-text-tertiary hover:text-physio-accent-critical transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded text-gray-500 hover:bg-white/10 hover:text-rose-400 transition-all duration-200 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
             title="Remove compound"
           >
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -274,17 +297,16 @@ const StackCard = ({ item, autoExpand }) => {
 
       {/* Expanded Controls */}
       {isExpanded && (
-        <div className="px-4 pb-4 bg-physio-bg-highlight/10 border-t border-physio-border-subtle">
+        <div className="bg-[#13151A] border-t border-dashed border-white/5 px-3 py-3">
           {/* Controls Row: Ester + Frequency */}
-          <div className="flex items-center gap-3 mb-3 pt-3">
-            {/* Ester Selector */}
+          <div className={`grid gap-3 mb-3 ${esterOptions.length > 0 ? "grid-cols-2" : "grid-cols-1"}`}>
             {esterOptions.length > 0 && (
-              <div className="flex-1">
-                <label className="block text-xs text-physio-text-tertiary mb-1">Ester</label>
+              <div>
+                <p className="text-[9px] text-gray-500 font-bold tracking-wider uppercase mb-2">Ester</p>
                 <select
                   value={selectedEster}
                   onChange={(e) => updateEster(item.compound, e.target.value)}
-                  className="w-full px-2 py-1 text-xs bg-[#1A1D23] border border-white/10 rounded text-gray-200 focus:outline-none focus:border-indigo-400/60"
+                  className="w-full h-8 px-3 py-1.5 text-sm bg-[#1A1D23] border border-white/10 rounded-lg text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/50 transition-all duration-200"
                 >
                   {esterOptions.map((ester) => (
                     <option key={ester.id} value={ester.id}>
@@ -295,13 +317,12 @@ const StackCard = ({ item, autoExpand }) => {
               </div>
             )}
 
-            {/* Frequency Selector */}
-            <div className={esterOptions.length > 0 ? "flex-1" : "w-full"}>
-              <label className="block text-xs text-physio-text-tertiary mb-1">Frequency</label>
+            <div>
+              <p className="text-[9px] text-gray-500 font-bold tracking-wider uppercase mb-2">Frequency</p>
               <select
                 value={frequency}
                 onChange={(e) => updateFrequency(item.compound, parseFloat(e.target.value))}
-                className="w-full px-2 py-1 text-xs bg-[#1A1D23] border border-white/10 rounded text-gray-200 focus:outline-none focus:border-indigo-400/60"
+                className="w-full h-8 px-3 py-1.5 text-sm bg-[#1A1D23] border border-white/10 rounded-lg text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/50 transition-all duration-200"
               >
                 <option value={1}>QD</option>
                 <option value={1.5}>1.5x/wk</option>
@@ -314,7 +335,30 @@ const StackCard = ({ item, autoExpand }) => {
 
           {/* Dosage Slider */}
           <div>
-            <label className="block text-xs text-physio-text-tertiary mb-2">Dosage</label>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[9px] text-gray-500 font-bold tracking-wider uppercase">
+                {isOral ? "Daily Dosage" : "Weekly Dosage"}
+              </p>
+              <div className="relative flex items-center w-28">
+                <input
+                  type="number"
+                  value={doseInput}
+                  onChange={(e) => setDoseInput(e.target.value)}
+                  onBlur={commitDoseInput}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      commitDoseInput();
+                      e.currentTarget.blur();
+                    }
+                  }}
+                  className="w-full h-8 bg-[#1A1D23] border border-white/10 rounded px-3 py-1.5 text-sm text-white font-mono pr-12 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all duration-200"
+                />
+                <span className="pointer-events-none absolute right-3 text-[10px] text-gray-500 uppercase tracking-[0.2em] select-none">
+                  {unit}
+                </span>
+              </div>
+            </div>
             <Slider
               value={item.dose}
               min={0}
@@ -323,6 +367,8 @@ const StackCard = ({ item, autoExpand }) => {
               unit={unit}
               onChange={(val) => updateDose(item.compound, val)}
               warningThreshold={isOral ? 50 : 800}
+              accentColor={meta.color}
+              showValue={false}
             />
           </div>
         </div>
@@ -421,13 +467,13 @@ const ActiveStackRail = () => {
           </div>
           <button
             onClick={openSelector}
-            className={`flex items-center gap-2 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest border rounded-full transition-all ${
+            className={`flex items-center justify-center gap-2 h-7 px-3 text-[11px] font-semibold uppercase tracking-widest border rounded-full transition-all ${
               stack.length === 0
                 ? "linear-active shadow-glow-indigo"
                 : "text-primary bg-element border-white/10 hover:border-white/20"
             }`}
           >
-            <span className="text-sm">+</span>
+            <span className="text-sm leading-none mb-0.5">+</span>
             Add
           </button>
         </div>

@@ -4,7 +4,6 @@ const DashboardLayout = ({
   leftRail, // Zone A: Active Stack
   centerStage, // Zone B: Visualization
   rightRail, // Zone C: Vitals/Intel
-  bottomControls, // Status bar content for center pane
   className = "",
 }) => {
   const [showLeft, setShowLeft] = useState(false);
@@ -32,11 +31,6 @@ const DashboardLayout = ({
 
         <div className="col-center flex flex-col min-h-0">
           <div className="flex-1 min-h-0">{centerStage}</div>
-          {bottomControls && (
-            <div className="center-status-bar">
-              {bottomControls}
-            </div>
-          )}
         </div>
 
         <div className="col-right flex flex-col min-h-0">

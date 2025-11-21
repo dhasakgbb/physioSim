@@ -150,7 +150,6 @@ export const StackProvider = ({ children }) => {
   );
   const [inspectedCompound, setInspectedCompound] = useState(null);
   const [viewMode, setViewMode] = useState(getInitialViewMode);
-  const [durationWeeks, setDurationWeeks] = useState(12);
 
   useEffect(() => {
     writeJSONStorage(PROFILE_STORAGE_KEY, userProfile);
@@ -190,9 +189,8 @@ export const StackProvider = ({ children }) => {
     return evaluateStack({
       stackInput: stack,
       profile: userProfile,
-      durationWeeks,
     });
-  }, [stack, userProfile, durationWeeks]);
+  }, [stack, userProfile]);
 
   // 3. Actions
   const handleAddCompound = useCallback(
@@ -257,8 +255,6 @@ export const StackProvider = ({ children }) => {
     setInspectedCompound,
     viewMode,
     setViewMode,
-    durationWeeks,
-    setDurationWeeks,
     metrics,
     handleAddCompound,
     handleDoseChange,

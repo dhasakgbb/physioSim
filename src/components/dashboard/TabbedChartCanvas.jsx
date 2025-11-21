@@ -56,9 +56,8 @@ const TabbedChartCanvas = ({ onTimeScrub }) => {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* CENTER PANE HEADER - The only navigation that matters */}
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/5 px-6 bg-[#0B0C0E]/80 backdrop-blur-md sticky top-0 z-20">
+    <main className="flex flex-col h-screen w-full bg-[#0A0A0A] overflow-hidden relative">
+      <header className="h-14 shrink-0 flex items-center justify-between border-b border-white/5 px-6 bg-[#0B0C0E]">
         <div className="flex bg-[#1a1d23] p-0.5 rounded-lg border border-white/5">
           {tabs.map((tab, idx) => {
             const isActive = activeTab === tab.id;
@@ -67,7 +66,7 @@ const TabbedChartCanvas = ({ onTimeScrub }) => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-3 py-1 text-[11px] font-medium uppercase tracking-wide transition-all ${
+                className={`px-3 pt-[3px] pb-[5px] text-[11px] font-medium uppercase tracking-wide transition-all ${
                   isActive
                     ? 'linear-active shadow-glow-indigo'
                     : 'text-secondary hover:text-primary hover:bg-element/40'
@@ -101,11 +100,12 @@ const TabbedChartCanvas = ({ onTimeScrub }) => {
         </div>
       </header>
 
-      {/* Chart Content - Full Canvas */}
-      <div className="flex-1 relative min-h-0">
-        {renderActiveChart()}
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
+        <div className="flex flex-col min-h-full gap-4 p-4 pb-10">
+          {renderActiveChart()}
+        </div>
       </div>
-    </div>
+    </main>
   );
 };
 

@@ -20,8 +20,6 @@ vi.mock("../../../context/StackContext", () => {
         setUserProfile: vi.fn(),
         inspectedCompound: null,
         setInspectedCompound: vi.fn(),
-        durationWeeks: 12,
-        setDurationWeeks: vi.fn(),
         metrics: {},
       }),
       [],
@@ -49,8 +47,6 @@ vi.mock("../../../context/SimulationContext", () => {
         compounds: [],
         setCompounds: vi.fn(),
         metrics: {},
-        cycleDuration: 12,
-        setCycleDuration: vi.fn(),
         updateDose: vi.fn(),
         updateFrequency: vi.fn(),
         updateEster: vi.fn(),
@@ -74,12 +70,11 @@ vi.mock("../../../context/SimulationContext", () => {
 });
 
 vi.mock("../DashboardLayout", () => ({
-  default: ({ leftRail, centerStage, rightRail, bottomControls }) => (
+  default: ({ leftRail, centerStage, rightRail }) => (
     <div>
       <div data-testid="left">{leftRail}</div>
       <div data-testid="stage">{centerStage}</div>
       <div data-testid="right">{rightRail}</div>
-      <div data-testid="status">{bottomControls}</div>
     </div>
   ),
 }));

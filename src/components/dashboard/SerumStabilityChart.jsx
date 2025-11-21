@@ -11,7 +11,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { compoundData } from "../../data/compoundData";
-import { simulateSerum } from "../../utils/pharmacokinetics";
+import { simulateSerum, getSteadyStateDurationDays } from "../../utils/pharmacokinetics";
 import { useStack } from "../../context/StackContext";
 import { useSimulation } from "../../context/SimulationContext";
 import { getGeneticProfileConfig } from "../../utils/personalization";
@@ -53,9 +53,14 @@ const SerumStabilityChart = ({ onTimeScrub }) => {
       .join("|");
   }, [stack]);
 
+  const steadyStateDays = useMemo(
+    () => getSteadyStateDurationDays(stack),
+    [stack],
+  );
+
   const serumKey = useMemo(
-    () => `${stackSignature}|${metabolismMultiplier}`,
-    [stackSignature, metabolismMultiplier],
+    () => `${stackSignature}|${metabolismMultiplier}|${steadyStateDays}`,
+    [stackSignature, metabolismMultiplier, steadyStateDays],
   );
 
   const data = useMemo(() => {
@@ -63,7 +68,7 @@ const SerumStabilityChart = ({ onTimeScrub }) => {
     const cache = serumCacheRef.current;
     if (cache.has(serumKey)) return cache.get(serumKey);
 
-    const simulated = simulateSerum(stack, 28, { metabolismMultiplier }) || [];
+    const simulated = simulateSerum(stack, { metabolismMultiplier, durationDays: steadyStateDays }) || [];
     const sanitized = simulated
       .map((point) => ({
         ...point,
@@ -73,7 +78,7 @@ const SerumStabilityChart = ({ onTimeScrub }) => {
       .sort((a, b) => a.day - b.day);
     cache.set(serumKey, sanitized);
     return sanitized;
-  }, [stack, metabolismMultiplier, serumKey]);
+  }, [stack, metabolismMultiplier, serumKey, steadyStateDays]);
 
   // Handle playhead interactions
   const handleMouseDown = (event) => {
@@ -106,8 +111,8 @@ const SerumStabilityChart = ({ onTimeScrub }) => {
     const chartWidth = rect.width - 40; // Account for margins
     const relativeX = Math.max(0, Math.min(1, x / chartWidth));
 
-    // Convert to day value (data spans 28 days)
-    const dayPosition = relativeX * 28;
+    const span = data.length ? data[data.length - 1].day : steadyStateDays;
+    const dayPosition = relativeX * span;
 
     setPlayheadPosition(dayPosition);
 
@@ -189,6 +194,7 @@ const SerumStabilityChart = ({ onTimeScrub }) => {
               interval={hasOrals ? 0 : 6} // Daily ticks for orals, Weekly for injectables
               tickLine={false}
               axisLine={false}
+              domain={[0, data.length ? data[data.length - 1].day : steadyStateDays || 1]}
             />
             <YAxis hide />
 

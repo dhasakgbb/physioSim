@@ -49,7 +49,7 @@ export const ActiveMixture = ({ compounds, onRemove, onUpdate }) => {
 
 // SUB-COMPONENT: THE ROW (Fixes the Text Overlap)
 const CompoundRow = ({ data, onRemove }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   return (
     <div className="group flex flex-col bg-[#0F1115] hover:bg-[#16181c] transition-colors cursor-pointer">
