@@ -56,23 +56,23 @@ const LabReportCard = ({ stack, metrics }) => {
     };
   };
 
-  const getStatusReverse = (value, ranges) => {
-    if (value <= ranges.critical)
+  const getHdlStatus = (value) => {
+    if (value < 30)
       return {
         color: "text-physio-accent-critical",
         bg: "bg-physio-accent-critical/10",
-        label: "CRITICAL",
+        label: "CRITICAL LOW",
       };
-    if (value <= ranges.warning)
+    if (value <= 45)
       return {
         color: "text-physio-accent-warning",
         bg: "bg-physio-accent-warning/10",
-        label: "WARNING",
+        label: "ELEVATED RISK",
       };
     return {
       color: "text-physio-accent-success",
       bg: "bg-physio-accent-success/10",
-      label: "NORMAL",
+      label: "OPTIMAL",
     };
   };
 
@@ -127,10 +127,7 @@ const LabReportCard = ({ stack, metrics }) => {
           label="HDL"
           value={labValues.hdl.toFixed(0)}
           unit="mg/dL"
-          status={getStatusReverse(labValues.hdl, {
-            critical: 30,
-            warning: 35,
-          })}
+          status={getHdlStatus(labValues.hdl)}
           reference="&gt; 40"
         />
 

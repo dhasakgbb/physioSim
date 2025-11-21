@@ -9,11 +9,47 @@ const DEFAULT_LABS = {
 };
 
 const LAB_BLUEPRINT = [
-  { id: "hdl", label: "HDL (Good)", unit: "mg/dL", min: 40, max: 100, inverse: true },
-  { id: "ldl", label: "LDL (Bad)", unit: "mg/dL", min: 0, max: 100 },
-  { id: "ast", label: "Liver (AST)", unit: "U/L", min: 0, max: 40 },
-  { id: "alt", label: "Liver (ALT)", unit: "U/L", min: 0, max: 40 },
-  { id: "estradiol", label: "Estradiol", unit: "pg/mL", min: 20, max: 40 },
+  {
+    id: "hdl",
+    label: "HDL (Good)",
+    unit: "mg/dL",
+    min: 40,
+    max: 100,
+    inverse: true,
+    thresholds: { criticalLow: 30, warningLow: 45 },
+  },
+  {
+    id: "ldl",
+    label: "LDL (Bad)",
+    unit: "mg/dL",
+    min: 0,
+    max: 100,
+    thresholds: { warningHigh: 130, criticalHigh: 160 },
+  },
+  {
+    id: "ast",
+    label: "Liver (AST)",
+    unit: "U/L",
+    min: 0,
+    max: 40,
+    thresholds: { warningHigh: 40, criticalHigh: 80 },
+  },
+  {
+    id: "alt",
+    label: "Liver (ALT)",
+    unit: "U/L",
+    min: 0,
+    max: 40,
+    thresholds: { warningHigh: 40, criticalHigh: 80 },
+  },
+  {
+    id: "estradiol",
+    label: "Estradiol",
+    unit: "pg/mL",
+    min: 20,
+    max: 40,
+    thresholds: { warningHigh: 50, criticalHigh: 80, warningLow: 15, criticalLow: 10 },
+  },
 ];
 
 export const RightInspector = ({ metrics, steadyStateMetrics, scrubbedPoint = null }) => {
@@ -71,16 +107,14 @@ export const RightInspector = ({ metrics, steadyStateMetrics, scrubbedPoint = nu
 };
 
 const BulletChart = ({ data }) => {
-  const { value, max, min, inverse } = data;
-  const isHigh = !inverse && value > max;
-  const isLow = inverse && value < min;
-  const isDanger = isHigh || isLow;
-
+  const { value, max, min } = data;
   const spanMax = max * 1.5;
   const fillPercent = Math.min(100, (value / spanMax) * 100);
   const markerPosition = (max / spanMax) * 100;
-  const gradientClass = getThermalGradient(fillPercent);
-  const isHot = fillPercent >= 80;
+
+  const severity = getLabSeverity(value, data);
+  const gradientClass = getGradientForSeverity(severity, fillPercent);
+  const isDanger = severity !== "normal";
 
   const rangeLabel = Number.isFinite(min) && Number.isFinite(max)
     ? `${min}-${max} ${data.unit}`
@@ -106,7 +140,7 @@ const BulletChart = ({ data }) => {
           className={`absolute left-0 top-0 h-full rounded-full bg-gradient-to-r ${gradientClass} transition-all duration-500 ease-out`}
           style={{ width: `${fillPercent}%` }}
         />
-        {(isDanger || isHot) && (
+        {isDanger && (
           <div
             className="pointer-events-none absolute top-[-2px] right-0 h-[8px] w-3 bg-rose-400/50 blur-lg opacity-70"
             aria-hidden
@@ -116,7 +150,7 @@ const BulletChart = ({ data }) => {
 
       <span
         className={`text-left font-mono text-xs tabular-nums pl-1 ${
-          isDanger || isHot ? "text-rose-400" : "text-gray-300"
+          isDanger ? "text-rose-400" : "text-gray-300"
         }`}
       >
         {Number.isFinite(value) ? value.toFixed(value >= 100 ? 0 : 1) : "--"}
@@ -125,14 +159,37 @@ const BulletChart = ({ data }) => {
   );
 };
 
-const getThermalGradient = (percentage) => {
-  if (percentage < 50) {
-    return "from-emerald-500 via-teal-400 to-emerald-300";
+const getLabSeverity = (value, data) => {
+  const { thresholds = {}, inverse, min, max } = data;
+  const {
+    criticalLow,
+    warningLow,
+    warningHigh,
+    criticalHigh,
+  } = thresholds;
+
+  if (criticalLow !== undefined && value < criticalLow) return "critical";
+  if (criticalHigh !== undefined && value > criticalHigh) return "critical";
+  if (warningLow !== undefined && value < warningLow) return "warning";
+  if (warningHigh !== undefined && value > warningHigh) return "warning";
+
+  if (inverse && min !== undefined && value < min) return "warning";
+  if (!inverse && max !== undefined && value > max) return "warning";
+
+  return "normal";
+};
+
+const getGradientForSeverity = (severity, percentage) => {
+  if (severity === "critical") {
+    return "from-rose-500 via-red-500 to-red-600";
   }
-  if (percentage < 75) {
-    return "from-emerald-300 via-amber-300 to-amber-400";
+  if (severity === "warning") {
+    return "from-amber-400 via-orange-400 to-amber-500";
   }
-  return "from-amber-400 via-orange-500 to-rose-500";
+  if (percentage > 90) {
+    return "from-emerald-300 via-amber-200 to-amber-300";
+  }
+  return "from-emerald-500 via-teal-400 to-emerald-300";
 };
 
 export default RightInspector;

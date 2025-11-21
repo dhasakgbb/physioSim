@@ -14,13 +14,14 @@ import {
 import { defaultProfile } from "./personalization.js";
 import { compoundData } from "../data/compoundData.js";
 import { COMPOUND_VECTORS } from "../data/pathwayMap.js";
+import { calculateCycleMetrics } from "./simulationEngine.js";
 
 // ============================================================================
 // CONSTANTS & CONFIGURATION
 // ============================================================================
 
 const CONSTANTS = {
-  SATURATION_THRESHOLD: 1500, // Increased for Open Class realism
+  SATURATION_THRESHOLD: 1500,
   TOXICITY_THRESHOLD: 1200,
   ORAL_TOXICITY_THRESHOLD: 500,
   SUPPRESSION_THRESHOLD: 200,
@@ -31,199 +32,38 @@ const CONSTANTS = {
   EVIDENCE_BLEND: 0.4,
 };
 
-// Map "dirty" vector keys to clean Pathway Node keys (from SignalingNetwork)
 const PATHWAY_KEY_MAPPING = {
   neuro: "non_genomic",
   nitrogen: "ar_genomic",
-  igf1: "ar_genomic", // Simplified for viz
-  anti_e: "estrogen", // Special handling needed (negative)
-  rbc: "liver", // Simplified
+  igf1: "ar_genomic",
+  anti_e: "estrogen",
+  rbc: "liver",
   dht: "non_genomic",
 };
 
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-/**
- * Calculates a biological response using a Sigmoid Emax model.
- * Response = Baseline + (MaxChange * Dose^n) / (ED50^n + Dose^n)
- * @param {number} dose - Weekly dose in mg (or Load units)
- * @param {number} maxChange - Maximum possible change (positive or negative)
- * @param {number} ed50 - Dose at which 50% of max change occurs
- * @param {number} n - Hill coefficient (slope)
- */
-const calculateSigmoidResponse = (dose, maxChange, ed50, n = 1.0) => {
-  if (dose <= 0) return 0;
-  const num = maxChange * Math.pow(dose, n);
-  const den = Math.pow(ed50, n) + Math.pow(dose, n);
-  return num / den;
-};
-
-/**
- * Calculates projected lab values based on active compounds.
- * Centralized logic for "Virtual Phlebotomist".
- * Uses Non-Linear Emax Models for realistic saturation.
- */
-const calculateProjectedLabs = (activeCompounds, profile) => {
-  // Baselines
-  let hdl = 50; // Baseline mg/dL
-  let ldl = 100; // Baseline mg/dL
-  let hematocrit = 45; // Baseline %
-  let ast = 25; // Baseline U/L
-  let alt = 25; // Baseline U/L
-  let creatinine = 1.0; // Baseline mg/dL
-  let neuroRisk = 0; // Baseline Index
-  let estradiol = 25; // Baseline pg/mL
-  let prolactin = 6.0; // Baseline ng/mL
-  let shbg = 30; // Baseline nmol/L
-  let totalTestosterone = 600; // Baseline ng/dL
-  let freeTestosterone = 12; // Baseline pg/mL
-
-  // 1. Aggregate Stress Loads
-  let lipidStressLoad = 0;
-  let hepaticLoad = 0;
-  let renalLoad = 0;
-  let rbcLoad = 0;
-  let aromataseLoad = 0;
-  let prolactinLoad = 0;
-  let neuroLoad = 0;
-  let shbgSuppressionLoad = 0;
-
-  activeCompounds.forEach(({ code, meta, weeklyDose }) => {
-    const dose = weeklyDose;
-
-    // Lipid Stress Load
-    // Orals are ~4x more potent at crushing HDL due to hepatic pass
-    if (meta.type === "oral") {
-      lipidStressLoad += dose * 4.0;
-    } else {
-      lipidStressLoad += dose * 1.0;
-    }
-
-    // Hepatic Load
-    if (meta.type === "oral") {
-      hepaticLoad += dose;
-    }
-
-    // Renal Load
-    if (code === "trenbolone") renalLoad += dose * 2.0; // Direct toxicity
-    if (code === "eq") renalLoad += dose * 0.5; // BP driven
-    if (meta.flags?.isHeavyBP) renalLoad += dose * 0.5;
-
-    // RBC Load (Hematocrit)
-    if (meta.biomarkers?.rbc > 0) {
-      rbcLoad += dose * meta.biomarkers.rbc;
-    }
-
-    // Neuro Load
-    const neuroScore = meta.biomarkers?.neurotoxicity || meta.biomarkers?.cns_drive || 0;
-    if (neuroScore > 0) {
-      neuroLoad += dose * neuroScore;
-    }
-
-    // Hormonal Loads
-    if (meta.flags?.aromatization) {
-      aromataseLoad += dose * meta.flags.aromatization;
-    }
-    if (code === "dianabol") aromataseLoad += dose * 0.8; // Methylestradiol is potent
-    
-    if (meta.biomarkers?.prolactin) {
-      prolactinLoad += dose * meta.biomarkers.prolactin;
-    }
-
-    if (meta.biomarkers?.shbg < 0) {
-      shbgSuppressionLoad += dose * Math.abs(meta.biomarkers.shbg);
-    }
-
-    // Testosterone Base
-    if (code === "testosterone") {
-      totalTestosterone += dose * 7; 
-    }
-    
-    // AI Logic (Negative Load)
-    if (code === "arimidex") {
-      aromataseLoad -= dose * 400; // Strong reduction
-    }
-    if (code === "eq") {
-      aromataseLoad -= dose * 0.5; // Mild AI effect
-    }
+const buildPhysicsStack = (activeCompounds, stackInput = []) => {
+  if (!Array.isArray(activeCompounds) || !activeCompounds.length) return [];
+  const lookup = Object.create(null);
+  stackInput.forEach((item) => {
+    if (item?.compound) lookup[item.compound] = item;
   });
 
-  // 2. Apply Emax Models (The "Simulation")
+  return activeCompounds.map((entry) => {
+    const source = lookup[entry.code] || {};
+    const isOral = Boolean(entry.isOral);
+    const rawFrequency = source.frequency ?? entry.frequency;
+    const normalizedFrequency = isOral ? 7 : Math.max(rawFrequency || 1, 1);
+    const baseDosage = isOral
+      ? source.dose ?? entry.dose ?? entry.weeklyDose / normalizedFrequency
+      : (entry.weeklyDose || 0) / normalizedFrequency;
 
-  // HDL: Drops to min 10. Max drop 40. ED50 600mg load.
-  hdl -= calculateSigmoidResponse(lipidStressLoad, 40, 600, 1.5);
-
-  // LDL: Rises to max 250 (+150). ED50 1000mg load.
-  ldl += calculateSigmoidResponse(lipidStressLoad, 150, 1000, 1.2);
-
-  // Hematocrit: Rises to max 60 (+15). ED50 1500mg load.
-  hematocrit += calculateSigmoidResponse(rbcLoad, 15, 1500, 1.2);
-
-  // Liver (AST/ALT): Rises to max 200 (+175). ED50 800mg oral load.
-  const liverStress = calculateSigmoidResponse(hepaticLoad, 175, 800, 2.0);
-  ast += liverStress;
-  alt += liverStress * 1.2; // ALT usually higher
-
-  // Kidney (Creatinine): Rises to max 3.0 (+2.0). ED50 2000mg load.
-  creatinine += calculateSigmoidResponse(renalLoad, 2.0, 2000, 1.5);
-
-  // Neuro Risk: Max 10. ED50 1500 load.
-  neuroRisk += calculateSigmoidResponse(neuroLoad, 10, 1500, 1.3);
-
-  // Estradiol: Linear-ish but saturates at high levels? 
-  // Actually aromatase is linear until substrate depletion, but we'll keep it simpler.
-  // 500mg Test -> ~50-75pg/mL. 
-  // Load 500 -> +50. 
-  estradiol += aromataseLoad * 0.1; 
-
-  // Prolactin: 
-  prolactin += calculateSigmoidResponse(prolactinLoad, 30, 1000, 1.5);
-
-  // SHBG: Crushed by androgens. Max drop 28 (to 2). ED50 300mg load.
-  shbg -= calculateSigmoidResponse(shbgSuppressionLoad, 28, 300, 1.0);
-
-
-  // Apply Profile Modifiers
-  if (profile.dietState === "bulking") {
-    ldl += 10; 
-    hdl -= 5;
-    ast += 5;
-  } else if (profile.dietState === "cutting") {
-    hdl += 2; 
-    ldl -= 5;
-  }
-
-  // Clamp values to realistic ranges (Safety Net)
-  hdl = Math.max(5, hdl);
-  ldl = Math.max(40, ldl);
-  hematocrit = Math.min(hematocrit, 65);
-  ast = Math.max(10, ast);
-  alt = Math.max(10, alt);
-  creatinine = Math.max(0.5, creatinine);
-  neuroRisk = Math.max(0, neuroRisk);
-  estradiol = Math.max(0, estradiol);
-  shbg = Math.max(2, shbg);
-
-  // Calculate Free Testosterone
-  const freeTestRatio = 0.02 + (30 - shbg) * 0.0015;
-  freeTestosterone = totalTestosterone * freeTestRatio * 10;
-
-  return {
-    hdl,
-    ldl,
-    hematocrit,
-    ast,
-    alt,
-    creatinine,
-    neuroRisk,
-    estradiol,
-    prolactin,
-    totalTestosterone,
-    freeTestosterone,
-    shbg,
-  };
+    return {
+      id: entry.code,
+      dosage: Number.isFinite(baseDosage) ? baseDosage : 0,
+      frequency: normalizedFrequency,
+      ester: source.ester || entry.ester || entry.meta?.defaultEster,
+    };
+  });
 };
 
 /**
@@ -689,7 +529,15 @@ export const evaluateStack = ({
     const weeklyDose = getWeeklyDose(dose, isOral);
 
     // Store for Global Penalties
-    state.activeCompounds.push({ code, meta, dose, weeklyDose, isOral });
+    state.activeCompounds.push({
+      code,
+      meta,
+      dose,
+      weeklyDose,
+      isOral,
+      ester: esterKey,
+      frequency: stackItem?.frequency,
+    });
 
     // B. Bioavailability & Active Dose
     const specificBioavailability = meta.esters?.[esterKey]?.bioavailability;
@@ -943,8 +791,11 @@ export const evaluateStack = ({
     chronicRisk > 0.1 ? finalBenefit / chronicRisk : finalBenefit; // Prevent div/0
 
   // 7. Calculate Analytics (Labs & Pathways)
-  const projectedLabs = calculateProjectedLabs(state.activeCompounds, profile);
   const pathwayLoads = calculatePathwayLoads(state.activeCompounds);
+  const physicsStack = buildPhysicsStack(state.activeCompounds, stackInput);
+  const physicsMetrics = calculateCycleMetrics(physicsStack, compoundData);
+  const projectedLabs = physicsMetrics.projectedLabs;
+  const systemLoadSnapshot = physicsMetrics.systemLoad;
 
   // 8. Construct Result
   return {
@@ -954,6 +805,9 @@ export const evaluateStack = ({
     analytics: {
       projectedLabs,
       pathwayLoads,
+      systemLoad: systemLoadSnapshot,
+      physicsMeta: physicsMetrics.meta,
+      physicsGains: physicsMetrics.projectedGains,
     },
     totals: {
       baseBenefit: state.genomicBenefit + state.nonGenomicBenefit,

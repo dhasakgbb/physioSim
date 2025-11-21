@@ -4,6 +4,8 @@ import CycleEvolutionChart from "./CycleEvolutionChart";
 import OptimizerPane from "./OptimizerPane";
 import SignalingNetwork from "./SignalingNetwork";
 import { useStack } from "../../context/StackContext";
+import { useSystemLoad } from "../../hooks/useSystemLoad";
+import StatusIndicator from "./StatusIndicator";
 import { CenterPane } from "./CenterPane";
 
 const NET_FAMILY_TABS = new Set(["efficiency", "serum", "evolution"]);
@@ -143,8 +145,7 @@ const TabbedChartCanvas = ({ onTimeScrub }) => {
               Vitals
             </button>
           </div>
-          <span className="flex h-2 w-2 rounded-full bg-emerald shadow-glow-indigo" />
-          <span className="text-[10px] font-mono text-secondary uppercase tracking-[0.35em]">System Ready</span>
+          <StatusIndicator />
         </div>
       </header>
 

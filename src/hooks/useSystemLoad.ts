@@ -120,10 +120,18 @@ const CATEGORY_CONFIGS: CategoryConfig[] = [
   },
 ];
 
+const PRESSURE_TO_CATEGORY: Record<string, string> = {
+  Cardiovascular: "cardiovascular",
+  Hepatic: "hepatic",
+  Renal: "renal",
+  "Neuro / CNS": "neuro",
+};
+
 export const useSystemLoad = (): SystemLoadResult => {
   const { metrics } = useStack() as { metrics?: Record<string, any> };
 
   return useMemo<SystemLoadResult>(() => {
+    const systemSnapshot = metrics?.analytics?.systemLoad;
     const pathwayLoads: PathwayLoads = metrics?.analytics?.pathwayLoads ?? {};
     const labs: ProjectedLabs = {
       hematocrit: 45,
@@ -154,22 +162,35 @@ export const useSystemLoad = (): SystemLoadResult => {
       };
     });
 
-    const systemIndex = categories.length
+    const fallbackIndex = categories.length
       ? Math.round(
           categories.reduce((sum, cat) => sum + cat.percent, 0) /
             categories.length,
         )
       : 0;
 
-    const systemLevel = getLevel(systemIndex);
-
-    const dominantCategory = categories.reduce<SystemLoadCategory | null>(
+    const fallbackDominant = categories.reduce<SystemLoadCategory | null>(
       (acc, cat) => {
         if (!acc || cat.percent > acc.percent) return cat;
         return acc;
       },
       null,
     );
+
+    const snapshotTotal = Number(systemSnapshot?.total);
+    const systemIndex = Number.isFinite(snapshotTotal)
+      ? Math.max(0, Math.min(100, Math.round(snapshotTotal)))
+      : fallbackIndex;
+
+    const systemLevel = getLevel(systemIndex);
+
+    const dominantCategoryId = systemSnapshot?.dominantPressure
+      ? PRESSURE_TO_CATEGORY[systemSnapshot.dominantPressure]
+      : null;
+
+    const dominantCategory = dominantCategoryId
+      ? categories.find((cat) => cat.id === dominantCategoryId) || fallbackDominant
+      : fallbackDominant;
 
     return {
       categories,

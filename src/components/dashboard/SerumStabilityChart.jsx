@@ -76,8 +76,26 @@ const SerumStabilityChart = ({ onTimeScrub }) => {
         total: Number.isFinite(point.total) ? point.total : 0,
       }))
       .sort((a, b) => a.day - b.day);
-    cache.set(serumKey, sanitized);
-    return sanitized;
+
+    const converted = sanitized.map((point) => {
+      const next = { ...point };
+      let serumTotal = 0;
+
+      stack.forEach(({ compound }) => {
+        const meta = compoundData[compound];
+        const factor = meta?.conversionFactor ?? 0;
+        const mgValue = Number(point[compound]) || 0;
+        const serumValue = mgValue * factor;
+        next[compound] = serumValue;
+        serumTotal += serumValue;
+      });
+
+      next.total = serumTotal;
+      return next;
+    });
+
+    cache.set(serumKey, converted);
+    return converted;
   }, [stack, metabolismMultiplier, serumKey, steadyStateDays]);
 
   // Handle playhead interactions
@@ -211,7 +229,7 @@ const SerumStabilityChart = ({ onTimeScrub }) => {
                 fontSize: "11px",
                 marginBottom: "5px",
               }}
-              formatter={(value) => `${value.toFixed(0)} mg`}
+              formatter={(value) => `${Number(value ?? 0).toFixed(0)} ng/dL`}
               labelFormatter={(val) => `Day ${val}`}
             />
 

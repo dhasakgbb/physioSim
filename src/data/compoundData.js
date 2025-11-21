@@ -17,6 +17,7 @@ export const compoundData = {
     type: "injectable",
     bioavailability: 1.0,
     suppressiveFactor: 2,
+    conversionFactor: 12.0, // mg in serum -> ng/dL conversion
     flags: { aromatization: 1.0, isSuppressive: true },
     defaultEster: "enanthate",
     esters: {
@@ -55,6 +56,7 @@ export const compoundData = {
       rbc: +1,
       cortisol: 0,
       prolactin: 0,
+        neurotoxicity: 0,
       e2_conversion: +2,
       renal_toxicity: 0,
     },
@@ -146,6 +148,7 @@ export const compoundData = {
     type: "injectable",
     bioavailability: 1.0,
     suppressiveFactor: 4, // 19-nor suppression
+    conversionFactor: 4.5,
     flags: { aromatization: 0.2, isSuppressive: true, createsDHN: true },
     defaultEster: "decanoate",
     esters: {
@@ -438,6 +441,7 @@ export const compoundData = {
     type: "injectable",
     bioavailability: 1.0,
     suppressiveFactor: 5,
+    conversionFactor: 5.0,
     flags: { isSuppressive: true, isRenalToxic: true },
     defaultEster: "acetate",
     esters: {
@@ -463,6 +467,7 @@ export const compoundData = {
       igf1: +3,
       rbc: +3,
       cortisol: -3,
+      neurotoxicity: 0,
       prolactin: +2,
       neurotoxicity: 3,
       renal_toxicity: 3, // High renal stress
@@ -507,6 +512,7 @@ export const compoundData = {
     type: "injectable",
     bioavailability: 1.0,
     suppressiveFactor: 3,
+    conversionFactor: 3.0,
     flags: { aromatization: 0.5 },
     category: "endurance",
     pathway: "ar_genomic",
@@ -550,6 +556,7 @@ export const compoundData = {
     type: "injectable",
     bioavailability: 1.0,
     suppressiveFactor: 2,
+    conversionFactor: 3.0,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: "propionate",
     esters: {
@@ -602,6 +609,7 @@ export const compoundData = {
     type: "injectable",
     bioavailability: 1.0,
     suppressiveFactor: 2,
+    conversionFactor: 3.0,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: "enanthate",
     esters: {
@@ -655,6 +663,7 @@ export const compoundData = {
     toxicityTier: 2,
     bioavailability: 0.8,
     suppressiveFactor: 3,
+    conversionFactor: 0,
     flags: { aromatization: 2.0, isHeavyBP: true, createsMethylEstrogen: true },
     defaultEster: "oral",
     esters: {
@@ -694,6 +703,7 @@ export const compoundData = {
     toxicityTier: 3.5, // Upped from 3, functionally peer to Sdrol in high dose
     bioavailability: 0.85,
     suppressiveFactor: 3,
+    conversionFactor: 0,
     flags: { aromatization: 0.5, isHeavyBP: true },
     defaultEster: "oral",
     esters: {
@@ -733,6 +743,7 @@ export const compoundData = {
     toxicityTier: 2,
     bioavailability: 0.8,
     suppressiveFactor: 2,
+    conversionFactor: 0,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: "oral",
     esters: {
@@ -771,6 +782,7 @@ export const compoundData = {
     toxicityTier: 1,
     bioavailability: 0.8,
     suppressiveFactor: 2,
+    conversionFactor: 0,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: "oral",
     esters: {
@@ -785,6 +797,7 @@ export const compoundData = {
       rbc: +1,
       cortisol: -1,
       prolactin: 0,
+      liver_toxicity: +2,
       renal_toxicity: 1, // Stressful on kidneys long term
     },
     halfLife: 9,
@@ -809,6 +822,7 @@ export const compoundData = {
     toxicityTier: 4,
     bioavailability: 0.8,
     suppressiveFactor: 4,
+    conversionFactor: 0,
     flags: { aromatization: 0, isSuppressive: true, isLiverToxic: true },
     defaultEster: "oral",
     esters: {
@@ -855,6 +869,7 @@ export const compoundData = {
     toxicityTier: 0,
     bioavailability: 0.05,
     suppressiveFactor: 1,
+    conversionFactor: 0,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: "oral",
     esters: {
@@ -894,6 +909,7 @@ export const compoundData = {
     toxicityTier: 2,
     bioavailability: 0.85,
     suppressiveFactor: 2,
+    conversionFactor: 0,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: "oral",
     esters: {
@@ -932,6 +948,7 @@ export const compoundData = {
     toxicityTier: 4,
     bioavailability: 0.85,
     suppressiveFactor: 4,
+    conversionFactor: 0,
     flags: { aromatization: 0, isSuppressive: true, isLiverToxic: true },
     defaultEster: "oral",
     esters: {
@@ -946,8 +963,8 @@ export const compoundData = {
       rbc: +2,
       cortisol: 0,
       prolactin: 0,
-      liver_toxicity: +3,
-      renal_toxicity: 2,
+      liver_toxicity: +4,
+      renal_toxicity: 3,
     },
     halfLife: 8,
     modelConfidence: 0.4,
@@ -970,6 +987,7 @@ export const compoundData = {
     type: "injectable",
     bioavailability: 1.0,
     suppressiveFactor: 5,
+    conversionFactor: 10.0,
     flags: { aromatization: 3.0, isSuppressive: true },
     defaultEster: "acetate",
     esters: {
@@ -1014,6 +1032,7 @@ export const compoundData = {
     type: "injectable",
     bioavailability: 1.0,
     suppressiveFactor: 3,
+    conversionFactor: 6.0,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: "cypionate",
     esters: {
@@ -1066,6 +1085,7 @@ export const compoundData = {
     toxicityTier: 0,
     bioavailability: 0.85,
     suppressiveFactor: 0,
+    conversionFactor: 0,
     flags: { isAI: true },
     defaultEster: "oral",
     esters: {
@@ -1095,6 +1115,7 @@ export const compoundData = {
     toxicityTier: 0,
     bioavailability: 0.65,
     suppressiveFactor: 0,
+    conversionFactor: 0,
     flags: { is5AR: true, contraindicated: ["nandrolone"] },
     defaultEster: "oral",
     esters: {
@@ -1139,6 +1160,7 @@ export const compoundData = {
     toxicityTier: 1,
     bioavailability: 1.0,
     suppressiveFactor: 0,
+    conversionFactor: 0,
     flags: { isSERM: true },
     defaultEster: "oral",
     esters: {
@@ -1173,6 +1195,7 @@ export const compoundData = {
     toxicityTier: 1,
     bioavailability: 1.0,
     suppressiveFactor: 0,
+    conversionFactor: 0,
     flags: { isSERM: true },
     defaultEster: "oral",
     esters: {
@@ -1207,6 +1230,7 @@ export const compoundData = {
     toxicityTier: 0,
     bioavailability: 1.0,
     suppressiveFactor: -1, // Stimulatory
+    conversionFactor: 0,
     flags: { isGonadotropin: true },
     defaultEster: "none",
     esters: {
@@ -1240,6 +1264,7 @@ export const compoundData = {
     toxicityTier: 1,
     bioavailability: 1.0,
     suppressiveFactor: 0,
+    conversionFactor: 0,
     flags: { isDopamineAgonist: true },
     defaultEster: "oral",
     esters: {
