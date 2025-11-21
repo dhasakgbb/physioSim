@@ -472,13 +472,13 @@ const SignalingNetwork = ({ stack, metrics }) => {
           <path
             d={pathData}
             fill="none"
-            stroke={isHighlighted ? link.color : HIGHLIGHT_COLORS.muted}
+            stroke={isHighlighted ? "var(--primary-indigo)" : HIGHLIGHT_COLORS.muted}
             strokeWidth={
               isHighlighted
                 ? Math.max(link.value * 0.5, 1) + 2
                 : Math.max(link.value * 0.5, 1)
             }
-            strokeOpacity={isDimmed ? 0.05 : (isHighlighted ? 0.9 : 0.6)}
+            strokeOpacity={isDimmed ? 0.05 : (isHighlighted ? 0.8 : 0.2)}
             className="transition-all duration-300"
           />
           {/* Animated Particle (only if active) */}
@@ -513,14 +513,10 @@ const SignalingNetwork = ({ stack, metrics }) => {
     });
   };
 
+  const isEmpty = !stack || stack.length === 0;
+
   return (
-    <div className="relative w-full h-full min-h-[500px] bg-physio-bg-core rounded-2xl border border-physio-border-subtle shadow-2xl overflow-hidden flex flex-col">
-      {/* Column Headers - Fixed at top */}
-      <div className="w-full flex justify-between px-10 py-4 bg-physio-bg-core z-20 border-b border-physio-border-subtle text-xs font-bold text-physio-text-tertiary uppercase tracking-widest">
-        <span>Compounds</span>
-        <span>Pathways</span>
-        <span>Outcomes</span>
-      </div>
+    <div className={`relative w-full h-full overflow-hidden flex flex-col ${isEmpty ? 'ghost-wireframe' : ''}`}>
 
       {/* Scrollable Area */}
       <div
@@ -637,26 +633,27 @@ const NodeCard = ({ node }) => {
   const breathingAnimation = saturation > 70 ? "animate-pulse" : "";
   const breathingIntensity = saturation > 80 ? 0.8 : saturation > 70 ? 0.4 : 0;
 
+  // Pulse animation for nodes exceeding 85% capacity (2s duration)
+  const pulseAnimation = saturation > 85 ? "animate-pulse" : "";
+  const pulseIntensity = saturation > 85 ? 0.6 : 0;
+
   return (
     <div
       className={`
-        relative flex items-center justify-between rounded-2xl border bg-[#1e293b]/90 backdrop-blur-sm
+        relative flex items-center justify-between rounded-lg border bg-physio-bg-surface
         transition-all duration-500 ease-out
-        ${saturation > 90 ? "shadow-[0_0_20px_rgba(239,68,68,0.6)] border-red-500/60" : ""}
-        ${saturation > 60 ? "shadow-[0_0_12px_rgba(59,130,246,0.4)]" : ""}
-        ${breathingAnimation}
+        ${pulseAnimation}
       `}
       style={{
         width: `${dynamicWidth}px`,
-        padding: `${Math.round(12 * intensityFactor)}px`,
+        padding: `${Math.round(8 * intensityFactor)}px`,
         minHeight: `${dynamicHeight}px`,
-        borderColor: border,
-        boxShadow: saturation > 70
-          ? `${glow}, 0 0 ${breathingIntensity * 30}px rgba(239, 68, 68, ${breathingIntensity})`
-          : glow,
-        transform: isSaturated ? "scale(1.05)" : "scale(1)",
+        borderColor: 'var(--border-highlight)',
+        boxShadow: saturation > 85
+          ? `0 0 ${pulseIntensity * 20}px rgba(239, 68, 68, ${pulseIntensity})`
+          : 'none',
         opacity: saturation > 10 ? 1 : 0.7, // Fade out very low intensity nodes
-        animationDuration: saturation > 80 ? "2s" : saturation > 70 ? "3s" : "4s",
+        animationDuration: '2s',
       }}
     >
       <div className="flex flex-col w-full">

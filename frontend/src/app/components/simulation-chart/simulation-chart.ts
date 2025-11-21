@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, signal } from '@angular/core';
 import { DataPointModel } from '../../core/services/simulation-client';
+
+export type ChartView = 'efficiency' | 'serum' | 'evolution';
 
 @Component({
   selector: 'app-simulation-chart',
@@ -11,6 +13,7 @@ import { DataPointModel } from '../../core/services/simulation-client';
 export class SimulationChart {
   @Input() dataPoints: DataPointModel[] = [];
   @Input() loading = false;
+  @Input() activeTab: 'explore' | 'optimize' | 'signaling' = 'explore';
 
   readonly viewBox = { width: 820, height: 320, padding: 32 };
 

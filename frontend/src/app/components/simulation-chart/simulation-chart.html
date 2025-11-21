@@ -1,70 +1,95 @@
 <section class="chart-header">
-	<div>
-		<p class="eyebrow">Serum telemetry</p>
-		<h2>Plasma envelope</h2>
-	</div>
-	<div class="badge" *ngIf="latestPoint as point">
-		Day {{ point.day }} · {{ point.serumConcentration | number: '1.0-0' }} ng/dL
-	</div>
+  <div class="header-content">
+    <p class="eyebrow">
+      <ng-container [ngSwitch]="activeTab">
+        <span *ngSwitchCase="'explore'">Dose Efficiency</span>
+        <span *ngSwitchCase="'optimize'">Serum Release</span>
+        <span *ngSwitchCase="'signaling'">Signaling Network</span>
+      </ng-container>
+    </p>
+    <h2>
+      <ng-container [ngSwitch]="activeTab">
+        <span *ngSwitchCase="'explore'">Anabolic vs Toxicity</span>
+        <span *ngSwitchCase="'optimize'">Plasma Envelope</span>
+        <span *ngSwitchCase="'signaling'">Pathway Topology</span>
+      </ng-container>
+    </h2>
+  </div>
 </section>
 
 <div class="chart-frame" [class.chart-frame--loading]="loading">
-	<svg
-		[attr.viewBox]="viewBoxAttr"
-		role="img"
-		aria-label="Simulation output chart"
-	>
-		<defs>
-			<linearGradient id="plasmaFill" x1="0%" x2="0%" y1="0%" y2="100%">
-				<stop offset="0%" stop-color="rgba(92,225,230,0.5)" />
-				<stop offset="100%" stop-color="rgba(92,225,230,0)" />
-			</linearGradient>
-			<linearGradient id="anabolicStroke" x1="0%" x2="100%" y1="0%" y2="0%">
-				<stop offset="0%" stop-color="var(--neon-magenta)" />
-				<stop offset="100%" stop-color="var(--neon-cyan)" />
-			</linearGradient>
-		</defs>
+  <!-- Signaling View Placeholder -->
+  <div *ngIf="activeTab === 'signaling'" class="chart-empty">
+    <p>Sankey Diagram Placeholder</p>
+    <small>Network topology visualization coming soon.</small>
+  </div>
 
-		<path
-			*ngIf="toxicityPath"
-			class="toxicity-area"
-			[attr.d]="toxicityPath"
-		></path>
-		<path
-			*ngIf="serumPath"
-			class="serum-path"
-			[attr.d]="serumPath"
-		></path>
-		<path
-			*ngIf="anabolicPath"
-			class="anabolic-path"
-			[attr.d]="anabolicPath"
-		></path>
-	</svg>
+  <!-- SVG Chart for Explore/Optimize -->
+  <svg
+    *ngIf="activeTab !== 'signaling'"
+    [attr.viewBox]="viewBoxAttr"
+    role="img"
+    aria-label="Simulation output chart"
+  >
+    <defs>
+      <linearGradient id="plasmaFill" x1="0%" x2="0%" y1="0%" y2="100%">
+        <stop offset="0%" stop-color="rgba(56, 189, 248, 0.5)" />
+        <stop offset="100%" stop-color="rgba(56, 189, 248, 0)" />
+      </linearGradient>
+      <linearGradient id="anabolicStroke" x1="0%" x2="100%" y1="0%" y2="0%">
+        <stop offset="0%" stop-color="#38BDF8" />
+        <stop offset="100%" stop-color="#22D3EE" />
+      </linearGradient>
+    </defs>
 
-	<div class="chart-empty" *ngIf="!dataPoints.length && !loading">
-		No telemetry yet. Adjust the stack and pulse the solver.
-	</div>
-	<div class="chart-loader" *ngIf="loading">
-		<span></span>
-		<p>Streaming datapoints…</p>
-	</div>
+    <!-- Explore View: Anabolic & Toxicity -->
+    <ng-container *ngIf="activeTab === 'explore'">
+      <path
+        *ngIf="toxicityPath"
+        class="toxicity-area"
+        [attr.d]="toxicityPath"
+      ></path>
+      <path
+        *ngIf="anabolicPath"
+        class="anabolic-path"
+        [attr.d]="anabolicPath"
+      ></path>
+    </ng-container>
+
+    <!-- Optimize View: Serum Only -->
+    <ng-container *ngIf="activeTab === 'optimize'">
+      <path
+        *ngIf="serumPath"
+        class="serum-path"
+        [attr.d]="serumPath"
+      ></path>
+    </ng-container>
+  </svg>
+
+  <div class="chart-empty" *ngIf="!dataPoints.length && !loading && activeTab !== 'signaling'">
+    No telemetry yet. Adjust the stack and pulse the solver.
+  </div>
+  <div class="chart-loader" *ngIf="loading">
+    <span></span>
+    <p>Streaming datapoints…</p>
+  </div>
 </div>
 
-<section class="chart-stats">
-	<article>
-		<p class="label">Peak serum</p>
-		<strong>{{ peakSerum | number: '1.0-0' }} ng/dL</strong>
-		<small>Envelope area {{ serumAUC | number: '1.0-0' }}</small>
-	</article>
-	<article>
-		<p class="label">Anabolic crest</p>
-		<strong>{{ peakAnabolic | number: '1.1-1' }} AU</strong>
-		<small>Relative gain channel</small>
-	</article>
-	<article>
-		<p class="label">Toxicity ceiling</p>
-		<strong>{{ maxToxicity | number: '1.1-1' }}%</strong>
-		<small>Keep it sub-35% for safety</small>
-	</article>
-</section>
+<!-- Stats visible in Optimize view -->
+<!-- <section class="chart-stats" *ngIf="activeTab === 'optimize'">
+  <article>
+    <p class="label">Peak serum</p>
+    <strong>{{ peakSerum | number: '1.0-0' }} ng/dL</strong>
+    <small>Envelope area {{ serumAUC | number: '1.0-0' }}</small>
+  </article>
+  <article>
+    <p class="label">Anabolic crest</p>
+    <strong>{{ peakAnabolic | number: '1.1-1' }} AU</strong>
+    <small>Relative gain channel</small>
+  </article>
+  <article>
+    <p class="label">Toxicity ceiling</p>
+    <strong>{{ maxToxicity | number: '1.1-1' }}%</strong>
+    <small>Keep it sub-35% for safety</small>
+  </article>
+</section> -->

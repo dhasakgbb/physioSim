@@ -5,32 +5,42 @@
 @tailwind utilities;
 
 :root {
-  /* Gunmetal/Carbon Base Palette */
-  --color-bg-core: #0a0a0c;         /* Deep void */
-  --color-bg-void: #0d0d0f;         /* Data visualization area */
-  --color-bg-console: #1a1c20;      /* Control surfaces - brushed metal */
-  --color-bg-surface: #1e2024;      /* Cards and panels */
-  --color-bg-panel: #24262a;        /* Elevated surfaces */
-  --color-bg-input: #2a2c30;        /* Form elements */
-  --color-bg-highlight: #2f3135;    /* Interactive states */
+  /* A. The "OLED Gunmetal" Palette */
+  --bg-main: #0B0C0E;              /* The void. Not pure black, but 98% black. */
+  --bg-surface: #13151A;           /* The card surface. Slightly cooler grey. */
+  --bg-surface-hover: #1A1D23;     /* Interaction state. */
+  --border-subtle: rgba(255, 255, 255, 0.06);  /* The default separator. */
+  --border-highlight: rgba(255, 255, 255, 0.12); /* Hover borders. */
 
-  /* Text Hierarchy */
-  --color-text-primary: #f1f5f9;    /* Tungsten white */
-  --color-text-secondary: #94a3b8;  /* Cool gray */
-  --color-text-tertiary: #64748b;   /* Muted */
-  --color-text-muted: #475569;      /* Subtle */
+  /* B. The "Bio-Luminescent" Accents */
+  --primary-indigo: #5E6AD2;        /* Use for "Optimize" buttons and sliders. */
+  --signal-green: #27D796;         /* Use for "Normal" range and positive deltas. */
+  --signal-orange: #F3A041;        /* Use for Warnings. */
+  --signal-red: #E05555;           /* Use for Critical/Redline. */
 
-  /* Electric Blue Accent System */
-  --color-accent-primary: #00d4ff;    /* Electric blue */
-  --color-accent-secondary: #0891b2; /* Deep cyan */
-  --color-accent-success: #10b981;   /* Emerald */
-  --color-accent-warning: #f59e0b;   /* Amber */
-  --color-accent-critical: #ef4444;  /* Red */
+  /* Legacy mappings for backward compatibility */
+  --color-bg-core: var(--bg-main);
+  --color-bg-void: var(--bg-main);
+  --color-bg-console: #1a1c20;
+  --color-bg-panel: var(--bg-surface);
+  --color-bg-input: #2a2c30;
+  --color-bg-highlight: var(--bg-surface-hover);
+
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-tertiary: #64748b;
+  --color-text-muted: #475569;
+
+  --color-accent-primary: var(--primary-indigo);
+  --color-accent-secondary: #0891b2;
+  --color-accent-success: var(--signal-green);
+  --color-accent-warning: var(--signal-orange);
+  --color-accent-critical: var(--signal-red);
 
   /* Tactical Outlines */
-  --color-border-subtle: #374151;
-  --color-border-strong: #4b5563;
-  --color-border-accent: #00d4ff;
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-highlight);
+  --color-border-accent: var(--primary-indigo);
 }
 
 body {
@@ -49,69 +59,91 @@ body {
   overflow-x: hidden;
 }
 
-/* Gunmetal/Carbon Textures */
-.brushed-metal {
-  background: linear-gradient(135deg,
-    var(--color-bg-console) 0%,
-    #141619 50%,
-    var(--color-bg-console) 100%);
-  position: relative;
+
+/* C. Effects (The "Secret Sauce") */
+.glow-orange {
+  box-shadow: 0px 0px 8px rgba(243, 160, 65, 0.4);
 }
 
-.brushed-metal::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+.glow-red {
+  box-shadow: 0px 0px 10px rgba(225, 85, 85, 0.6);
+}
+
+/* GLASS COCKPIT - CSS Grid Layout System */
+/* The Main Container - Forces the 3-column structure */
+.app-shell {
+  display: grid;
+  grid-template-rows: 48px 1fr 40px; /* Header, Main, Footer */
+  height: 100vh;
+  width: 100vw;
+  background: var(--bg-main); /* Deepest Black */
+  overflow: hidden;
+}
+
+/* The Header */
+.header {
+  grid-row: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: var(--bg-surface);
+}
+
+/* The Main Content Area - 3 Columns */
+.main-stage {
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: 260px 1fr 300px; /* Fixed Left, Flex Center, Fixed Right */
+}
+
+/* The Columns - Note the borders */
+.col-left {
+  background: var(--bg-surface);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.col-center {
+  background: var(--bg-main); /* Slightly lighter to bring it forward */
+  position: relative; /* Anchor for floating elements */
+  padding: 24px; /* Give the chart breathing room */
+}
+
+.col-right {
+  background: var(--bg-surface);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* The Footer */
+.footer {
+  grid-row: 3;
+  background: var(--bg-main);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+
+/* Phase 2: The "Ghost" Wireframe */
+.ghost-wireframe {
   background-image:
-    radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px),
-    radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 1px, transparent 1px);
-  background-size: 4px 4px;
-  background-position: 0 0, 2px 2px;
-  opacity: 0.3;
-  pointer-events: none;
-}
-
-/* Carbon Fiber Pattern */
-.carbon-fiber {
-  background:
-    repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 2px,
-      rgba(255,255,255,0.03) 2px,
-      rgba(255,255,255,0.03) 4px
-    ),
-    linear-gradient(135deg, var(--color-bg-panel) 0%, var(--color-bg-surface) 100%);
-  position: relative;
-}
-
-.carbon-fiber::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    135deg,
-    transparent 0%,
-    rgba(255,255,255,0.02) 25%,
-    transparent 50%,
-    rgba(255,255,255,0.01) 75%,
-    transparent 100%
-  );
-  pointer-events: none;
-}
-
-/* Tactical Void Background */
-.void-background {
-  background:
-    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(0, 212, 255, 0.03) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 40% at 80% 60%, rgba(0, 212, 255, 0.02) 0%, transparent 50%),
-    var(--color-bg-void);
+    /* Faint grid lines */
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    /* Chemical hexagon pattern */
+    radial-gradient(circle at 25% 25%, rgba(94, 106, 210, 0.01) 2px, transparent 2px),
+    radial-gradient(circle at 75% 75%, rgba(39, 215, 150, 0.01) 2px, transparent 2px);
+  background-size:
+    40px 40px,    /* Grid */
+    60px 60px,    /* Hex pattern 1 */
+    80px 80px;    /* Hex pattern 2 */
+  background-position:
+    0 0,           /* Grid */
+    20px 20px,     /* Hex pattern 1 */
+    40px 40px;     /* Hex pattern 2 */
+  opacity: 0.4;    /* Very subtle */
 }
 
 /* Carbon Fiber Headers */
@@ -184,15 +216,6 @@ body {
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
 }
 
-.dot-grid {
-  background-color: var(--color-bg-core);
-  background-image: radial-gradient(
-    rgba(228, 228, 231, 0.05) 1px,
-    transparent 1px
-  );
-  background-size: 20px 20px;
-  background-position: center;
-}
 
 .hud-bracket {
   position: relative;

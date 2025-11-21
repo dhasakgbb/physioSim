@@ -1,32 +1,116 @@
-<section class="hud">
-	<header class="hud__header">
-		<div>
-			<p class="eyebrow">Telemetry HUD</p>
-			<h2>Safety posture</h2>
-		</div>
-	</header>
+<div class="flex flex-col space-y-6">
+  
+  <!-- Section 1: System Health -->
+  <div>
+    <h3 class="mb-3 text-[10px] font-bold uppercase tracking-wider text-gray-500">System Health</h3>
+    <div class="grid gap-y-1">
+      
+      <!-- Readiness -->
+      <div class="grid grid-cols-[60px_1fr_60px] items-center gap-3 h-8">
+        <span class="text-xs font-medium text-gray-400">Ready</span>
+        <div class="relative h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+          <div 
+            class="absolute left-0 top-0 h-full rounded-full bg-emerald-400" 
+            [style.width]="getBarWidth(vitals[0].value, vitals[0].max)"
+            [class]="vitals[0].status === 'critical' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-emerald-400'">
+          </div>
+        </div>
+        <span class="text-right font-mono text-xs text-emerald-400" [class]="vitals[0].status === 'critical' ? 'text-red-400' : 'text-emerald-400'">
+          {{ vitals[0].value | number: '1.0-1' }}
+        </span>
+      </div>
 
-	<div class="hud__body" *ngIf="dataPoints.length; else hudEmpty">
-		<div class="gauge" aria-label="readiness gauge">
-			<div class="gauge__ring" [style.background]="readinessGradient">
-				<div class="gauge__core">
-					<span>{{ readinessScore | number: '1.0-0' }}%</span>
-					<small>readiness</small>
-				</div>
-			</div>
-			<p class="gauge__caption">Stability {{ volatilityScore | number: '1.0-0' }}%</p>
-		</div>
+      <!-- Stability -->
+      <div class="grid grid-cols-[60px_1fr_60px] items-center gap-3 h-8">
+        <span class="text-xs font-medium text-gray-400">Stable</span>
+        <div class="relative h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+          <div 
+            class="absolute left-0 top-0 h-full rounded-full bg-emerald-400" 
+            [style.width]="getBarWidth(vitals[1].value, vitals[1].max)"
+            [class]="vitals[1].status === 'critical' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-emerald-400'">
+          </div>
+        </div>
+        <span class="text-right font-mono text-xs text-emerald-400" [class]="vitals[1].status === 'critical' ? 'text-red-400' : 'text-emerald-400'">
+          {{ vitals[1].value | number: '1.0-1' }}
+        </span>
+      </div>
 
-		<ul class="metric-grid">
-			<li *ngFor="let metric of metricCards">
-				<p class="label">{{ metric.label }}</p>
-				<strong>{{ metric.value }}</strong>
-				<small>{{ metric.caption }}</small>
-			</li>
-		</ul>
-	</div>
-</section>
+      <!-- Toxicity -->
+      <div class="grid grid-cols-[60px_1fr_60px] items-center gap-3 h-8">
+        <span class="text-xs font-medium text-gray-400">Tox</span>
+        <div class="relative h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+          <div 
+            class="absolute left-0 top-0 h-full rounded-full bg-emerald-400" 
+            [style.width]="getBarWidth(vitals[2].value, vitals[2].max)"
+            [class]="vitals[2].status === 'critical' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-emerald-400'">
+          </div>
+        </div>
+        <span class="text-right font-mono text-xs text-emerald-400" [class]="vitals[2].status === 'critical' ? 'text-red-400' : 'text-emerald-400'">
+          {{ vitals[2].value | number: '1.0-1' }}
+        </span>
+      </div>
+
+    </div>
+  </div>
+  
+  <!-- Section 2: Biomarkers -->
+  <div>
+    <h3 class="mb-3 text-[10px] font-bold uppercase tracking-wider text-gray-500">Biomarkers</h3>
+    <div class="grid gap-y-1">
+      
+      <!-- Peak Serum -->
+      <div class="grid grid-cols-[60px_1fr_60px] items-center gap-3 h-8">
+        <span class="text-xs font-medium text-gray-400">Serum</span>
+        <div class="relative h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+          <div 
+            class="absolute left-0 top-0 h-full rounded-full bg-emerald-400" 
+            [style.width]="getBarWidth(vitals[3].value, vitals[3].max)"
+            [class]="vitals[3].status === 'critical' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-emerald-400'">
+          </div>
+        </div>
+        <span class="text-right font-mono text-xs text-emerald-400" [class]="vitals[3].status === 'critical' ? 'text-red-400' : 'text-emerald-400'">
+          {{ vitals[3].value | number: '1.0-0' }}
+        </span>
+      </div>
+
+      <!-- Anabolic Idx -->
+      <div class="grid grid-cols-[60px_1fr_60px] items-center gap-3 h-8">
+        <span class="text-xs font-medium text-gray-400">Anabolic</span>
+        <div class="relative h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+          <div 
+            class="absolute left-0 top-0 h-full rounded-full bg-emerald-400" 
+            [style.width]="getBarWidth(vitals[4].value, vitals[4].max)"
+            [class]="vitals[4].status === 'critical' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-emerald-400'">
+          </div>
+        </div>
+        <span class="text-right font-mono text-xs text-emerald-400" [class]="vitals[4].status === 'critical' ? 'text-red-400' : 'text-emerald-400'">
+          {{ vitals[4].value | number: '1.1-1' }}
+        </span>
+      </div>
+
+      <!-- Drift -->
+      <div class="grid grid-cols-[60px_1fr_60px] items-center gap-3 h-8">
+        <span class="text-xs font-medium text-gray-400">Drift</span>
+        <div class="relative h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+          <div 
+            class="absolute left-0 top-0 h-full rounded-full bg-emerald-400" 
+            [style.width]="getBarWidth(Math.abs(vitals[5].value), vitals[5].max)"
+            [class]="vitals[5].status === 'critical' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-emerald-400'">
+          </div>
+        </div>
+        <span class="text-right font-mono text-xs text-emerald-400" [class]="vitals[5].status === 'critical' ? 'text-red-400' : 'text-emerald-400'">
+          {{ Math.abs(vitals[5].value) | number: '1.0-1' }}
+        </span>
+      </div>
+
+    </div>
+  </div>
+  
+</div>
 
 <ng-template #hudEmpty>
-	<div class="hud-empty">Solve a stack to unlock telemetry.</div>
+  <div class="hud-empty">
+    <p>No telemetry data available.</p>
+    <small>Run a simulation to view vitals.</small>
+  </div>
 </ng-template>

@@ -13,19 +13,67 @@ import {
 import { compoundData } from "../../data/compoundData";
 import { simulateSerum } from "../../utils/pharmacokinetics";
 import { useStack } from "../../context/StackContext";
+import { useSimulation } from "../../context/SimulationContext";
 import { getGeneticProfileConfig } from "../../utils/personalization";
 
-const SerumStabilityChart = ({ stack, onTimeScrub }) => {
+const useDebouncedCallback = (callback, delay = 60) => {
+  const timeoutRef = React.useRef(null);
+
+  const debounced = React.useCallback((...args) => {
+    if (!callback) return;
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+    timeoutRef.current = window.setTimeout(() => callback(...args), delay);
+  }, [callback, delay]);
+
+  React.useEffect(() => () => {
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+  }, []);
+
+  return debounced;
+};
+
+const SerumStabilityChart = ({ onTimeScrub }) => {
   const { userProfile } = useStack();
+  const { compounds } = useSimulation();
+  const stack = compounds;
   const { metabolismMultiplier } = getGeneticProfileConfig(userProfile);
   const [playheadPosition, setPlayheadPosition] = React.useState(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const chartRef = React.useRef(null);
+  const serumCacheRef = React.useRef(new Map());
 
-  const data = useMemo(
-    () => simulateSerum(stack, 28, { metabolismMultiplier }),
-    [stack, metabolismMultiplier],
+  const debouncedScrub = useDebouncedCallback(onTimeScrub, 75);
+
+  const stackSignature = useMemo(() => {
+    if (!stack.length) return "empty";
+    return stack
+      .map(({ compound, dose, frequency, ester }) =>
+        [compound, dose, frequency ?? "", ester ?? ""].join(":"),
+      )
+      .join("|");
+  }, [stack]);
+
+  const serumKey = useMemo(
+    () => `${stackSignature}|${metabolismMultiplier}`,
+    [stackSignature, metabolismMultiplier],
   );
+
+  const data = useMemo(() => {
+    if (!stack.length) return [];
+    const cache = serumCacheRef.current;
+    if (cache.has(serumKey)) return cache.get(serumKey);
+
+    const simulated = simulateSerum(stack, 28, { metabolismMultiplier }) || [];
+    const sanitized = simulated
+      .map((point) => ({
+        ...point,
+        day: Number.isFinite(point.day) ? point.day : 0,
+        total: Number.isFinite(point.total) ? point.total : 0,
+      }))
+      .sort((a, b) => a.day - b.day);
+    cache.set(serumKey, sanitized);
+    return sanitized;
+  }, [stack, metabolismMultiplier, serumKey]);
 
   // Handle playhead interactions
   const handleMouseDown = (event) => {
@@ -47,8 +95,14 @@ const SerumStabilityChart = ({ stack, onTimeScrub }) => {
   const updatePlayheadPosition = (event) => {
     if (!chartRef.current) return;
 
+    const clientX =
+      event?.clientX ??
+      event?.touches?.[0]?.clientX ??
+      event?.changedTouches?.[0]?.clientX;
+    if (typeof clientX !== "number") return;
+
     const rect = chartRef.current.getBoundingClientRect();
-    const x = event.clientX - rect.left;
+    const x = clientX - rect.left;
     const chartWidth = rect.width - 40; // Account for margins
     const relativeX = Math.max(0, Math.min(1, x / chartWidth));
 
@@ -58,30 +112,30 @@ const SerumStabilityChart = ({ stack, onTimeScrub }) => {
     setPlayheadPosition(dayPosition);
 
     // Call the callback to update Virtual Phlebotomist
-    if (onTimeScrub) {
+    if (onTimeScrub && data.length) {
       // Find the closest data point
       const closestPoint = data.reduce((closest, point) => {
         return Math.abs(point.day - dayPosition) < Math.abs(closest.day - dayPosition)
           ? point
           : closest;
       });
-      onTimeScrub(closestPoint);
+      debouncedScrub(closestPoint);
     }
   };
 
   React.useEffect(() => {
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.addEventListener('touchmove', handleMouseMove);
-      document.addEventListener('touchend', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("touchmove", handleMouseMove);
+      document.addEventListener("touchend", handleMouseUp);
     }
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('touchmove', handleMouseMove);
-      document.removeEventListener('touchend', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("touchmove", handleMouseMove);
+      document.removeEventListener("touchend", handleMouseUp);
     };
   }, [isDragging]);
 
@@ -102,46 +156,24 @@ const SerumStabilityChart = ({ stack, onTimeScrub }) => {
   }, [stack]);
 
   return (
-    <div className="absolute inset-0 flex flex-col bg-physio-bg-core">
-      <div className="flex items-center justify-between px-6 py-4 z-10 bg-physio-bg-surface backdrop-blur">
-        <div className="flex flex-wrap items-baseline gap-3">
-          <h3 className="text-sm font-bold text-physio-text-primary uppercase tracking-wider">
-            Serum Stability Simulator
-          </h3>
-          <span className="text-xs text-physio-text-tertiary font-medium">
-            Pharmacokinetics & Active Half-Lives
-          </span>
+    <div className="flex flex-col h-full relative">
+      {/* Chart Canvas - Edge to Edge */}
+      <div className="flex-1 w-full min-h-0 relative">
+        <div className="absolute top-4 left-6 right-6 z-10 flex items-center justify-between text-[10px] uppercase tracking-[0.4em] text-[#9ca3af]">
+          <span>Serum Stability</span>
+          <span>Stability Score {stabilityScore}%</span>
         </div>
-
-        <div className="flex items-center gap-3">
-          <span className="text-xs uppercase text-physio-text-tertiary">
-            Stability Score
-          </span>
-          <span
-            className={`text-sm font-mono font-bold ${
-              Number(stabilityScore) > 85
-                ? "text-physio-accent-success"
-                : Number(stabilityScore) > 60
-                  ? "text-physio-accent-warning"
-                  : "text-physio-accent-critical"
-            }`}
-          >
-            {stabilityScore}%
-          </span>
-        </div>
-      </div>
-
-      <div className="flex-1 w-full min-h-0 relative pb-12">
         <ResponsiveContainer
           width="100%"
           height="100%"
           ref={chartRef}
           onMouseDown={handleMouseDown}
+          onTouchStart={handleMouseDown}
           style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
         >
           <LineChart
             data={data}
-            margin={{ top: 20, right: 30, left: 30, bottom: 20 }}
+            margin={{ top: 60, right: 30, left: 30, bottom: 20 }}
           >
             <CartesianGrid
               strokeDasharray="3 3"
@@ -174,14 +206,6 @@ const SerumStabilityChart = ({ stack, onTimeScrub }) => {
               }}
               formatter={(value) => `${value.toFixed(0)} mg`}
               labelFormatter={(val) => `Day ${val}`}
-            />
-
-            <Legend
-              verticalAlign="top"
-              height={36}
-              iconType="circle"
-              iconSize={8}
-              wrapperStyle={{ fontSize: "11px" }}
             />
 
             {/* Render a Line for every compound in the stack */}

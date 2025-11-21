@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import Card from "../ui/Card";
+import PhlebotomistCell from "../ui/PhlebotomistCell";
 import { getAncillaryProtocol } from "../../data/sideFxAndAncillaries";
 import { compoundData } from "../../data/compoundData";
 
@@ -81,34 +82,6 @@ const ReferenceRangeIndicator = ({ value, range, label }) => {
   );
 };
 
-// Grouped biomarker display
-const BiomarkerGroup = ({ title, biomarkers, icon }) => (
-  <div className="space-y-3 p-4 rounded-lg bg-physio-bg-surface/30 border border-physio-border-subtle/50 hover:bg-physio-bg-surface/50 transition-colors">
-    <h4 className="text-xs uppercase tracking-widest text-physio-text-primary font-bold border-b border-physio-border-subtle pb-2 flex items-center gap-2">
-      {icon && <span className="text-physio-accent-primary text-sm">{icon}</span>}
-      {title}
-    </h4>
-    <div className="space-y-1">
-      {biomarkers.map((biomarker, idx) => {
-        const range = BIOMARKER_RANGES[biomarker.id];
-        if (!range) return null;
-
-        return (
-          <div key={idx} className="flex items-center gap-3 py-1 px-2 rounded hover:bg-physio-bg-highlight/20 transition-colors">
-            <span className="w-16 text-right text-sm text-physio-text-secondary font-medium truncate">
-              {biomarker.label}
-            </span>
-            <ReferenceRangeIndicator
-              value={biomarker.value}
-              range={range}
-              label={biomarker.label}
-            />
-          </div>
-        );
-      })}
-    </div>
-  </div>
-);
 
 const VitalSigns = ({
   metrics,
@@ -312,53 +285,147 @@ const VitalSigns = ({
             </div>
           )}
 
-          {/* Biomarker Panels - Grouped by System */}
+          {/* Inspector Grid - Visual Biomarker Analysis */}
           <div className="space-y-6">
-            {/* Lipid Profile */}
-            <BiomarkerGroup
-              title="Lipid Profile"
-              icon="🫀"
-              biomarkers={[
-                { id: 'total_cholesterol', label: 'Total Chol', value: 185 },
-                { id: 'ldl', label: 'LDL', value: 105 },
-                { id: 'hdl', label: 'HDL', value: 55 },
-                { id: 'triglycerides', label: 'Triglycerides', value: 95 }
-              ]}
-            />
+            {/* LIPIDS Section */}
+            <div className="space-y-3">
+              <h4 className="text-xs uppercase tracking-widest text-physio-text-primary font-bold border-b border-physio-border-subtle pb-2 flex items-center gap-2">
+                <span className="text-lg">🫀</span> Lipids
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                <PhlebotomistCell
+                  label="Total Cholesterol"
+                  value={185}
+                  min={0}
+                  max={300}
+                  safeMax={200}
+                  unit="mg/dL"
+                />
+                <PhlebotomistCell
+                  label="LDL"
+                  value={105}
+                  min={0}
+                  max={200}
+                  safeMax={100}
+                  unit="mg/dL"
+                  isCritical={105 > 100}
+                />
+                <PhlebotomistCell
+                  label="HDL"
+                  value={55}
+                  min={0}
+                  max={100}
+                  safeMax={40}
+                  unit="mg/dL"
+                />
+                <PhlebotomistCell
+                  label="Triglycerides"
+                  value={95}
+                  min={0}
+                  max={200}
+                  safeMax={150}
+                  unit="mg/dL"
+                />
+              </div>
+            </div>
 
-            {/* Liver Function */}
-            <BiomarkerGroup
-              title="Liver Function"
-              icon="🫘"
-              biomarkers={[
-                { id: 'alt', label: 'ALT', value: 32 },
-                { id: 'ast', label: 'AST', value: 28 },
-                { id: 'alp', label: 'ALP', value: 85 },
-                { id: 'bilirubin', label: 'Bilirubin', value: 0.8 }
-              ]}
-            />
+            {/* HORMONES Section */}
+            <div className="space-y-3">
+              <h4 className="text-xs uppercase tracking-widest text-physio-text-primary font-bold border-b border-physio-border-subtle pb-2 flex items-center gap-2">
+                <span className="text-lg">⚡</span> Hormones
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                <PhlebotomistCell
+                  label="Testosterone"
+                  value={650}
+                  min={0}
+                  max={1000}
+                  safeMax={800}
+                  unit="ng/dL"
+                />
+                <PhlebotomistCell
+                  label="Cortisol"
+                  value={18}
+                  min={0}
+                  max={30}
+                  safeMax={25}
+                  unit="μg/dL"
+                />
+                <PhlebotomistCell
+                  label="SHBG"
+                  value={25}
+                  min={0}
+                  max={50}
+                  safeMax={40}
+                  unit="nmol/L"
+                />
+                <PhlebotomistCell
+                  label="Prolactin"
+                  value={8}
+                  min={0}
+                  max={20}
+                  safeMax={15}
+                  unit="ng/mL"
+                />
+              </div>
+            </div>
 
-            {/* Hormonal Panel */}
-            <BiomarkerGroup
-              title="Hormonal Panel"
-              icon="⚡"
-              biomarkers={[
-                { id: 'testosterone', label: 'Testosterone', value: 650 },
-                { id: 'cortisol', label: 'Cortisol', value: 18 },
-                { id: 'shbg', label: 'SHBG', value: 25 },
-                { id: 'prolactin', label: 'Prolactin', value: 8 }
-              ]}
-            />
-
-            {/* Metabolic Indicators */}
-            <BiomarkerGroup
-              title="Metabolic Health"
-              icon="🔥"
-              biomarkers={[
-                { id: 'glucose', label: 'Glucose', value: 92 },
-                { id: 'insulin', label: 'Insulin', value: 8 }
-              ]}
-            />
+            {/* ORGANS Section */}
+            <div className="space-y-3">
+              <h4 className="text-xs uppercase tracking-widest text-physio-text-primary font-bold border-b border-physio-border-subtle pb-2 flex items-center gap-2">
+                <span className="text-lg">🫘</span> Organ Function
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                <PhlebotomistCell
+                  label="ALT"
+                  value={32}
+                  min={0}
+                  max={100}
+                  safeMax={40}
+                  unit="U/L"
+                />
+                <PhlebotomistCell
+                  label="AST"
+                  value={28}
+                  min={0}
+                  max={100}
+                  safeMax={40}
+                  unit="U/L"
+                />
+                <PhlebotomistCell
+                  label="ALP"
+                  value={85}
+                  min={0}
+                  max={150}
+                  safeMax={120}
+                  unit="U/L"
+                />
+                <PhlebotomistCell
+                  label="Bilirubin"
+                  value={0.8}
+                  min={0}
+                  max={2.0}
+                  safeMax={1.2}
+                  unit="mg/dL"
+                />
+                <PhlebotomistCell
+                  label="Glucose"
+                  value={92}
+                  min={0}
+                  max={140}
+                  safeMax={100}
+                  unit="mg/dL"
+                />
+                <PhlebotomistCell
+                  label="Insulin"
+                  value={8}
+                  min={0}
+                  max={25}
+                  safeMax={15}
+                  unit="μIU/mL"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Ancillary Checklist (HIDDEN) */}

@@ -5,13 +5,13 @@ import { describe, it, expect, vi } from "vitest";
 import { act } from "react";
 import Dashboard from "../Dashboard";
 import { StackProvider } from "../../../context/StackContext";
+import { SimulationProvider } from "../../../context/SimulationContext";
 
 vi.mock("../../../context/StackContext", () => {
   const React = require("react");
   const StackContext = React.createContext();
 
   const StackProvider = ({ children }) => {
-    const [viewMode, setViewMode] = React.useState("net");
     const value = React.useMemo(
       () => ({
         stack: [],
@@ -20,13 +20,11 @@ vi.mock("../../../context/StackContext", () => {
         setUserProfile: vi.fn(),
         inspectedCompound: null,
         setInspectedCompound: vi.fn(),
-        viewMode,
-        setViewMode,
         durationWeeks: 12,
         setDurationWeeks: vi.fn(),
         metrics: {},
       }),
-      [viewMode],
+      [],
     );
 
     return (
@@ -34,20 +32,54 @@ vi.mock("../../../context/StackContext", () => {
     );
   };
 
-  const useStack = () => React.useContext(StackContext);
-
   return {
     StackProvider,
-    useStack,
+    useStack: () => React.useContext(StackContext),
     VIEW_MODE_SLUGS: { net: "explore", optimize: "optimize", network: "signaling" },
   };
 });
 
+vi.mock("../../../context/SimulationContext", () => {
+  const React = require("react");
+  const SimulationContext = React.createContext();
+
+  const SimulationProvider = ({ children }) => {
+    const value = React.useMemo(
+      () => ({
+        compounds: [],
+        setCompounds: vi.fn(),
+        metrics: {},
+        cycleDuration: 12,
+        setCycleDuration: vi.fn(),
+        updateDose: vi.fn(),
+        updateFrequency: vi.fn(),
+        updateEster: vi.fn(),
+        removeCompound: vi.fn(),
+        addCompound: vi.fn(),
+      }),
+      [],
+    );
+
+    return (
+      <SimulationContext.Provider value={value}>
+        {children}
+      </SimulationContext.Provider>
+    );
+  };
+
+  return {
+    SimulationProvider,
+    useSimulation: () => React.useContext(SimulationContext),
+  };
+});
+
 vi.mock("../DashboardLayout", () => ({
-  default: ({ headerControls, centerStage }) => (
+  default: ({ leftRail, centerStage, rightRail, bottomControls }) => (
     <div>
-      <div data-testid="header">{headerControls}</div>
+      <div data-testid="left">{leftRail}</div>
       <div data-testid="stage">{centerStage}</div>
+      <div data-testid="right">{rightRail}</div>
+      <div data-testid="status">{bottomControls}</div>
     </div>
   ),
 }));
@@ -84,36 +116,33 @@ vi.mock("../OptimizerPane", () => ({
   default: () => <div data-testid="optimizer-pane">Optimizer Pane</div>,
 }));
 
-vi.mock("../DonationModal", () => ({
-  default: () => null,
-}));
-
 vi.mock("../CompoundInspector", () => ({
   default: () => null,
 }));
 
-describe("Dashboard view switching", () => {
-  it("switches between Explore, Optimize, and Signaling", async () => {
+describe("Dashboard tab switching", () => {
+  it("switches between Efficiency, Optimize, and Pathways", async () => {
     const user = userEvent.setup();
     await act(async () => {
       render(
         <StackProvider>
-          <Dashboard />
+          <SimulationProvider>
+            <Dashboard />
+          </SimulationProvider>
         </StackProvider>,
       );
     });
 
     // Explore view is default
     expect(screen.getByTestId("net-chart")).toBeInTheDocument();
-    expect(screen.queryByTestId("optimizer-pane")).not.toBeInTheDocument();
 
     await act(async () => {
-      await user.click(screen.getByRole("link", { name: /optimize/i }));
+      await user.click(screen.getByRole("button", { name: /optimize/i }));
     });
     expect(screen.getByTestId("optimizer-pane")).toBeInTheDocument();
 
     await act(async () => {
-      await user.click(screen.getByRole("link", { name: /signaling/i }));
+      await user.click(screen.getByRole("button", { name: /pathways/i }));
     });
     expect(screen.getByTestId("network-chart")).toBeInTheDocument();
   });

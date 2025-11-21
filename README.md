@@ -6,6 +6,8 @@
 ![React](https://img.shields.io/badge/React-18.2-61dafb.svg)
 ![Recharts](https://img.shields.io/badge/Recharts-2.10-8884d8.svg)
 
+> **Architecture Decision**: This project uses React as the primary frontend framework. The Angular prototype in `/frontend/` has been deprecated and will be removed in a future release.
+
 ---
 
 ## 📋 Table of Contents

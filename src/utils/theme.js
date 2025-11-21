@@ -1,13 +1,15 @@
+// Bio-Luminescent Design Tokens
 export const COLORS = {
-  benefit: "#22c55e",
-  risk: "#f87171",
-  grid: "#3f3f46",
+  // B. The "Bio-Luminescent" Accents
+  benefit: "var(--signal-green)",         // #27D796 - Use for "Normal" range and positive deltas
+  risk: "var(--signal-red)",              // #E05555 - Use for Critical/Redline
+  grid: "var(--border-subtle)",           // Subtle grid lines
   textPrimary: "#e4e4e7",
   textSecondary: "#a1a1aa",
   textTertiary: "#71717a",
-  accentSuccess: "#22c55e",
-  accentWarning: "#fbbf24",
-  accentCritical: "#f87171",
-  accentCyan: "#3b82f6",
-  bgSurface: "#27272a",
+  accentSuccess: "var(--signal-green)",   // #27D796
+  accentWarning: "var(--signal-orange)",  // #F3A041 - Use for Warnings
+  accentCritical: "var(--signal-red)",    // #E05555
+  accentCyan: "var(--primary-indigo)",    // #5E6AD2 - Use for "Optimize" buttons and sliders
+  bgSurface: "var(--bg-surface)",         // #13151A
 };

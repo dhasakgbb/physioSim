@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { EsterType } from '../../generated/physiosim/v1/engine_pb';
 import { CompoundModel } from '../../core/services/simulation-client';
 
@@ -24,13 +24,19 @@ export class ActiveMixture {
   @Output() refreshRequested = new EventEmitter<void>();
 
   readonly durationRange = { min: 7, max: 112 };
+  readonly expandedCompoundId = signal<string | null>(null);
 
   trackByCompound = (_: number, compound: CompoundModel) => compound.id;
+
+  toggleCompound(id: string): void {
+    this.expandedCompoundId.update(current => current === id ? null : id);
+  }
 
   onDosageSliderChange(compoundId: string, event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);
     this.emitDosageUpdate(compoundId, value);
   }
+// ...existing code...
 
   onDosageInputChange(compoundId: string, event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);

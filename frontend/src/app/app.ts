@@ -1,10 +1,12 @@
-import { Component, OnInit, computed, inject } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { SimulationClientService } from './core/services/simulation-client';
 
 interface CompoundUpdatePayload {
   id: string;
   dosageMg: number;
 }
+
+export type AppTab = 'explore' | 'optimize' | 'signaling';
 
 @Component({
   selector: 'app-root',
@@ -14,6 +16,9 @@ interface CompoundUpdatePayload {
 })
 export class App implements OnInit {
   private readonly simulationClient = inject(SimulationClientService);
+  
+  readonly activeTab = signal<AppTab>('explore');
+
   readonly vm = computed(() => ({
     compounds: this.simulationClient.compounds(),
     dataPoints: this.simulationClient.dataPoints(),
@@ -24,6 +29,10 @@ export class App implements OnInit {
 
   ngOnInit(): void {
     void this.simulationClient.runCurrentConfiguration();
+  }
+
+  setActiveTab(tab: AppTab): void {
+    this.activeTab.set(tab);
   }
 
   onCompoundUpdated(change: CompoundUpdatePayload): void {

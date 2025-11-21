@@ -1,6 +1,14 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { DataPointModel } from '../../core/services/simulation-client';
 
+export interface VitalMetric {
+  label: string;
+  value: number;
+  unit: string;
+  status: 'normal' | 'warning' | 'critical';
+  max: number; // For bar scaling
+}
+
 @Component({
   selector: 'app-telemetry-hud',
   standalone: false,
@@ -11,6 +19,55 @@ import { DataPointModel } from '../../core/services/simulation-client';
 export class TelemetryHud {
   @Input() dataPoints: DataPointModel[] = [];
 
+  get vitals(): VitalMetric[] {
+    if (!this.dataPoints.length) return [];
+
+    return [
+      {
+        label: 'Readiness',
+        value: this.readinessScore,
+        unit: '%',
+        status: this.readinessScore > 80 ? 'normal' : this.readinessScore > 50 ? 'warning' : 'critical',
+        max: 100
+      },
+      {
+        label: 'Stability',
+        value: this.volatilityScore,
+        unit: '%',
+        status: this.volatilityScore > 70 ? 'normal' : 'warning',
+        max: 100
+      },
+      {
+        label: 'Toxicity',
+        value: this.toxicityLoad,
+        unit: '%',
+        status: this.toxicityLoad < 35 ? 'normal' : this.toxicityLoad < 60 ? 'warning' : 'critical',
+        max: 100
+      },
+      {
+        label: 'Peak Serum',
+        value: this.peakSerum,
+        unit: 'ng/dL',
+        status: 'normal',
+        max: 5000 // Arbitrary scale for visualization
+      },
+      {
+        label: 'Anabolic Idx',
+        value: this.peakAnabolic,
+        unit: 'AU',
+        status: 'normal',
+        max: 20
+      },
+      {
+        label: 'Drift',
+        value: Math.abs(this.driftPerDay),
+        unit: 'ng/d',
+        status: Math.abs(this.driftPerDay) < 50 ? 'normal' : 'warning',
+        max: 200
+      }
+    ];
+  }
+
   get readinessScore(): number {
     if (!this.dataPoints.length) {
       return 0;
@@ -18,11 +75,6 @@ export class TelemetryHud {
     const ratio = this.peakAnabolic / Math.max(this.maxToxicity || 1, 1);
     const normalized = Math.min(1, ratio / 2.5);
     return Number((normalized * 100).toFixed(1));
-  }
-
-  get readinessGradient(): string {
-    const angle = (this.readinessScore / 100) * 360;
-    return `conic-gradient(var(--neon-cyan) 0deg ${angle}deg, rgba(255,255,255,0.15) ${angle}deg 360deg)`;
   }
 
   get volatilityScore(): number {
@@ -49,42 +101,8 @@ export class TelemetryHud {
     return Number((last - prev).toFixed(1));
   }
 
-  get steadyStateDay(): number | null {
-    if (!this.dataPoints.length) {
-      return null;
-    }
-    const target = this.peakSerum * 0.9;
-    const point = this.dataPoints.find((p) => p.serumConcentration >= target);
-    return point?.day ?? null;
-  }
-
   get toxicityLoad(): number {
     return Number(this.maxToxicity.toFixed(1));
-  }
-
-  get metricCards(): Array<{ label: string; value: string; caption: string }> {
-    return [
-      {
-        label: 'Steady state',
-        value: this.steadyStateDay ? `${this.steadyStateDay} d` : '—',
-        caption: 'Day crossing 90% of peak serum',
-      },
-      {
-        label: 'Drift / day',
-        value: `${this.driftPerDay > 0 ? '+' : ''}${this.driftPerDay} ng/dL`,
-        caption: 'Delta between last two solves',
-      },
-      {
-        label: 'Toxic load',
-        value: `${this.toxicityLoad}%`,
-        caption: 'Max modeled hepatic stress',
-      },
-      {
-        label: 'Anabolic / tox',
-        value: this.maxToxicity ? (this.peakAnabolic / this.maxToxicity).toFixed(2) : '—',
-        caption: 'Bigger is better for lean gain bias',
-      },
-    ];
   }
 
   private get peakSerum(): number {
@@ -99,4 +117,8 @@ export class TelemetryHud {
     return Math.max(...this.dataPoints.map((p) => p.toxicityScore), 0);
   }
 
+  getBarWidth(value: number, max: number): string {
+    const percentage = Math.min(100, Math.max(0, (value / max) * 100));
+    return `${percentage}%`;
+  }
 }

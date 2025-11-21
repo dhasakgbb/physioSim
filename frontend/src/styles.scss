@@ -4,9 +4,9 @@
 @import "@fontsource/orbitron/700.css";
 
 :root {
-	--void-black: #04060b;
-	--carbon: #0f141c;
-	--nebula: #161f2d;
+	--void-black: #0B0C0E;
+	--carbon: #13151A;
+	--nebula: #181A1F;
 	--plasma: #1d2b3d;
 	--gridline: rgba(255, 255, 255, 0.08);
 	--neon-cyan: #00f5ff;
@@ -14,9 +14,9 @@
 	--ion-green: #7bffb7;
 	--amber: #ffb347;
 	--warning: #ff5f6d;
-	--text-primary: #f4f7ff;
+	--text-primary: #D1D5DB;
 	--text-muted: rgba(244, 247, 255, 0.65);
-	font-family: 'JetBrains Mono', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 	color-scheme: dark;
 }
 
@@ -30,7 +30,7 @@ body {
 	background: radial-gradient(circle at top, rgba(0, 245, 255, 0.15), transparent 55%),
 		linear-gradient(135deg, var(--void-black), var(--carbon));
 	color: var(--text-primary);
-	font-family: 'JetBrains Mono', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 	letter-spacing: 0.02em;
 }
 

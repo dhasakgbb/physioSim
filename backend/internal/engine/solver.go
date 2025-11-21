@@ -52,8 +52,20 @@ func NewSolver(cfg SolverConfig) *Solver {
 
 // Run executes the simulation for the provided request.
 func (s *Solver) Run(req *enginepb.SimulationRequest) *enginepb.SimulationResponse {
-	if req == nil || req.DurationDays <= 0 {
+	if req == nil || req.DurationDays <= 0 || req.DurationDays > 365 {
 		return &enginepb.SimulationResponse{}
+	}
+
+	// Validate compounds
+	if len(req.Compounds) > 20 { // Reasonable limit
+		return &enginepb.SimulationResponse{}
+	}
+
+	for _, compound := range req.Compounds {
+		if compound == nil || compound.DosageMg < 0 || compound.DosageMg > 2000 ||
+		   compound.AbsorptionK < 0 || compound.EliminationK < 0 {
+			return &enginepb.SimulationResponse{}
+		}
 	}
 
 	days := int(req.DurationDays)

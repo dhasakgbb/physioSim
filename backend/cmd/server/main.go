@@ -65,7 +65,21 @@ func main() {
 
 	grpcWebServer := grpcweb.WrapServer(
 		grpcServer,
-		grpcweb.WithOriginFunc(func(origin string) bool { return true }),
+		grpcweb.WithOriginFunc(func(origin string) bool {
+			// Allow specific origins in production
+			allowedOrigins := []string{
+				"https://yourdomain.com",
+				"https://www.yourdomain.com",
+				"http://localhost:3000", // For development
+				"http://localhost:4200", // For Angular dev
+			}
+			for _, allowed := range allowedOrigins {
+				if origin == allowed {
+					return true
+				}
+			}
+			return false
+		}),
 	)
 
 	httpHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -84,10 +98,25 @@ func main() {
 	})
 
 	corsWrapped := cors.New(cors.Options{
-		AllowOriginFunc:  func(origin string) bool { return true },
+		AllowOriginFunc: func(origin string) bool {
+			// Allow specific origins in production
+			allowedOrigins := []string{
+				"https://yourdomain.com",
+				"https://www.yourdomain.com",
+				"http://localhost:3000", // For development
+				"http://localhost:4200", // For Angular dev
+			}
+			for _, allowed := range allowedOrigins {
+				if origin == allowed {
+					return true
+				}
+			}
+			return false
+		},
 		AllowedMethods:   []string{http.MethodPost, http.MethodGet, http.MethodOptions},
-		AllowedHeaders:   []string{"*"},
-		AllowCredentials: true,
+		AllowedHeaders:   []string{"Content-Type", "Authorization", "X-Requested-With"},
+		AllowCredentials: false, // Disable credentials for security
+		MaxAge:           86400, // Cache preflight for 24 hours
 	}).Handler(httpHandler)
 
 	httpServer := &http.Server{

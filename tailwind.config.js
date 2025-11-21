@@ -4,52 +4,81 @@ export default {
   theme: {
     extend: {
       colors: {
+        main: "#0B0C0E",
+        surface: "#13151A",
+        element: "#1F2229",
+        primary: "#EDEDED",
+        secondary: "#8A8F98",
+        tertiary: "#575C66",
+        indigo: {
+          DEFAULT: "#5E6AD2",
+          glow: "rgba(94, 106, 210, 0.5)",
+        },
+        emerald: {
+          DEFAULT: "#27D796",
+          dim: "rgba(39, 215, 150, 0.1)",
+        },
+        rose: {
+          DEFAULT: "#E05555",
+          dim: "rgba(224, 85, 85, 0.1)",
+        },
+        // Physio design system colors
         physio: {
-          bg: {
-            core: "#09090B", // Level 0 — Void
-            surface: "#18181B", // Level 1 — Sidebars
-            highlight: "#27272A", // Level 2 — Panels/Cards
-            input: "#3F3F46", // Level 3 — Controls
-            glass: "rgba(24, 24, 27, 0.85)",
-          },
-          text: {
-            primary: "#E4E4E7",
-            secondary: "#A1A1AA",
-            tertiary: "#71717A",
-            muted: "#52525B",
-            inverse: "#09090B",
-          },
-          accent: {
-            primary: "#3B82F6", // Tech Blue
-            secondary: "#F8FAFC", // Titanium White
-            success: "#22C55E",
-            warning: "#FBBF24",
-            critical: "#F87171",
-            cyan: "#38BDF8",
-            mint: "#A5F3FC",
-          },
-          border: {
-            subtle: "#27272A",
-            strong: "#3F3F46",
-          },
+          // Background colors
+          'bg-core': 'var(--bg-main)',
+          'bg-void': 'var(--bg-main)',
+          'bg-surface': 'var(--bg-surface)',
+          'bg-panel': 'var(--bg-surface)',
+          'bg-input': 'var(--color-bg-input)',
+          'bg-highlight': 'var(--bg-surface-hover)',
+          'bg-console': 'var(--color-bg-console)',
+
+          // Text colors
+          'text-primary': 'var(--color-text-primary)',
+          'text-secondary': 'var(--color-text-secondary)',
+          'text-tertiary': 'var(--color-text-tertiary)',
+          'text-muted': 'var(--color-text-muted)',
+
+          // Accent colors
+          'accent-primary': 'var(--color-accent-primary)',
+          'accent-secondary': 'var(--color-accent-secondary)',
+          'accent-success': 'var(--color-accent-success)',
+          'accent-warning': 'var(--color-accent-warning)',
+          'accent-critical': 'var(--color-accent-critical)',
+          'accent-cyan': 'var(--primary-indigo)',
+
+          // Border colors
+          'border-subtle': 'var(--color-border-subtle)',
+          'border-strong': 'var(--color-border-strong)',
+          'border-accent': 'var(--color-border-accent)',
         },
       },
       fontFamily: {
-        sans: ["Outfit", "Inter", "system-ui", "sans-serif"], // Added Outfit preference
-        mono: ["JetBrains Mono", "Fira Code", "monospace"],
+        sans: ["Inter", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "Geist Mono", "monospace"],
       },
       boxShadow: {
-        "neo-sm": "0 2px 4px rgba(0, 0, 0, 0.3)",
-        "neo-md": "0 8px 16px rgba(0, 0, 0, 0.4)",
-        "neo-lg": "0 16px 32px rgba(0, 0, 0, 0.5)",
-        "neo-glow": "0 0 20px rgba(99, 102, 241, 0.15)",
-        "physio-subtle": "0 1px 2px 0 rgba(0, 0, 0, 0.5)",
-        "physio-elevated": "0 10px 15px -3px rgba(0, 0, 0, 0.5)",
+        "glow-indigo": "0 0 20px -5px rgba(94, 106, 210, 0.5)",
+        "glow-red": "0 0 20px -5px rgba(224, 85, 85, 0.5)",
       },
-      backgroundImage: {
-        "gradient-primary": "linear-gradient(to right, #6366f1, #8b5cf6)",
-        "gradient-safe": "linear-gradient(to right, #10b981, #34d399)",
-        "gradient-danger": "linear-gradient(to right, #ef4444, #f87171)",
+      animation: {
+        "fade-in": "fade-in 0.4s ease-out forwards",
+        "slide-in-left": "slide-in-left 0.3s ease-out forwards",
+        "slide-in-right": "slide-in-right 0.3s ease-out forwards",
+      },
+      keyframes: {
+        "fade-in": {
+          "from": { opacity: "0", transform: "translateY(5px)" },
+          "to": { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-in-left": {
+          "from": { transform: "translateX(-100%)" },
+          "to": { transform: "translateX(0)" },
+        },
+        "slide-in-right": {
+          "from": { transform: "translateX(100%)" },
+          "to": { transform: "translateX(0)" },
+        },
       },
     },
   },

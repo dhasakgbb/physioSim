@@ -38,7 +38,7 @@ const Slider = ({
           </label>
         )}
         <div
-          className={`font-mono text-sm font-bold transition-colors ${isHigh ? "text-physio-accent-critical" : "text-physio-text-primary"}`}
+          className={`font-mono text-sm font-bold transition-colors ${isHigh ? "text-rose" : "text-primary"}`}
         >
           {localValue}{" "}
           <span className="text-physio-text-tertiary text-xs font-sans font-normal">
@@ -53,11 +53,11 @@ const Slider = ({
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Track Background */}
-        <div className="absolute w-full h-2 bg-physio-bg-input rounded-full overflow-hidden group-hover:bg-physio-bg-input/80 transition-colors">
+        <div className="absolute w-full h-2 rounded-full overflow-hidden transition-colors bg-white/10 group-hover:bg-white/15">
           {/* Fill */}
           <div
             className={`h-full transition-all duration-100 ${
-              isHigh ? 'bg-physio-accent-critical' : 'bg-physio-accent-primary'
+              isHigh ? 'bg-rose' : 'bg-indigo'
             }`}
             style={{ width: `${percentage}%` }}
           />
@@ -69,10 +69,10 @@ const Slider = ({
           if (markerPos < 0 || markerPos > 100) return null;
 
           let colorClass = "bg-physio-text-muted";
-          if (marker.tone === "accent") colorClass = "bg-physio-accent-primary";
+          if (marker.tone === "accent") colorClass = "bg-indigo";
           if (marker.tone === "warning")
-            colorClass = "bg-physio-accent-warning";
-          if (marker.tone === "error") colorClass = "bg-physio-accent-critical";
+            colorClass = "bg-emerald";
+          if (marker.tone === "error") colorClass = "bg-rose";
 
           return (
             <div
@@ -97,16 +97,12 @@ const Slider = ({
           className="absolute w-full h-full opacity-0 cursor-pointer z-10"
         />
 
-        {/* Custom Thumb (Larger with hover halo) */}
+        {/* Custom Thumb (Primary Indigo with glow) */}
         <div
-          className={`absolute rounded-full border-2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-all duration-200 ${
-            isHovered
-              ? 'w-6 h-6 shadow-[0_0_0_6px_rgba(59,130,246,0.15),0_6px_20px_rgba(0,0,0,0.3)] scale-110'
-              : 'w-5 h-5 shadow-[0_4px_12px_rgba(0,0,0,0.25)]'
+          className={`absolute rounded-full transform -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-all duration-200 border border-white/20 ${
+            isHovered ? 'w-6 h-6 scale-110 shadow-glow-indigo' : 'w-5 h-5'
           } ${
-            isHigh
-              ? 'bg-white border-physio-accent-critical'
-              : 'bg-white border-physio-accent-primary'
+            isHigh ? 'bg-rose' : 'bg-indigo'
           }`}
           style={{ left: `${percentage}%`, top: '50%' }}
         />
