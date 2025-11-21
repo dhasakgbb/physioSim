@@ -16,7 +16,7 @@ import { compoundData } from "../../data/compoundData";
 const SCALAR_STEPS = 120;
 const NEGATIVE_WINDOW = 0.65; // Explore down to ~35% of the current stack
 const POSITIVE_WINDOW = 0.85; // Explore up to ~185% of the current stack
-const CHART_MARGIN = { top: 30, right: 28, bottom: 32, left: 24 };
+const CHART_MARGIN = { top: 10, right: 20, bottom: 0, left: 20 };
 const SMOOTHING_WEIGHT = 0.18;
 const LABEL_GUARD = 72; // px padding to keep badges on screen
 const BINDING_WEIGHTS = {
@@ -283,6 +283,16 @@ const NetEffectChart = ({ onTimeScrub }) => {
     [chartSize.width],
   );
 
+  const clampOverlayX = React.useCallback(
+    (value) => {
+      if (!Number.isFinite(value)) return 0;
+      if (!chartSize.width) return Math.max(value, 0);
+      const max = chartSize.width;
+      return Math.min(Math.max(value, 0), max);
+    },
+    [chartSize.width],
+  );
+
   const handleCursor = React.useCallback((state) => {
     if (!state?.isTooltipActive) {
       setHoverMeta(null);
@@ -290,12 +300,13 @@ const NetEffectChart = ({ onTimeScrub }) => {
     }
     const nextPoint = state?.activePayload?.[0]?.payload;
     if (!nextPoint) return;
+    const projectedX = projectX(nextPoint.deltaPercent);
     setHoverMeta({
       point: nextPoint,
-      x: projectX(nextPoint.deltaPercent),
+      x: clampOverlayX(projectedX),
     });
     debouncedScrub(nextPoint);
-  }, [debouncedScrub, projectX]);
+  }, [clampOverlayX, debouncedScrub, projectX]);
 
   if (!stack.length) {
     return (
@@ -309,6 +320,8 @@ const NetEffectChart = ({ onTimeScrub }) => {
 
   const currentLineX = currentPoint ? projectX(currentPoint.deltaPercent) : null;
   const peakLineX = sweep.sweetSpot ? projectX(sweep.sweetSpot.deltaPercent) : null;
+  const safeCurrentLineX = currentLineX != null ? clampOverlayX(currentLineX) : null;
+  const safePeakLineX = peakLineX != null ? clampOverlayX(peakLineX) : null;
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-white/5 bg-[#050608]">
@@ -371,6 +384,7 @@ const NetEffectChart = ({ onTimeScrub }) => {
               domain={sweep.domain}
               axisLine={false}
               tickLine={false}
+              padding={{ left: 20, right: 20 }}
               label={{
                 value: "Stack Delta (%)",
                 position: "insideBottomRight",
@@ -416,18 +430,18 @@ const NetEffectChart = ({ onTimeScrub }) => {
         </ResponsiveContainer>
 
         <div className="pointer-events-none absolute inset-0 z-10" aria-hidden>
-          {currentPoint && currentLineX != null && (
+          {currentPoint && safeCurrentLineX != null && (
             <div
               className="absolute inset-y-10 w-[2px] bg-gradient-to-b from-transparent via-cyan-400/70 to-transparent"
               style={{
-                left: currentLineX,
+                left: safeCurrentLineX,
                 transition: "left 280ms ease",
               }}
             >
               <span
                 className="absolute -top-7 whitespace-nowrap rounded-full border border-cyan-400/40 bg-cyan-400/10 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-[0.3em] text-cyan-100"
                 style={{
-                  transform: `translate(calc(-50% + ${computeLabelShift(currentLineX)}px), 0)`,
+                  transform: `translate(calc(-50% + ${computeLabelShift(safeCurrentLineX)}px), 0)`,
                 }}
               >
                 Current Stack
@@ -435,18 +449,18 @@ const NetEffectChart = ({ onTimeScrub }) => {
             </div>
           )}
 
-          {sweep.sweetSpot && peakLineX != null && (
+          {sweep.sweetSpot && safePeakLineX != null && (
             <div
               className="absolute inset-y-10 w-[2px] bg-gradient-to-b from-transparent via-indigo-400/70 to-transparent"
               style={{
-                left: peakLineX,
+                left: safePeakLineX,
                 transition: "left 320ms ease",
               }}
             >
               <span
                 className="absolute bottom-8 whitespace-nowrap rounded-full border border-indigo-400/40 bg-indigo-500/10 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-[0.3em] text-indigo-100"
                 style={{
-                  transform: `translate(calc(-50% + ${computeLabelShift(peakLineX)}px), 0)`,
+                  transform: `translate(calc(-50% + ${computeLabelShift(safePeakLineX)}px), 0)`,
                 }}
               >
                 Peak Gap {formatNumber(sweep.sweetSpot.netGap)}

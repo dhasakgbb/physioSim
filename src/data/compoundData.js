@@ -887,7 +887,7 @@ export const compoundData = {
   },
 
   turinabol: {
-    name: "Turinabol (CDMT)",
+    name: "Turinabol",
     color: "#F472B6",
     abbreviation: "Tbol",
     type: "oral",

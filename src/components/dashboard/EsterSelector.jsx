@@ -11,7 +11,8 @@ const EsterSelector = ({ compoundKey, selectedEster, onChange, color }) => {
 
   if (esterOptions.length <= 1) return null;
 
-  const currentLabel = meta.esters[selectedEster]?.slug || "Select";
+  const esterMeta = meta?.esters?.[selectedEster];
+  const currentLabel = esterMeta?.label || esterMeta?.shortLabel || esterMeta?.slug || "Select";
 
   // Click outside handler
   useEffect(() => {
@@ -28,9 +29,12 @@ const EsterSelector = ({ compoundKey, selectedEster, onChange, color }) => {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-physio-bg-surface border border-physio-border-subtle hover:border-physio-border-strong transition-all group"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-physio-bg-surface border border-physio-border-subtle hover:border-physio-border-strong transition-all group min-w-[10rem] max-w-[14rem]"
       >
-        <span className="text-xs font-bold uppercase tracking-wider text-physio-text-secondary group-hover:text-physio-text-primary">
+        <span
+          className="flex-1 truncate text-left text-xs font-bold uppercase tracking-wider text-physio-text-secondary group-hover:text-physio-text-primary"
+          title={currentLabel}
+        >
           {currentLabel}
         </span>
         <svg
@@ -45,7 +49,7 @@ const EsterSelector = ({ compoundKey, selectedEster, onChange, color }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1 w-36 bg-physio-bg-core/95 backdrop-blur-xl border border-physio-border-strong rounded-lg shadow-xl z-50 overflow-hidden animate-fade-in">
+        <div className="absolute left-0 top-full mt-1 w-48 bg-physio-bg-core/95 backdrop-blur-xl border border-physio-border-strong rounded-lg shadow-xl z-50 overflow-hidden animate-fade-in">
           {esterOptions.map(([key, details]) => (
             <button
               key={key}

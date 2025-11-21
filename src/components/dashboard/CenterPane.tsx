@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useMemo } from "react";
+import { ResponsiveContainer, BarChart, Bar, XAxis, LabelList } from "recharts";
 import DoseEfficiencyChart from "./DoseEfficiencyChart";
 import { useSystemLoad } from "../../hooks/useSystemLoad";
 import { useProjectedGains } from "../../hooks/useProjectedGains";
@@ -38,11 +39,13 @@ const LoadRow: React.FC<LoadRowProps> = ({ label, percent, level, gradient }) =>
 
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between gap-3 text-[11px]">
+      <div className="flex items-center justify-between gap-2 text-[11px] leading-tight">
         <p className="truncate font-medium text-gray-100" title={label}>
           {label}
         </p>
-        <p className={`font-mono text-sm tabular-nums leading-tight ${meta.text}`}>{percent}%</p>
+        <p className={`w-12 text-right font-mono text-xs tabular-nums leading-tight ${meta.text}`}>
+          {percent}%
+        </p>
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
         <div
@@ -61,11 +64,11 @@ const ProjectedGainsCard: React.FC<{ vectors: ProjectedVectorMetric[]; netScore:
         <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Projected Gains</h4>
         <p className="text-[9px] text-gray-500">Vector intensity forecast</p>
       </div>
-      <div className="text-right">
-        <div className="font-mono text-3xl font-light leading-none tracking-tight text-white tabular-nums">
+      <div className="flex flex-col items-end text-right gap-1">
+        <div className="font-mono text-3xl font-light tracking-tight text-white tabular-nums leading-tight">
           {Number.isFinite(netScore) ? netScore.toFixed(1) : "--"}
         </div>
-        <p className="mt-1 text-right text-[9px] uppercase tracking-widest text-emerald-300">Net Score</p>
+        <p className="text-[10px] uppercase tracking-widest text-emerald-300 leading-tight">Net Score</p>
       </div>
     </div>
 
@@ -103,7 +106,9 @@ const SystemLoadCard: React.FC<{
     <div className="flex items-baseline justify-between gap-4">
       <div>
         <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-500">System Load</h4>
-        <p className="text-[9px] text-gray-500">Organ stress telemetry</p>
+        <p className="text-[9px] uppercase tracking-widest text-gray-500 mt-1">
+          {dominantCategory ? `Dominant pressure: ${dominantCategory}` : "Awaiting stack inputs"}
+        </p>
       </div>
       <div className="text-right">
         <div className="font-mono text-3xl font-light leading-none tracking-tight text-white tabular-nums">
@@ -114,11 +119,6 @@ const SystemLoadCard: React.FC<{
         </p>
       </div>
     </div>
-
-    <p className="mt-3 text-[10px] uppercase tracking-widest text-gray-500">
-      {dominantCategory ? `Dominant pressure: ${dominantCategory}` : "Awaiting stack inputs"}
-    </p>
-
     <div className="mt-4 flex-1 space-y-3">
       {categories.map((category) => (
         <LoadRow key={category.id} {...category} />
@@ -127,23 +127,48 @@ const SystemLoadCard: React.FC<{
   </div>
 );
 
+const HALF_LIFE_SERIES = [
+  { label: "Now", duration: 8, display: "8h" },
+  { label: "2 Wks", duration: 108, display: "4.5d" },
+  { label: "4 Wks", duration: 24, display: "1d" },
+];
+
 const ActiveHalfLifeCard: React.FC = () => (
   <div className="rounded-xl border border-white/5 bg-[#0C0C0C] p-5 flex flex-col h-full">
-    <h4 className="mb-4 text-[10px] font-bold uppercase tracking-widest text-gray-500">Active Half-Life</h4>
-    <div className="flex flex-1 items-end justify-between gap-1">
-      <div className="group relative h-[30%] w-1/3 rounded-t-sm bg-gradient-to-t from-rose-500/20 to-rose-500">
-        <div className="absolute -top-4 w-full text-center text-[9px] text-gray-500 opacity-0 transition-opacity group-hover:opacity-100">8h</div>
-      </div>
-      <div className="group relative h-[80%] w-1/3 rounded-t-sm bg-gradient-to-t from-indigo-500/20 to-indigo-500">
-        <div className="absolute -top-4 w-full text-center text-[9px] text-gray-500 opacity-0 transition-opacity group-hover:opacity-100">4.5d</div>
-      </div>
-      <div className="relative h-[10%] w-1/3 rounded-t-sm border-t border-white/10 bg-white/5" />
+    <div className="flex items-center justify-between">
+      <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Active Half-Life</h4>
+      <p className="text-[9px] uppercase tracking-[0.4em] text-gray-500">t½</p>
     </div>
-    <div className="mt-2 flex justify-between text-[9px] font-mono text-gray-500 tabular-nums">
-      <span>Now</span>
-      <span>2 Wks</span>
-      <span>4 Wks</span>
+    <div className="mt-2 flex-1 min-h-[150px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={HALF_LIFE_SERIES} barSize={32} margin={{ left: 8, right: 8, top: 12, bottom: 0 }}>
+          <defs>
+            <linearGradient id="halfLifeGradient" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stopColor="rgba(59,130,246,0.2)" />
+              <stop offset="100%" stopColor="rgba(129,140,248,0.95)" />
+            </linearGradient>
+          </defs>
+          <XAxis
+            dataKey="label"
+            axisLine={false}
+            tickLine={false}
+            tick={{ fill: "#525252", fontSize: 10, fontFamily: "var(--font-mono)", letterSpacing: "0.08em" }}
+            tickMargin={8}
+          />
+          <Bar dataKey="duration" radius={[8, 8, 0, 0]} fill="url(#halfLifeGradient)">
+            <LabelList
+              dataKey="display"
+              position="top"
+              fill="#A5B4FC"
+              fontSize={11}
+              fontFamily="var(--font-mono)"
+              letterSpacing="0.2em"
+            />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
+    <p className="mt-3 text-[10px] uppercase tracking-[0.3em] text-gray-500">Normalized elimination curve</p>
   </div>
 );
 
@@ -154,14 +179,14 @@ export const CenterPane: React.FC<CenterPaneProps> = ({ onTimeScrub }) => {
   const systemLevelMeta = useMemo(() => LEVEL_META[systemLevel], [systemLevel]);
 
   return (
-    <div className="flex flex-col gap-4 w-full">
-      <section className="shrink-0 h-[450px] w-full min-h-0">
+    <div className="flex flex-col gap-3 w-full">
+      <section className="shrink-0 h-[350px] w-full min-h-0">
         <div className="h-full min-h-0">
           <DoseEfficiencyChart onTimeScrub={onTimeScrub} />
         </div>
       </section>
 
-      <section className="shrink-0 h-[280px] grid grid-cols-1 gap-4 md:grid-cols-3">
+      <section className="shrink-0 h-[260px] grid grid-cols-1 gap-4 md:grid-cols-3">
         <ProjectedGainsCard vectors={vectors} netScore={netScore} />
         <SystemLoadCard
           systemIndex={systemIndex}

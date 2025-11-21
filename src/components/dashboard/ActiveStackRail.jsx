@@ -235,7 +235,7 @@ const StackCard = ({ item, autoExpand }) => {
     <div className="border-b border-physio-border-subtle last:border-b-0">
       {/* Compact Row (48px) */}
       <div
-        className="flex items-center h-11 w-full gap-2.5 px-3 hover:bg-physio-bg-highlight/30 cursor-pointer transition-colors group"
+        className="flex items-center h-11 w-full min-w-0 gap-2.5 px-3 hover:bg-physio-bg-highlight/30 cursor-pointer transition-colors group"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         {/* Expand/Collapse Chevron */}
@@ -260,7 +260,10 @@ const StackCard = ({ item, autoExpand }) => {
 
         {/* Compound Name */}
         <div className="flex-1 min-w-0 flex items-center pr-2">
-          <span className="text-sm font-medium text-gray-200 truncate">
+          <span
+            className="text-sm font-medium text-gray-200 truncate"
+            title={meta.name || item.compound}
+          >
             {meta.name || item.compound}
           </span>
         </div>
