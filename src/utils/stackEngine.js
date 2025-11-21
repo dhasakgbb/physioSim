@@ -1095,7 +1095,9 @@ export const evaluateStack = ({
   // 7. Calculate Analytics (Labs & Pathways)
   const pathwayLoads = calculatePathwayLoads(state.activeCompounds);
   const physicsStack = buildPhysicsStack(state.activeCompounds, stackInput);
-  const physicsMetrics = calculateCycleMetrics(physicsStack, compoundData);
+  const physicsMetrics = calculateCycleMetrics(physicsStack, compoundData, {
+    aromataseScalar,
+  });
   const projectedLabs = physicsMetrics.projectedLabs;
   const legacySystemLoad = physicsMetrics.systemLoad;
   const cnsProfile = physicsMetrics.cnsProfile;

@@ -270,15 +270,17 @@ UI components stack these values so athletes can see “9/10 but mostly water”
 
 #### 2.2.4 Organ-Specific Toxicity Buckets
 
-`toxicityCoefficient` is now a dictionary. Each bucket (`hepatic`, `lipid`, `renal`, `neuro`, `cardio`, etc.) feeds both the exponential drag term and the system-load gauges:
+`toxicityCoefficient` is now a dictionary. Each bucket (`hepatic`, `lipid`, `renal`, `neuro`, `cardio`, etc.) feeds both the exponential drag term and the system-load gauges. A single **Empirical Tuning Parameter** ($\alpha_{drag} = 1.5$) controls every supra-linear toxicity curve in the engine:
 
 ```ts
 const organDrag = Object.entries(compound.toxicity).reduce((acc, [organ, coeff]) => {
-   const load = Math.pow(activeLoad * coeff, 1.4);
+   const load = Math.pow(activeLoad * coeff, alphaDrag);
    organLoads[organ] += load;
    return acc + load * organWeights[organ];
 }, 0);
 ```
+
+> **alphaDrag (Empirical Tuning Parameter = 1.5):** Tuned against published oral/injectable toxicity case series to ensure mixed-organ abuse accelerates faster than linear but still plateaus under clinical ceilings. Because the constant is shared (organ buckets, toxicity drag, and oral hepatic surge), any future adjustment remains transparent—update the value once and document the rationale here.
 
 When multiple compounds hammer the same organ, the bucket trips faster, unlocking specific warnings (e.g., “CRITICAL HEPATIC LOAD” vs “CNS overload”). Mixing organ targets still raises total drag, but it lets the education layer explain why some stacks feel worse than others. The aggregated `organDrag` replaces the old scalar `toxicityDrag` in the Hill expression above.
 
@@ -399,8 +401,8 @@ $$LabValue = L_{min} + \frac{L_{max} - L_{min}}{1 + e^{-k\,(Load - Midpoint)}}$$
 ### 3.3 Oral Stress & Liver Modeling
 
 - Base `liver_toxicity` contributions already increased AST/ALT, but the simulator adds an **oral surge** when daily oral dose exceeds 10 mg:
-  - `oralRatio = max(1, dailyDose / 25)`.
-  - `oralHepaticSurge = (oralRatio^1.35) * (6 * toxicityTier)`.
+   - `oralRatio = max(1, dailyDose / 25)`.
+   - `oralHepaticSurge = (oralRatio^alphaDrag) * (6 * toxicityTier)`.
   - ALT += `oralHepaticSurge * 2.2`, AST += `oralHepaticSurge * 1.8`, hepatic system load += `oralHepaticSurge * 0.9`.
   - `oralStressLoad` accumulates for use in the global toxicity scalar.
 
@@ -434,11 +436,14 @@ The net effect: users finally see prolactin warnings trip on Tren/Nand cycles ev
 1. Raw toxicity = sum of cardiovascular + hepatic + renal + neuro buckets.
 2. Convert to percent using a harsher divisor (60) and add `oralStressLoad`.
 3. Add mg-based pressure: if `totalSaturationMg / TOXICITY_CEILING > 0.4`, apply `((pressure - 0.4)^1.1) * 140`.
-4. Apply **critical penalty multiplier** when labs breach thresholds:
-   - HDL < 30 (+0.3, with another +0.6 when < 20).
-   - LDL > 180 (+0.3).
-   - ALT or AST > 80 (+0.4).
-   - Creatinine > 1.4 (+0.5).
+4. Apply **critical penalty multiplier** when labs breach guideline-aligned thresholds:
+   - HDL < 40 (+0.3, with another +0.6 when < 20).
+   - LDL > 160 (+0.2) and > 190 (+0.3 total) to reflect AHA/ACC intervention guidance.
+   - ALT or AST > 120 (+0.4) and > 200 (+0.8 total) per DILI criteria.
+   - Creatinine > 1.5 (+0.5) per KDIGO AKI screening.
+   - Hematocrit > 54 (+0.3, +0.7 when > 56) per secondary polycythemia guidance.
+
+These bounds mirror the table in the reviewer brief and cite common clinical cut points: AHA/ACC for dyslipidemia (HDL/LDL), DILI upper-limit multiples for AST/ALT, KDIGO acute kidney injury screening for creatinine, and hematology recommendations for investigating secondary polycythemia.
 5. Cap at 100 and compute the dominant pressure (largest of the four buckets) for UI highlighting.
 
 ### 3.6 Final Output

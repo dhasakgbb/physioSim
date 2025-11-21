@@ -32,6 +32,7 @@ const SHBG_BINDING_SCALE = 120;
 const DEFAULT_AROMATASE_VMAX = 220;
 const DEFAULT_AROMATASE_KM = 500;
 const MIN_SUBSTRATE_MG = 1;
+const TOXICITY_SUPRA_LINEAR_EXPONENT = 1.5;
 
 const DAILY_FREQUENCY = 7;
 
@@ -79,6 +80,9 @@ const computeBindingTerm = (saturationMg, kiValue) => {
 
 const clampScore = (value = 0, precision = 2) =>
   Number(Number(value || 0).toFixed(precision));
+
+const applySupraLinearDrag = (value = 0) =>
+  Math.pow(Math.max(0, Number(value) || 0), TOXICITY_SUPRA_LINEAR_EXPONENT);
 
 const CNS_STATE_DETAILS = {
   CALM: "Minimal adrenergic load; baseline neural readiness.",
@@ -372,7 +376,8 @@ export const calculateActiveLoad = (stack = [], compoundLookup = defaultCompound
     const efficiencyFactor = saturationRatio > 1
       ? 1 + Math.log10(saturationRatio)
       : saturationRatio;
-    const toxicityLoad = Math.pow(Math.max(activeMg, 0) / 500, 1.5) + (drugData.type === "oral" ? 0.05 : 0);
+    const toxicityLoad = applySupraLinearDrag(Math.max(activeMg, 0) / 500) +
+      (drugData.type === "oral" ? 0.05 : 0);
 
     normalized.push({
       ...drugData,
@@ -488,6 +493,8 @@ export const calculateSystemLoad = (activeCompounds = []) => {
   const organSupport = calculateOrganSupport(activeCompounds);
   if (Array.isArray(activeCompounds)) {
     const positive = (value) => Math.max(0, Number(value) || 0);
+    const accumulate = (current, addition) =>
+      addition > 0 ? current + applySupraLinearDrag(addition) : current;
     activeCompounds.forEach((drug) => {
       if (!drug) return;
       const toxMod = Number(drug.toxicityLoad) || 0;
@@ -496,18 +503,22 @@ export const calculateSystemLoad = (activeCompounds = []) => {
 
       const androgenicSource =
         toxicity.androgenic ?? metabolic.dht_conversion ?? 0;
-      load.androgenic += positive(androgenicSource) * toxMod;
-      load.cardio += positive(toxicity.lipid) * toxMod + positive(metabolic.diuretic_effect) * 0.5;
-      load.neuro += positive(toxicity.neuro) * toxMod;
-      load.hepatic += positive(toxicity.hepatic) * toxMod;
-      load.renal += positive(toxicity.renal) * toxMod;
+      load.androgenic = accumulate(load.androgenic, positive(androgenicSource) * toxMod);
+      load.cardio = accumulate(load.cardio, positive(toxicity.lipid) * toxMod);
+      load.cardio = accumulate(load.cardio, positive(metabolic.diuretic_effect) * 0.5);
+      load.neuro = accumulate(load.neuro, positive(toxicity.neuro) * toxMod);
+      load.hepatic = accumulate(load.hepatic, positive(toxicity.hepatic) * toxMod);
+      load.renal = accumulate(load.renal, positive(toxicity.renal) * toxMod);
       const estrogenicSource = positive(metabolic.aromatization);
       if (estrogenicSource) {
-        load.estrogenic += estrogenicSource * toxMod;
+        load.estrogenic = accumulate(load.estrogenic, estrogenicSource * toxMod);
       }
       const progestogenicSource = positive(toxicity.progestogenic);
       if (progestogenicSource) {
-        load.progestogenic += progestogenicSource * toxMod;
+        load.progestogenic = accumulate(
+          load.progestogenic,
+          progestogenicSource * toxMod,
+        );
       }
     });
   }
@@ -656,19 +667,19 @@ const formatLabs = (labs) => {
   const entries = {
     hdl: {
       value: Number(hdl.toFixed(0)),
-      status: classifyLabStatus(hdl, { warningLow: 45, criticalLow: 30 }),
+      status: classifyLabStatus(hdl, { warningLow: 40, criticalLow: 20 }),
     },
     ldl: {
       value: Number(labs.ldl.toFixed(0)),
-      status: classifyLabStatus(labs.ldl, { warningHigh: 130, criticalHigh: 160 }),
+      status: classifyLabStatus(labs.ldl, { warningHigh: 160, criticalHigh: 190 }),
     },
     ast: {
       value: Number(labs.ast.toFixed(0)),
-      status: classifyLabStatus(labs.ast, { warningHigh: 50, criticalHigh: 80 }),
+      status: classifyLabStatus(labs.ast, { warningHigh: 120, criticalHigh: 200 }),
     },
     alt: {
       value: Number(labs.alt.toFixed(0)),
-      status: classifyLabStatus(labs.alt, { warningHigh: 50, criticalHigh: 80 }),
+      status: classifyLabStatus(labs.alt, { warningHigh: 120, criticalHigh: 200 }),
     },
     e2: {
       value: Number(labs.e2.toFixed(0)),
@@ -681,11 +692,11 @@ const formatLabs = (labs) => {
     },
     hematocrit: {
       value: Number(labs.hematocrit.toFixed(1)),
-      status: classifyLabStatus(labs.hematocrit, { warningHigh: 50, criticalHigh: 55 }),
+      status: classifyLabStatus(labs.hematocrit, { warningHigh: 52, criticalHigh: 54 }),
     },
     creatinine: {
       value: Number(labs.creatinine.toFixed(2)),
-      status: classifyLabStatus(labs.creatinine, { warningHigh: 1.3, criticalHigh: 1.6 }),
+      status: classifyLabStatus(labs.creatinine, { warningHigh: 1.3, criticalHigh: 1.5 }),
     },
     egfr: {
       value: Number(labs.egfr.toFixed(0)),
@@ -860,6 +871,7 @@ export const calculateCycleMetrics = (
     if (aromatizationFlag) {
       const aromLoad = saturationMg * aromatizationFlag;
       totalAromatizableLoad += aromLoad;
+      compound.aromatizationLoad = aromLoad;
     }
         const estrogenicityFlag = Number(data.flags?.estrogenicity) || 0;
         const estrogenicVector = Math.max(0, aromatizationFlag + estrogenicityFlag);
@@ -891,7 +903,7 @@ export const calculateCycleMetrics = (
 
     if (isOral && dailyDose > 10) {
       const oralRatio = Math.max(0, dailyDose / 25);
-      const oralHepaticSurge = Math.pow(oralRatio, 1.5) * (6 * toxicityTier);
+      const oralHepaticSurge = applySupraLinearDrag(oralRatio) * (6 * toxicityTier);
       projectedLabs.alt += oralHepaticSurge * 2.2;
       projectedLabs.ast += oralHepaticSurge * 1.8;
       systemLoad.hepatic += oralHepaticSurge * 0.9;
@@ -913,17 +925,48 @@ export const calculateCycleMetrics = (
       suppressiveLoad += suppressiveFactor * loadRatio;
     }
   });
-  const aromPressure = totalAromatizableLoad / 350;
-  const aiMitigation = 1 / (1 + antiEstrogenStrength * 0.6);
   const suppressionScore = Math.min(1, suppressiveLoad / 5.5);
   const endogenousStatus = Math.max(0, 1 - suppressionScore);
   const baselineEstradiol = 25 * endogenousStatus;
-  const aromatizedEstradiol = Math.pow(Math.max(0, aromPressure), 1.35) * 35;
-  const unmanagedEstradiol = baselineEstradiol + aromatizedEstradiol;
-  const estradiolValue = Math.min(
-    350,
-    unmanagedEstradiol * aiMitigation + methylEstrogenLoad * 0.05,
-  );
+  const aromataseProfileScalar = Math.max(0.25, Number(aromataseScalar) || 1);
+  const aiInhibitionFactor = 1 / (1 + antiEstrogenStrength * 0.6);
+  const aromataseConfig = {
+    baselineEstradiol,
+    aromataseScalar: aromataseProfileScalar,
+    inhibitor: aiInhibitionFactor,
+    methylLoad: methylEstrogenLoad,
+  };
+
+  const preliminaryAromatase = computeAromatizationKinetics({
+    ...aromataseConfig,
+    substrateMg: Math.max(0, totalAromatizableLoad),
+  });
+
+  const firstShbgPass = calculateShbgDynamics({
+    compounds,
+    estradiol: preliminaryAromatase.estradiol,
+    baselineShbg: BASELINE_SHBG_NMOL,
+  });
+
+  const freeAromatizableLoad = Array.isArray(compounds)
+    ? compounds.reduce((sum, compound) => {
+        if (!compound?.aromatizationLoad) return sum;
+        const lookupKey = compound.key || compound.id;
+        const rawFraction = Number(
+          firstShbgPass.compoundFreeFractions?.[lookupKey],
+        );
+        const safeFraction = Number.isFinite(rawFraction) ? rawFraction : 1;
+        const clampedFraction = Math.max(0, Math.min(1, safeFraction));
+        return sum + compound.aromatizationLoad * clampedFraction;
+      }, 0)
+    : 0;
+
+  const aromataseResult = computeAromatizationKinetics({
+    ...aromataseConfig,
+    substrateMg: Math.max(0, freeAromatizableLoad),
+  });
+
+  const estradiolValue = aromataseResult.estradiol;
   projectedLabs.e2 = estradiolValue;
   projectedLabs.estradiol = estradiolValue;
 
@@ -1074,28 +1117,34 @@ export const calculateCycleMetrics = (
 
   let criticalPenaltyMultiplier = 1.0;
 
-  if (projectedLabs.hdl < 30) {
+  if (projectedLabs.hdl < 40) {
     criticalPenaltyMultiplier += 0.3;
     if (projectedLabs.hdl < 20) {
       criticalPenaltyMultiplier += 0.6;
     }
   }
 
-  if (projectedLabs.ldl > 180) {
-    criticalPenaltyMultiplier += 0.3;
+  if (projectedLabs.ldl > 160) {
+    criticalPenaltyMultiplier += 0.2;
+    if (projectedLabs.ldl > 190) {
+      criticalPenaltyMultiplier += 0.3;
+    }
   }
 
-  if (projectedLabs.alt > 80 || projectedLabs.ast > 80) {
+  if (projectedLabs.alt > 120 || projectedLabs.ast > 120) {
     criticalPenaltyMultiplier += 0.4;
+    if (projectedLabs.alt > 200 || projectedLabs.ast > 200) {
+      criticalPenaltyMultiplier += 0.4;
+    }
   }
 
-  if (projectedLabs.creatinine > 1.4) {
+  if (projectedLabs.creatinine > 1.5) {
     criticalPenaltyMultiplier += 0.5;
   }
 
-  if (projectedLabs.hematocrit > 55) {
+  if (projectedLabs.hematocrit > 54) {
     criticalPenaltyMultiplier += 0.3;
-    if (projectedLabs.hematocrit > 57) {
+    if (projectedLabs.hematocrit > 56) {
       criticalPenaltyMultiplier += 0.4;
     }
   }
@@ -1120,6 +1169,19 @@ export const calculateCycleMetrics = (
     cnsProfile,
     receptorCompetition,
     shbgDynamics,
-    meta: { totalActiveMg, totalSaturationMg, efficiencyRatio },
+    meta: {
+      totalActiveMg,
+      totalSaturationMg,
+      efficiencyRatio,
+      aromatase: {
+        baselineEstradiol,
+        suppressionScore,
+        profileScalar: aromataseProfileScalar,
+        inhibitor: aiInhibitionFactor,
+        totalSubstrateMg: Math.max(0, totalAromatizableLoad),
+        freeSubstrateMg: Math.max(0, freeAromatizableLoad),
+        estradiol: estradiolValue,
+      },
+    },
   };
 };
