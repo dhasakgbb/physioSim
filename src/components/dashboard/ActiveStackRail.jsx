@@ -182,19 +182,15 @@ const NAME_MAP = {
 
 const getDisplayName = (name) => NAME_MAP[name] || name;
 
-const StackCard = ({ item, autoExpand }) => {
-  const [isExpanded, setIsExpanded] = useState(Boolean(autoExpand));
-  useEffect(() => {
-    if (autoExpand) {
-      setIsExpanded(true);
-    }
-  }, [autoExpand]);
+const StackCard = ({ item }) => {
+  const isExpanded = Boolean(item.isOpen);
   const { setInspectedCompound } = useStack();
   const {
     updateDose,
     removeCompound,
     updateEster,
     updateFrequency,
+    setCompoundOpen,
   } = useSimulation();
 
   const meta = compoundData[item.compound];
@@ -239,16 +235,24 @@ const StackCard = ({ item, autoExpand }) => {
   const displayDose = Math.round(item.dose || 0);
   const displayName = getDisplayName(meta.name || item.compound);
 
+  const toggleExpanded = () => {
+    setCompoundOpen(item.compound, !isExpanded);
+  };
+
   return (
     <div className="border-b border-physio-border-subtle last:border-b-0">
       {/* Compact Row (48px) */}
       <div
         className="flex items-center h-11 w-full min-w-0 gap-2.5 px-3 hover:bg-physio-bg-highlight/30 cursor-pointer transition-colors group"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={toggleExpanded}
       >
         {/* Expand/Collapse Chevron */}
         <button
           className="flex items-center justify-center w-6 h-6 text-physio-text-tertiary hover:text-physio-text-primary transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleExpanded();
+          }}
         >
           <svg
             className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
@@ -332,7 +336,7 @@ const StackCard = ({ item, autoExpand }) => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setIsExpanded(true);
+                    setCompoundOpen(item.compound, true);
                     setInspectedCompound(item.compound);
                   }}
                   className="rounded p-1 text-white/30 hover:bg-white/10 hover:text-white"
@@ -470,25 +474,8 @@ const ActiveStackRail = () => {
   const { compounds } = useSimulation();
   const stack = compounds;
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
-  const prevKeysRef = React.useRef(new Set());
-  const hasHydratedRef = React.useRef(false);
-  const newlyAddedKeys = React.useMemo(() => {
-    const previous = prevKeysRef.current;
-    const currentKeys = new Set(stack.map((item) => item.compound));
-    const added = new Set();
-
-    if (hasHydratedRef.current) {
-      stack.forEach((item) => {
-        if (!previous.has(item.compound)) {
-          added.add(item.compound);
-        }
-      });
-    }
-
-    prevKeysRef.current = currentKeys;
-    hasHydratedRef.current = true;
-    return added;
-  }, [stack]);
+  const listRef = useRef(null);
+  const prevLengthRef = useRef(0);
 
   const openSelector = useCallback(() => setIsSelectorOpen(true), []);
   const closeSelector = useCallback(() => setIsSelectorOpen(false), []);
@@ -524,6 +511,20 @@ const ActiveStackRail = () => {
     };
   }, [openSelector]);
 
+  useEffect(() => {
+    if (stack.length > prevLengthRef.current) {
+      requestAnimationFrame(() => {
+        if (listRef.current) {
+          listRef.current.scrollTo({
+            top: listRef.current.scrollHeight,
+            behavior: "smooth",
+          });
+        }
+      });
+    }
+    prevLengthRef.current = stack.length;
+  }, [stack.length]);
+
   return (
     <div className="relative flex flex-col w-full h-full bg-[#0F1115]">
       <div className="sticky top-0 z-20 border-b border-white/5 bg-[#0F1115]">
@@ -558,7 +559,10 @@ const ActiveStackRail = () => {
 
       <CompoundSelector isOpen={isSelectorOpen} onClose={closeSelector} />
 
-      <div className="flex-1 overflow-y-auto px-3 pt-3 pb-4 space-y-3 scrollbar-hide">
+      <div
+        ref={listRef}
+        className="flex-1 overflow-y-auto px-3 pt-3 pb-4 space-y-3 scrollbar-hide"
+      >
         {stack.length === 0 ? (
           <EmptyStackState />
         ) : (
@@ -566,7 +570,6 @@ const ActiveStackRail = () => {
             <StackCard
               key={item.compound}
               item={item}
-              autoExpand={newlyAddedKeys.has(item.compound)}
             />
           ))
         )}

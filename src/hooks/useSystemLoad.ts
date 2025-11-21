@@ -127,10 +127,103 @@ const PRESSURE_TO_CATEGORY: Record<string, string> = {
   "Neuro / CNS": "neuro",
 };
 
+const WIDGET_CATEGORY_CONFIGS = [
+  {
+    id: "androgenic",
+    key: "androgenic" as const,
+    label: "Androgenic",
+    description: "AR saturation & DHT pressure",
+    gradient: "from-indigo-500 via-indigo-400 to-sky-400",
+  },
+  {
+    id: "cardio",
+    key: "cardio" as const,
+    label: "Cardiovascular",
+    description: "Lipids, BP and plasma volume",
+    gradient: "from-rose-500 via-amber-400 to-yellow-300",
+  },
+  {
+    id: "neuro",
+    key: "neuro" as const,
+    label: "Neuro / CNS",
+    description: "Neurotoxicity & central drive",
+    gradient: "from-purple-500 via-fuchsia-500 to-pink-400",
+  },
+  {
+    id: "hepatic",
+    key: "hepatic" as const,
+    label: "Hepatic",
+    description: "Oral metabolism & enzyme burden",
+    gradient: "from-orange-500 via-amber-500 to-yellow-400",
+  },
+  {
+    id: "renal",
+    key: "renal" as const,
+    label: "Nephrological",
+    description: "Filtration stress",
+    gradient: "from-teal-400 via-cyan-400 to-sky-300",
+  },
+  {
+    id: "estrogenic",
+    key: "estrogenic" as const,
+    label: "Estrogenic",
+    description: "Estradiol pressure & water retention",
+    gradient: "from-pink-500 via-rose-400 to-amber-200",
+  },
+  {
+    id: "progestogenic",
+    key: "progestogenic" as const,
+    label: "Progestogenic",
+    description: "Progesterone receptor & prolactin stress",
+    gradient: "from-green-500 via-emerald-400 to-teal-300",
+  },
+];
+
+const clampWidgetPercent = (value: unknown): number => {
+  if (typeof value !== "number" || Number.isNaN(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value)));
+};
+
 export const useSystemLoad = (): SystemLoadResult => {
   const { metrics } = useStack() as { metrics?: Record<string, any> };
 
   return useMemo<SystemLoadResult>(() => {
+    const widgetVectors = metrics?.analytics?.systemLoadVectors;
+    if (widgetVectors) {
+      const categories = WIDGET_CATEGORY_CONFIGS.map((config) => {
+        const percent = clampWidgetPercent(widgetVectors[config.key]);
+        const level = getLevel(percent);
+        return {
+          id: config.id,
+          label: config.label,
+          description: config.description,
+          percent,
+          level,
+          gradient: config.gradient,
+          readout: `${percent}% load`,
+        };
+      });
+
+      const dominantCategory = categories.reduce<SystemLoadCategory | null>(
+        (acc, cat) => (cat.percent > (acc?.percent ?? -1) ? cat : acc),
+        null,
+      );
+
+      const snapshotTotal = Number(metrics?.analytics?.systemLoad?.total);
+      const systemIndex = Number.isFinite(snapshotTotal)
+        ? Math.max(0, Math.min(100, Math.round(snapshotTotal)))
+        : dominantCategory?.percent ?? 0;
+
+      const systemLevel = getLevel(systemIndex);
+
+      return {
+        categories,
+        systemIndex,
+        systemLevel,
+        dominantCategory,
+      };
+    }
+
     const systemSnapshot = metrics?.analytics?.systemLoad;
     const pathwayLoads: PathwayLoads = metrics?.analytics?.pathwayLoads ?? {};
     const labs: ProjectedLabs = {

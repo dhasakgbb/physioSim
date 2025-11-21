@@ -19,6 +19,14 @@ import { VIEW_MODE_STORAGE_KEY } from "../utils/storageKeys";
 const BASE_PATH = (import.meta.env?.BASE_URL || "/").replace(/\/*$/, "/");
 const BASE_PATH_NO_TRAIL = BASE_PATH.replace(/\/$/, "");
 
+const SUPPORT_PROTOCOLS = Object.freeze({
+  liver: [
+    { compound: "tudca", dose: 1000, frequency: 1 },
+    { compound: "nac", dose: 1200, frequency: 1 },
+  ],
+  renal: [{ compound: "nac", dose: 1200, frequency: 1 }],
+});
+
 const stripBasePath = (pathname) => {
   if (BASE_PATH === "/") return pathname;
   if (pathname.startsWith(BASE_PATH)) {
@@ -207,11 +215,12 @@ export const StackProvider = ({ children }) => {
       // ----------------------------------------
 
       setStack((prev) => [
-        ...prev,
+        ...prev.map((item) => ({ ...item, isOpen: false })),
         {
           compound: compoundKey,
           dose: startDose,
           frequency: defaultFreq, // Store it here
+          isOpen: true,
         },
       ]);
     },
@@ -246,6 +255,58 @@ export const StackProvider = ({ children }) => {
     );
   }, []);
 
+  const handleSetCompoundOpen = useCallback((compoundKey, nextOpen) => {
+    setStack((prev) =>
+      prev.map((item) => {
+        if (item.compound === compoundKey) {
+          return { ...item, isOpen: nextOpen };
+        }
+        if (nextOpen) {
+          return { ...item, isOpen: false };
+        }
+        return item;
+      }),
+    );
+  }, []);
+
+  const toggleSupportProtocol = useCallback((protocolKey) => {
+    const prescription = SUPPORT_PROTOCOLS[protocolKey];
+    if (!prescription?.length) return;
+
+    setStack((prev) => {
+      const protocolActive = prev.some(
+        (item) => item.supportProtocol === protocolKey,
+      );
+      if (protocolActive) {
+        return prev.filter((item) => item.supportProtocol !== protocolKey);
+      }
+
+      let working = prev.filter((item) => item.supportProtocol !== protocolKey);
+      let added = false;
+
+      prescription.forEach(({ compound, dose, frequency }) => {
+        if (working.some((item) => item.compound === compound)) return;
+        const meta = compoundData[compound];
+        if (!meta) return;
+        const startDose = dose ?? (meta.type === "oral" ? 500 : 200);
+        const startFrequency = frequency ?? (meta.type === "oral" ? 1 : 3.5);
+        working = [
+          ...working,
+          {
+            compound,
+            dose: startDose,
+            frequency: startFrequency,
+            isOpen: false,
+            supportProtocol: protocolKey,
+          },
+        ];
+        added = true;
+      });
+
+      return added ? working : prev;
+    });
+  }, []);
+
   const value = {
     stack,
     setStack,
@@ -261,6 +322,8 @@ export const StackProvider = ({ children }) => {
     handleRemove,
     handleEsterChange,
     handleFrequencyChange,
+    handleSetCompoundOpen,
+    toggleSupportProtocol,
   };
 
   return (

@@ -1,11 +1,16 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useStack } from "../../context/StackContext";
+import HealthInsightBanner from "./HealthInsightBanner";
 
 const DEFAULT_LABS = {
-  hdl: 60, // Healthy baseline: strong HDL
-  ldl: 90, // Near-optimal LDL
-  ast: 22, // Typical reference AST
-  alt: 24, // Typical reference ALT
-  estradiol: 24, // Neutral E2 midpoint
+  hdl: 60,
+  ldl: 90,
+  ast: 22,
+  alt: 24,
+  estradiol: 24,
+  hematocrit: 45,
+  creatinine: 1.0,
+  egfr: 95,
 };
 
 const LAB_BLUEPRINT = [
@@ -50,27 +55,115 @@ const LAB_BLUEPRINT = [
     max: 40,
     thresholds: { warningHigh: 50, criticalHigh: 80, warningLow: 15, criticalLow: 10 },
   },
+  {
+    id: "hematocrit",
+    label: "Hematocrit",
+    unit: "%",
+    min: 38,
+    max: 52,
+    thresholds: { warningHigh: 50, criticalHigh: 55 },
+  },
+  {
+    id: "creatinine",
+    label: "Creatinine",
+    unit: "mg/dL",
+    min: 0.6,
+    max: 1.2,
+    thresholds: { warningHigh: 1.3, criticalHigh: 1.6 },
+  },
+  {
+    id: "egfr",
+    label: "eGFR",
+    unit: "mL/min",
+    min: 60,
+    max: 120,
+    inverse: true,
+    thresholds: { warningLow: 60, criticalLow: 45 },
+  },
 ];
 
 export const RightInspector = ({ metrics, steadyStateMetrics, scrubbedPoint = null }) => {
+  const { toggleSupportProtocol } = useStack();
   const totals = steadyStateMetrics?.totals || metrics?.totals || {
     netScore: 0,
     totalRisk: 0,
   };
 
   const { netScore = 0, totalRisk = 0 } = totals;
+  const labsWidget = metrics?.analytics?.labsWidget;
+  const projectedLabs = metrics?.analytics?.projectedLabs || {};
+  const systemLoadVectors = metrics?.analytics?.systemLoadVectors || {};
+  const [pendingProtocol, setPendingProtocol] = useState(null);
 
   const vitalsData = useMemo(() => {
-    const labs = {
+    const fallback = {
       ...DEFAULT_LABS,
       ...(metrics?.analytics?.projectedLabs || {}),
     };
 
-    return LAB_BLUEPRINT.map((item) => ({
-      ...item,
-      value: Number(labs[item.id] ?? 0),
-    }));
-  }, [metrics]);
+    return LAB_BLUEPRINT.map((item) => {
+      const widgetEntry =
+        labsWidget?.[item.id] || (item.id === "estradiol" ? labsWidget?.e2 : undefined);
+      const numericValue = Number(
+        widgetEntry?.value ?? fallback[item.id] ?? DEFAULT_LABS[item.id] ?? 0,
+      );
+      return {
+        ...item,
+        value: numericValue,
+        status: widgetEntry?.status || null,
+      };
+    });
+  }, [metrics, labsWidget]);
+
+  const activeInsight = useMemo(() => {
+    const hepaticLoad = Number(systemLoadVectors?.hepatic || 0);
+    const renalLoad = Number(systemLoadVectors?.renal || 0);
+    const astValue = Number(
+      (labsWidget?.ast?.value ?? projectedLabs.ast ?? DEFAULT_LABS.ast) || 0,
+    );
+    if (hepaticLoad > 80 || astValue > 100) {
+      return {
+        id: "hepatic",
+        title: "Hepatotoxicity Critical.",
+        subtitle: "AST/ALT levels indicate severe stress.",
+        actionLabel: "Apply Liver Support",
+        actionKey: "liver",
+      };
+    }
+
+    const egfrValue = Number(
+      (labsWidget?.egfr?.value ?? projectedLabs.egfr ?? DEFAULT_LABS.egfr) || 0,
+    );
+    if (renalLoad > 80 || (Number.isFinite(egfrValue) && egfrValue < 60)) {
+      return {
+        id: "renal",
+        title: "Renal Stress Detected.",
+        subtitle: "Filtration rate is trending dangerously low.",
+        actionLabel: "Apply Renal Support",
+        actionKey: "renal",
+      };
+    }
+
+    return null;
+  }, [labsWidget, projectedLabs, systemLoadVectors]);
+
+  useEffect(() => {
+    if (!activeInsight && pendingProtocol) {
+      setPendingProtocol(null);
+    }
+  }, [activeInsight, pendingProtocol]);
+
+  const handleInsightAction = (insight) => {
+    if (!insight || !toggleSupportProtocol) return;
+    if (pendingProtocol === insight.actionKey) return;
+    toggleSupportProtocol(insight.actionKey);
+    setPendingProtocol(insight.actionKey);
+    setTimeout(() => {
+      setPendingProtocol((current) =>
+        current === insight.actionKey ? null : current,
+      );
+    }, 600);
+  };
 
   const scrubLabel = useMemo(() => {
     if (!scrubbedPoint) return null;
@@ -86,6 +179,14 @@ export const RightInspector = ({ metrics, steadyStateMetrics, scrubbedPoint = nu
   return (
     <div className="flex flex-col h-full bg-[#0F1115] border-l border-white/5 overflow-y-auto scrollbar-hide">
       <div className="p-5">
+        <HealthInsightBanner
+          insight={activeInsight}
+          onAction={handleInsightAction}
+          isLoading={
+            Boolean(pendingProtocol) &&
+            activeInsight?.actionKey === pendingProtocol
+          }
+        />
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
             Projected Labs (Steady State)
@@ -112,9 +213,9 @@ const BulletChart = ({ data }) => {
   const fillPercent = Math.min(100, (value / spanMax) * 100);
   const markerPosition = (max / spanMax) * 100;
 
-  const severity = getLabSeverity(value, data);
+  const severity = mapStatusToSeverity(data.status) || getLabSeverity(value, data);
   const gradientClass = getGradientForSeverity(severity, fillPercent);
-  const isDanger = severity !== "normal";
+  const isDanger = severity === "critical" || severity === "warning";
 
   const rangeLabel = Number.isFinite(min) && Number.isFinite(max)
     ? `${min}-${max} ${data.unit}`
@@ -176,6 +277,13 @@ const getLabSeverity = (value, data) => {
   if (inverse && min !== undefined && value < min) return "warning";
   if (!inverse && max !== undefined && value > max) return "warning";
 
+  return "normal";
+};
+
+const mapStatusToSeverity = (status) => {
+  if (!status) return null;
+  if (status === "critical") return "critical";
+  if (status === "bad") return "warning";
   return "normal";
 };
 

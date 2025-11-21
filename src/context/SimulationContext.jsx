@@ -13,6 +13,8 @@ export const SimulationProvider = ({ children }) => {
     handleEsterChange,
     handleRemove,
     handleAddCompound,
+    handleSetCompoundOpen,
+    toggleSupportProtocol,
   } = useStack();
 
   const value = useMemo(
@@ -25,6 +27,8 @@ export const SimulationProvider = ({ children }) => {
       updateEster: handleEsterChange,
       removeCompound: handleRemove,
       addCompound: handleAddCompound,
+      setCompoundOpen: handleSetCompoundOpen,
+      toggleSupportProtocol,
     }),
     [
       stack,
@@ -35,6 +39,8 @@ export const SimulationProvider = ({ children }) => {
       handleEsterChange,
       handleRemove,
       handleAddCompound,
+      handleSetCompoundOpen,
+      toggleSupportProtocol,
     ],
   );
 

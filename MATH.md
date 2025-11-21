@@ -25,7 +25,7 @@ Everything described below lives inside those three layers.
 
 | Term | Definition | Declared In |
 | --- | --- | --- |
-| **Compound** | A single anabolic agent with metadata, curves, and biomarkers. | `src/data/compoundData.js` |
+| **Compound** | A single anabolic agent with metadata, curves, biomarkers, and signal/drag traits (`potency`, `saturationCeiling`, `toxicityCoefficient`). | `src/data/compoundData.js` |
 | **Stack** | An ordered list of `{ compound, dose, frequency, ester? }` objects supplied by the user. | `StackContext` state |
 | **Profile** | Represents the athlete (bodyweight, body fat, age, training style, experience, sensitivities). Adjusts math defaults. | `src/utils/personalization.js` |
 | **Metrics** | Result of `evaluateStack`. Includes totals, warnings, projected labs, pathway loads, system load, and physics metadata. | `stackEngine` return value |
@@ -95,19 +95,100 @@ export const compoundData = {
       { dose: 50, value: 0.7 },
       { dose: 100, value: 1.8 },
     ],
+      potency: 0.85,             // slope for anabolic signal (1.0 = testosterone baseline)
+      saturationCeiling: 1.9,    // signal cap (low for Anavar)
+      toxicity: {               // organ-specific drag coefficients
+         hepatic: 0.65,
+         lipid: 0.55,
+         renal: 0.35,
+         neuro: 0.2,
+      },
+      pathwayWeights: {
+         ar: 0.6,
+         nonGenomic: 0.3,
+         antiCatabolic: 0.1,
+         shbgBinding: 0.2,
+      },
+      metabolicVectors: {
+         aromatization: 0.2,
+         dhtConversion: 0.05,
+         glycogenLoad: 0.6,
+         lipolysis: 0.3,
+      },
+      anabolicRating: 0.65,      // tissue accretion strength
+      androgenicRating: 0.35,    // CNS drive / aggression
+      cosmeticFactor: 0.05,      // positive = wetter / glycogenic
   },
   // … dozens of compounds
 };
 ```
 
-The fields fall into four categories:
+The fields fall into five categories:
 
 1. **Display**: `name`, `abbreviation`, `color`, `category`, `pathway`, `bindingAffinity`.
 2. **Dose handling**: `type`, `defaultEster`, `esters`, `bioavailability`, `halfLife` (convert user input to weekly active mg).
-3. **Scoring hooks**: `benefitCurve`, `riskCurve`, `biomarkers`, `flags`, `toxicityTier`, `suppressiveFactor`.
-4. **Peripheral metadata**: `sideEffectProfile`, `evidenceProvenance`, etc. (mostly informational today, ready for future heuristics).
+3. **Scoring hooks**: `benefitCurve`, `riskCurve`, `biomarkers`, `flags`, `toxicityTier`, `suppressiveFactor`, plus the **signal/drag traits** (`potency`, `saturationCeiling`) and **qualitative vectors** (`pathwayWeights`, `metabolicVectors`, `anabolicRating`, `androgenicRating`, `cosmeticFactor`).
+4. **Toxicity buckets**: per-organ coefficients under `toxicity.{hepatic,lipid,renal,neuro,cardio,progestogenic,...}` that feed the drag equation and targeted warnings.
+5. **Physics hints**: flags that feed the deterministic labs (`aiStrength`, `antiInflammatory`, `conversionFactor`, etc.).
+6. **Peripheral metadata**: `sideEffectProfile`, `evidenceProvenance`, etc. (mostly informational today, ready for future heuristics).
+
+### 1.1 Per-Compound Impact Channels (Where Liver/Lipid/Strength Numbers Come From)
+
+Every compound informs the analytics layer through three parallel channels. This is the authoritative mapping for “how do we calculate the liver hit, lipid damage, or strength gain for a single drug?”
+
+1. **Signal channel (benefits / strength / hypertrophy)**
+    - Inputs: `benefitCurve`, `potency`, `saturationCeiling`, `anabolicRating`, `androgenicRating`, `pathwayWeights.ar`, `pathwayWeights.nonGenomic`.
+    - In `stackEngine` we evaluate the curve at the active dose, apply the profile scalars, and compute:
+       $$Signal = sigmoid(\text{activeMg} \times potency,\ saturationCeiling)$$
+    - `anabolicRating` steers the hypertrophy term, `androgenicRating` funnels into the strength/CNS bonus, and `pathwayWeights` allocate that signal to the AR vs non-genomic dashboards. The resulting values populate:
+       - `metrics.totals.benefit`
+       - `metrics.analytics.projectedGains.hypertrophy/strength`
+       - Pathway charts (e.g., `MechanismMonitor`).
+
+2. **Drag channel (organ stress across hepatic/lipid/renal/etc.)**
+    - Inputs: `toxicity` dictionary, `toxicityTier`, `biomarkers` with negative values (e.g., `liver_toxicity`, `hdl`), oral flags.
+    - For each organ bucket we accumulate:
+       $$OrganLoad_{organ} += (activeMg \times toxicity[organ])^{1.4}$$
+    - Hepatic and lipid loads additionally ingest biomarker deltas, so a compound with `biomarkers.liver_toxicity = 2` boosts AST/ALT beyond the toxicity bucket alone. Oral compounds trigger the surge math in §3.3 via `toxicityTier` once the daily dose exceeds 10 mg.
+    - These numbers surface as:
+       - `metrics.analytics.systemLoad.<hepatic|lipid|renal|neuro>`
+       - Lab projections: AST/ALT map to hepatic load, HDL/LDL map to lipid load, creatinine/eGFR map to renal load.
+
+3. **Lab coefficient channel (direct biomarker curves)**
+    - Inputs: `biomarkers` object, `conversionFactor`, `flags` (e.g., `aromatization`, `aiStrength`).
+    - Each biomarker entry is a signed scalar that feeds the deterministic lab sigmoids described in §3.2. Example mappings:
+       - `biomarkers.liver_toxicity` → AST/ALT sigmoid load + hepatic system load multiplier.
+       - `biomarkers.lipid_profile` (HDL negative / LDL positive) → HDL/LDL sigmoids.
+       - `biomarkers.rbc` → hematocrit sigmoid + cardiovascular system load.
+       - `biomarkers.cns_drive` or `androgenicRating` → projects into strength gain and neuro load.
+       - `conversionFactor` → translates active mg into serum testosterone for the labs panel.
+
+Put differently:
+
+| Field | Drives | Consumes |
+| --- | --- | --- |
+| `toxicity.hepatic` + `biomarkers.liver_toxicity` + oral surge | AST/ALT values, `systemLoad.hepatic`, hepatic warnings | `simulationEngine`, `useSystemLoad` |
+| `toxicity.lipid` + HDL/LDL biomarkers | HDL/LDL labs, `systemLoad.cardiovascular`, lipid warnings | `simulationEngine`, Lab Report UI |
+| `toxicity.renal` + `biomarkers.renal_toxicity` | Creatinine, eGFR, `systemLoad.renal` | `simulationEngine`, Banner triggers |
+| `flags.aromatization` + `flags.estrogenicity` | Serum E2 (first term only) vs `systemLoad.estrogenic` (both terms) | `simulationEngine`, estrogenic warnings/Banners |
+| `toxicity.progestogenic` + `biomarkers.prolactin` | `projectedLabs.prolactin`, `systemLoad.progestogenic`, progesterone-driven gyno warnings | `simulationEngine`, RightInspector banners |
+| `benefitCurve` + `anabolicRating` + `androgenicRating` | Hypertrophy/strength projections, net gain bars | `stackEngine`, `ProjectedGains` widgets |
+
+If a compound feels inaccurate in liver, lipid, or strength outputs, the fix is always to re-check these inputs: `biomarkers` for the raw lab direction, `toxicity` for organ buckets, and `potency/anabolicRating` for signal.
 
 Whenever you add or edit a compound, confirm that its `biomarkers` cover **all** downstream consumers. For example, failing to set `liver_toxicity` means the physics engine will under-report ALT/AST even if the UI calls the compound “C17-aa”. Also set `bindingAffinity` (Testosterone defaults to `100`) so the receptor competition math knows how hard the compound fights for AR occupancy. High-affinity agents (e.g., Trenbolone ~250) will crowd out low-affinity ones once receptors are saturated.
+
+Finally, populate the signal/drag traits and qualitative vectors:
+
+- `potency` (slope vs mg): Testosterone baseline = `1.0`; fast-acting agents go up to ~`1.8`; mild SARMs dip below `0.8`.
+- `saturationCeiling`: rough 0–4 scale representing the asymptote. Injectables can live in the 3–3.5 range; small orals stay around 1.6–2.0.
+- `pathwayWeights`: relative strength across `ar`, `nonGenomic`, `antiCatabolic`, `shbgBinding`. Numbers should sum to ≤1; we normalize internally.
+- `metabolicVectors`: `aromatization`, `dhtConversion`, `glycogenLoad`, `lipolysis`. Use these to differentiate “wet” vs “dry” compounds and true fat burners.
+- `anabolicRating` vs `androgenicRating`: coarse 0–1 scalars used for tissue vs CNS drive multipliers.
+- `cosmeticFactor`: -1 (dry/diuretic) → +1 (very wet). Feeds the “fullness” output. (Redundant with metabolic vectors but convenient for UI copy.)
+- `toxicity.{hepatic,lipid,renal,neuro,cardio,progestogenic}`: per-organ drag coefficients. Use 0.1–0.3 for mild pressure, 0.6+ for brutal compounds.
+
+The engine falls back to safe defaults (1.0 / 2.4 / uniform pathway weights / 0.2 toxicity buckets) if omitted, but setting real values is what makes net-gain modeling feel realistic.
 
 ---
 
@@ -132,7 +213,7 @@ Whenever you add or edit a compound, confirm that its `biomarkers` cover **all**
 
 For each compound:
 
-1. **Weekly conversion**: orals multiply by 7, injectables respect the provided weekly mg. Half-life + ester weight convert that to active mg for genomic accounting.
+1. **Weekly conversion / Active load**: orals multiply by 7, injectables respect the provided weekly mg. Half-life + ester weight convert that to **active serum mg** per day so the Hill equation sees the same units the physics engine does.
 2. **State tracking**:
    - `totalSystemicLoad += weeklyDose`.
    - `totalGenomicLoad += activeGenomicDose * pathwayWeight`.
@@ -145,6 +226,79 @@ For each compound:
    - Genomic vs non-genomic benefit buckets.
    - `rawRiskSum` (pre-interactions, pre-penalties).
    - `byCompound[code] = { benefit, risk, meta }` for UI breakdowns.
+
+#### 2.2.1 Signal vs Drag (Modified Sigmoid w/ Toxicity Penalty)
+
+Simple linear curves could not explain why hypertrophy plateaus while the athlete crashes. The scoring pass now decomposes every compound into two interacting terms derived from the new schema fields:
+
+1. **Anabolic Signal** — a modified sigmoid/log blend that rises fast and then asymptotes at `saturationCeiling`. The slope is governed by `potency` so Trenbolone (≈1.6) rockets upward while Testosterone (1.0) climbs slower and Anavar (0.8) flattens early.
+
+2. **Systemic Drag** — an exponential penalty seeded by `toxicityCoefficient`. It starts near zero but accelerates aggressively for harsh drugs. Values for injectables stay around 0.1–0.2, methylated orals live in the 0.35–0.55 range.
+
+3. **Net Gain** — the per-compound contribution is `Signal - Drag`. Gains plateau when the signal hits its ceiling; they regress only when drag surpasses that asymptote, which usually coincides with the system-load widgets going critical.
+
+Pseudo-code (mirrors the implementation in `stackEngine`):
+
+```ts
+const rawSignal = sigmoid(dose * potency, saturationCeiling);
+const cappedSignal = Math.min(rawSignal, saturationCeiling);
+const toxicityDrag = Math.pow(dose * toxicityCoefficient, 1.5);
+const netGain = cappedSignal - toxicityDrag;
+```
+
+This model lets us explain to users that “the drug is still powerful, but your body is failing.” UI components can now plateau the benefit bars, tint the tips red, or fire warnings when drag dominates. Regression is only surfaced when drag > signal **and** system-load buckets cross their critical thresholds, keeping the story aligned: the drug keeps signaling, but the athlete can no longer capitalize because the body is cooked.
+
+#### 2.2.2 Pathway Weights, SHBG Levers, and Synergy Bonuses
+
+Potency alone cannot describe why Proviron “frees up” other steroids or why Dbol still works despite weak AR affinity. Each compound now declares pathway weights:
+
+- `ar` — receptor binding strength (paired with `bindingAffinity`).
+- `nonGenomic` — membrane-level cascades, e.g., rapid glycogen storage, nitric-oxide effects.
+- `antiCatabolic` — cortisol suppression, SHBG binding, nutrient partitioning, appetite rescue.
+
+During scoring we project the active load onto this vector to build a richer state object. High `ar` entries boost the main signal; high `nonGenomic` entries raise the “fluid/fullness” term (see below); high `antiCatabolic` entries damp the drag curve (representing appetite retention) and apply a SHBG relief multiplier to the rest of the stack. We also compute a **CNS synergy bonus**: when the running `androgenicRating` sum is high and the stack still has headroom (system load < critical), we allow up to +8 % extra anabolic signal, arguing that aggression/CNS drive improves training intensity.
+
+#### 2.2.3 Tissue vs Fluid Split (Hypertrophy Quality)
+
+The “Projected Gains” meter now consists of two explicit components:
+
+1. **Tissue Accretion** — `tissueGain = sigmoid(activeLoad * anabolicRating)` and feeds protein synthesis outputs. This value is what persists after the cycle.
+2. **Cosmetic Volume** — `fullnessGain = activeLoad * cosmeticFactor`, bounded to ±3 units. Positive numbers mean water/glycogen/pump (Dbol, Anadrol); negative numbers mean drying out (Winstrol, Masteron).
+
+UI components stack these values so athletes can see “9/10 but mostly water” vs “6/10 but dry, real tissue.” Hooks also compute a tissue-to-fluid ratio for messaging.
+
+#### 2.2.4 Organ-Specific Toxicity Buckets
+
+`toxicityCoefficient` is now a dictionary. Each bucket (`hepatic`, `lipid`, `renal`, `neuro`, `cardio`, etc.) feeds both the exponential drag term and the system-load gauges:
+
+```ts
+const organDrag = Object.entries(compound.toxicity).reduce((acc, [organ, coeff]) => {
+   const load = Math.pow(activeLoad * coeff, 1.4);
+   organLoads[organ] += load;
+   return acc + load * organWeights[organ];
+}, 0);
+```
+
+When multiple compounds hammer the same organ, the bucket trips faster, unlocking specific warnings (e.g., “CRITICAL HEPATIC LOAD” vs “CNS overload”). Mixing organ targets still raises total drag, but it lets the education layer explain why some stacks feel worse than others. The aggregated `organDrag` replaces the old scalar `toxicityDrag` in the Hill expression above.
+
+#### 2.2.5 The Free Hormone Cascade (SHBG Modeling)
+
+Potency is not truly static because Sex Hormone Binding Globulin (SHBG) throttles the free fraction of every androgen in the stack. Compounds such as Anadrol, Proviron, and Winstrol carry strong negative `biomarkers.shbg` entries in `compoundData`, but until recently those values only flowed into the lab panel. The stack engine now captures their systemic effect via a **Bioavailability Scalar**:
+
+1. **Aggregate SHBG impact** – as we iterate the stack, we sum each compound’s `biomarkers.shbg` contribution (negative numbers indicate SHBG suppression). Oral agents with “SHBG crush” behavior naturally drive this total sharply downward.
+2. **Free Hormone Multiplier** – the cumulative SHBG delta is translated into a multiplier bounded between 1.0 and ~1.3 (smooth logistic curve). A neutral stack (no SHBG disruption) yields `1.0`; a Test + Anadrol run may land around `1.22`.
+3. **Apply to aromatizable injectables** – before evaluating the signal curves for Testosterone, Equipoise, or similar injectables, we rescale their `activeMg` by the multiplier. This mirrors reality: 500 mg Test plus 20 mg Anadrol feels stronger than 500 mg Test alone because more of the Test is unbound.
+
+The downstream impact is twofold: (a) projected gains capture the “free hormone boost,” and (b) the UI can explain why stacks that include SHBG crushers hit harder even if the headline mg totals look unchanged.
+
+#### 2.2.6 Neural Tone vs Toxicity (Drive vs Fatigue)
+
+Strength perception is not purely anabolic; it is also neurological. To reflect the “wired but tired” experience common with Anadrol, Trenbolone, and other high-androgen compounds, the stack engine decomposes the neuro bucket into two scalars:
+
+1. **Drive (Adrenergic Excitation)** – As we loop over compounds, we accumulate `neuralDriveScore = Σ(androgenicRating × doseScalar)` where `doseScalar = (weeklyDose / 200)^0.85`. Agents with high `androgenicRating` and meaningful weekly doses quickly elevate this score.
+2. **Fatigue (Systemic Drag)** – After the loop, we translate `totalSystemicLoad` + the computed `systemLoad.total` into a fatigue score: $$Fatigue = (\frac{totalSystemicLoad}{adjustedToxicityThreshold})^{1.1} \times 2.5 + (systemLoad.total/100) \times 2.0$$
+
+The analytics payload now exposes `workoutQuality = { drive, fatigue, net }`, where `net = drive - fatigue`. Early in a blast the fatigue term stays low, so Anadrol/Test feels explosive. As systemic load creeps toward the toxicity ceiling, fatigue overtakes drive and the net score goes negative, mirroring the “wired but exhausted” reports athletes describe in week four.
 
 #### Receptor Competition & Spillover (Binding Affinity Cap)
 
@@ -263,6 +417,24 @@ $$LabValue = L_{min} + \frac{L_{max} - L_{min}}{1 + e^{-k\,(Load - Midpoint)}}$$
 - `aiMitigation = 1 / (1 + antiEstrogenStrength * 0.6)`.
 - Estradiol = `min(350, (25 + aromPressure^1.35 * 35) * aiMitigation + methylEstrogenLoad * 0.05)`.
 - Value is stored under both `projectedLabs.e2` and `projectedLabs.estradiol` so older UI code keeps working.
+
+### 3.4.1 The 19-Nor Engine (Progesterone / Prolactin Physics)
+
+19-nor compounds behave nothing like the Test + Oral models. Trenbolone, Nandrolone, and Ment hard-bind to both the Androgen and Progesterone receptors, creating gyno risk even when serum Estradiol is low. The simulator now captures that biology through two coupled mechanisms:
+
+1. **Receptor Dominance / Spillover**
+    - Each compound contributes an affinity-weighted load: `affinityLoad = saturationMg × affinityMultiplier`. Overrides map Tren (5×), Ment (4×), Nandrolone (1.5×); everything else defaults to 1×.
+    - When `Σ affinityLoad` exceeds the receptor ceiling (2,600 mgEq), low-affinity aromatizers (Test, EQ) are “spilled” off the AR. The displaced load routes into `totalAromatizableLoad`, effectively bumping Estradiol even if the user keeps Test constant. This reproduces the “High Tren + High Test = estrogen chaos” anecdote while letting “High Tren + Low Test” stay manageable.
+
+2. **Progesterone / Prolactin Pressure**
+    - While iterating compounds we accumulate two signals:
+       - `nor19Load = Σ saturationMg × biomarkers.prolactin` (Tren/Nand/Trest carry positive coefficients).
+       - `progestinDoseLoad = Σ loadRatio × toxicity.progestogenic` (captures data-layer toxicity bucket).
+    - After Estradiol is calculated we blend the signals:
+       $$ProgestogenicScore = \max\Big(0, \frac{nor19Load}{600} + \frac{progestinDoseLoad}{8} + \frac{\max(0, E2 - 35)}{50} \Big)$$
+    - `systemLoad.progestogenic = clamp(ProgestogenicScore × 12, 0, 100)` becomes the new Hormonal Pressure bucket, while `projectedLabs.prolactin = min(60, 12 + ProgestogenicScore × 6)` feeds the labs UI. High Estradiol amplifies Progesterone receptor density, so stacking Deca + high E2 explodes the score just like in real bloodwork.
+
+The net effect: users finally see prolactin warnings trip on Tren/Nand cycles even when serum E2 looks “normal,” and they understand why lowering their Test dose (reducing displacement) calms everything down.
 
 ### 3.5 System Load Total & Kill Switch
 

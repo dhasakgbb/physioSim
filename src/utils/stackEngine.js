@@ -14,7 +14,14 @@ import {
 import { defaultProfile } from "./personalization.js";
 import { compoundData } from "../data/compoundData.js";
 import { COMPOUND_VECTORS } from "../data/pathwayMap.js";
-import { calculateCycleMetrics } from "./simulationEngine.js";
+import {
+  calculateCycleMetrics,
+  calculateActiveLoad,
+  calculateEfficiencyMetrics,
+  calculateProjectedGains,
+  calculateSystemLoad,
+  calculateProjectedLabsWidget,
+} from "./simulationEngine.js";
 
 // ============================================================================
 // CONSTANTS & CONFIGURATION
@@ -41,6 +48,23 @@ const PATHWAY_KEY_MAPPING = {
   dht: "non_genomic",
 };
 
+const DEFAULT_CONCENTRATIONS = {
+  testosterone: 250,
+  nandrolone: 200,
+  deca: 200,
+  npp: 100,
+  trenbolone: 100,
+  primobolan: 100,
+  masteron: 100,
+  eq: 200,
+  ment: 100,
+  dhb: 100,
+  boldenone: 200,
+};
+
+const DEFAULT_INJECTABLE_CONCENTRATION = 200;
+const FREE_HORMONE_TARGETS = new Set(["testosterone", "eq"]);
+
 const buildPhysicsStack = (activeCompounds, stackInput = []) => {
   if (!Array.isArray(activeCompounds) || !activeCompounds.length) return [];
   const lookup = Object.create(null);
@@ -64,6 +88,85 @@ const buildPhysicsStack = (activeCompounds, stackInput = []) => {
       ester: source.ester || entry.ester || entry.meta?.defaultEster,
     };
   });
+};
+
+const calculateInjectionLogistics = (activeCompounds = []) => {
+  let totalWeeklyVolume = 0;
+  let maxPerInjection = 0;
+  let maxPipScore = 0;
+  let hasWeeklyMegaShot = false;
+  const perInjectionShots = [];
+
+  activeCompounds.forEach((entry) => {
+    const { meta, weeklyDose, code, frequency } = entry;
+    if (!meta || meta.type !== "injectable") return;
+
+    const concentration =
+      meta.concentration ||
+      DEFAULT_CONCENTRATIONS[code] ||
+      DEFAULT_CONCENTRATIONS[meta.category] ||
+      DEFAULT_INJECTABLE_CONCENTRATION;
+
+    if (!concentration || concentration <= 0) return;
+
+    const weeklyMl = weeklyDose / concentration;
+    if (!Number.isFinite(weeklyMl) || weeklyMl <= 0) return;
+
+    totalWeeklyVolume += weeklyMl;
+
+    const intervalDays = Math.max(Number(frequency) || 7, 0.5);
+    const injectionsPerWeek = Math.max(1, 7 / intervalDays);
+    const perInjectionMl = weeklyMl / injectionsPerWeek;
+    maxPerInjection = Math.max(maxPerInjection, perInjectionMl);
+    perInjectionShots.push({ code, perInjectionMl, intervalDays });
+
+    if (intervalDays >= 6 && perInjectionMl > 5) {
+      hasWeeklyMegaShot = true;
+    }
+
+    const pipScore = meta.biomarkers?.pip || 0;
+    maxPipScore = Math.max(maxPipScore, pipScore);
+  });
+
+  const warnings = [];
+  if (hasWeeklyMegaShot) {
+    warnings.push({
+      level: "critical",
+      message:
+        "High injection volume (>5 mL) scheduled for single weekly pins. Split the dose across multiple sites to avoid tissue damage.",
+    });
+  }
+
+  if (maxPerInjection > 3.5) {
+    warnings.push({
+      level: "warning",
+      message:
+        "Injection volume above 3.5 mL per shot detected. Consider dividing doses to reduce PIP and scar tissue.",
+    });
+  }
+
+  if (totalWeeklyVolume > 12) {
+    warnings.push({
+      level: "warning",
+      message:
+        "Total weekly oil volume exceeds 12 mL. Assess ester choices or concentration to keep injections manageable.",
+    });
+  }
+
+  if (maxPipScore >= 4) {
+    warnings.push({
+      level: "warning",
+      message:
+        "High PIP compound detected. Rotate injection sites and dilute with carrier oil if possible.",
+    });
+  }
+
+  return {
+    totalWeeklyVolume: Number(totalWeeklyVolume.toFixed(2)),
+    maxPerInjection: Number(maxPerInjection.toFixed(2)),
+    maxPipScore,
+    warnings,
+  };
 };
 
 /**
@@ -234,6 +337,28 @@ const isOralUsage = (meta, code, ester) => {
  */
 const getWeeklyDose = (dose, isOral) => {
   return isOral ? dose * 7 : dose;
+};
+
+const calculateFreeHormoneMultiplier = (compounds, doses) => {
+  let suppressionLoad = 0;
+
+  compounds.forEach((code) => {
+    const meta = compoundData[code];
+    if (!meta) return;
+    const shbgImpact = meta.biomarkers?.shbg || 0;
+    if (shbgImpact >= 0) return;
+    const dose = doses[code] ?? 0;
+    if (!dose) return;
+    const isOral = meta.type === "oral";
+    const weeklyDose = getWeeklyDose(dose, isOral);
+    const reference = isOral ? 350 : 700;
+    const normalizedLoad = Math.max(0, weeklyDose / reference);
+    suppressionLoad += Math.abs(shbgImpact) * normalizedLoad;
+  });
+
+  if (suppressionLoad <= 0) return 1.0;
+  const clamped = Math.min(3, suppressionLoad);
+  return 1 + (clamped / 3) * 0.3;
 };
 
 /**
@@ -500,20 +625,14 @@ export const evaluateStack = ({
     maxSuppression: 0,
     byCompound: {},
     activeCompounds: [], // For global penalties
+    neuralDriveScore: 0,
   };
 
   // In the steady state model we assume compounds are held long enough to saturate,
   // so time-based multipliers collapse into the profile-specific recovery penalty only.
   const suppressionPenalty = recoveryPenalty;
 
-  // SHBG Logic (Dose Dependent)
-  let shbgCrushScore = 0;
-  if (doses["proviron"]) shbgCrushScore += (doses["proviron"] * 7) / 350; // 50mg/day = 1.0
-  if (doses["winstrol"]) shbgCrushScore += (doses["winstrol"] * 7) / 350; // 50mg/day = 1.0
-  if (doses["masteron"]) shbgCrushScore += doses["masteron"] / 400; // 400mg/week = 1.0
-
-  // Cap the multiplier to avoid game-breaking numbers (max 20% boost)
-  const shbgMultiplier = 1 + Math.min(shbgCrushScore, 2.0) * 0.1;
+  const freeHormoneMultiplier = calculateFreeHormoneMultiplier(compounds, doses);
 
   // 2. Primary Compound Loop
   compounds.forEach((code) => {
@@ -554,6 +673,11 @@ export const evaluateStack = ({
       const weight = meta.bindingAffinity === "very_high" ? 2 : 1;
       state.totalGenomicLoad += activeGenomicDose * weight;
     }
+    const androgenicRating = Math.max(0, Number(meta.androgenicRating) || 0);
+    if (androgenicRating > 0) {
+      const driveDoseScalar = Math.pow(Math.max(0, weeklyDose) / 200, 0.85);
+      state.neuralDriveScore += androgenicRating * driveDoseScalar;
+    }
     if (meta.suppressiveFactor) {
       state.maxSuppression = Math.max(
         state.maxSuppression,
@@ -562,7 +686,18 @@ export const evaluateStack = ({
     }
 
     // E. Benefit & Risk Evaluation (Curve Lookup)
-    const benefitRes = evaluateCompoundResponse(code, "benefit", dose, profile);
+    const receivesFreeHormoneBoost =
+      FREE_HORMONE_TARGETS.has(code) && meta.type === "injectable";
+    const benefitDose = receivesFreeHormoneBoost
+      ? dose * freeHormoneMultiplier
+      : dose;
+
+    const benefitRes = evaluateCompoundResponse(
+      code,
+      "benefit",
+      benefitDose,
+      profile,
+    );
     const riskRes = evaluateCompoundResponse(code, "risk", dose, profile);
 
     let benefitVal = benefitRes?.value ?? 0;
@@ -593,13 +728,6 @@ export const evaluateStack = ({
       } else {
          riskVal *= 0.5; // Low risk below threshold
       }
-    }
-
-    // Apply SHBG Bonus (Injectables only)
-    if (meta.type === "injectable" && meta.pathway === "ar_genomic") {
-      // Note: Benefit curves are pre-calibrated, but this boosts efficiency
-      // We apply it as a multiplier to the outcome
-      benefitVal *= shbgMultiplier;
     }
 
     // Apply Stability Penalty
@@ -795,19 +923,95 @@ export const evaluateStack = ({
   const physicsStack = buildPhysicsStack(state.activeCompounds, stackInput);
   const physicsMetrics = calculateCycleMetrics(physicsStack, compoundData);
   const projectedLabs = physicsMetrics.projectedLabs;
-  const systemLoadSnapshot = physicsMetrics.systemLoad;
+  const legacySystemLoad = physicsMetrics.systemLoad;
+
+  const logistics = calculateInjectionLogistics(state.activeCompounds);
+
+  const helperInput = state.activeCompounds.map((entry) => ({
+    id: entry.code,
+    dose: entry.weeklyDose,
+    frequency: 1,
+    ester: entry.ester,
+  }));
+
+  const activeLoadPayload = helperInput.length
+    ? calculateActiveLoad(helperInput, compoundData)
+    : [];
+
+  const doseEfficiencyMetrics = calculateEfficiencyMetrics(activeLoadPayload);
+  const projectedGainsWidget = calculateProjectedGains(activeLoadPayload);
+  const systemLoadVectors = calculateSystemLoad(activeLoadPayload);
+  const labsWidget = calculateProjectedLabsWidget(activeLoadPayload, projectedLabs);
+
+  const summarizedSystemLoad = (() => {
+    if (!systemLoadVectors) return legacySystemLoad;
+    const entries = [
+      { label: "Androgenic", value: systemLoadVectors.androgenic || 0 },
+      { label: "Cardiovascular", value: systemLoadVectors.cardio || 0 },
+      { label: "Neuro / CNS", value: systemLoadVectors.neuro || 0 },
+      { label: "Hepatic", value: systemLoadVectors.hepatic || 0 },
+      { label: "Renal", value: systemLoadVectors.renal || 0 },
+      { label: "Estrogenic", value: systemLoadVectors.estrogenic || 0 },
+      { label: "Progestogenic", value: systemLoadVectors.progestogenic || 0 },
+    ];
+    const dominant = entries.reduce(
+      (current, entry) =>
+        entry.value > (current?.value ?? -Infinity) ? entry : current,
+      null,
+    );
+    const total = Math.max(
+      0,
+      Math.min(
+        100,
+        entries.reduce((max, entry) => (entry.value > max ? entry.value : max), 0),
+      ),
+    );
+    return {
+      total: Math.round(total),
+      dominantPressure: dominant?.label || "Balanced",
+    };
+  })();
+
+  const fatigueScalar = Math.max(0, state.totalSystemicLoad / adjustedToxicityThreshold);
+  const systemicStress = Math.max(
+    summarizedSystemLoad?.total ?? legacySystemLoad?.total ?? 0,
+    0,
+  ) / 100;
+  const fatigueScore = Math.pow(fatigueScalar, 1.1) * 2.5 + systemicStress * 2.0;
+  const workoutQuality = {
+    drive: Number(state.neuralDriveScore.toFixed(2)),
+    fatigue: Number(fatigueScore.toFixed(2)),
+    net: Number((state.neuralDriveScore - fatigueScore).toFixed(2)),
+  };
 
   // 8. Construct Result
+  const interactionWarnings = getInteractionWarnings(compounds, profile);
+  const combinedWarnings = [
+    ...interactionWarnings,
+    ...logistics.warnings.map((warn) => ({
+      type: "logistics",
+      level: warn.level === "critical" ? "critical" : "warning",
+      message: warn.message,
+    })),
+  ];
+
   return {
     byCompound: state.byCompound,
     pairInteractions,
-    warnings: getInteractionWarnings(compounds, profile),
+    warnings: combinedWarnings,
     analytics: {
       projectedLabs,
       pathwayLoads,
-      systemLoad: systemLoadSnapshot,
+      systemLoad: summarizedSystemLoad,
+      systemLoadVectors,
+      labsWidget,
+      doseEfficiency: doseEfficiencyMetrics,
+      projectedGains: projectedGainsWidget,
+      logistics,
       physicsMeta: physicsMetrics.meta,
       physicsGains: physicsMetrics.projectedGains,
+      physicsSystemLoad: legacySystemLoad,
+      workoutQuality,
     },
     totals: {
       baseBenefit: state.genomicBenefit + state.nonGenomicBenefit,

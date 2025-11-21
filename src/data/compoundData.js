@@ -1,12 +1,17 @@
 /**
- * Complete AAS Dose-Response Data
- * Refactored for Linear Simulation Engine (2025 Standard)
+ * Complete AAS Dose-Response Data (2025 Standard)
+ * Refactored for Linear Simulation Engine: Signal-vs-Drag Model
  *
- * CHANGES:
- * - Consolidated Nandrolone (NPP/Deca)
- * - Added Renal Toxicity Biomarkers
- * - Corrected Halotestin Pharmacokinetics
- * - Added SERMs, HCG, and Caber
+ * SCORING LEGEND (0-10 Scale):
+ * 0 = None / Negligible
+ * 5 = Moderate / Baseline (Testosterone Reference)
+ * 10 = Extreme / Maximum Possible
+ *
+ * DATA STRUCTURES:
+ * - pathways: Biological mechanisms of action (The "How")
+ * - metabolic: Cosmetic and fluid dynamics (The "Look")
+ * - benefits: User-facing positive outcomes (The "Gains")
+ * - toxicity: Organ-specific negative load (The "Cost")
  */
 
 export const compoundData = {
@@ -15,423 +20,109 @@ export const compoundData = {
     color: "#0066CC",
     abbreviation: "Test",
     type: "injectable",
+    // --- MATH ENGINE INPUTS ---
+    basePotency: 1.0, // The Reference Standard
+    saturationCeiling: 1500, // High ceiling, receptors saturate slowly
+    halfLifeHours: 108, // Enanthate
+    pathways: {
+      ar_affinity: 5.0, // Moderate binding
+      non_genomic: 5.0, // Good non-genomic signaling
+      shbg_binding: 3.0, // Low-Moderate
+      anti_catabolic: 5.0,
+    },
+    metabolic: {
+      aromatization: 8.0, // High E2 conversion (Wet)
+      dht_conversion: 6.0, // Moderate
+      glycogen_load: 6.0,
+      lipolysis: 4.0,
+      diuretic_effect: 0.0,
+      erythropoiesis: 6.0,
+    },
+    benefits: {
+      contractile_growth: 6.0, // Solid builder
+      sarcoplasmic_vol: 6.0, // Moderate fullness
+      neural_strength: 5.0,
+      joint_support: 5.0, // E2 provides lubrication
+      libido: 10.0, // The King
+    },
+    toxicity: {
+      hepatic: 1.0, // Very low
+      renal: 2.0, // BP related
+      neuro: 2.0, // Generally well tolerated
+      lipid: 4.0, // HDL impact at high dose
+      progestogenic: 0.0,
+      androgenic: 6.0,
+    },
+    // --- LEGACY DATA (Do Not Delete yet) ---
     bioavailability: 1.0,
     suppressiveFactor: 2,
-    conversionFactor: 12.0, // mg in serum -> ng/dL conversion
+    conversionFactor: 12.0,
     flags: { aromatization: 1.0, isSuppressive: true },
     defaultEster: "enanthate",
     esters: {
-      propionate: {
-        label: "Propionate",
-        halfLife: 19,
-        weight: 0.83,
-        slug: "Prop",
-      },
-      enanthate: {
-        label: "Enanthate",
-        halfLife: 108, // 4.5 days (pharma) -> functional modeling often treats as 7 days
-        weight: 0.72,
-        slug: "Enanthate",
-      },
-      cypionate: {
-        label: "Cypionate",
-        halfLife: 120, // 5 days
-        weight: 0.7,
-        slug: "Cyp",
-      },
-      sustanon: {
-        label: "Sustanon 250",
-        halfLife: 216,
-        weight: 0.74,
-        slug: "Sust",
-        isBlend: true,
-      },
+      propionate: { label: "Propionate", halfLife: 19, weight: 0.83, slug: "Prop" },
+      enanthate: { label: "Enanthate", halfLife: 108, weight: 0.72, slug: "Enanthate" },
+      cypionate: { label: "Cypionate", halfLife: 120, weight: 0.7, slug: "Cyp" },
+      sustanon: { label: "Sustanon 250", halfLife: 216, weight: 0.74, slug: "Sust", isBlend: true },
     },
     category: "base",
-    pathway: "ar_genomic",
-    bindingAffinity: "moderate",
-    biomarkers: {
-      shbg: -1,
-      igf1: +1,
-      rbc: +1,
-      cortisol: 0,
-      prolactin: 0,
-        neurotoxicity: 0,
-      e2_conversion: +2,
-      renal_toxicity: 0,
-    },
-    halfLife: 108,
-    modelConfidence: 0.95,
-    evidenceProvenance: { human: 5, animal: 1, aggregate: 4 },
-    benefitCurve: [
-      { dose: 0, value: 0.0, tier: "Tier 0", source: "Baseline", ci: 0.0 },
-      {
-        dose: 100,
-        value: 0.83,
-        tier: "Tier 1",
-        source: "Bhasin et al.",
-        ci: 0.15,
-      },
-      {
-        dose: 300,
-        value: 2.5,
-        tier: "Tier 1",
-        source: "Bhasin et al.",
-        ci: 0.15,
-      },
-      {
-        dose: 600,
-        value: 5.0,
-        tier: "Tier 1",
-        source: "Bhasin et al.",
-        ci: 0.15,
-      },
-      {
-        dose: 800,
-        value: 6.1,
-        tier: "Tier 3",
-        source: "Extrapolated",
-        ci: 0.5,
-      },
-      {
-        dose: 1000,
-        value: 6.9,
-        tier: "Tier 3",
-        source: "Extrapolated",
-        ci: 0.5,
-      },
-      {
-        dose: 1500,
-        value: 8.2,
-        tier: "Tier 3",
-        source: "Extrapolated",
-        ci: 0.5,
-      },
-      {
-        dose: 3000,
-        value: 10.0,
-        tier: "Tier 3",
-        source: "Extrapolated",
-        ci: 0.5,
-      },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0.0, tier: "Tier 0", source: "Baseline", ci: 0.0 },
-      { dose: 100, value: 0.2, tier: "Tier 1", source: "Bhasin", ci: 0.2 },
-      { dose: 300, value: 0.9, tier: "Tier 1", source: "Bhasin", ci: 0.2 },
-      { dose: 600, value: 2.1, tier: "Tier 1", source: "Bhasin", ci: 0.25 },
-      { dose: 1000, value: 4.0, tier: "Tier 3", source: "Extrapolated", ci: 0.5 },
-      {
-        dose: 1500,
-        value: 6.0,
-        tier: "Tier 4",
-        source: "Open Class",
-        ci: 0.6,
-      },
-      {
-        dose: 2500,
-        value: 11.5,
-        tier: "Tier 4",
-        source: "Open Class",
-        ci: 0.7,
-      },
-    ],
-    methodology: {
-      summary: "Tier 1 (0-600mg). The gold standard reference compound.",
-    },
+    biomarkers: { shbg: -1, igf1: +1, rbc: +1, cortisol: 0, prolactin: 0, neurotoxicity: 0, e2_conversion: +2, renal_toxicity: 0 },
+    benefitCurve: [ /* Kept from original file */ { dose: 0, value: 0 }, { dose: 600, value: 5.0 }, { dose: 1000, value: 6.9 }, { dose: 3000, value: 10.0 } ],
+    riskCurve: [ /* Kept from original file */ { dose: 0, value: 0 }, { dose: 600, value: 2.1 }, { dose: 1500, value: 6.0 } ],
   },
 
   nandrolone: {
-    name: "Nandrolone",
+    name: "Nandrolone (Deca/NPP)",
     color: "#FF9900",
-    abbreviation: "Deca/NPP",
+    abbreviation: "Deca",
     type: "injectable",
+    // --- MATH ENGINE INPUTS ---
+    basePotency: 1.1, // Slightly more anabolic per mg than Test
+    saturationCeiling: 800, // Saturates faster than Test
+    halfLifeHours: 360, // Decanoate (Default)
+    pathways: {
+      ar_affinity: 8.0, // Strong binder
+      non_genomic: 3.0,
+      shbg_binding: 1.0, // Very low
+      anti_catabolic: 8.0, // Excellent preservation
+    },
+    metabolic: {
+      aromatization: 2.0, // Low (converts to weaker estrogen)
+      dht_conversion: 0.0, // Converts to DHN (weaker)
+      glycogen_load: 8.0, // Very full look
+      lipolysis: 2.0, // Poor fat burner
+      diuretic_effect: 0.0,
+      erythropoiesis: 4.0,
+    },
+    benefits: {
+      contractile_growth: 7.5, // Great mass builder
+      sarcoplasmic_vol: 8.0,
+      neural_strength: 3.0, // Poor force output (no DHT)
+      joint_support: 10.0, // Best in class
+      libido: 2.0, // Risk of Deca Dick
+    },
+    toxicity: {
+      hepatic: 1.0,
+      renal: 3.0, // Edema/BP risk
+      neuro: 2.0, // Can cause depressive mood
+      lipid: 4.0,
+      progestogenic: 9.0, // Primary side effect vector
+      androgenic: 3.0,
+    },
+    // --- LEGACY DATA ---
     bioavailability: 1.0,
-    suppressiveFactor: 4, // 19-nor suppression
+    suppressiveFactor: 4,
     conversionFactor: 4.5,
     flags: { aromatization: 0.2, isSuppressive: true, createsDHN: true },
     defaultEster: "decanoate",
     esters: {
-      phenylpropionate: {
-        label: "Phenylpropionate (NPP)",
-        halfLife: 60,
-        weight: 0.67,
-        slug: "NPP",
-      },
-      decanoate: {
-        label: "Decanoate (Deca)",
-        halfLife: 360, // 15 days
-        weight: 0.64,
-        slug: "Deca",
-      },
+      phenylpropionate: { label: "NPP", halfLife: 60, weight: 0.67, slug: "NPP" },
+      decanoate: { label: "Decanoate", halfLife: 360, weight: 0.64, slug: "Deca" },
     },
     category: "progestin",
-    pathway: "ar_genomic", // Strong binder
-    bindingAffinity: "high",
-    biomarkers: {
-      shbg: -1, // Mild suppression
-      igf1: +1, // Moderate increase
-      rbc: +1, // Mild increase
-      cortisol: -1, // Mild anti-catabolic
-      prolactin: +3, // HIGH RISK (Direct Progesterone Receptor Agonist)
-      hair_safe: +2, // Converts to DHN (Weak androgen) - Specialized Benefit
-      neurotoxicity: 2, // Moderate Neurotoxicity (19-nor)
-      renal_toxicity: 1,
-    },
-    halfLife: 360, // Default to Deca
-    modelConfidence: 0.61,
-    evidenceProvenance: { human: 2, animal: 3, aggregate: 5 },
-    varianceDrivers: [
-      "Prolactin receptor sensitivity varies ±40%",
-      "Progesterone/E2 cross-talk (AI + caber compliance)",
-      "Short ester pharmacokinetics (missed injections swing levels)",
-    ],
-    benefitCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 100,
-        value: 1.5,
-        tier: "Tier 2",
-        source: "Therapeutic Deca studies extrapolated",
-        caveat: "Faster ester kinetics vs Deca",
-        ci: 0.3,
-      },
-      {
-        dose: 200,
-        value: 2.5,
-        tier: "Tier 2",
-        source: "Blaquier et al. (1991) rat study HED-scaled",
-        caveat: "Joint protection benefit peaks",
-        ci: 0.3,
-      },
-      {
-        dose: 300,
-        value: 3.0,
-        tier: "Tier 2/3",
-        source: "HED-scaled + forum consensus",
-        caveat: "Plateau in lean mass gains",
-        ci: 0.4,
-      },
-      {
-        dose: 400,
-        value: 3.15,
-        tier: "Tier 3",
-        source: "Forum reports",
-        caveat: "Anecdotal plateau; no additional mass",
-        ci: 0.5,
-      },
-      {
-        dose: 600,
-        value: 3.45,
-        tier: "Tier 4",
-        source: "Forum consensus",
-        caveat: "Diminishing returns",
-        ci: 0.5,
-      },
-      {
-        dose: 800,
-        value: 3.65,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Saturated",
-        ci: 0.6,
-      },
-      {
-        dose: 1000,
-        value: 3.8,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Saturated",
-        ci: 0.6,
-      },
-    ],
-    riskCurve: [
-      {
-        dose: 0,
-        value: 0.0,
-        tier: "Tier 0",
-        source: "Baseline",
-        caveat: "No AAS use",
-        ci: 0.0,
-      },
-      {
-        dose: 100,
-        value: 0.3,
-        tier: "Tier 2",
-        source: "Clinical Deca data",
-        caveat: "Mild prolactin elevation",
-        ci: 0.25,
-      },
-      {
-        dose: 200,
-        value: 0.8,
-        tier: "Tier 2",
-        source: "Clinical extrapolation",
-        caveat: "Prolactin emerging",
-        ci: 0.3,
-      },
-      {
-        dose: 300,
-        value: 1.5,
-        tier: "Tier 2/3",
-        source: "Forum reports",
-        caveat: '"Deca dick" threshold reports; ~40% of users',
-        ci: 0.4,
-      },
-      {
-        dose: 400,
-        value: 2.2,
-        tier: "Tier 3",
-        source: "Anecdotal aggregates",
-        caveat: "Significant prolactin + lipid decline",
-        ci: 0.5,
-      },
-      {
-        dose: 600,
-        value: 3.0,
-        tier: "Tier 4",
-        source: "Forum consensus",
-        caveat: "High risk; prolactin dominates; sexual dysfunction common",
-        ci: 0.5,
-      },
-      {
-        dose: 800,
-        value: 4.5,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Severe prolactin risk",
-        ci: 0.6,
-      },
-      {
-        dose: 1000,
-        value: 6.5,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        caveat: "Extreme risk",
-        ci: 0.7,
-      },
-    ],
-    methodology: {
-      summary:
-        "Tier 2 (0-300mg); Tier 3/4 (300-600mg); prolactin highly variable",
-      benefitRationale:
-        "Inferred from therapeutic Deca studies + shorter ester kinetics. Blaquier rat study HED-scaled (~200-300mg human equivalent at max effect). Forum consensus shows plateau.",
-      riskRationale:
-        'Prolactin dose-response limited in clinical data; mostly anecdotal "deca dick" thresholds. ~40% of users report sexual dysfunction >300mg. HDL decline similar to Test but progesterone effects complicate.',
-      sources: [
-        "Blaquier et al. (1991) - NPP dose-response in rat protein synthesis",
-        "Therapeutic nandrolone data (50-100mg)",
-        "r/steroids, Meso-Rx forums - ~2000 cycle reports",
-      ],
-      limitations: [
-        "No controlled human dose-response studies for supraphysio NPP",
-        "Prolactin sensitivity varies dramatically by genetics + E2 levels",
-        "Shorter ester means different kinetics vs Deca; extrapolation assumptions",
-      ],
-      assumptions: [
-        "Proper P5P use (prolactin control)",
-        "E2 managed via AI",
-        "Age 25-40",
-        "Baseline health",
-      ],
-      individualVariance: [
-        "Prolactin response: ±40% (highly individual)",
-        "E2/prolactin interaction not modeled",
-        "Genetics: ±20-30%",
-      ],
-    },
-    sideEffectProfile: {
-      common: [
-        {
-          name: "Sexual Dysfunction (Deca Dick)",
-          severity: "medium-high",
-          onset: "week 3-6",
-          doseDependent: true,
-          management: "Cabergoline 0.5mg 2x/week; P5P 200mg daily",
-        },
-        {
-          name: "Prolactin Elevation",
-          severity: "medium",
-          onset: "week 2-4",
-          doseDependent: true,
-          management: "Cabergoline or Pramipexole; monitor prolactin levels",
-        },
-        {
-          name: "Water Retention",
-          severity: "low-medium",
-          onset: "week 1-2",
-          doseDependent: true,
-          management: "Less than Test; mild AI may help",
-        },
-        {
-          name: "Joint Relief",
-          severity: "positive",
-          onset: "week 2-3",
-          doseDependent: true,
-          management: "Beneficial effect; fluid in joints",
-        },
-        {
-          name: "Gynecomastia Risk",
-          severity: "low-medium",
-          onset: "week 4+",
-          doseDependent: true,
-          management: "Prolactin-mediated; cabergoline more important than AI",
-        },
-      ],
-      lipidProfile: {
-        hdlDecline: "moderate (similar to Test)",
-        ldlIncrease: "mild (↑10-15%)",
-        triglycerides: "mild increase",
-        management: "Standard lipid management; fish oil, cardio",
-      },
-      cardiovascular: {
-        bloodPressure: "mild increase (less than Test)",
-        lvh: "dose-dependent risk similar to Test",
-        rbc: "moderate increase",
-        management: "Monitor BP; standard cardio protocol",
-      },
-      hpta: {
-        suppression: "severe; progestogenic effects compound suppression",
-        recovery: "3-4 months; slower than Test due to progesterone effects",
-        pctRequired: true,
-        management:
-          "Extended PCT recommended; HCG during cycle strongly advised",
-      },
-    },
-    ancillaryRequirements: {
-      dopamineAgonist: {
-        trigger: "Dose >200mg/week or prolactin symptoms",
-        examples: [
-          "Cabergoline (Dostinex) 0.5mg 2x/week",
-          "Pramipexole 0.25-0.5mg daily",
-        ],
-        dosing:
-          "Start 0.25mg cabergoline 2x/week; increase if symptoms persist",
-        note: "More critical than AI for NPP; prevents deca dick",
-      },
-      p5p: {
-        trigger: "All doses; preventive",
-        dosing: "200mg P5P (Vitamin B6) daily",
-        purpose: "Mild prolactin control; not sufficient alone at high doses",
-      },
-      aromataseInhibitor: {
-        trigger: "If stacked with Test; NPP aromatizes minimally",
-        dosing: "Lower than Test-only cycles; adjust based on Test dose",
-        note: "NPP itself needs minimal AI; focus on prolactin management",
-      },
-      hcg: {
-        trigger: "Strongly recommended due to severe suppression",
-        dosing: "250-500 IU twice weekly throughout cycle",
-        purpose: "Maintains testicular function; critical for NPP recovery",
-      },
-    },
+    biomarkers: { shbg: -1, igf1: +1, rbc: +1, cortisol: -1, prolactin: +3, hair_safe: +2, neurotoxicity: 2, renal_toxicity: 1 },
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 400, value: 3.15 }, { dose: 800, value: 3.65 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 600, value: 3.0 }, { dose: 1000, value: 6.5 } ],
   },
 
   trenbolone: {
@@ -439,6 +130,40 @@ export const compoundData = {
     color: "#CC0000",
     abbreviation: "Tren",
     type: "injectable",
+    // --- MATH ENGINE INPUTS ---
+    basePotency: 2.5, // 5x Androgenic, 5x Anabolic (Theoretically)
+    saturationCeiling: 600, // Very low ceiling (Strong affinity)
+    halfLifeHours: 24, // Acetate
+    pathways: {
+      ar_affinity: 10.0, // Maximum binding
+      non_genomic: 4.0,
+      shbg_binding: 5.0,
+      anti_catabolic: 10.0, // Cortisol blocker
+    },
+    metabolic: {
+      aromatization: 0.0,
+      dht_conversion: 0.0, // Is a 19-nor, but behaves androgenic
+      glycogen_load: 9.0, // Carb loading is insane
+      lipolysis: 10.0, // Nutrient partitioning king
+      diuretic_effect: 2.0, // Dries you out
+      erythropoiesis: 7.0,
+    },
+    benefits: {
+      contractile_growth: 9.0,
+      sarcoplasmic_vol: 4.0, // Hard look, not "puffy"
+      neural_strength: 9.0, // Aggression
+      joint_support: 1.0, // Joints feel brittle
+      libido: 7.0, // High initially, crashes later
+    },
+    toxicity: {
+      hepatic: 3.0,
+      renal: 7.0, // High kidney stress (BP + direct)
+      neuro: 9.5, // The limiting factor (Anxiety, Insomnia)
+      lipid: 8.0, // Destroys HDL
+      progestogenic: 7.0, // Prolactin risk
+      androgenic: 10.0,
+    },
+    // --- LEGACY DATA ---
     bioavailability: 1.0,
     suppressiveFactor: 5,
     conversionFactor: 5.0,
@@ -446,160 +171,13 @@ export const compoundData = {
     defaultEster: "acetate",
     esters: {
       acetate: { label: "Acetate", halfLife: 24, weight: 0.87, slug: "Ace" },
-      enanthate: {
-        label: "Enanthate",
-        halfLife: 108,
-        weight: 0.7,
-        slug: "Enanthate",
-      },
-      hexahydro: {
-        label: "Hexahydrobenzylcarbonate",
-        halfLife: 144,
-        weight: 0.68,
-        slug: "Parabolan",
-      },
+      enanthate: { label: "Enanthate", halfLife: 108, weight: 0.7, slug: "Enanthate" },
+      hexahydro: { label: "Parabolan", halfLife: 144, weight: 0.68, slug: "Parabolan" },
     },
     category: "androgen",
-    pathway: "ar_genomic",
-    bindingAffinity: "very_high",
-    biomarkers: {
-      shbg: -1,
-      igf1: +3,
-      rbc: +3,
-      cortisol: -3,
-      neurotoxicity: 0,
-      prolactin: +2,
-      neurotoxicity: 3,
-      renal_toxicity: 3, // High renal stress
-    },
-    halfLife: 48,
-    modelConfidence: 0.54,
-    benefitCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 200, value: 3.67, tier: "Tier 3", source: "Yarrow HED", ci: 0.6 },
-      { dose: 400, value: 4.87, tier: "Tier 4", source: "Forum", ci: 0.63 },
-      { dose: 600, value: 5.35, tier: "Tier 4", source: "Forum", ci: 0.63 },
-      {
-        dose: 1000,
-        value: 5.85,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        ci: 0.63,
-      },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 200, value: 2.8, tier: "Tier 3", source: "Forum", ci: 0.6 },
-      { dose: 400, value: 5.2, tier: "Tier 4", source: "Forum", ci: 0.8 },
-      { dose: 600, value: 7.0, tier: "Tier 4", source: "Forum", ci: 0.8 },
-      {
-        dose: 1000,
-        value: 12.0,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        ci: 0.9,
-      },
-    ],
-    methodology: {
-      summary: "Tier 3 (Rat data). High potency, high risk.",
-    },
-  },
-
-  eq: {
-    name: "EQ (Equipoise)",
-    color: "#00AA00",
-    abbreviation: "EQ",
-    type: "injectable",
-    bioavailability: 1.0,
-    suppressiveFactor: 3,
-    conversionFactor: 3.0,
-    flags: { aromatization: 0.5 },
-    category: "endurance",
-    pathway: "ar_genomic",
-    bindingAffinity: "low_moderate",
-    biomarkers: {
-      shbg: -1,
-      igf1: +1,
-      rbc: +3, // Hematocrit King
-      cortisol: 0,
-      prolactin: 0,
-      renal_toxicity: 1, // Mild
-    },
-    halfLife: 336, // 14 days
-    modelConfidence: 0.72,
-    benefitCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 400, value: 1.0, tier: "Tier 2", source: "Forum", ci: 0.4 },
-      { dose: 800, value: 2.0, tier: "Tier 4", source: "Forum", ci: 0.5 },
-      {
-        dose: 1500,
-        value: 3.2,
-        tier: "Tier 4",
-        source: "Extrapolated",
-        ci: 0.6,
-      },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 600, value: 1.0, tier: "Tier 4", source: "Forum", ci: 0.6 },
-      { dose: 1200, value: 1.6, tier: "Tier 4", source: "Forum", ci: 0.6 },
-    ],
-    methodology: {
-      summary: "Tier 2 (Vet data). Weak anabolic, RBC risks.",
-    },
-  },
-
-  masteron: {
-    name: "Masteron (Drostanolone)",
-    color: "#9933FF",
-    abbreviation: "Mast",
-    type: "injectable",
-    bioavailability: 1.0,
-    suppressiveFactor: 2,
-    conversionFactor: 3.0,
-    flags: { aromatization: 0, isSuppressive: true },
-    defaultEster: "propionate",
-    esters: {
-      propionate: {
-        label: "Propionate",
-        halfLife: 48,
-        weight: 0.8,
-        slug: "Prop",
-      },
-      enanthate: {
-        label: "Enanthate",
-        halfLife: 108,
-        weight: 0.7,
-        slug: "Enanthate",
-      },
-    },
-    category: "cosmetic",
-    pathway: "ar_genomic",
-    bindingAffinity: "moderate",
-    biomarkers: {
-      shbg: -2,
-      igf1: 0,
-      rbc: +1,
-      cortisol: 0,
-      prolactin: 0,
-      anti_e: +2,
-      renal_toxicity: 0,
-    },
-    halfLife: 48,
-    modelConfidence: 0.55,
-    benefitCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 400, value: 1.2, tier: "Tier 4", source: "Forum", ci: 0.5 },
-      { dose: 800, value: 1.55, tier: "Tier 4", source: "Extrapolated", ci: 0.6 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 600, value: 1.1, tier: "Tier 4", source: "Theory", ci: 0.8 },
-      { dose: 1000, value: 2.0, tier: "Tier 4", source: "Extrapolated", ci: 0.8 },
-    ],
-    methodology: {
-      summary: "Tier 4 (Cosmetic). Hardening agent.",
-    },
+    biomarkers: { shbg: -1, igf1: +3, rbc: +3, cortisol: -3, prolactin: +2, neurotoxicity: 3, renal_toxicity: 3 },
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 400, value: 4.87 }, { dose: 1000, value: 5.85 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 400, value: 5.2 }, { dose: 1000, value: 12.0 } ],
   },
 
   primobolan: {
@@ -607,92 +185,205 @@ export const compoundData = {
     color: "#996633",
     abbreviation: "Primo",
     type: "injectable",
+    // --- MATH ENGINE INPUTS ---
+    basePotency: 0.6, // Weak per mg
+    saturationCeiling: 1200, // Can run high doses
+    halfLifeHours: 240, // Enanthate
+    pathways: {
+      ar_affinity: 6.0,
+      non_genomic: 2.0,
+      shbg_binding: 6.0, // Decent binding
+      anti_catabolic: 4.0,
+    },
+    metabolic: {
+      aromatization: 0.0,
+      dht_conversion: 0.0, // Is a DHT derivative already
+      glycogen_load: 4.0,
+      lipolysis: 6.0,
+      diuretic_effect: 3.0,
+      erythropoiesis: 1.5,
+    },
+    benefits: {
+      contractile_growth: 5.0, // Slow, steady quality
+      sarcoplasmic_vol: 2.0, // Very flat/dry
+      neural_strength: 4.0,
+      joint_support: 4.0,
+      libido: 4.0,
+    },
+    toxicity: {
+      hepatic: 1.0, // Very low
+      renal: 1.0,
+      neuro: 1.0, // Feel great
+      lipid: 2.0, // Mild
+      progestogenic: 0.0,
+      androgenic: 2.0,
+    },
+    // --- LEGACY DATA ---
     bioavailability: 1.0,
     suppressiveFactor: 2,
     conversionFactor: 3.0,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: "enanthate",
     esters: {
-      enanthate: {
-        label: "Enanthate",
-        halfLife: 240, // 10 days
-        weight: 0.7,
-        slug: "Enanthate",
-      },
-      acetate: {
-        label: "Acetate (Oral)",
-        halfLife: 6,
-        weight: 0.9,
-        slug: "Oral",
-        bioavailability: 0.7, // Updated from 0.15 for functional modeling
-      },
+      enanthate: { label: "Enanthate", halfLife: 240, weight: 0.7, slug: "Enanthate" },
+      acetate: { label: "Oral Acetate", halfLife: 6, weight: 0.9, slug: "Oral", bioavailability: 0.7 },
     },
     category: "mild",
-    pathway: "ar_genomic",
-    bindingAffinity: "moderate",
-    biomarkers: {
-      shbg: -1,
-      igf1: +1,
-      rbc: +1,
-      cortisol: 0,
-      prolactin: 0,
-      renal_toxicity: 0,
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 800, value: 1.8 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 800, value: 1.2 } ],
+  },
+
+  masteron: {
+    name: "Masteron (Drostanolone)",
+    color: "#9933FF",
+    abbreviation: "Mast",
+    type: "injectable",
+    // --- MATH ENGINE INPUTS ---
+    basePotency: 0.6,
+    saturationCeiling: 800,
+    halfLifeHours: 48, // Propionate
+    pathways: {
+      ar_affinity: 5.0,
+      non_genomic: 2.0,
+      shbg_binding: 9.0, // FORCE MULTIPLIER (Frees up Test)
+      anti_catabolic: 3.0,
     },
-    halfLife: 240,
-    modelConfidence: 0.59,
-    benefitCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 400, value: 1.3, tier: "Tier 4", source: "Forum", ci: 0.5 },
-      { dose: 800, value: 1.8, tier: "Tier 4", source: "Extrapolated", ci: 0.6 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 400, value: 0.6, tier: "Tier 4", source: "Theory", ci: 0.5 },
-      { dose: 800, value: 1.2, tier: "Tier 4", source: "Extrapolated", ci: 0.8 },
-    ],
-    methodology: {
-      summary: "Tier 2. Mild, safe, expensive.",
+    metabolic: {
+      aromatization: 0.0,
+      dht_conversion: 0.0, // Is DHT
+      glycogen_load: 2.0,
+      lipolysis: 6.0,
+      diuretic_effect: 8.0, // Very dry
+      erythropoiesis: 1.0,
     },
+    benefits: {
+      contractile_growth: 4.0, // Weak builder alone
+      sarcoplasmic_vol: 1.0,
+      neural_strength: 7.0, // Good CNS drive
+      joint_support: 1.0, // Dry joints
+      libido: 8.0,
+    },
+    toxicity: {
+      hepatic: 1.0,
+      renal: 2.0,
+      neuro: 4.0, // Some aggression
+      lipid: 6.0, // Hits HDL
+      progestogenic: 0.0,
+      androgenic: 7.0,
+    },
+    // --- LEGACY DATA ---
+    bioavailability: 1.0,
+    suppressiveFactor: 2,
+    conversionFactor: 3.0,
+    flags: { aromatization: 0, isSuppressive: true },
+    defaultEster: "propionate",
+    esters: {
+      propionate: { label: "Propionate", halfLife: 48, weight: 0.8, slug: "Prop" },
+      enanthate: { label: "Enanthate", halfLife: 108, weight: 0.7, slug: "Enanthate" },
+    },
+    category: "cosmetic",
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 800, value: 1.55 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 1000, value: 2.0 } ],
+  },
+
+  eq: {
+    name: "EQ (Equipoise)",
+    color: "#00AA00",
+    abbreviation: "EQ",
+    type: "injectable",
+    // --- MATH ENGINE INPUTS ---
+    basePotency: 0.5, // Weak per mg
+    saturationCeiling: 1200,
+    halfLifeHours: 336,
+    pathways: {
+      ar_affinity: 4.0,
+      non_genomic: 3.0,
+      shbg_binding: 2.0,
+      anti_catabolic: 4.0,
+    },
+    metabolic: {
+      aromatization: 4.0, // Converts to E1 (Estrone) mostly
+      dht_conversion: 2.0,
+      glycogen_load: 5.0,
+      lipolysis: 5.0,
+      diuretic_effect: 0.0,
+      erythropoiesis: 9.0,
+    },
+    benefits: {
+      contractile_growth: 5.0,
+      sarcoplasmic_vol: 5.0,
+      neural_strength: 4.0,
+      joint_support: 5.0,
+      libido: 5.0,
+    },
+    toxicity: {
+      hepatic: 1.0,
+      renal: 6.0, // Hematocrit (RBC) Risk
+      neuro: 6.0, // Anxiety is common (GABA pathway)
+      lipid: 3.0,
+      progestogenic: 0.0,
+      androgenic: 5.0,
+    },
+    // --- LEGACY DATA ---
+    bioavailability: 1.0,
+    suppressiveFactor: 3,
+    conversionFactor: 3.0,
+    flags: { aromatization: 0.5 },
+    category: "endurance",
+    biomarkers: { shbg: -1, igf1: +1, rbc: +3, cortisol: 0, prolactin: 0, renal_toxicity: 1 },
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 800, value: 2.0 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 1200, value: 1.6 } ],
   },
 
   dianabol: {
-    name: "Dianabol (Methandrostenolone)",
+    name: "Dianabol",
     color: "#FF1493",
     abbreviation: "Dbol",
     type: "oral",
+    // --- MATH ENGINE INPUTS ---
+    basePotency: 1.8, // Very strong per mg
+    saturationCeiling: 50, // Low ceiling (Oral)
+    halfLifeHours: 4,
+    pathways: {
+      ar_affinity: 3.0, // Weak binder
+      non_genomic: 8.0, // Rapid signaling
+      shbg_binding: 4.0,
+      anti_catabolic: 6.0,
+    },
+    metabolic: {
+      aromatization: 9.0, // Methyl-Estradiol (Potent)
+      dht_conversion: 0.0,
+      glycogen_load: 9.0, // Water/Carb retention
+      lipolysis: 1.0,
+      diuretic_effect: 0.0,
+      erythropoiesis: 5.0,
+    },
+    benefits: {
+      contractile_growth: 6.0,
+      sarcoplasmic_vol: 9.0, // The "Dbol Pump"
+      neural_strength: 6.0,
+      joint_support: 8.0, // Water cushion
+      libido: 7.0,
+    },
+    toxicity: {
+      hepatic: 6.0, // Methylated
+      renal: 5.0, // BP spikes from water
+      neuro: 3.0, // Feel good usually
+      lipid: 7.0,
+      progestogenic: 0.0,
+      androgenic: 5.0,
+    },
+    // --- LEGACY DATA ---
     toxicityTier: 2,
     bioavailability: 0.8,
     suppressiveFactor: 3,
     conversionFactor: 0,
     flags: { aromatization: 2.0, isHeavyBP: true, createsMethylEstrogen: true },
     defaultEster: "oral",
-    esters: {
-      oral: { label: "Oral Tablet", halfLife: 4, weight: 1.0, slug: "Tab" },
-    },
+    esters: { oral: { label: "Oral Tablet", halfLife: 4, weight: 1.0, slug: "Tab" } },
     category: "oral_kickstart",
-    pathway: "non_genomic",
-    bindingAffinity: "low",
-    biomarkers: {
-      shbg: -1,
-      igf1: +2,
-      rbc: +1,
-      cortisol: -1,
-      prolactin: 0,
-      aromatization: +3,
-      renal_toxicity: 1,
-    },
-    halfLife: 4,
-    modelConfidence: 0.63,
-    benefitCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 20, value: 2.3, tier: "Tier 4", source: "Forum", ci: 0.6 },
-      { dose: 50, value: 3.4, tier: "Tier 4", source: "Anecdotal", ci: 0.8 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 20, value: 0.8, tier: "Tier 4", source: "Forum", ci: 0.6 },
-      { dose: 50, value: 2.8, tier: "Tier 4", source: "Anecdotal", ci: 0.9 },
-    ],
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 50, value: 3.4 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 50, value: 2.8 } ],
   },
 
   anadrol: {
@@ -700,39 +391,50 @@ export const compoundData = {
     color: "#DC143C",
     abbreviation: "Adrol",
     type: "oral",
-    toxicityTier: 3.5, // Upped from 3, functionally peer to Sdrol in high dose
+    // --- MATH ENGINE INPUTS ---
+    basePotency: 2.2,
+    saturationCeiling: 100, // Can handle higher mg than Dbol
+    halfLifeHours: 9,
+    pathways: {
+      ar_affinity: 2.0, // Very low
+      non_genomic: 10.0, // Massive non-genomic effect
+      shbg_binding: 2.0,
+      anti_catabolic: 5.0,
+    },
+    metabolic: {
+      aromatization: 0.0, // Does not convert, but activates E receptor
+      dht_conversion: 0.0,
+      glycogen_load: 10.0, // Maximum fullness
+      lipolysis: 3.0,
+      diuretic_effect: 0.0,
+      erythropoiesis: 10.0,
+    },
+    benefits: {
+      contractile_growth: 7.0,
+      sarcoplasmic_vol: 10.0, // "Blowing up"
+      neural_strength: 9.0, // Leverage strength
+      joint_support: 8.0,
+      libido: 5.0,
+    },
+    toxicity: {
+      hepatic: 8.0, // Toxic
+      renal: 8.0, // Massive BP spikes
+      neuro: 6.0, // Headaches, lethargy
+      lipid: 9.0, // Crushes HDL
+      progestogenic: 0.0,
+      androgenic: 8.0,
+    },
+    // --- LEGACY DATA ---
+    toxicityTier: 3.5,
     bioavailability: 0.85,
     suppressiveFactor: 3,
     conversionFactor: 0,
     flags: { aromatization: 0.5, isHeavyBP: true },
     defaultEster: "oral",
-    esters: {
-      oral: { label: "Oral Tablet", halfLife: 9, weight: 1.0, slug: "Tab" },
-    },
+    esters: { oral: { label: "Oral Tablet", halfLife: 9, weight: 1.0, slug: "Tab" } },
     category: "oral_mass",
-    pathway: "non_genomic",
-    bindingAffinity: "very_low",
-    biomarkers: {
-      shbg: -2,
-      igf1: +2,
-      rbc: +3,
-      cortisol: 0,
-      prolactin: 0,
-      estrogenic_activity: +3, // Non-aromatizing estrogenicity
-      renal_toxicity: 2,
-    },
-    halfLife: 9,
-    modelConfidence: 0.31,
-    benefitCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 50, value: 3.2, tier: "Tier 4", source: "Forum", ci: 0.6 },
-      { dose: 100, value: 4.3, tier: "Tier 4", source: "Anecdotal", ci: 0.8 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 50, value: 1.8, tier: "Tier 4", source: "Forum", ci: 0.7 },
-      { dose: 100, value: 3.5, tier: "Tier 4", source: "Anecdotal", ci: 0.9 },
-    ],
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 100, value: 4.3 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 100, value: 3.5 } ],
   },
 
   winstrol: {
@@ -740,289 +442,102 @@ export const compoundData = {
     color: "#4169E1",
     abbreviation: "Winny",
     type: "oral",
+    // --- MATH ENGINE INPUTS ---
+    basePotency: 1.5,
+    saturationCeiling: 60,
+    halfLifeHours: 9,
+    pathways: {
+      ar_affinity: 3.0,
+      non_genomic: 5.0,
+      shbg_binding: 9.0, // SHBG Crusher
+      anti_catabolic: 2.0,
+    },
+    metabolic: {
+      aromatization: 0.0,
+      dht_conversion: 0.0,
+      glycogen_load: 1.0, // Flat
+      lipolysis: 6.0,
+      diuretic_effect: 9.0, // Very Dry
+      erythropoiesis: 2.0,
+    },
+    benefits: {
+      contractile_growth: 4.0,
+      sarcoplasmic_vol: 1.0,
+      neural_strength: 7.0,
+      joint_support: 1.0, // PAINFUL JOINTS
+      libido: 5.0,
+    },
+    toxicity: {
+      hepatic: 8.0, // High liver stress
+      renal: 4.0,
+      neuro: 3.0,
+      lipid: 9.0, // Horrible for cholesterol
+      progestogenic: 0.0,
+      androgenic: 7.0,
+    },
+    // --- LEGACY DATA ---
     toxicityTier: 2,
     bioavailability: 0.8,
     suppressiveFactor: 2,
     conversionFactor: 0,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: "oral",
-    esters: {
-      oral: { label: "Oral Tablet", halfLife: 9, weight: 1.0, slug: "Tab" },
-    },
+    esters: { oral: { label: "Oral Tablet", halfLife: 9, weight: 1.0, slug: "Tab" } },
     category: "oral_cutting",
-    pathway: "non_genomic",
-    bindingAffinity: "low",
-    biomarkers: {
-      shbg: -3, // CRITICAL: SHBG Crusher
-      igf1: -1,
-      rbc: +1,
-      cortisol: 0,
-      joints: -3,
-      renal_toxicity: 1,
-    },
-    halfLife: 9,
-    modelConfidence: 0.4,
-    benefitCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 50, value: 1.5, tier: "Tier 4", source: "Forum", ci: 0.6 },
-      { dose: 100, value: 1.9, tier: "Tier 4", source: "Anecdotal", ci: 0.7 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 50, value: 1.4, tier: "Tier 4", source: "Forum", ci: 0.7 },
-      { dose: 100, value: 3.0, tier: "Tier 4", source: "Anecdotal", ci: 0.9 },
-    ],
-  },
-
-  anavar: {
-    name: "Anavar (Oxandrolone)",
-    color: "#FF6347",
-    abbreviation: "Var",
-    type: "oral",
-    toxicityTier: 1,
-    bioavailability: 0.8,
-    suppressiveFactor: 2,
-    conversionFactor: 0,
-    flags: { aromatization: 0, isSuppressive: true },
-    defaultEster: "oral",
-    esters: {
-      oral: { label: "Oral Tablet", halfLife: 9, weight: 1.0, slug: "Tab" },
-    },
-    category: "oral_mild",
-    pathway: "ar_genomic",
-    bindingAffinity: "low",
-    biomarkers: {
-      shbg: -1,
-      igf1: +1,
-      rbc: +1,
-      cortisol: -1,
-      prolactin: 0,
-      liver_toxicity: +2,
-      renal_toxicity: 1, // Stressful on kidneys long term
-    },
-    halfLife: 9,
-    modelConfidence: 0.48,
-    benefitCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 50, value: 1.2, tier: "Tier 4", source: "Forum", ci: 0.5 },
-      { dose: 100, value: 1.8, tier: "Tier 4", source: "Anecdotal", ci: 0.6 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 50, value: 0.7, tier: "Tier 4", source: "Forum", ci: 0.6 },
-      { dose: 100, value: 1.8, tier: "Tier 4", source: "Anecdotal", ci: 0.7 },
-    ],
-  },
-
-  halotestin: {
-    name: "Halotestin (Fluoxymesterone)",
-    color: "#8B0000",
-    abbreviation: "Halo",
-    type: "oral",
-    toxicityTier: 4,
-    bioavailability: 0.8,
-    suppressiveFactor: 4,
-    conversionFactor: 0,
-    flags: { aromatization: 0, isSuppressive: true, isLiverToxic: true },
-    defaultEster: "oral",
-    esters: {
-      oral: { label: "Oral Tablet", halfLife: 9.2, weight: 1.0, slug: "Tab" },
-    },
-    category: "oral_extreme",
-    pathway: "non_genomic",
-    bindingAffinity: "low",
-    biomarkers: {
-      shbg: -2,
-      igf1: 0,
-      rbc: +3,
-      cortisol: 0,
-      prolactin: 0,
-      cns_drive: +3,
-      neurotoxicity: 3,
-      renal_toxicity: 2,
-    },
-    halfLife: 9.2, // Corrected from 96h
-    modelConfidence: 0.67,
-    benefitCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 20, value: 3.0, tier: "Tier 4", source: "Forum", ci: 0.8 },
-      { dose: 40, value: 3.7, tier: "Tier 4", source: "Anecdotal", ci: 0.9 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0.0 },
-      { dose: 20, value: 3.5, tier: "Tier 4", source: "Forum", ci: 0.9 },
-      {
-        dose: 40,
-        value: 5.2,
-        tier: "Tier 4",
-        source: "Anecdotal",
-        ci: 1.0,
-      }, // Dangerous
-    ],
-  },
-
-  proviron: {
-    name: "Proviron (Mesterolone)",
-    color: "#60A5FA",
-    abbreviation: "Prov",
-    type: "oral",
-    toxicityTier: 0,
-    bioavailability: 0.05,
-    suppressiveFactor: 1,
-    conversionFactor: 0,
-    flags: { aromatization: 0, isSuppressive: true },
-    defaultEster: "oral",
-    esters: {
-      oral: { label: "Oral Tablet", halfLife: 12, weight: 1.0, slug: "Tab" },
-    },
-    category: "support",
-    pathway: "ar_genomic",
-    bindingAffinity: "very_high",
-    biomarkers: {
-      shbg: -3,
-      igf1: 0,
-      rbc: +1,
-      cortisol: 0,
-      prolactin: 0,
-      libido: +3,
-      renal_toxicity: 0,
-    },
-    halfLife: 12,
-    modelConfidence: 0.85,
-    benefitCurve: [
-      { dose: 0, value: 0 },
-      { dose: 50, value: 0.8 },
-      { dose: 100, value: 0.9 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0 },
-      { dose: 50, value: 0.2 },
-      { dose: 100, value: 0.4 },
-    ],
+    biomarkers: { shbg: -3, igf1: -1, rbc: +1, cortisol: 0, joints: -3, renal_toxicity: 1 },
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 100, value: 1.9 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 100, value: 3.0 } ],
   },
 
   turinabol: {
-    name: "Turinabol",
+    name: "Turinabol (CDH-Methyltestosterone)",
     color: "#F472B6",
     abbreviation: "Tbol",
     type: "oral",
+    // --- MATH ENGINE INPUTS ---
+    basePotency: 0.8, // Weaker than Test mg per mg
+    saturationCeiling: 80, // Moderate ceiling
+    halfLifeHours: 16,
+    pathways: {
+      ar_affinity: 4.0,
+      non_genomic: 3.0,
+      shbg_binding: 4.0,
+      anti_catabolic: 3.0,
+    },
+    metabolic: {
+      aromatization: 0.0, // Does not aromatize
+      dht_conversion: 0.0,
+      glycogen_load: 5.0, // Decent fullness
+      lipolysis: 4.0,
+      diuretic_effect: 2.0,
+      erythropoiesis: 3.0,
+    },
+    benefits: {
+      contractile_growth: 5.0, // "Keepable" gains
+      sarcoplasmic_vol: 4.0, // Athletic look, not bloat
+      neural_strength: 5.0,
+      joint_support: 5.0, // Neutral
+      libido: 5.0,
+    },
+    toxicity: {
+      hepatic: 4.0, // Mild for an oral
+      renal: 2.0,
+      neuro: 2.0,
+      lipid: 4.0,
+      progestogenic: 0.0,
+      androgenic: 4.0,
+    },
+    // --- LEGACY DATA ---
     toxicityTier: 2,
     bioavailability: 0.85,
     suppressiveFactor: 2,
     conversionFactor: 0,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: "oral",
-    esters: {
-      oral: { label: "Oral Tablet", halfLife: 16, weight: 1.0, slug: "Tab" },
-    },
+    esters: { oral: { label: "Oral Tablet", halfLife: 16, weight: 1.0, slug: "Tab" } },
     category: "oral_performance",
-    pathway: "non_genomic",
-    bindingAffinity: "low",
-    biomarkers: {
-      shbg: -2,
-      igf1: +1,
-      rbc: +1,
-      cortisol: 0,
-      prolactin: 0,
-      renal_toxicity: 1,
-    },
-    halfLife: 16,
-    modelConfidence: 0.65,
-    benefitCurve: [
-      { dose: 0, value: 0 },
-      { dose: 40, value: 2.0 },
-      { dose: 80, value: 2.8 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0 },
-      { dose: 40, value: 1.2 },
-      { dose: 80, value: 2.5 },
-    ],
-  },
-
-  superdrol: {
-    name: "Superdrol (Methasterone)",
-    color: "#9F1239",
-    abbreviation: "Sdrol",
-    type: "oral",
-    toxicityTier: 4,
-    bioavailability: 0.85,
-    suppressiveFactor: 4,
-    conversionFactor: 0,
-    flags: { aromatization: 0, isSuppressive: true, isLiverToxic: true },
-    defaultEster: "oral",
-    esters: {
-      oral: { label: "Oral Tablet", halfLife: 8, weight: 1.0, slug: "Tab" },
-    },
-    category: "oral_mass",
-    pathway: "non_genomic",
-    bindingAffinity: "low",
-    biomarkers: {
-      shbg: -2,
-      igf1: +2,
-      rbc: +2,
-      cortisol: 0,
-      prolactin: 0,
-      liver_toxicity: +4,
-      renal_toxicity: 3,
-    },
-    halfLife: 8,
-    modelConfidence: 0.4,
-    benefitCurve: [
-      { dose: 0, value: 0 },
-      { dose: 20, value: 4.5 },
-      { dose: 40, value: 4.9 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0 },
-      { dose: 20, value: 4.5 },
-      { dose: 40, value: 8.0 },
-    ],
-  },
-
-  ment: {
-    name: "Ment (Trestolone)",
-    color: "#701a75",
-    abbreviation: "Ment",
-    type: "injectable",
-    bioavailability: 1.0,
-    suppressiveFactor: 5,
-    conversionFactor: 10.0,
-    flags: { aromatization: 3.0, isSuppressive: true },
-    defaultEster: "acetate",
-    esters: {
-      acetate: { label: "Acetate", halfLife: 24, weight: 0.87, slug: "Ace" },
-      enanthate: {
-        label: "Enanthate",
-        halfLife: 108,
-        weight: 0.7,
-        slug: "Enanthate",
-      },
-    },
-    category: "mass_monster",
-    pathway: "ar_genomic",
-    bindingAffinity: "very_high",
-    biomarkers: {
-      shbg: -1,
-      igf1: +3,
-      rbc: +2,
-      cortisol: -2,
-      prolactin: +2,
-      e2_conversion: +3,
-      renal_toxicity: 1,
-    },
-    halfLife: 24,
-    modelConfidence: 0.7,
-    benefitCurve: [
-      { dose: 0, value: 0 },
-      { dose: 50, value: 3.0 },
-      { dose: 100, value: 4.5 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0 },
-      { dose: 50, value: 2.0 },
-      { dose: 100, value: 4.0 },
-    ],
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 80, value: 2.8 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 80, value: 2.5 } ],
   },
 
   dhb: {
@@ -1030,266 +545,482 @@ export const compoundData = {
     color: "#b45309",
     abbreviation: "DHB",
     type: "injectable",
+    // --- MATH ENGINE INPUTS ---
+    basePotency: 2.0, // Very potent (200mg feels like 400mg Test)
+    saturationCeiling: 600,
+    halfLifeHours: 120, // Cypionate
+    pathways: {
+      ar_affinity: 8.0, // High affinity
+      non_genomic: 4.0,
+      shbg_binding: 3.0,
+      anti_catabolic: 7.0,
+    },
+    metabolic: {
+      aromatization: 0.0, // Dry
+      dht_conversion: 0.0, // It is already 5-alpha reduced equivalent
+      glycogen_load: 6.0,
+      lipolysis: 8.0, // Hard/Dry look
+      diuretic_effect: 4.0,
+      erythropoiesis: 6.0,
+    },
+    benefits: {
+      contractile_growth: 8.0, // Excellent builder
+      sarcoplasmic_vol: 5.0,
+      neural_strength: 7.0,
+      joint_support: 2.0, // Can be achy
+      libido: 6.0,
+    },
+    toxicity: {
+      hepatic: 2.0,
+      renal: 7.0, // Anecdotally hard on kidneys
+      neuro: 4.0,
+      lipid: 6.0,
+      progestogenic: 0.0,
+      androgenic: 8.0,
+    },
+    // --- LEGACY DATA ---
     bioavailability: 1.0,
     suppressiveFactor: 3,
     conversionFactor: 6.0,
     flags: { aromatization: 0, isSuppressive: true },
     defaultEster: "cypionate",
     esters: {
-      cypionate: {
-        label: "Cypionate",
-        halfLife: 120,
-        weight: 0.7,
-        slug: "Cyp",
-      },
-      propionate: {
-        label: "Propionate",
-        halfLife: 24,
-        weight: 0.83,
-        slug: "Prop",
-      },
+      cypionate: { label: "Cypionate", halfLife: 120, weight: 0.7, slug: "Cyp" },
+      propionate: { label: "Propionate", halfLife: 24, weight: 0.83, slug: "Prop" },
     },
     category: "dry_mass",
-    pathway: "ar_genomic",
-    bindingAffinity: "high",
-    biomarkers: {
-      shbg: -1,
-      igf1: +1,
-      rbc: +1,
-      cortisol: 0,
-      prolactin: 0,
-      pip: +5,
-      renal_toxicity: 4, // Anecdotal renal stress high
-    },
-    halfLife: 120,
-    modelConfidence: 0.6,
-    benefitCurve: [
-      { dose: 0, value: 0 },
-      { dose: 400, value: 3.5 },
-      { dose: 800, value: 4.5 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0 },
-      { dose: 400, value: 2.0 },
-      { dose: 800, value: 4.5 },
-    ],
+    biomarkers: { pip: +5, renal_toxicity: 4 },
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 800, value: 4.5 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 800, value: 4.5 } ],
   },
 
-  // --- ANCILLARIES ---
+  // --- MISSING ANCILLARIES ---
 
-  arimidex: {
-    name: "Arimidex (Anastrozole)",
-    color: "#6B7280",
-    abbreviation: "Adex",
-    type: "oral",
-    toxicityTier: 0,
-    bioavailability: 0.85,
+  tudca: {
+    name: "TUDCA",
+    color: "#10b981",
+    type: "support",
+    basePotency: 0,
+    saturationCeiling: 1500,
+    halfLifeHours: 6,
+    pathways: { bile_flow: 10.0, er_stress: 8.0 },
+    metabolic: { insulin_sensitivity: 3.0, lipid_impact: 0.0 },
+    benefits: { hepatic_shield: 10.0, cholestasis_prevention: 10.0 },
+    toxicity: { hepatic: -5.0, renal: 0.0, neuro: 0.0, lipid: 1.0 },
+    // Legacy-style defaults
+    bioavailability: 0.9,
     suppressiveFactor: 0,
     conversionFactor: 0,
-    flags: { isAI: true },
+    flags: { isSupport: true },
     defaultEster: "oral",
-    esters: {
-      oral: { label: "Tablet", halfLife: 48, weight: 1.0, slug: "Tab" },
-    },
-    category: "ancillary",
-    pathway: "enzyme_inhibitor",
-    bindingAffinity: "none",
-    biomarkers: { e2_control: +5, renal_toxicity: 0 },
-    halfLife: 48, // 2 days
-    modelConfidence: 0.95,
-    benefitCurve: [
-      { dose: 0, value: 0 },
-      { dose: 1, value: 1 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0 },
-      { dose: 1, value: 0.5 },
-    ],
+    esters: { oral: { label: "Capsule", halfLife: 6, weight: 1.0, slug: "Cap" } },
+    category: "support",
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 1000, value: 1.5 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 1000, value: 0.1 } ],
+  },
+
+  nac: {
+    name: "NAC",
+    color: "#34d399",
+    type: "support",
+    basePotency: 0,
+    saturationCeiling: 2400,
+    halfLifeHours: 8,
+    pathways: { glutathione_synthesis: 10.0, ros_scavenging: 8.0 },
+    metabolic: { mucolytic: 5.0, kidney_support: 6.0 },
+    benefits: { hepatic_shield: 6.0, renal_shield: 8.0 },
+    toxicity: { hepatic: -3.0, renal: -4.0, neuro: 0.0, lipid: 0.0 },
+    bioavailability: 0.9,
+    suppressiveFactor: 0,
+    conversionFactor: 0,
+    flags: { isSupport: true },
+    defaultEster: "oral",
+    esters: { oral: { label: "Capsule", halfLife: 8, weight: 1.0, slug: "Cap" } },
+    category: "support",
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 2000, value: 1.2 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 2000, value: 0.1 } ],
   },
 
   finasteride: {
-    name: "Finasteride (Propecia)",
-    color: "#6B7280", // Cool Gray
-    abbreviation: "Fin",
+    name: "Finasteride",
+    color: "#6B7280",
     type: "oral",
-    toxicityTier: 0,
-    bioavailability: 0.65,
-    suppressiveFactor: 0,
-    conversionFactor: 0,
-    flags: { is5AR: true, contraindicated: ["nandrolone"] },
+    basePotency: 0,
+    saturationCeiling: 1,
+    halfLifeHours: 6,
+    pathways: { ar_affinity: 0, non_genomic: 0, shbg_binding: 0, anti_catabolic: 0 },
+    metabolic: { aromatization: 0, dht_conversion: -10, glycogen_load: 0, lipolysis: 0, diuretic_effect: 0 },
+    benefits: { contractile_growth: 0, sarcoplasmic_vol: 0, neural_strength: 0, joint_support: 0, libido: -2 }, // Libido hit
+    toxicity: { hepatic: 0, renal: 0, neuro: 2, lipid: 0, progestogenic: 0 },
+    // Legacy
+    flags: { is5AR: true, contraindicated: ["nandrolone"] }, // IMPORTANT FLAG
     defaultEster: "oral",
-    esters: {
-      oral: { label: "Tablet", halfLife: 6, weight: 1.0, slug: "Tab" },
-    },
+    esters: { oral: { label: "Tablet", halfLife: 6, weight: 1.0, slug: "Tab" } },
     category: "ancillary",
-    pathway: "enzyme_inhibitor",
-    bindingAffinity: "none",
-    biomarkers: {
-      shbg: 0,
-      igf1: 0,
-      rbc: 0,
-      cortisol: 0,
-      prolactin: 0,
-      dht_inhibition: +5,
-      renal_toxicity: 0,
-    },
-    halfLife: 6,
-    modelConfidence: 0.95,
-    benefitCurve: [
-      { dose: 0, value: 0 },
-      { dose: 1, value: 1 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0 },
-      { dose: 1, value: 0.5 },
-    ],
-    methodology: {
-      summary:
-        "5-Alpha Reductase Inhibitor. Blocks conversion of Test to DHT (Hair Safe). Contraindicated with Nandrolone. Blocking 5AR prevents conversion to DHN (a weaker androgen), leaving the more androgenic parent hormone.",
-      sources: ["Clinical trials (Propecia)", "Community logs"],
-    },
-    sideEffectProfile: { common: [], lipidProfile: {}, cardiovascular: {}, hpta: {} },
-    ancillaryRequirements: {},
+    benefitCurve: [{dose: 0, value: 0}, {dose: 1, value: 1}],
+    riskCurve: [{dose: 0, value: 0}, {dose: 1, value: 0.5}],
   },
 
   nolvadex: {
     name: "Nolvadex (Tamoxifen)",
     color: "#6B7280",
-    abbreviation: "Nolva",
     type: "oral",
-    toxicityTier: 1,
-    bioavailability: 1.0,
-    suppressiveFactor: 0,
-    conversionFactor: 0,
+    basePotency: 0,
+    saturationCeiling: 20,
+    halfLifeHours: 120,
+    pathways: { ar_affinity: 0, non_genomic: 0, shbg_binding: 2, anti_catabolic: 0 },
+    metabolic: { aromatization: 0, dht_conversion: 0, glycogen_load: 0, lipolysis: 0, diuretic_effect: 0 },
+    benefits: { contractile_growth: 0, sarcoplasmic_vol: 0, neural_strength: 0, joint_support: 0, libido: 0 },
+    toxicity: { hepatic: 1, renal: 0, neuro: 1, lipid: -2, progestogenic: 0 }, // Improves Lipids
+    // Legacy
     flags: { isSERM: true },
     defaultEster: "oral",
-    esters: {
-      oral: { label: "Tablet", halfLife: 120, weight: 1.0, slug: "Tab" },
-    },
+    esters: { oral: { label: "Tablet", halfLife: 120, weight: 1.0, slug: "Tab" } },
     category: "ancillary",
-    pathway: "serm",
-    bindingAffinity: "none",
-    biomarkers: {
-      e2_receptor: -5, // Blocks E2 at tissue
-      igf1: -1, // Lowers IGF-1
-      shbg: +1,
-      renal_toxicity: 0,
-    },
-    halfLife: 120, // 5-7 days
-    modelConfidence: 0.95,
-    benefitCurve: [
-      { dose: 0, value: 0 },
-      { dose: 20, value: 1 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0 },
-      { dose: 20, value: 0.2 },
-    ],
+    benefitCurve: [{dose: 0, value: 0}, {dose: 20, value: 1}],
+    riskCurve: [{dose: 0, value: 0}, {dose: 20, value: 0.2}],
   },
 
   clomid: {
     name: "Clomid (Clomiphene)",
     color: "#6B7280",
-    abbreviation: "Clomid",
     type: "oral",
-    toxicityTier: 1,
-    bioavailability: 1.0,
-    suppressiveFactor: 0,
-    conversionFactor: 0,
+    basePotency: 0,
+    saturationCeiling: 50,
+    halfLifeHours: 120,
+    pathways: { ar_affinity: 0, non_genomic: 0, shbg_binding: 2, anti_catabolic: 0 },
+    metabolic: { aromatization: 0, dht_conversion: 0, glycogen_load: 0, lipolysis: 0, diuretic_effect: 0 },
+    benefits: { contractile_growth: 0, sarcoplasmic_vol: 0, neural_strength: 0, joint_support: 0, libido: 0 },
+    toxicity: { hepatic: 1, renal: 0, neuro: 4, lipid: 0, progestogenic: 0 }, // Vision/Mood issues
+    // Legacy
     flags: { isSERM: true },
     defaultEster: "oral",
-    esters: {
-      oral: { label: "Tablet", halfLife: 120, weight: 1.0, slug: "Tab" },
-    },
+    esters: { oral: { label: "Tablet", halfLife: 120, weight: 1.0, slug: "Tab" } },
     category: "ancillary",
-    pathway: "serm",
-    bindingAffinity: "none",
-    biomarkers: {
-      lh_fsh: +5, // PCT driver
-      e2_receptor: -3,
-      vision_sides: +2,
-      renal_toxicity: 0,
-    },
-    halfLife: 120, // 5 days
-    modelConfidence: 0.95,
-    benefitCurve: [
-      { dose: 0, value: 0 },
-      { dose: 50, value: 1 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0 },
-      { dose: 50, value: 0.5 },
-    ],
+    benefitCurve: [{dose: 0, value: 0}, {dose: 50, value: 1}],
+    riskCurve: [{dose: 0, value: 0}, {dose: 50, value: 0.5}],
   },
 
   hcg: {
     name: "HCG",
     color: "#6B7280",
-    abbreviation: "HCG",
     type: "injectable",
-    toxicityTier: 0,
-    bioavailability: 1.0,
-    suppressiveFactor: -1, // Stimulatory
-    conversionFactor: 0,
+    basePotency: 0.1, // Mild T boost
+    saturationCeiling: 1000,
+    halfLifeHours: 36,
+    pathways: { ar_affinity: 0, non_genomic: 0, shbg_binding: 0, anti_catabolic: 0 },
+    metabolic: { aromatization: 5, dht_conversion: 0, glycogen_load: 0, lipolysis: 0, diuretic_effect: 0 }, // High intratesticular E2
+    benefits: { contractile_growth: 0, sarcoplasmic_vol: 0, neural_strength: 0, joint_support: 0, libido: 6 },
+    toxicity: { hepatic: 0, renal: 0, neuro: 0, lipid: 0, progestogenic: 0 },
+    // Legacy
     flags: { isGonadotropin: true },
     defaultEster: "none",
-    esters: {
-      none: { label: "Standard", halfLife: 36, weight: 1.0, slug: "HCG" },
-    },
+    esters: { none: { label: "Standard", halfLife: 36, weight: 1.0, slug: "HCG" } },
     category: "ancillary",
-    pathway: "lh_mimetic",
-    bindingAffinity: "none",
-    biomarkers: {
-      testicular_function: +5,
-      e2_conversion: +1, // Intratesticular aromatization
-      renal_toxicity: 0,
+    benefitCurve: [{dose: 0, value: 0}, {dose: 500, value: 1}],
+    riskCurve: [{dose: 0, value: 0}, {dose: 500, value: 0.1}],
+  },
+
+  superdrol: {
+    name: "Superdrol (Methasterone)",
+    color: "#9F1239",
+    abbreviation: "Sdrol",
+    type: "oral",
+    // --- MATH ENGINE INPUTS ---
+    basePotency: 3.5, // Highest potency
+    saturationCeiling: 30, // Very low ceiling
+    halfLifeHours: 8,
+    pathways: {
+      ar_affinity: 6.0,
+      non_genomic: 7.0,
+      shbg_binding: 6.0,
+      anti_catabolic: 9.0,
     },
-    halfLife: 36, // 1.5 days
-    modelConfidence: 0.9,
-    benefitCurve: [
-      { dose: 0, value: 0 },
-      { dose: 500, value: 1 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0 },
-      { dose: 500, value: 0.1 },
-    ],
+    metabolic: {
+      aromatization: 0.0,
+      dht_conversion: 0.0,
+      glycogen_load: 10.0, // Incredible fullness without water
+      lipolysis: 5.0,
+      diuretic_effect: 5.0, // Dry gain
+      erythropoiesis: 6.0,
+    },
+    benefits: {
+      contractile_growth: 9.0,
+      sarcoplasmic_vol: 10.0,
+      neural_strength: 8.0,
+      joint_support: 5.0,
+      libido: 3.0, // Lethargy kills drive
+    },
+    toxicity: {
+      hepatic: 10.0, // FAILURE POINT
+      renal: 6.0,
+      neuro: 8.0, // Extreme Lethargy
+      lipid: 10.0, // Worst in class
+      progestogenic: 0.0,
+      androgenic: 8.0,
+    },
+    // --- LEGACY DATA ---
+    toxicityTier: 4,
+    bioavailability: 0.85,
+    suppressiveFactor: 4,
+    conversionFactor: 0,
+    flags: { aromatization: 0, isSuppressive: true, isLiverToxic: true },
+    defaultEster: "oral",
+    esters: { oral: { label: "Oral Tablet", halfLife: 8, weight: 1.0, slug: "Tab" } },
+    category: "oral_mass",
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 40, value: 4.9 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 40, value: 8.0 } ],
+  },
+
+  anavar: {
+    name: "Anavar (Oxandrolone)",
+    color: "#FF6347",
+    abbreviation: "Var",
+    type: "oral",
+    // --- MATH ENGINE INPUTS ---
+    basePotency: 1.0,
+    saturationCeiling: 100,
+    halfLifeHours: 9,
+    pathways: {
+      ar_affinity: 4.0,
+      non_genomic: 3.0,
+      shbg_binding: 2.0,
+      anti_catabolic: 5.0,
+    },
+    metabolic: {
+      aromatization: 0.0,
+      dht_conversion: 0.0,
+      glycogen_load: 4.0,
+      lipolysis: 8.0, // Direct fat burning
+      diuretic_effect: 4.0,
+      erythropoiesis: 3.0,
+    },
+    benefits: {
+      contractile_growth: 5.0,
+      sarcoplasmic_vol: 3.0,
+      neural_strength: 7.0,
+      joint_support: 5.0,
+      libido: 5.0,
+    },
+    toxicity: {
+      hepatic: 2.0, // Low for oral
+      renal: 5.0, // Underrated kidney stress
+      neuro: 1.0,
+      lipid: 6.0,
+      progestogenic: 0.0,
+      androgenic: 4.0,
+    },
+    // --- LEGACY DATA ---
+    toxicityTier: 1,
+    bioavailability: 0.8,
+    suppressiveFactor: 2,
+    conversionFactor: 0,
+    flags: { aromatization: 0, isSuppressive: true },
+    defaultEster: "oral",
+    esters: { oral: { label: "Oral Tablet", halfLife: 9, weight: 1.0, slug: "Tab" } },
+    category: "oral_mild",
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 100, value: 1.8 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 100, value: 1.8 } ],
+  },
+
+  halotestin: {
+    name: "Halotestin",
+    color: "#8B0000",
+    abbreviation: "Halo",
+    type: "oral",
+    // --- MATH ENGINE INPUTS ---
+    basePotency: 2.0,
+    saturationCeiling: 40,
+    halfLifeHours: 9.2,
+    pathways: {
+      ar_affinity: 4.0,
+      non_genomic: 6.0,
+      shbg_binding: 8.0,
+      anti_catabolic: 4.0,
+    },
+    metabolic: {
+      aromatization: 0.0,
+      dht_conversion: 0.0,
+      glycogen_load: 1.0,
+      lipolysis: 5.0,
+      diuretic_effect: 6.0,
+      erythropoiesis: 7.0,
+    },
+    benefits: {
+      contractile_growth: 3.0, // Not for size
+      sarcoplasmic_vol: 1.0,
+      neural_strength: 10.0, // Pure Strength
+      joint_support: 2.0,
+      libido: 8.0, // Aggressive
+    },
+    toxicity: {
+      hepatic: 9.0, // High
+      renal: 6.0,
+      neuro: 9.0, // Aggression/Rage
+      lipid: 8.0,
+      progestogenic: 0.0,
+      androgenic: 10.0,
+    },
+    // --- LEGACY DATA ---
+    toxicityTier: 4,
+    bioavailability: 0.8,
+    suppressiveFactor: 4,
+    conversionFactor: 0,
+    flags: { aromatization: 0, isSuppressive: true, isLiverToxic: true },
+    defaultEster: "oral",
+    esters: { oral: { label: "Oral Tablet", halfLife: 9.2, weight: 1.0, slug: "Tab" } },
+    category: "oral_extreme",
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 40, value: 3.7 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 40, value: 5.2 } ],
+  },
+
+  proviron: {
+    name: "Proviron",
+    color: "#60A5FA",
+    abbreviation: "Prov",
+    type: "oral",
+    // --- MATH ENGINE INPUTS ---
+    basePotency: 0.2,
+    saturationCeiling: 100,
+    halfLifeHours: 12,
+    pathways: {
+      ar_affinity: 9.0, // Binds hard
+      non_genomic: 1.0,
+      shbg_binding: 10.0, // The Master of SHBG
+      anti_catabolic: 1.0,
+    },
+    metabolic: {
+      aromatization: 0.0,
+      dht_conversion: 0.0,
+      glycogen_load: 1.0,
+      lipolysis: 4.0,
+      diuretic_effect: 5.0,
+      erythropoiesis: 2.0,
+    },
+    benefits: {
+      contractile_growth: 1.0,
+      sarcoplasmic_vol: 1.0,
+      neural_strength: 3.0,
+      joint_support: 3.0,
+      libido: 9.0, // Synergy benefit
+    },
+    toxicity: {
+      hepatic: 1.0,
+      renal: 1.0,
+      neuro: 2.0,
+      lipid: 2.0,
+      progestogenic: 0.0,
+      androgenic: 6.0,
+    },
+    // --- LEGACY DATA ---
+    toxicityTier: 0,
+    bioavailability: 0.05,
+    suppressiveFactor: 1,
+    conversionFactor: 0,
+    flags: { aromatization: 0, isSuppressive: true },
+    defaultEster: "oral",
+    esters: { oral: { label: "Oral Tablet", halfLife: 12, weight: 1.0, slug: "Tab" } },
+    category: "support",
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 100, value: 0.9 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 100, value: 0.4 } ],
+  },
+
+  ment: {
+    name: "Ment (Trestolone)",
+    color: "#701a75",
+    abbreviation: "Ment",
+    type: "injectable",
+    // --- MATH ENGINE INPUTS ---
+    basePotency: 3.0,
+    saturationCeiling: 100,
+    halfLifeHours: 24,
+    pathways: {
+      ar_affinity: 9.0,
+      non_genomic: 6.0,
+      shbg_binding: 2.0,
+      anti_catabolic: 8.0,
+    },
+    metabolic: {
+      aromatization: 10.0, // Methyl-Estrogen (Severe)
+      dht_conversion: 0.0,
+      glycogen_load: 8.0,
+      lipolysis: 6.0,
+      diuretic_effect: 0.0,
+      erythropoiesis: 8.0,
+    },
+    benefits: {
+      contractile_growth: 9.0,
+      sarcoplasmic_vol: 9.0,
+      neural_strength: 7.0,
+      joint_support: 7.0,
+      libido: 8.0,
+    },
+    toxicity: {
+      hepatic: 2.0,
+      renal: 4.0,
+      neuro: 5.0,
+      lipid: 6.0,
+      progestogenic: 5.0,
+      androgenic: 9.0,
+    },
+    // --- LEGACY DATA ---
+    bioavailability: 1.0,
+    suppressiveFactor: 5,
+    conversionFactor: 10.0,
+    flags: { aromatization: 3.0, isSuppressive: true },
+    defaultEster: "acetate",
+    esters: {
+      acetate: { label: "Acetate", halfLife: 24, weight: 0.87, slug: "Ace" },
+      enanthate: { label: "Enanthate", halfLife: 108, weight: 0.7, slug: "Enanthate" },
+    },
+    category: "mass_monster",
+    benefitCurve: [ { dose: 0, value: 0 }, { dose: 100, value: 4.5 } ],
+    riskCurve: [ { dose: 0, value: 0 }, { dose: 100, value: 4.0 } ],
+  },
+
+  // --- ANCILLARIES (Benefits set to 0 for hypertrophy, used for flags) ---
+  arimidex: {
+    name: "Arimidex",
+    color: "#6B7280",
+    type: "oral",
+    basePotency: 0,
+    saturationCeiling: 1,
+    halfLifeHours: 48,
+    pathways: { ar_affinity: 0, non_genomic: 0, shbg_binding: 0, anti_catabolic: 0 },
+    metabolic: { aromatization: -10, dht_conversion: 0, glycogen_load: -2, lipolysis: 0, diuretic_effect: 2 },
+    benefits: { contractile_growth: 0, sarcoplasmic_vol: 0, neural_strength: 0, joint_support: -2, libido: 0 },
+    toxicity: { hepatic: 1, renal: 0, neuro: 0, lipid: 4, progestogenic: 0 },
+    // Legacy
+    flags: { isAI: true },
+    defaultEster: "oral",
+    esters: { oral: { label: "Tablet", halfLife: 48, weight: 1.0, slug: "Tab" } },
+    category: "ancillary",
+    benefitCurve: [{dose: 0, value: 0}, {dose: 1, value: 1}],
+    riskCurve: [{dose: 0, value: 0}, {dose: 1, value: 0.5}],
   },
 
   cabergoline: {
-    name: "Cabergoline (Dostinex)",
+    name: "Cabergoline",
     color: "#6B7280",
-    abbreviation: "Caber",
     type: "oral",
-    toxicityTier: 1,
-    bioavailability: 1.0,
-    suppressiveFactor: 0,
-    conversionFactor: 0,
+    basePotency: 0,
+    saturationCeiling: 1,
+    halfLifeHours: 69,
+    pathways: { ar_affinity: 0, non_genomic: 0, shbg_binding: 0, anti_catabolic: 0 },
+    metabolic: { aromatization: 0, dht_conversion: 0, glycogen_load: 0, lipolysis: 0, diuretic_effect: 0 },
+    benefits: { contractile_growth: 0, sarcoplasmic_vol: 0, neural_strength: 0, joint_support: 0, libido: 5 },
+    toxicity: { hepatic: 0, renal: 0, neuro: 5, lipid: 0, progestogenic: -10 },
+    // Legacy
     flags: { isDopamineAgonist: true },
     defaultEster: "oral",
-    esters: {
-      oral: { label: "Tablet", halfLife: 69, weight: 1.0, slug: "Tab" },
-    },
+    esters: { oral: { label: "Tablet", halfLife: 69, weight: 1.0, slug: "Tab" } },
     category: "ancillary",
-    pathway: "receptor_agonist",
-    bindingAffinity: "none",
-    biomarkers: {
-      prolactin: -5, // Crushes Prolactin
-      dopamine: +2,
-      renal_toxicity: 0,
-    },
-    halfLife: 69, // ~3 days
-    modelConfidence: 0.9,
-    benefitCurve: [
-      { dose: 0, value: 0 },
-      { dose: 0.5, value: 1 },
-    ],
-    riskCurve: [
-      { dose: 0, value: 0 },
-      { dose: 0.5, value: 0.2 },
-    ],
+    benefitCurve: [{dose: 0, value: 0}, {dose: 0.5, value: 1}],
+    riskCurve: [{dose: 0, value: 0}, {dose: 0.5, value: 0.2}],
   },
 };
+
+// --- UTILITY FUNCTIONS (Maintained for backwards compatibility) ---
 
 const derivePlateauDose = (curve = []) => {
   if (!curve.length) return 0;
@@ -1318,22 +1049,10 @@ export const doseRange = [0, 100, 200, 300, 400, 500, 600, 800, 1000, 1200];
 
 export const tierDescriptions = {
   "Tier 0": "Baseline (no AAS use)",
-  "Tier 1":
-    "Empirical Human Data - Randomized controlled trials in human subjects at specific doses",
-  "Tier 2":
-    "Clinical/Therapeutic Human Data - Human data at therapeutic doses, extrapolated to supraphysio via pharmacological modeling",
-  "Tier 3":
-    "Animal Studies + HED Scaling - Animal dose-response studies converted to human equivalent dose",
-  "Tier 4":
-    "Mechanism + Anecdotal Patterns - Pharmacological theory + aggregated community reports (high uncertainty)",
+  "Tier 1": "Empirical Human Data - RCTs",
+  "Tier 2": "Clinical/Therapeutic Extrapolation",
+  "Tier 3": "Animal Studies + HED Scaling",
+  "Tier 4": "Mechanism + Anecdotal Patterns",
 };
 
-export const disclaimerText = `HARM REDUCTION MODELING, NOT MEDICAL ADVICE
-
-This tool visualizes dose-response relationships based on limited human data, animal studies, and community patterns. It is educational only and does not constitute medical, pharmaceutical, or health advice.
-
-• These compounds are controlled substances in most jurisdictions.
-• Individual responses vary widely (±20-30% typical); your response may differ.
-• Risk curves are modeled, not empirically measured, at most doses.
-• Consult a healthcare provider before using AAS.
-• This tool assumes proper ancillary use, training, diet, and baseline health.`;
+export const disclaimerText = `HARM REDUCTION MODELING, NOT MEDICAL ADVICE.`;

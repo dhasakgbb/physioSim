@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { compoundData } from "../../data/compoundData";
 
 const LabReportCard = ({ stack, metrics }) => {
-  // Use centralized lab values from stackEngine
+  const labsWidget = metrics?.analytics?.labsWidget;
   const labValues = metrics?.analytics?.projectedLabs || {
     hdl: 50,
     ldl: 100,
@@ -10,6 +10,7 @@ const LabReportCard = ({ stack, metrics }) => {
     ast: 25,
     alt: 25,
     creatinine: 1.0,
+    egfr: 95,
     neuroRisk: 0,
     estradiol: 25,
     prolactin: 6.0,
@@ -54,6 +55,14 @@ const LabReportCard = ({ stack, metrics }) => {
       bg: "bg-physio-accent-success/10",
       label: "NORMAL",
     };
+  };
+
+  const widgetStatus = (key, fallback) => {
+    const statusKey = labsWidget?.[key]?.status;
+    if (statusKey && STATUS_STYLE_MAP[statusKey]) {
+      return STATUS_STYLE_MAP[statusKey];
+    }
+    return fallback;
   };
 
   const getHdlStatus = (value) => {
@@ -125,61 +134,87 @@ const LabReportCard = ({ stack, metrics }) => {
         {/* HDL */}
         <LabRow
           label="HDL"
-          value={labValues.hdl.toFixed(0)}
+          value={(labsWidget?.hdl?.value ?? labValues.hdl).toFixed(0)}
           unit="mg/dL"
-          status={getHdlStatus(labValues.hdl)}
+          status={widgetStatus("hdl", getHdlStatus(labValues.hdl))}
           reference="&gt; 40"
         />
 
         {/* LDL */}
         <LabRow
           label="LDL"
-          value={labValues.ldl.toFixed(0)}
+          value={(labsWidget?.ldl?.value ?? labValues.ldl).toFixed(0)}
           unit="mg/dL"
-          status={getStatus(labValues.ldl, { critical: 160, warning: 130 })}
+          status={widgetStatus(
+            "ldl",
+            getStatus(labValues.ldl, { critical: 160, warning: 130 }),
+          )}
           reference="&lt; 100"
         />
 
         {/* Hematocrit */}
         <LabRow
           label="HCT"
-          value={labValues.hematocrit.toFixed(1)}
+          value={(labsWidget?.hematocrit?.value ?? labValues.hematocrit).toFixed(1)}
           unit="%"
-          status={getStatus(labValues.hematocrit, {
-            critical: 54,
-            warning: 50,
-          })}
+          status={widgetStatus(
+            "hematocrit",
+            getStatus(labValues.hematocrit, { critical: 55, warning: 50 }),
+          )}
           reference="&lt; 50%"
         />
 
         {/* AST */}
         <LabRow
           label="AST"
-          value={labValues.ast.toFixed(0)}
+          value={(labsWidget?.ast?.value ?? labValues.ast).toFixed(0)}
           unit="U/L"
-          status={getStatus(labValues.ast, { critical: 80, warning: 50 })}
+          status={widgetStatus(
+            "ast",
+            getStatus(labValues.ast, { critical: 80, warning: 50 }),
+          )}
           reference="&lt; 40"
         />
 
         {/* ALT */}
         <LabRow
           label="ALT"
-          value={labValues.alt.toFixed(0)}
+          value={(labsWidget?.alt?.value ?? labValues.alt).toFixed(0)}
           unit="U/L"
-          status={getStatus(labValues.alt, { critical: 80, warning: 50 })}
+          status={widgetStatus(
+            "alt",
+            getStatus(labValues.alt, { critical: 80, warning: 50 }),
+          )}
           reference="&lt; 40"
         />
 
         {/* Creatinine */}
         <LabRow
           label="Creatinine"
-          value={labValues.creatinine.toFixed(2)}
+          value={(labsWidget?.creatinine?.value ?? labValues.creatinine).toFixed(2)}
           unit="mg/dL"
-          status={getStatus(labValues.creatinine, {
-            critical: 1.5,
-            warning: 1.3,
-          })}
+          status={widgetStatus(
+            "creatinine",
+            getStatus(labValues.creatinine, {
+              critical: 1.5,
+              warning: 1.3,
+            }),
+          )}
           reference="&lt; 1.2"
+        />
+
+        <LabRow
+          label="eGFR"
+          value={(labsWidget?.egfr?.value ?? labValues.egfr).toFixed(0)}
+          unit="mL/min"
+          status={widgetStatus(
+            "egfr",
+            getStatus(labValues.egfr, {
+              criticalLow: 45,
+              warningLow: 60,
+            }),
+          )}
+          reference="&gt; 60"
         />
 
         {/* Neuro Risk */}
@@ -198,12 +233,15 @@ const LabReportCard = ({ stack, metrics }) => {
           label="Estradiol"
           value={labValues.estradiol.toFixed(0)}
           unit="pg/mL"
-          status={getStatus(labValues.estradiol, {
-            critical: 80,
-            warning: 50,
-            lowWarning: 15,
-            lowCritical: 10,
-          })}
+          status={widgetStatus(
+            "e2",
+            getStatus(labValues.estradiol, {
+              critical: 80,
+              warning: 50,
+              lowWarning: 15,
+              lowCritical: 10,
+            }),
+          )}
           reference="20-40"
         />
 
@@ -291,6 +329,24 @@ const LabRow = ({ label, value, unit, status, reference }) => {
       </div>
     </div>
   );
+};
+
+const STATUS_STYLE_MAP = {
+  good: {
+    color: "text-physio-accent-success",
+    bg: "bg-physio-accent-success/10",
+    label: "NORMAL",
+  },
+  bad: {
+    color: "text-physio-accent-warning",
+    bg: "bg-physio-accent-warning/10",
+    label: "ELEVATED",
+  },
+  critical: {
+    color: "text-physio-accent-critical",
+    bg: "bg-physio-accent-critical/10",
+    label: "CRITICAL",
+  },
 };
 
 export default LabReportCard;
