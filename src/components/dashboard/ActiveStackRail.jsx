@@ -101,23 +101,21 @@ const CompoundSelector = ({ isOpen, onClose }) => {
           ref={panelRef}
           className="bg-[#13151A] border border-white/10 rounded-2xl shadow-[0_35px_80px_rgba(0,0,0,0.75)] backdrop-blur-xl p-4"
         >
-        <div className="flex items-center justify-between pb-4 border-b border-white/5">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-gray-500">
-              Add Compound
-            </p>
-            <p className="text-xs text-gray-400 mt-1">Search the stack library</p>
+          <div className="flex items-center justify-between pb-4 border-b border-white/5">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white tracking-wide">Add Compound</p>
+              <p className="text-xs text-gray-400 mt-1">Search the stack library</p>
+            </div>
+            <div className="flex items-center gap-3 text-[10px] tracking-[0.3em] text-gray-500">
+              <span className="uppercase">⌘K</span>
+              <button
+                onClick={onClose}
+                className="uppercase hover:text-white"
+              >
+                Close
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-3 text-[10px] tracking-[0.3em] text-gray-500">
-            <span className="uppercase">⌘K</span>
-            <button
-              onClick={onClose}
-              className="uppercase hover:text-white"
-            >
-              Close
-            </button>
-          </div>
-        </div>
 
           <div className="mt-4">
             <input
@@ -148,8 +146,8 @@ const CompoundSelector = ({ isOpen, onClose }) => {
                       onClick={() => handleSelect(option.key)}
                       className="w-full flex items-center justify-between text-left px-3 py-3 border border-transparent rounded-xl text-sm text-white hover:border-white/10 hover:bg-white/5 transition-all"
                     >
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wider">
+                      <div className="flex flex-col min-w-0 pr-3">
+                        <p className="text-sm font-medium text-white truncate">
                           {option.name}
                         </p>
                         <p className="text-[10px] text-gray-500 mt-1">
@@ -176,6 +174,13 @@ const CompoundSelector = ({ isOpen, onClose }) => {
     </div>
   );
 };
+
+const NAME_MAP = {
+  "Oral Turinabol": "Turinabol",
+  "Nandrolone Phenylpropionate": "NPP",
+};
+
+const getDisplayName = (name) => NAME_MAP[name] || name;
 
 const StackCard = ({ item, autoExpand }) => {
   const [isExpanded, setIsExpanded] = useState(Boolean(autoExpand));
@@ -230,6 +235,9 @@ const StackCard = ({ item, autoExpand }) => {
     return esterOptions.some((opt) => opt.id === base) ? base : esterOptions[0].id;
   }, [item.ester, meta.defaultEster, esterOptions]);
   const frequency = item.frequency || 3.5; // Default fallback
+  const unitLabel = unit.toUpperCase();
+  const displayDose = Math.round(item.dose || 0);
+  const displayName = getDisplayName(meta.name || item.compound);
 
   return (
     <div className="border-b border-physio-border-subtle last:border-b-0">
@@ -268,6 +276,13 @@ const StackCard = ({ item, autoExpand }) => {
           </span>
         </div>
 
+        <div className="flex items-baseline gap-1 font-mono text-sm text-gray-100 shrink-0">
+          <span>{displayDose}</span>
+          <span className="text-[10px] uppercase tracking-[0.25em] text-white/40">
+            {unitLabel}
+          </span>
+        </div>
+
         {/* Action Buttons */}
         <div className="flex shrink-0 items-center gap-1 pr-1 ml-4">
           <button
@@ -300,79 +315,138 @@ const StackCard = ({ item, autoExpand }) => {
 
       {/* Expanded Controls */}
       {isExpanded && (
-        <div className="bg-[#13151A] border-t border-dashed border-white/5 px-3 py-3">
-          {/* Controls Row: Ester + Frequency */}
-          <div className={`grid gap-3 mb-3 ${esterOptions.length > 0 ? "grid-cols-2" : "grid-cols-1"}`}>
-            {esterOptions.length > 0 && (
-              <div>
-                <p className="text-[9px] text-gray-500 font-bold tracking-wider uppercase mb-2">Ester</p>
-                <select
-                  value={selectedEster}
-                  onChange={(e) => updateEster(item.compound, e.target.value)}
-                  className="w-full h-8 px-3 py-1.5 text-sm bg-[#1A1D23] border border-white/10 rounded-lg text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/50 transition-all duration-200"
-                >
-                  {esterOptions.map((ester) => (
-                    <option key={ester.id} value={ester.id}>
-                      {ester.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <div>
-              <p className="text-[9px] text-gray-500 font-bold tracking-wider uppercase mb-2">Frequency</p>
-              <select
-                value={frequency}
-                onChange={(e) => updateFrequency(item.compound, parseFloat(e.target.value))}
-                className="w-full h-8 px-3 py-1.5 text-sm bg-[#1A1D23] border border-white/10 rounded-lg text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/50 transition-all duration-200"
-              >
-                <option value={1}>QD</option>
-                <option value={1.5}>1.5x/wk</option>
-                <option value={2}>EOD</option>
-                <option value={3.5}>3.5x/wk</option>
-                <option value={7}>Daily</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Dosage Slider */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[9px] text-gray-500 font-bold tracking-wider uppercase">
-                {isOral ? "Daily Dosage" : "Weekly Dosage"}
-              </p>
-              <div className="relative flex items-center w-28">
-                <input
-                  type="number"
-                  value={doseInput}
-                  onChange={(e) => setDoseInput(e.target.value)}
-                  onBlur={commitDoseInput}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      commitDoseInput();
-                      e.currentTarget.blur();
-                    }
-                  }}
-                  className="w-full h-8 bg-[#1A1D23] border border-white/10 rounded px-3 py-1.5 text-sm text-white font-mono pr-12 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all duration-200"
+        <div className="px-3 py-3">
+          <div className="group relative flex flex-col gap-3 rounded-2xl border border-white/5 bg-white/[0.02] p-3">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-white/5 pb-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div
+                  className="h-2 w-2 rounded-full shadow-[0_0_6px_rgba(0,0,0,0.6)]"
+                  style={{ backgroundColor: meta.color }}
                 />
-                <span className="pointer-events-none absolute right-3 text-[10px] text-gray-500 uppercase tracking-[0.2em] select-none">
-                  {unit}
+                <span className="text-sm font-medium text-white/90 truncate">
+                  {displayName}
                 </span>
               </div>
+              <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsExpanded(true);
+                    setInspectedCompound(item.compound);
+                  }}
+                  className="rounded p-1 text-white/30 hover:bg-white/10 hover:text-white"
+                  title="View compound details"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeCompound(item.compound);
+                  }}
+                  className="rounded p-1 text-white/30 hover:bg-rose-500/20 hover:text-rose-300"
+                  title="Remove compound"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
-            <Slider
-              value={item.dose}
-              min={0}
-              max={max}
-              step={isOral ? 5 : 10}
-              unit={unit}
-              onChange={(val) => updateDose(item.compound, val)}
-              warningThreshold={isOral ? 50 : 800}
-              accentColor={meta.color}
-              showValue={false}
-            />
+
+            {/* Controls */}
+            <div className={`grid gap-2 ${esterOptions.length > 0 ? "grid-cols-2" : "grid-cols-1"}`}>
+              {esterOptions.length > 0 && (
+                <div className="relative">
+                  <label className="text-[9px] font-bold uppercase tracking-[0.35em] text-white/30 mb-1 block">Ester</label>
+                  <select
+                    value={selectedEster}
+                    onChange={(e) => updateEster(item.compound, e.target.value)}
+                    className="w-full appearance-none rounded-lg border border-white/5 bg-white/[0.03] py-1.5 pl-2 pr-6 text-[11px] font-medium text-white/80 outline-none transition-colors hover:bg-white/[0.06] hover:border-white/10 focus:border-white/20"
+                  >
+                    {esterOptions.map((ester) => (
+                      <option key={ester.id} value={ester.id} className="bg-[#0F1115]">
+                        {ester.name}
+                      </option>
+                    ))}
+                  </select>
+                  <svg
+                    className="pointer-events-none absolute right-2 top-[34px] h-3 w-3 text-white/30"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
+                    <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              )}
+
+              <div className="relative">
+                <label className="text-[9px] font-bold uppercase tracking-[0.35em] text-white/30 mb-1 block">Frequency</label>
+                <select
+                  value={frequency}
+                  onChange={(e) => updateFrequency(item.compound, parseFloat(e.target.value))}
+                  className="w-full appearance-none rounded-lg border border-white/5 bg-white/[0.03] py-1.5 pl-2 pr-6 text-[11px] font-medium text-white/80 outline-none transition-colors hover:bg-white/[0.06] hover:border-white/10 focus:border-white/20"
+                >
+                  <option value={1}>QD (Daily)</option>
+                  <option value={1.5}>1.5x / week</option>
+                  <option value={2}>EOD</option>
+                  <option value={3.5}>3.5x / week</option>
+                  <option value={7}>Every day</option>
+                </select>
+                <svg
+                  className="pointer-events-none absolute right-2 top-[34px] h-3 w-3 text-white/30"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
+                  <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Dosage */}
+            <div className="space-y-2 pt-1">
+              <div className="flex items-baseline justify-between">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.35em] text-white/30">
+                  Dosage
+                </span>
+                <div className="flex items-baseline gap-1">
+                  <input
+                    type="number"
+                    value={doseInput}
+                    onChange={(e) => setDoseInput(e.target.value)}
+                    onBlur={commitDoseInput}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        commitDoseInput();
+                        e.currentTarget.blur();
+                      }
+                    }}
+                    className="w-16 bg-transparent text-right font-mono text-sm font-medium text-white outline-none focus:text-emerald-400"
+                  />
+                  <span className="text-[9px] font-medium text-white/40">{unitLabel}</span>
+                </div>
+              </div>
+              <Slider
+                value={item.dose}
+                min={0}
+                max={max}
+                step={isOral ? 5 : 10}
+                unit={unit}
+                onChange={(val) => updateDose(item.compound, val)}
+                warningThreshold={isOral ? 50 : 800}
+                accentColor={meta.color}
+                showValue={false}
+                className="pt-1"
+              />
+            </div>
           </div>
         </div>
       )}
@@ -459,7 +533,7 @@ const ActiveStackRail = () => {
           </div>
           <span className="text-[10px] font-mono text-tertiary uppercase tracking-[0.35em]">Beta</span>
         </div>
-        <div className="flex items-center justify-between h-12 px-4">
+        <div className="flex items-center justify-between h-11 px-4">
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold uppercase tracking-[0.35em] text-tertiary">
               Active Stack
@@ -484,7 +558,7 @@ const ActiveStackRail = () => {
 
       <CompoundSelector isOpen={isSelectorOpen} onClose={closeSelector} />
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto px-3 pt-3 pb-4 space-y-3 scrollbar-hide">
         {stack.length === 0 ? (
           <EmptyStackState />
         ) : (

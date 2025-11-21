@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import SerumStabilityChart from "./SerumStabilityChart";
 import CycleEvolutionChart from "./CycleEvolutionChart";
 import OptimizerPane from "./OptimizerPane";
@@ -6,9 +6,49 @@ import SignalingNetwork from "./SignalingNetwork";
 import { useStack } from "../../context/StackContext";
 import { CenterPane } from "./CenterPane";
 
+const NET_FAMILY_TABS = new Set(["efficiency", "serum", "evolution"]);
+const VIEW_MODE_TO_TAB = {
+  net: "efficiency",
+  optimize: "optimize",
+  network: "pathways",
+};
+const TAB_TO_VIEW_MODE = {
+  efficiency: "net",
+  serum: "net",
+  evolution: "net",
+  optimize: "optimize",
+  pathways: "network",
+};
+
 const TabbedChartCanvas = ({ onTimeScrub }) => {
-  const { stack, userProfile, setUserProfile, setStack, metrics } = useStack();
-  const [activeTab, setActiveTab] = useState('efficiency');
+  const {
+    stack,
+    userProfile,
+    setUserProfile,
+    setStack,
+    metrics,
+    viewMode,
+    setViewMode,
+  } = useStack();
+
+  const initialTab = useMemo(() => VIEW_MODE_TO_TAB[viewMode] || "efficiency", [viewMode]);
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  useEffect(() => {
+    const targetTab = VIEW_MODE_TO_TAB[viewMode];
+    if (!targetTab) return;
+
+    if (viewMode === "net") {
+      if (!NET_FAMILY_TABS.has(activeTab)) {
+        setActiveTab(targetTab);
+      }
+      return;
+    }
+
+    if (activeTab !== targetTab) {
+      setActiveTab(targetTab);
+    }
+  }, [viewMode, activeTab]);
 
   const tabs = [
     { id: 'efficiency', label: 'Efficiency' },
@@ -49,6 +89,14 @@ const TabbedChartCanvas = ({ onTimeScrub }) => {
     return null;
   };
 
+  const handleTabChange = (nextTab) => {
+    setActiveTab(nextTab);
+    const mappedMode = TAB_TO_VIEW_MODE[nextTab] || "net";
+    if (mappedMode !== viewMode) {
+      setViewMode(mappedMode);
+    }
+  };
+
   const openDrawer = (target) => {
     if (typeof window === "undefined") return;
     const eventName = target === "stack" ? "open-stack-drawer" : "open-inspector-drawer";
@@ -65,7 +113,7 @@ const TabbedChartCanvas = ({ onTimeScrub }) => {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`px-3 pt-[3px] pb-[5px] text-[11px] font-medium uppercase tracking-wide transition-all ${
                   isActive
                     ? 'linear-active shadow-glow-indigo'

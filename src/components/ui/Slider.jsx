@@ -56,21 +56,18 @@ const Slider = ({
       )}
 
       <div
-        className="relative h-8 flex items-center group"
+        className="relative h-6 flex items-center group"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Track Background */}
-        <div className="absolute w-full h-2 rounded-full overflow-hidden transition-colors bg-white/10 group-hover:bg-white/15">
+        <div className="absolute w-full h-0.5 rounded-full overflow-hidden transition-colors bg-white/15">
           {/* Fill */}
           <div
             className="h-full transition-all duration-100"
             style={{
               width: `${percentage}%`,
               backgroundColor: trackColor,
-              boxShadow: isHigh
-                ? "0 0 10px rgba(244,63,94,0.45)"
-                : `0 0 10px ${trackColor}55`,
             }}
           />
         </div>
@@ -89,7 +86,7 @@ const Slider = ({
           return (
             <div
               key={idx}
-              className={`absolute w-1 h-2 ${colorClass} rounded-sm transform -translate-x-1/2 mt-4 transition-opacity ${
+              className={`absolute w-1 h-2 ${colorClass} rounded-sm transform -translate-x-1/2 mt-3 transition-opacity ${
                 isHovered ? 'opacity-100' : 'opacity-60'
               }`}
               style={{ left: `${markerPos}%`, top: "50%" }}
@@ -109,18 +106,16 @@ const Slider = ({
           className="absolute w-full h-full opacity-0 cursor-pointer z-10"
         />
 
-        {/* Custom Thumb (Primary Indigo with glow) */}
+        {/* Custom Thumb */}
         <div
-          className={`absolute rounded-full transform -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-all duration-200 border border-white/20 ${
-            isHovered ? 'w-6 h-6 scale-110' : 'w-5 h-5'
+          className={`absolute rounded-full transform -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-all duration-150 border border-white/30 ${
+            isHovered ? 'w-4 h-4' : 'w-3.5 h-3.5'
           }`}
           style={{
             left: `${percentage}%`,
             top: '50%',
             backgroundColor: trackColor,
-            boxShadow: isHigh
-              ? "0 0 12px rgba(244,63,94,0.55)"
-              : `0 0 12px ${trackColor}55`,
+            boxShadow: "0 0 6px rgba(0,0,0,0.25)",
           }}
         />
       </div>

@@ -195,6 +195,7 @@ const SerumStabilityChart = ({ onTimeScrub }) => {
               tickLine={false}
               axisLine={false}
               domain={[0, data.length ? data[data.length - 1].day : steadyStateDays || 1]}
+              padding={{ left: 20, right: 20 }}
             />
             <YAxis hide />
 

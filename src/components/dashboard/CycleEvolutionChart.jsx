@@ -249,6 +249,7 @@ const CycleEvolutionChart = ({ onTimeScrub }) => {
               stroke="#4b5563"
               tickLine={false}
               axisLine={false}
+              padding={{ left: 20, right: 20 }}
             />
             <YAxis hide domain={[0, yMax]} />
             <Tooltip

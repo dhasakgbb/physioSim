@@ -64,11 +64,11 @@ const ProjectedGainsCard: React.FC<{ vectors: ProjectedVectorMetric[]; netScore:
         <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Projected Gains</h4>
         <p className="text-[9px] text-gray-500">Vector intensity forecast</p>
       </div>
-      <div className="flex flex-col items-end text-right gap-1">
-        <div className="font-mono text-3xl font-light tracking-tight text-white tabular-nums leading-tight">
+      <div className="flex flex-col items-end text-right">
+        <div className="text-3xl font-mono text-white leading-none tabular-nums">
           {Number.isFinite(netScore) ? netScore.toFixed(1) : "--"}
         </div>
-        <p className="text-[10px] uppercase tracking-widest text-emerald-300 leading-tight">Net Score</p>
+        <p className="mt-1 text-[10px] font-bold tracking-wider uppercase text-emerald-400">Net Score</p>
       </div>
     </div>
 
@@ -110,11 +110,11 @@ const SystemLoadCard: React.FC<{
           {dominantCategory ? `Dominant pressure: ${dominantCategory}` : "Awaiting stack inputs"}
         </p>
       </div>
-      <div className="text-right">
-        <div className="font-mono text-3xl font-light leading-none tracking-tight text-white tabular-nums">
+      <div className="flex flex-col items-end text-right">
+        <div className="text-3xl font-mono text-white leading-none tabular-nums">
           {systemIndex}%
         </div>
-        <p className={`mt-1 text-right text-[9px] uppercase tracking-widest ${systemLevelMeta.text}`}>
+        <p className={`mt-1 text-[10px] font-bold tracking-wider uppercase ${systemLevelMeta.text}`}>
           {systemLevelMeta.label}
         </p>
       </div>

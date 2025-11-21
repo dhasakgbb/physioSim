@@ -12,17 +12,27 @@ vi.mock("../../../context/StackContext", () => {
   const StackContext = React.createContext();
 
   const StackProvider = ({ children }) => {
+    const [viewMode, setViewMode] = React.useState("net");
+    const staticFns = React.useMemo(
+      () => ({
+        setStack: vi.fn(),
+        setUserProfile: vi.fn(),
+        setInspectedCompound: vi.fn(),
+      }),
+      [],
+    );
+
     const value = React.useMemo(
       () => ({
         stack: [],
-        setStack: vi.fn(),
         userProfile: {},
-        setUserProfile: vi.fn(),
         inspectedCompound: null,
-        setInspectedCompound: vi.fn(),
         metrics: {},
+        viewMode,
+        setViewMode,
+        ...staticFns,
       }),
-      [],
+      [viewMode, staticFns],
     );
 
     return (
