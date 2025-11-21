@@ -328,57 +328,6 @@ The app will be available at `http://localhost:5173`
 
 ---
 
-## 🔌 Backend & gRPC-Web Bridge (Phase 3)
-
-The Phase 3 work reconnected the UI to a Go simulation engine through a browser-ready gRPC-Web proxy that ships with the backend binary. Use the following workflow whenever you need live data or to refresh the generated client stubs.
-
-### Run the Go simulation engine + grpc-web proxy
-
-1. In one terminal, start the Go server (this launches both the raw gRPC endpoint and the grpc-web HTTP proxy):
-
-  ```bash
-  cd backend
-  go run ./cmd/server
-  ```
-
-2. By default the binary exposes:
-  - gRPC: `localhost:50051`
-  - gRPC-Web + health probe: `http://localhost:8080`
-
-3. Verify the proxy is healthy by curling the lightweight endpoint:
-
-  ```bash
-  curl http://localhost:8080/healthz
-  ```
-
-4. Keep this terminal running while you start the frontend dev server in another shell (`npm run dev`). The generated TypeScript client points to the grpc-web proxy, so the React app will immediately begin issuing SimulationEngine RPCs.
-
-### Configure listener ports via environment variables
-
-| Variable | Purpose | Default |
-| --- | --- | --- |
-| `PHYSIOSIM_GRPC_ADDR` | Raw gRPC listener (Go clients/tests) | `:50051` |
-| `PHYSIOSIM_GRPCWEB_ADDR` | grpc-web HTTP listener exposed to the browser | `:8080` |
-
-Override them before launching the server, e.g. `PHYSIOSIM_GRPCWEB_ADDR=:9090 go run ./cmd/server`.
-
-### Regenerate protobuf stubs (Go + TypeScript)
-
-Whenever `proto/physiosim/v1/engine.proto` changes, regenerate both client sets via the helper script:
-
-```bash
-./tools/generate-proto.sh
-```
-
-The script verifies you have `protoc`, `protoc-gen-go`, `protoc-gen-go-grpc`, and `protoc-gen-grpc-web` on your `PATH`, automatically prepending your `$(go env GOPATH)/bin` so freshly installed Go plugins are detected. Outputs land in:
-
-- Go server stubs: `backend/physiosim/v1`
-- TypeScript grpc-web stubs: `frontend/src/app/generated`
-
-Commit regenerated artifacts whenever the proto contract changes so both runtimes stay in sync.
-
----
-
 ## 🎮 Usage
 
 ### Basic Navigation

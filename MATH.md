@@ -125,7 +125,7 @@ export const compoundData = {
 
 The fields fall into five categories:
 
-1. **Display**: `name`, `abbreviation`, `color`, `category`, `pathway`, `bindingAffinity`.
+1. **Display**: `name`, `abbreviation`, `color`, `category`, `pathway`, `binding` (e.g., Ki metadata).
 2. **Dose handling**: `type`, `defaultEster`, `esters`, `bioavailability`, `halfLife` (convert user input to weekly active mg).
 3. **Scoring hooks**: `benefitCurve`, `riskCurve`, `biomarkers`, `flags`, `toxicityTier`, `suppressiveFactor`, plus the **signal/drag traits** (`potency`, `saturationCeiling`) and **qualitative vectors** (`pathwayWeights`, `metabolicVectors`, `anabolicRating`, `androgenicRating`, `cosmeticFactor`).
 4. **Toxicity buckets**: per-organ coefficients under `toxicity.{hepatic,lipid,renal,neuro,cardio,progestogenic,...}` that feed the drag equation and targeted warnings.
@@ -176,7 +176,7 @@ Put differently:
 
 If a compound feels inaccurate in liver, lipid, or strength outputs, the fix is always to re-check these inputs: `biomarkers` for the raw lab direction, `toxicity` for organ buckets, and `potency/anabolicRating` for signal.
 
-Whenever you add or edit a compound, confirm that its `biomarkers` cover **all** downstream consumers. For example, failing to set `liver_toxicity` means the physics engine will under-report ALT/AST even if the UI calls the compound “C17-aa”. Also set `bindingAffinity` (Testosterone defaults to `100`) so the receptor competition math knows how hard the compound fights for AR occupancy. High-affinity agents (e.g., Trenbolone ~250) will crowd out low-affinity ones once receptors are saturated.
+Whenever you add or edit a compound, confirm that its `biomarkers` cover **all** downstream consumers. For example, failing to set `liver_toxicity` means the physics engine will under-report ALT/AST even if the UI calls the compound “C17-aa”. Also set `binding.ki` (or at least `pathways.ar_affinity`) so the receptor competition math knows how hard the compound fights for AR occupancy. High-affinity agents (low Ki) like Trenbolone will monopolize the AR while mild SARMs with higher Ki values leave plenty of free receptor space.
 
 Finally, populate the signal/drag traits and qualitative vectors:
 
@@ -231,7 +231,7 @@ For each compound:
 
 Simple linear curves could not explain why hypertrophy plateaus while the athlete crashes. The scoring pass now decomposes every compound into two interacting terms derived from the new schema fields:
 
-1. **Anabolic Signal** — a modified sigmoid/log blend that rises fast and then asymptotes at `saturationCeiling`. The slope is governed by `potency` so Trenbolone (≈1.6) rockets upward while Testosterone (1.0) climbs slower and Anavar (0.8) flattens early.
+1. **Anabolic Signal** — now evaluated with the Hill (Emax) model so the nomenclature tracks pharmacology textbooks. For every compound we derive `E_max` from the peak of its `benefitCurve`, estimate `EC_50` from the dose that reaches half that peak (falling back to the default if the curve is sparse), and default the Hill coefficient `n` to 2 unless the compound overrides it. The response at the current dose `C` becomes $$Signal = \frac{E_{\text{max}} \times C^n}{EC_{50}^n + C^n}$$. Higher `potency` values lower the inferred `EC_50`, so Trenbolone rockets upward while milder drugs like Anavar require more exposure to reach the same fraction of `E_max`.
 
 2. **Systemic Drag** — an exponential penalty seeded by `toxicityCoefficient`. It starts near zero but accelerates aggressively for harsh drugs. Values for injectables stay around 0.1–0.2, methylated orals live in the 0.35–0.55 range.
 
@@ -240,10 +240,11 @@ Simple linear curves could not explain why hypertrophy plateaus while the athlet
 Pseudo-code (mirrors the implementation in `stackEngine`):
 
 ```ts
-const rawSignal = sigmoid(dose * potency, saturationCeiling);
-const cappedSignal = Math.min(rawSignal, saturationCeiling);
+const { emax, ec50, hillCoefficient } = deriveHillParams(compound);
+const signal = (emax * Math.pow(dose, hillCoefficient)) /
+   (Math.pow(ec50, hillCoefficient) + Math.pow(dose, hillCoefficient));
 const toxicityDrag = Math.pow(dose * toxicityCoefficient, 1.5);
-const netGain = cappedSignal - toxicityDrag;
+const netGain = signal - toxicityDrag;
 ```
 
 This model lets us explain to users that “the drug is still powerful, but your body is failing.” UI components can now plateau the benefit bars, tint the tips red, or fire warnings when drag dominates. Regression is only surfaced when drag > signal **and** system-load buckets cross their critical thresholds, keeping the story aligned: the drug keeps signaling, but the athlete can no longer capitalize because the body is cooked.
@@ -252,7 +253,7 @@ This model lets us explain to users that “the drug is still powerful, but your
 
 Potency alone cannot describe why Proviron “frees up” other steroids or why Dbol still works despite weak AR affinity. Each compound now declares pathway weights:
 
-- `ar` — receptor binding strength (paired with `bindingAffinity`).
+- `ar` — receptor binding strength (feeds Ki derivation when no explicit `binding.ki` is provided).
 - `nonGenomic` — membrane-level cascades, e.g., rapid glycogen storage, nitric-oxide effects.
 - `antiCatabolic` — cortisol suppression, SHBG binding, nutrient partitioning, appetite rescue.
 
@@ -283,42 +284,34 @@ When multiple compounds hammer the same organ, the bucket trips faster, unlockin
 
 #### 2.2.5 The Free Hormone Cascade (SHBG Modeling)
 
-Potency is not truly static because Sex Hormone Binding Globulin (SHBG) throttles the free fraction of every androgen in the stack. Compounds such as Anadrol, Proviron, and Winstrol carry strong negative `biomarkers.shbg` entries in `compoundData`, but until recently those values only flowed into the lab panel. The stack engine now captures their systemic effect via a **Bioavailability Scalar**:
+Sex Hormone Binding Globulin (SHBG) dictates how much of any androgen is actually free to work. We now model that tug of war explicitly with two metadata hooks on every compound:
 
-1. **Aggregate SHBG impact** – as we iterate the stack, we sum each compound’s `biomarkers.shbg` contribution (negative numbers indicate SHBG suppression). Oral agents with “SHBG crush” behavior naturally drive this total sharply downward.
-2. **Free Hormone Multiplier** – the cumulative SHBG delta is translated into a multiplier bounded between 1.0 and ~1.3 (smooth logistic curve). A neutral stack (no SHBG disruption) yields `1.0`; a Test + Anadrol run may land around `1.22`.
-3. **Apply to aromatizable injectables** – before evaluating the signal curves for Testosterone, Equipoise, or similar injectables, we rescale their `activeMg` by the multiplier. This mirrors reality: 500 mg Test plus 20 mg Anadrol feels stronger than 500 mg Test alone because more of the Test is unbound.
+- `shbgRelief` (0–10) – how aggressively the compound suppresses hepatic SHBG synthesis (Winny/Proviron score high, Anavar sits mid, injectables usually zero).
+- `shbgBindable` (boolean) – whether the compound’s signal jumps when SHBG falls (Testosterone, Equipoise, and other aromatizable injectables are true).
 
-The downstream impact is twofold: (a) projected gains capture the “free hormone boost,” and (b) the UI can explain why stacks that include SHBG crushers hit harder even if the headline mg totals look unchanged.
+The physics layer turns these flags into a global **Free Hormone Multiplier**:
+
+1. **Aggregate the crushers** – before the main scoring loop we scan `stackInput`, convert each dose to an approximate daily amount, and accumulate `reliefScore += shbgRelief × (ln(dailyMg + 1) / 3.5)`. The log keeps 25 mg Winstrol meaningful without rewarding 100 mg four-fold.
+2. **Translate score → multiplier** – `multiplier = clamp(1 + reliefScore / 25, 1.0, 1.35)`. A neutral stack stays at `1.0`, while Winny + Proviron caps around `1.35` (≈ 35 % more free hormone) to avoid runaway feedback.
+3. **Boost the victims** – any compound with `shbgBindable = true` has its benefit-side dose multiplied by the new scalar before the Hill curves fire. Thus 500 mg Test behaves like 650 mg if enough SHBG crushers are present, without granting the same bonus to the crushers themselves.
+
+We log the raw score, multiplier, and per-compound contributions into `analytics.shbgSynergy` and surface a “SHBG Synergy Detected” badge whenever the bonus exceeds +5 %. The badge explains *why* the stack suddenly shows more androgen signal (“Winstrol is displacing SHBG, increasing free-testosterone potency by +18 %”), closing the loop between metadata, physics, and UI.
 
 #### 2.2.6 Neural Tone vs Toxicity (Drive vs Fatigue)
 
-Strength perception is not purely anabolic; it is also neurological. To reflect the “wired but tired” experience common with Anadrol, Trenbolone, and other high-androgen compounds, the stack engine decomposes the neuro bucket into two scalars:
+Strength perception is not purely anabolic; it is also neurological. To reflect the “wired but tired” experience common with Anadrol, Trenbolone, and other high-androgen compounds, the physics engine now derives a `cnsProfile` inside `calculateCycleMetrics` before the analytics payload is returned:
 
-1. **Drive (Adrenergic Excitation)** – As we loop over compounds, we accumulate `neuralDriveScore = Σ(androgenicRating × doseScalar)` where `doseScalar = (weeklyDose / 200)^0.85`. Agents with high `androgenicRating` and meaningful weekly doses quickly elevate this score.
-2. **Fatigue (Systemic Drag)** – After the loop, we translate `totalSystemicLoad` + the computed `systemLoad.total` into a fatigue score: $$Fatigue = (\frac{totalSystemicLoad}{adjustedToxicityThreshold})^{1.1} \times 2.5 + (systemLoad.total/100) \times 2.0$$
+1. **Drive (Adrenergic Excitation)** – Each compound advertises an `androgenicRating`. During the physics pass we accumulate $$Drive = \sum (androgenicRating \times (\tfrac{weeklyDose}{200})^{0.85})$$ so peak-dose oral stimulants like Halotestin register instantly while gentler agents such as Primobolan barely move the needle.
+2. **Fatigue (Systemic Drag)** – Every compound can also provide a `neuroToxicity` flag (falls back to legacy `toxicity.neuro`). We convert those into a neurotoxicity load and blend it with bulk mg pressure plus the finalized `systemLoad.total` percentage: $$Fatigue = (\tfrac{saturationMg}{TOXICITY_{CEILING}})^{1.05} \times 3 + (\tfrac{systemLoad.total}{100}) \times 2.4 + (\tfrac{neuroToxicLoad}{6})^{1.05} \times 1.8$$
 
-The analytics payload now exposes `workoutQuality = { drive, fatigue, net }`, where `net = drive - fatigue`. Early in a blast the fatigue term stays low, so Anadrol/Test feels explosive. As systemic load creeps toward the toxicity ceiling, fatigue overtakes drive and the net score goes negative, mirroring the “wired but exhausted” reports athletes describe in week four.
+The resulting object includes `drive`, `fatigue`, `net`, `state`, `detail`, and `signals` (debug scalars). Downstream we still surface `analytics.workoutQuality`, but it now mirrors `cnsProfile` so UI code can render badges such as “GOD MODE” vs “WIRED BUT TIRED” alongside the numeric telemetry.
 
-#### Receptor Competition & Spillover (Binding Affinity Cap)
+#### Receptor Competition & Ki-Based Occupancy
 
-- Every compound now carries a `bindingAffinity` scalar relative to Testosterone (`100`). During scoring we compute an **affinity-weighted genomic load**: `affinityLoad = activeGenomicDose * (bindingAffinity / 100)`.
-- The sum of all affinity loads defines `totalAffinityLoad`. When it exceeds the profile-adjusted `RECEPTOR_CEILING`, we proportionally clamp each compound’s contribution so only the highest-affinity agents keep their full share of Androgen Receptor (AR) occupancy.
-- Displaced load (“spill”) is not wasted; it routes into the secondary pathways responsible for aromatization, DHT conversion, and systemic androgen pressure. Low-affinity compounds therefore raise estradiol and DHT faster in overloaded stacks, mirroring real-world competitive inhibition.
-- `bindingAffinity` defaults:
-   - Testosterone = `100` (baseline reference).
-   - DHT-derived injectables sit between `130–180`.
-   - 19-nor beasts like Trenbolone/MENT land `200+`.
-   Calibrate new entries relative to these anchors so the clamp feels intuitive.
-
-Implementation sketch:
-
-```ts
-const affinityLoad = activeGenomicDose * (bindingAffinity / 100);
-affinityAccumulator += affinityLoad;
-```
-
-After processing the stack, compute `spillRatio = max(0, (affinityAccumulator - receptorCeiling) / affinityAccumulator)`. Each compound’s spill amount becomes `lowAffinityPenalty = spillRatio * (1 - affinityWeight)` and feeds the estrogenic/DHT penalties plus `totalGenomicLoad` damping. That makes “too much low-affinity Test next to Tren” feel meaningfully different from “all Tren”.
+- Every compound may now declare `binding.ki` (nM). When omitted we derive a Ki from `pathways.ar_affinity` by anchoring Testosterone at $K_i = 0.9\text{ nM}$ and scaling inversely with the affinity score. This keeps older data usable while letting us plug in published dissociation constants as they become available.
+- Instead of heuristically clamping high-affinity stacks, we compute fractional occupancy with the Law of Mass Action. For each compound we normalize its steady-state exposure (`saturationMg / 400`) and divide by its Ki to obtain a binding term. The fraction of receptors occupied by compound $i$ is then $$\text{Occupancy}_i = \frac{[i]/K_{d,i}}{1 + \sum_j [j]/K_{d,j}}$$ which guarantees the occupancies sum to ≤1 and automatically privileges low-Ki ligands.
+- The simulation engine records `analytics.receptorCompetition` with the total occupancy, free fraction, and per-compound breakdown (`{ compound, ki, saturationMg, occupancy }`). UI layers can narrate “Tren monopolizes 62 % of AR sites; only 18 % remain free for Testosterone” without inventing spillover doses.
+- Aromatization and DHT conversion now work off the actual free hormone (total saturation load) with no artificial “spill” penalties—the free fraction reported above already implies how much substrate remains for enzymatic conversion.
 
 ### 2.3 Interaction Modeling & Non-Linear Corrections
 
@@ -365,7 +358,7 @@ Core helpers:
 
 - `getWeeklyFrequency(freq)` normalizes human strings ("EOD", "3x/wk") and numeric inputs into a multiplier.
 - `getActiveMg(dose, esterKey, compound)` multiplies by ester weight to convert total mg to released mg.
-- `getSaturationLevel(activeMg, halfLifeHours)` approximates steady-state build-up: `activeMg * (1 + halfLifeHours / 168)`.
+- `getSaturationLevel(activeMg, halfLifeHours, frequency)` multiplies `activeMg` by the pharmacokinetic accumulation ratio $R_{ac} = \frac{1}{1 - e^{-k_e \tau}}$, where $k_e = \ln(2) / t_{1/2}$ and $\tau = \frac{168}{\text{frequency}}$ hours (defaulting to weekly pins when unspecified). The ratio is clamped to a safe ceiling (6×) to prevent runaway concentrations when very long half-lives meet ultra-frequent dosing.
 
 ### 3.2 Per-Compound Calculations
 

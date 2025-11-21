@@ -14,14 +14,24 @@ export const SATURATION_THRESHOLD_1 = 1500;
 export const SATURATION_THRESHOLD_2 = 2500;
 export const TOXICITY_CEILING = 3000;
 const ORGAN_SHIELD_CAP = 0.6;
-const RECEPTOR_AFFINITY_OVERRIDES = {
-  testosterone: 1.0,
-  nandrolone: 1.5,
-  trenbolone: 5.0,
-  ment: 4.0,
+const RECEPTOR_KI_OVERRIDES = {
+  testosterone: 0.9, // nM (reference)
+  nandrolone: 0.65,
+  trenbolone: 0.3,
+  ment: 0.4,
 };
-const DEFAULT_AFFINITY = 1.0;
-const RECEPTOR_CEILING = 2600;
+const TESTOSTERONE_KI_NM = 0.9;
+const TESTOSTERONE_AFFINITY_SCORE = 5;
+const MIN_KI = 0.05;
+const RECEPTOR_BINDING_MG_SCALE = 400;
+const BASELINE_SHBG_NMOL = 35;
+const MIN_SHBG_NMOL = 5;
+const MAX_SHBG_NMOL = 120;
+const SHBG_BINDING_CAPACITY = 1.4;
+const SHBG_BINDING_SCALE = 120;
+const DEFAULT_AROMATASE_VMAX = 220;
+const DEFAULT_AROMATASE_KM = 500;
+const MIN_SUBSTRATE_MG = 1;
 
 const DAILY_FREQUENCY = 7;
 
@@ -34,6 +44,123 @@ const SUPPORT_SHIELD_SPECS = {
     hepatic: (dailyMg) => 0.2 * Math.min(1, dailyMg / 1200),
     renal: (dailyMg) => 0.4 * Math.min(1, dailyMg / 1200),
   },
+};
+
+const deriveKiValue = (compoundId, compoundMeta) => {
+  if (!compoundMeta || typeof compoundMeta !== "object") {
+    return TESTOSTERONE_KI_NM;
+  }
+
+  const explicitKi = Number(compoundMeta.binding?.ki);
+  if (Number.isFinite(explicitKi) && explicitKi > 0) {
+    return Math.max(MIN_KI, explicitKi);
+  }
+
+  if (RECEPTOR_KI_OVERRIDES[compoundId]) {
+    return RECEPTOR_KI_OVERRIDES[compoundId];
+  }
+
+  const affinityScore = Number(compoundMeta.pathways?.ar_affinity);
+  if (Number.isFinite(affinityScore) && affinityScore > 0) {
+    const normalizedScore = Math.max(0.5, affinityScore);
+    const relative = TESTOSTERONE_AFFINITY_SCORE / normalizedScore;
+    return Math.max(MIN_KI, Number((TESTOSTERONE_KI_NM * relative).toFixed(3)));
+  }
+
+  return TESTOSTERONE_KI_NM;
+};
+
+const computeBindingTerm = (saturationMg, kiValue) => {
+  if (!Number.isFinite(saturationMg) || saturationMg <= 0) return 0;
+  const normalizedConcentration = saturationMg / RECEPTOR_BINDING_MG_SCALE;
+  if (normalizedConcentration <= 0) return 0;
+  return normalizedConcentration / Math.max(MIN_KI, kiValue);
+};
+
+const clampScore = (value = 0, precision = 2) =>
+  Number(Number(value || 0).toFixed(precision));
+
+const CNS_STATE_DETAILS = {
+  CALM: "Minimal adrenergic load; baseline neural readiness.",
+  PRIMED: "Drive exceeds drag—sessions feel sharp and aggressive.",
+  "GOD MODE": "Sympathetic surge with low drag, ideal for peak attempts.",
+  "WIRED BUT TIRED": "Drive is high but toxicity is eroding output.",
+  "FRIED CNS": "Fatigue dominates, signaling imminent performance collapse.",
+  OVERREACHED: "Drag is overtaking drive; recovery window is overdue.",
+  BALANCED: "Drive and fatigue in equilibrium.",
+};
+
+const classifyCnsState = (drive, fatigue, net) => {
+  if (drive < 0.8 && fatigue < 1.1) return "CALM";
+  if (drive >= 4.5 && net >= 1.5 && fatigue <= drive * 0.65) return "GOD MODE";
+  if (drive >= 3 && net >= 0.5 && fatigue <= drive * 0.8) return "PRIMED";
+  if (drive >= 3 && fatigue >= drive * 0.85) return "WIRED BUT TIRED";
+  if (net <= -1.5 && fatigue > drive) return "FRIED CNS";
+  if (fatigue > drive) return "OVERREACHED";
+  return "BALANCED";
+};
+
+const describeCnsState = (state) => CNS_STATE_DETAILS[state] || CNS_STATE_DETAILS.BALANCED;
+
+const buildCnsProfile = (
+  { compounds = [], systemLoadTotal = 0, totalSaturationMg = 0 },
+  freeFractionLookup = {},
+) => {
+  let driveAccumulator = 0;
+  let neuroToxicPressure = 0;
+
+  if (Array.isArray(compounds)) {
+    compounds.forEach(({ id, key, data, weeklyDose = 0, saturationMg = 0 }) => {
+      if (!data) return;
+      const lookupKey = key || id;
+      const resolvedFraction = Number(freeFractionLookup[lookupKey]);
+      const safeFraction = Number.isFinite(resolvedFraction)
+        ? resolvedFraction
+        : 1;
+      const freeFraction = Math.min(1, Math.max(0, safeFraction));
+      const adjustedWeeklyDose = weeklyDose * freeFraction;
+      const adjustedSaturation = saturationMg * freeFraction;
+      const androgenicRating = Math.max(0, Number(data.androgenicRating) || 0);
+      if (androgenicRating > 0 && adjustedWeeklyDose > 0) {
+        const driveDoseScalar = Math.pow(Math.max(adjustedWeeklyDose, 0) / 200, 0.85);
+        driveAccumulator += androgenicRating * driveDoseScalar;
+      }
+
+      const neuroToxicity =
+        Number(data.neuroToxicity) ||
+        Number(data.toxicity?.neuro) ||
+        Number(data.biomarkers?.neurotoxicity) ||
+        0;
+      if (neuroToxicity > 0 && adjustedSaturation > 0) {
+        const toxDoseScalar = Math.pow(Math.max(adjustedSaturation, 0) / 350, 0.9);
+        neuroToxicPressure += Math.max(0, neuroToxicity) * toxDoseScalar;
+      }
+    });
+  }
+
+  const driveScore = clampScore(driveAccumulator);
+  const mgPressure = Math.max(0, totalSaturationMg / TOXICITY_CEILING);
+  const systemicDrag = Math.pow(mgPressure, 1.05) * 3.0;
+  const normalizedSystemLoad = Number.isFinite(systemLoadTotal)
+    ? systemLoadTotal
+    : 0;
+  const loadDrag = Math.max(0, normalizedSystemLoad / 100) * 2.4;
+  const neuroDrag = Math.pow(Math.max(neuroToxicPressure / 6, 0), 1.05) * 1.8;
+  const fatigueScore = clampScore(systemicDrag + loadDrag + neuroDrag);
+  const netScore = clampScore(driveScore - fatigueScore);
+  const state = classifyCnsState(driveScore, fatigueScore, netScore);
+
+  return {
+    drive: driveScore,
+    fatigue: fatigueScore,
+    net: netScore,
+    state,
+    detail: describeCnsState(state),
+    signals: {
+      neuroToxicLoad: clampScore(neuroToxicPressure),
+      mgPressure: clampScore(mgPressure, 3),
+    },
+  };
 };
 
 export const calculateOrganSupport = (activeCompounds = []) => {
@@ -57,6 +184,139 @@ export const calculateOrganSupport = (activeCompounds = []) => {
   shields.hepatic = Math.min(ORGAN_SHIELD_CAP, shields.hepatic);
   shields.renal = Math.min(ORGAN_SHIELD_CAP, shields.renal);
   return shields;
+};
+
+export const calculateShbgDynamics = ({
+  compounds = [],
+  estradiol = 25,
+  baselineShbg = BASELINE_SHBG_NMOL,
+} = {}) => {
+  const defaultState = {
+    shbgLevel: baselineShbg,
+    suppressionFactor: 0,
+    inductionFactor: 0,
+    bindingCapacity: baselineShbg * SHBG_BINDING_CAPACITY,
+    totalDemand: 0,
+    utilizedCapacity: 0,
+    compoundFreeFractions: {},
+    compounds: [],
+  };
+
+  if (!Array.isArray(compounds) || !compounds.length) {
+    return defaultState;
+  }
+
+  let androgenicPressure = 0;
+  let estrogenicPressure = Math.max(0, estradiol - 25);
+  const bindingDemands = [];
+
+  compounds.forEach((compound) => {
+    const data = compound?.data;
+    if (!data) return;
+    const compoundKey = compound?.key || compound?.id;
+    const saturationMg = Math.max(0, Number(compound.saturationMg) || 0);
+    if (saturationMg <= 0) return;
+
+    const androgenicRating = Math.max(0, Number(data.androgenicRating) || 0);
+    const shbgReliefScore = Math.max(0, Number(data.shbgRelief) || 0);
+    const shbgBindingScore = Math.max(0, Number(data.pathways?.shbg_binding) || 0);
+    const aromScore = Math.max(0, Number(data.metabolic?.aromatization) || 0);
+
+    androgenicPressure += saturationMg * (androgenicRating * 0.015 + shbgReliefScore * 0.02 + shbgBindingScore * 0.01);
+    estrogenicPressure += saturationMg * aromScore * 0.002;
+
+    const isBindable = data.shbgBindable !== false;
+    if (isBindable && shbgBindingScore > 0) {
+      const demand = shbgBindingScore * (saturationMg / SHBG_BINDING_SCALE);
+      if (demand > 0) {
+        bindingDemands.push({
+          key: compoundKey,
+          id: compound.id,
+          label: data.abbreviation || data.name || compound.id,
+          demand,
+          saturationMg,
+        });
+      }
+    }
+  });
+
+  const suppressionFactor = Math.min(0.85, androgenicPressure / 8000);
+  const inductionFactor = Math.min(1.5, estrogenicPressure / 60);
+  const rawShbgLevel = baselineShbg * (1 - suppressionFactor) + inductionFactor;
+  const shbgLevel = clampScore(
+    Math.min(MAX_SHBG_NMOL, Math.max(MIN_SHBG_NMOL, rawShbgLevel)),
+    2,
+  );
+
+  const bindingCapacity = shbgLevel * SHBG_BINDING_CAPACITY;
+  const totalDemand = bindingDemands.reduce((sum, entry) => sum + entry.demand, 0);
+  const utilizedCapacity = Math.min(totalDemand, bindingCapacity);
+  const compoundFreeFractions = {};
+  const shbgOccupancy = [];
+
+  if (totalDemand > 0) {
+    bindingDemands.forEach((entry) => {
+      const share = entry.demand / totalDemand;
+      const allocated = share * utilizedCapacity;
+      const boundFraction = Math.min(0.98, allocated / entry.demand);
+      const freeFraction = clampScore(1 - boundFraction, 4);
+      compoundFreeFractions[entry.key || entry.id] = freeFraction;
+      shbgOccupancy.push({
+        compound: entry.id,
+        label: entry.label,
+        demand: clampScore(entry.demand, 3),
+        boundFraction: clampScore(boundFraction, 4),
+        freeFraction,
+      });
+    });
+  }
+
+  return {
+    shbgLevel,
+    suppressionFactor: clampScore(suppressionFactor, 4),
+    inductionFactor: clampScore(inductionFactor, 4),
+    bindingCapacity: clampScore(bindingCapacity, 3),
+    totalDemand: clampScore(totalDemand, 3),
+    utilizedCapacity: clampScore(utilizedCapacity, 3),
+    compoundFreeFractions,
+    compounds: shbgOccupancy,
+  };
+};
+
+const michaelisMentenRate = (substrateMg = 0, vmax = 0, km = DEFAULT_AROMATASE_KM) => {
+  const substrate = Math.max(0, substrateMg);
+  if (substrate <= 0 || vmax <= 0) return 0;
+  const denominator = km + substrate;
+  if (denominator <= 0) return 0;
+  return (vmax * substrate) / denominator;
+};
+
+const computeAromatizationKinetics = ({
+  substrateMg = 0,
+  aromataseScalar = 1,
+  baselineEstradiol = 0,
+  inhibitor = 1,
+  methylLoad = 0,
+}) => {
+  const normalizedScalar = Math.max(0.25, Math.min(4, Number(aromataseScalar) || 1));
+  const inhibition = Math.max(0.05, Math.min(1, Number(inhibitor) || 1));
+  const effectiveVmax = DEFAULT_AROMATASE_VMAX * normalizedScalar * inhibition;
+  const effectiveKm = DEFAULT_AROMATASE_KM / normalizedScalar;
+  const substrate = Math.max(0, substrateMg);
+  const conversion = substrate > 0
+    ? michaelisMentenRate(Math.max(MIN_SUBSTRATE_MG, substrate), effectiveVmax, effectiveKm)
+    : 0;
+  const estradiol = Math.min(
+    350,
+    Math.max(5, baselineEstradiol + conversion + Math.max(0, methylLoad) * 0.05),
+  );
+  return {
+    estradiol,
+    conversion,
+    effectiveVmax,
+    effectiveKm,
+    substrateMg: substrate,
+  };
 };
 
 /**
@@ -104,13 +364,11 @@ export const calculateActiveLoad = (stack = [], compoundLookup = defaultCompound
     const esterWeight = ester?.weight ?? 1.0;
     const activeMg = weeklyDose * esterWeight;
 
-    if (aromatizationFlag) {
-      const aromLoad = saturationMg * aromatizationFlag;
-      totalAromatizableLoad += aromLoad;
-      if (affinityMultiplier <= 1.2) {
-        lowAffinityAromLoad += aromLoad;
-      }
-    }
+    // Calculate saturation for efficiency modeling
+    const esterHalfLife = ester?.halfLife || drugData.halfLife || 168;
+    const frequencyPerWeek = getWeeklyFrequency(freq);
+    const saturationMg = getSaturationLevel(activeMg, esterHalfLife, frequencyPerWeek);
+    const saturationRatio = activeMg > 0 ? saturationMg / activeMg : 1;
     const efficiencyFactor = saturationRatio > 1
       ? 1 + Math.log10(saturationRatio)
       : saturationRatio;
@@ -121,6 +379,8 @@ export const calculateActiveLoad = (stack = [], compoundLookup = defaultCompound
       id: item.id,
       rawDose: weeklyDose,
       activeMg,
+      saturationMg,
+      esterHalfLife,
       efficiencyFactor,
       saturationRatio,
       toxicityLoad,
@@ -473,18 +733,40 @@ export const getActiveMg = (dose, esterKey, compound) => {
   return dose * weight;
 };
 
-const getSaturationLevel = (activeMg, halfLifeHours) => {
-  if (!halfLifeHours) return activeMg;
-  const accumulationFactor = 1.0 + (halfLifeHours / 168.0);
-  return activeMg * accumulationFactor;
+const HOURS_PER_WEEK = 24 * 7;
+const MAX_ACCUMULATION_RATIO = 6.0;
+
+export const getAccumulationRatio = (halfLifeHours, frequencyPerWeek = 1) => {
+  if (!Number.isFinite(halfLifeHours) || halfLifeHours <= 0) return 1.0;
+  const dosesPerWeek = Number.isFinite(frequencyPerWeek) && frequencyPerWeek > 0 ? frequencyPerWeek : 1.0;
+  const tauHours = HOURS_PER_WEEK / dosesPerWeek;
+  const eliminationRate = Math.log(2) / halfLifeHours;
+  if (!Number.isFinite(eliminationRate) || eliminationRate <= 0) return 1.0;
+  const decay = Math.exp(-eliminationRate * tauHours);
+  const denominator = 1 - decay;
+  if (denominator <= 1e-6) return MAX_ACCUMULATION_RATIO;
+  const ratio = 1 / denominator;
+  if (!Number.isFinite(ratio) || ratio <= 0) return 1.0;
+  return Math.min(MAX_ACCUMULATION_RATIO, Math.max(1.0, ratio));
 };
 
-export const calculateCycleMetrics = (activeStack, compoundData) => {
+export const getSaturationLevel = (activeMg, halfLifeHours, frequencyPerWeek = 1) => {
+  if (!Number.isFinite(activeMg) || activeMg <= 0) return 0;
+  const accumulationRatio = getAccumulationRatio(halfLifeHours, frequencyPerWeek);
+  return activeMg * accumulationRatio;
+};
+
+export const calculateCycleMetrics = (
+  activeStack,
+  compoundData,
+  options = {},
+) => {
+  const { aromataseScalar = 1 } = options || {};
   let totalActiveMg = 0;
   let totalSaturationMg = 0;
 
   const compounds = activeStack
-    .map((item) => {
+    .map((item, index) => {
       const data = compoundData[item.id];
       if (!data) return null;
 
@@ -492,13 +774,14 @@ export const calculateCycleMetrics = (activeStack, compoundData) => {
       const weeklyDose = (item.dosage || 0) * freqMultiplier;
       const activeMg = getActiveMg(weeklyDose, item.ester, data);
       const esterHalfLife = data.esters?.[item.ester]?.halfLife || data.halfLife;
-      const saturationMg = getSaturationLevel(activeMg, esterHalfLife);
+      const saturationMg = getSaturationLevel(activeMg, esterHalfLife, freqMultiplier);
 
       totalActiveMg += activeMg;
       totalSaturationMg += saturationMg;
 
       return {
         ...item,
+        key: item.stackInstanceId || item.stackId || `${item.id}_${index}`,
         data,
         weeklyDose,
         activeMg,
@@ -545,7 +828,7 @@ export const calculateCycleMetrics = (activeStack, compoundData) => {
     ast: 22,
     hematocrit: 45,
     prolactin: 12,
-    shbg: 35,
+    shbg: BASELINE_SHBG_NMOL,
     creatinine: 0.9,
     neuroRisk: 0,
   };
@@ -557,25 +840,13 @@ export const calculateCycleMetrics = (activeStack, compoundData) => {
   let oralStressLoad = 0;
   let suppressiveLoad = 0;
   let progestinDoseLoad = 0;
-  let totalAffinityLoad = 0;
-  let lowAffinityAromLoad = 0;
 
   compounds.forEach((compound) => {
     const { data, saturationMg, weeklyDose } = compound;
     const loadRatio = saturationMg / 500;
-    const relativePotency = efficiencyRatio * loadRatio;
     const isOral = data.type === "oral";
     const dailyDose = weeklyDose / 7 || 0;
     const toxicityTier = data.toxicityTier ?? 1;
-    const affinityMultiplier =
-      RECEPTOR_AFFINITY_OVERRIDES[compound.id] ??
-      (data.pathways?.ar_affinity ? data.pathways.ar_affinity / 5 : DEFAULT_AFFINITY);
-    const affinityLoad = saturationMg * affinityMultiplier;
-    totalAffinityLoad += affinityLoad;
-
-    projectedGains.hypertrophy += (data.biomarkers?.igf1 || 0) * relativePotency * 1.5;
-    projectedGains.strength += (data.biomarkers?.cns_drive || 1) * relativePotency * 1.2;
-    projectedGains.fatLoss += (data.biomarkers?.cortisol < 0 ? 1 : 0) * relativePotency;
 
     systemLoad.cardiovascular += (data.biomarkers?.rbc || 0) * loadRatio * 2.5;
     systemLoad.hepatic += (data.biomarkers?.liver_toxicity || 0) * loadRatio * 5.0;
@@ -589,9 +860,6 @@ export const calculateCycleMetrics = (activeStack, compoundData) => {
     if (aromatizationFlag) {
       const aromLoad = saturationMg * aromatizationFlag;
       totalAromatizableLoad += aromLoad;
-      if (affinityMultiplier <= 1.2) {
-        lowAffinityAromLoad += aromLoad;
-      }
     }
         const estrogenicityFlag = Number(data.flags?.estrogenicity) || 0;
         const estrogenicVector = Math.max(0, aromatizationFlag + estrogenicityFlag);
@@ -609,7 +877,6 @@ export const calculateCycleMetrics = (activeStack, compoundData) => {
       progestinDoseLoad += progestogenicToxicity * loadRatio;
     }
 
-    projectedLabs.shbg -= loadRatio * 12;
     const baseHdlPenalty = loadRatio * 4;
     const hdlPenalty = data.type === "oral" ? baseHdlPenalty * 2.5 : baseHdlPenalty;
     projectedLabs.hdl -= hdlPenalty;
@@ -646,16 +913,6 @@ export const calculateCycleMetrics = (activeStack, compoundData) => {
       suppressiveLoad += suppressiveFactor * loadRatio;
     }
   });
-
-  if (totalAffinityLoad > RECEPTOR_CEILING && lowAffinityAromLoad > 0) {
-    const spillRatio = Math.min(
-      1,
-      (totalAffinityLoad - RECEPTOR_CEILING) / totalAffinityLoad,
-    );
-    const extraArom = lowAffinityAromLoad * spillRatio * 0.6;
-    totalAromatizableLoad += extraArom;
-  }
-
   const aromPressure = totalAromatizableLoad / 350;
   const aiMitigation = 1 / (1 + antiEstrogenStrength * 0.6);
   const suppressionScore = Math.min(1, suppressiveLoad / 5.5);
@@ -682,6 +939,96 @@ export const calculateCycleMetrics = (activeStack, compoundData) => {
     systemLoad.progestogenic + progestogenicLoadScore * 12,
   );
   projectedLabs.prolactin = Math.min(60, 12 + progestogenicLoadScore * 6);
+
+  const shbgDynamics = calculateShbgDynamics({
+    compounds,
+    estradiol: estradiolValue,
+    baselineShbg: BASELINE_SHBG_NMOL,
+  });
+  const freeFractionLookup = shbgDynamics.compoundFreeFractions || {};
+  projectedLabs.shbg = shbgDynamics.shbgLevel;
+
+  const receptorBindingTerms = [];
+  let totalBindingTerm = 0;
+
+  compounds.forEach((compound) => {
+    const { data, saturationMg = 0 } = compound;
+    if (!data || saturationMg <= 0) return;
+    const lookupKey = compound.key || compound.id;
+    const lookupValue = Number(freeFractionLookup[lookupKey]);
+    const freeFraction = Math.min(1, Math.max(0, Number.isFinite(lookupValue) ? lookupValue : 1));
+    compound.freeFraction = freeFraction;
+    const freeSaturationMg = saturationMg * freeFraction;
+    if (freeSaturationMg <= 0) return;
+    const freeLoadRatio = freeSaturationMg / 500;
+    const relativePotency = efficiencyRatio * freeLoadRatio;
+
+    projectedGains.hypertrophy += (data.biomarkers?.igf1 || 0) * relativePotency * 1.5;
+    projectedGains.strength += (data.biomarkers?.cns_drive || 1) * relativePotency * 1.2;
+    projectedGains.fatLoss += (data.biomarkers?.cortisol < 0 ? 1 : 0) * relativePotency;
+
+    const bindingKi = deriveKiValue(compound.id, data);
+    const bindingTerm = computeBindingTerm(freeSaturationMg, bindingKi);
+    if (bindingTerm > 0) {
+      receptorBindingTerms.push({
+        compoundId: compound.id,
+        label: data.abbreviation || data.name || compound.id,
+        ki: bindingKi,
+        bindingTerm,
+        saturationMg: freeSaturationMg,
+      });
+      totalBindingTerm += bindingTerm;
+    }
+  });
+
+  const testosteroneEntries = compounds.filter((entry) => entry.id === "testosterone");
+  const totalTestosteroneOutput = Math.max(0, projectedLabs.totalTestosterone);
+  if (testosteroneEntries.length) {
+    const avgFree = testosteroneEntries.reduce(
+      (sum, entry) => sum + (entry.freeFraction ?? 1),
+      0,
+    ) / testosteroneEntries.length;
+    const clampedRatio = clampScore(avgFree, 4);
+    projectedLabs.freeTestFraction = clampedRatio;
+    projectedLabs.freeTestosterone = clampScore(
+      totalTestosteroneOutput * clampedRatio,
+      2,
+    );
+  } else {
+    projectedLabs.freeTestFraction = clampScore(1, 4);
+    projectedLabs.freeTestosterone = clampScore(totalTestosteroneOutput, 2);
+  }
+
+  const receptorCompetition = (() => {
+    if (!receptorBindingTerms.length) {
+      return {
+        totalOccupancy: 0,
+        freeFraction: 1,
+        denominator: 1,
+        compounds: [],
+      };
+    }
+    const denominator = 1 + totalBindingTerm;
+    const compoundsOccupancy = receptorBindingTerms
+      .map((entry) => {
+        const occupancy = entry.bindingTerm / denominator;
+        return {
+          compound: entry.compoundId,
+          label: entry.label,
+          occupancy: Number(occupancy.toFixed(4)),
+          ki: Number(entry.ki.toFixed(3)),
+          saturationMg: Number(entry.saturationMg.toFixed(2)),
+        };
+      })
+      .sort((a, b) => b.occupancy - a.occupancy);
+    const totalOccupancy = compoundsOccupancy.reduce((sum, item) => sum + item.occupancy, 0);
+    return {
+      totalOccupancy: Number(totalOccupancy.toFixed(4)),
+      freeFraction: Number(Math.max(0, 1 - totalOccupancy).toFixed(4)),
+      denominator: Number(denominator.toFixed(4)),
+      compounds: compoundsOccupancy,
+    };
+  })();
 
   const rawTotalToxicity =
     systemLoad.cardiovascular +
@@ -760,10 +1107,19 @@ export const calculateCycleMetrics = (activeStack, compoundData) => {
     projectedGains.hypertrophy + projectedGains.strength + projectedGains.fatLoss;
   projectedGains.composite = Math.min(10.0, Number((rawGains / 10).toFixed(1)));
 
+  const cnsProfile = buildCnsProfile({
+    compounds,
+    systemLoadTotal: systemLoad.total,
+    totalSaturationMg,
+  }, freeFractionLookup);
+
   return {
     projectedGains,
     systemLoad,
     projectedLabs,
+    cnsProfile,
+    receptorCompetition,
+    shbgDynamics,
     meta: { totalActiveMg, totalSaturationMg, efficiencyRatio },
   };
 };

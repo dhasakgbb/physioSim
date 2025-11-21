@@ -14,12 +14,19 @@
  * - toxicity: Organ-specific negative load (The "Cost")
  */
 
+import { compoundKiValues } from "./compoundKiValues.js";
+
 export const compoundData = {
   testosterone: {
     name: "Testosterone",
     color: "#0066CC",
     abbreviation: "Test",
     type: "injectable",
+    androgenicRating: 0.65,
+    neuroToxicity: 0.2,
+    shbgRelief: 0,
+    shbgBindable: true,
+    binding: compoundKiValues.testosterone,
     // --- MATH ENGINE INPUTS ---
     basePotency: 1.0, // The Reference Standard
     saturationCeiling: 1500, // High ceiling, receptors saturate slowly
@@ -76,6 +83,11 @@ export const compoundData = {
     color: "#FF9900",
     abbreviation: "Deca",
     type: "injectable",
+    androgenicRating: 0.35,
+    neuroToxicity: 0.25,
+    shbgRelief: 0,
+    shbgBindable: true,
+    binding: compoundKiValues.nandrolone,
     // --- MATH ENGINE INPUTS ---
     basePotency: 1.1, // Slightly more anabolic per mg than Test
     saturationCeiling: 800, // Saturates faster than Test
@@ -130,6 +142,9 @@ export const compoundData = {
     color: "#CC0000",
     abbreviation: "Tren",
     type: "injectable",
+    androgenicRating: 1.05,
+    neuroToxicity: 0.85,
+    binding: compoundKiValues.trenbolone,
     // --- MATH ENGINE INPUTS ---
     basePotency: 2.5, // 5x Androgenic, 5x Anabolic (Theoretically)
     saturationCeiling: 600, // Very low ceiling (Strong affinity)
@@ -185,6 +200,8 @@ export const compoundData = {
     color: "#996633",
     abbreviation: "Primo",
     type: "injectable",
+    androgenicRating: 0.4,
+    neuroToxicity: 0.1,
     // --- MATH ENGINE INPUTS ---
     basePotency: 0.6, // Weak per mg
     saturationCeiling: 1200, // Can run high doses
@@ -238,7 +255,7 @@ export const compoundData = {
     color: "#9933FF",
     abbreviation: "Mast",
     type: "injectable",
-    // --- MATH ENGINE INPUTS ---
+    // --- MATH ENGINE INPUTS --- 
     basePotency: 0.6,
     saturationCeiling: 800,
     halfLifeHours: 48, // Propionate
@@ -248,6 +265,8 @@ export const compoundData = {
       shbg_binding: 9.0, // FORCE MULTIPLIER (Frees up Test)
       anti_catabolic: 3.0,
     },
+    androgenicRating: 0.75,
+    neuroToxicity: 0.2,
     metabolic: {
       aromatization: 0.0,
       dht_conversion: 0.0, // Is DHT
@@ -291,6 +310,11 @@ export const compoundData = {
     color: "#00AA00",
     abbreviation: "EQ",
     type: "injectable",
+    androgenicRating: 0.55,
+    neuroToxicity: 0.25,
+    shbgRelief: 0,
+    shbgBindable: true,
+    binding: compoundKiValues.eq,
     // --- MATH ENGINE INPUTS ---
     basePotency: 0.5, // Weak per mg
     saturationCeiling: 1200,
@@ -340,6 +364,9 @@ export const compoundData = {
     color: "#FF1493",
     abbreviation: "Dbol",
     type: "oral",
+    androgenicRating: 0.7,
+    neuroToxicity: 0.4,
+    shbgRelief: 5,
     // --- MATH ENGINE INPUTS ---
     basePotency: 1.8, // Very strong per mg
     saturationCeiling: 50, // Low ceiling (Oral)
@@ -392,6 +419,9 @@ export const compoundData = {
     abbreviation: "Adrol",
     type: "oral",
     // --- MATH ENGINE INPUTS ---
+    androgenicRating: 0.9,
+    neuroToxicity: 0.75,
+    shbgRelief: 7,
     basePotency: 2.2,
     saturationCeiling: 100, // Can handle higher mg than Dbol
     halfLifeHours: 9,
@@ -442,6 +472,10 @@ export const compoundData = {
     color: "#4169E1",
     abbreviation: "Winny",
     type: "oral",
+    androgenicRating: 0.6,
+    neuroToxicity: 0.35,
+    shbgRelief: 8,
+    shbgBindable: false,
     // --- MATH ENGINE INPUTS ---
     basePotency: 1.5,
     saturationCeiling: 60,
@@ -494,6 +528,8 @@ export const compoundData = {
     color: "#F472B6",
     abbreviation: "Tbol",
     type: "oral",
+    androgenicRating: 0.45,
+    neuroToxicity: 0.25,
     // --- MATH ENGINE INPUTS ---
     basePotency: 0.8, // Weaker than Test mg per mg
     saturationCeiling: 80, // Moderate ceiling
@@ -545,6 +581,8 @@ export const compoundData = {
     color: "#b45309",
     abbreviation: "DHB",
     type: "injectable",
+    androgenicRating: 0.85,
+    neuroToxicity: 0.45,
     // --- MATH ENGINE INPUTS ---
     basePotency: 2.0, // Very potent (200mg feels like 400mg Test)
     saturationCeiling: 600,
@@ -726,6 +764,9 @@ export const compoundData = {
     color: "#9F1239",
     abbreviation: "Sdrol",
     type: "oral",
+    androgenicRating: 0.95,
+    neuroToxicity: 0.9,
+    shbgRelief: 4,
     // --- MATH ENGINE INPUTS ---
     basePotency: 3.5, // Highest potency
     saturationCeiling: 30, // Very low ceiling
@@ -777,6 +818,11 @@ export const compoundData = {
     color: "#FF6347",
     abbreviation: "Var",
     type: "oral",
+    androgenicRating: 0.4,
+    neuroToxicity: 0.15,
+    shbgRelief: 3,
+    shbgBindable: false,
+    binding: compoundKiValues.oxandrolone,
     // --- MATH ENGINE INPUTS ---
     basePotency: 1.0,
     saturationCeiling: 100,
@@ -828,6 +874,8 @@ export const compoundData = {
     color: "#8B0000",
     abbreviation: "Halo",
     type: "oral",
+    androgenicRating: 1.0,
+    neuroToxicity: 0.85,
     // --- MATH ENGINE INPUTS ---
     basePotency: 2.0,
     saturationCeiling: 40,
@@ -879,10 +927,14 @@ export const compoundData = {
     color: "#60A5FA",
     abbreviation: "Prov",
     type: "oral",
-    // --- MATH ENGINE INPUTS ---
+    // --- MATH ENGINE INPUTS --- 
     basePotency: 0.2,
     saturationCeiling: 100,
     halfLifeHours: 12,
+    androgenicRating: 0.55,
+    neuroToxicity: 0.2,
+    shbgRelief: 6,
+    shbgBindable: false,
     pathways: {
       ar_affinity: 9.0, // Binds hard
       non_genomic: 1.0,
@@ -930,6 +982,11 @@ export const compoundData = {
     color: "#701a75",
     abbreviation: "Ment",
     type: "injectable",
+    androgenicRating: 0.95,
+    neuroToxicity: 0.6,
+    shbgRelief: 0,
+    shbgBindable: true,
+    binding: compoundKiValues.trestolone,
     // --- MATH ENGINE INPUTS ---
     basePotency: 3.0,
     saturationCeiling: 100,

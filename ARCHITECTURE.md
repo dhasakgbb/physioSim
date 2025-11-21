@@ -2,31 +2,32 @@
 
 ## 🚨 Critical Issues Found
 
-### 1. **Dual Frontend Architecture (CRITICAL)**
-**Issue**: The project contains TWO separate frontend applications doing similar things:
-- React/Vite app (`/src/`) - Main application (20+ components)
-- Angular app (`/frontend/`) - Prototype/duplicate (3 components)
+### 1. **Dual Frontend Architecture (DEPRECATED - RESOLVED)**
 
-**Impact**: Confusing development, maintenance overhead, deployment complexity.
+**Issue**: The project previously contained TWO separate frontend applications.
 
-**Evidence**:
-- Both have dashboard layouts with similar tabs ("Explore/Optimize/Signaling")
-- React: `TabbedChartCanvas.jsx` with 5 tabs (Efficiency, Serum, Evolution, Optimize, Pathways)
-- Angular: `app.html` with 3 tabs (Explore, Optimize, Signaling)
-- Both connect to the same gRPC backend
+- React/Vite app (`/src/`) - Main application (20+ components) **[ACTIVE]**
+- Angular app (`/frontend/`) - Prototype/duplicate **[REMOVED]**
+
+**Status**: ✅ **RESOLVED** - Angular prototype removed, React is the single frontend.
 
 ### 2. **Inconsistent Build System**
+
 **Issue**: Three separate build outputs with no unified deployment strategy:
+
 - `cmd/server/dist/` - Built Angular app
 - `dist/` - Built React app
 - No clear indication which is the "production" version
 
 ### 3. **Framework Inconsistency in Angular**
+
 **Issue**: Angular frontend uses Tailwind classes but Tailwind is not configured in `angular.json`.
 
 **Evidence**: `frontend/src/app/components/active-mixture/active-mixture.html` uses:
+
 ```html
-class="h-14 w-full cursor-pointer items-center justify-between border-b border-white/5"
+class="h-14 w-full cursor-pointer items-center justify-between border-b
+border-white/5"
 ```
 
 But `frontend/package.json` shows only basic Tailwind installation without Angular integration.
@@ -36,12 +37,14 @@ But `frontend/package.json` shows only basic Tailwind installation without Angul
 ### Component Architecture
 
 #### ✅ **React Components (Good)**
+
 - **Pattern**: Functional components with hooks
 - **Naming**: PascalCase (`Dashboard.jsx`, `TabbedChartCanvas.jsx`)
 - **Structure**: Feature-based organization (`dashboard/`, `ui/`)
 - **State**: Context providers (`StackContext.jsx`, `SimulationContext.jsx`)
 
 #### ⚠️ **Angular Components (Inconsistent)**
+
 - **Pattern**: Classes with decorators (modern Angular)
 - **Naming**: kebab-case (`simulation-chart.ts`)
 - **Structure**: Flat component organization
@@ -50,35 +53,31 @@ But `frontend/package.json` shows only basic Tailwind installation without Angul
 ### State Management
 
 #### ✅ **React (Consistent)**
+
 - **Pattern**: React Context + useReducer pattern
 - **Persistence**: localStorage with structured keys
 - **Updates**: Optimistic updates with error handling
 
 #### ⚠️ **Angular (Different Pattern)**
+
 - **Pattern**: Service-based with Angular signals
 - **Persistence**: Not implemented
 - **Updates**: Direct service calls
 
-### API Design
+#### ✅ **Environment Configuration**
 
-#### ✅ **gRPC-Web (Good)**
-- **Protocol**: Well-defined protobuf contracts
-- **Client Generation**: Automated TypeScript generation
-- **Error Handling**: Structured error responses
-
-#### ⚠️ **Environment Configuration**
 - **React**: `import.meta.env` (Vite-specific)
-- **Angular**: `environment.ts` files (Angular-specific)
-- **Backend**: OS environment variables
 
 ### Naming Conventions
 
 #### ✅ **Consistent Areas**
+
 - **CSS Variables**: `--bg-main`, `--color-text-primary`
 - **Constants**: `STORAGE_KEYS.PROFILE`
 - **Functions**: camelCase
 
 #### ⚠️ **Inconsistent Areas**
+
 - **File Extensions**: `.jsx` vs `.js` vs `.ts`
 - **Component Files**: `Dashboard.jsx` vs `simulation-chart.ts`
 - **Directory Structure**: React uses `dashboard/`, Angular uses `components/`
@@ -86,11 +85,13 @@ But `frontend/package.json` shows only basic Tailwind installation without Angul
 ### Testing Patterns
 
 #### ✅ **React Testing (Comprehensive)**
+
 - **Framework**: Vitest + React Testing Library
 - **Coverage**: Component tests, utility tests, data validation
 - **Setup**: Shared test utilities and mocks
 
 #### ⚠️ **Angular Testing (Incomplete)**
+
 - **Framework**: Vitest configured but minimal test files
 - **Coverage**: Only basic component spec
 - **Setup**: Basic Angular testing setup
@@ -98,6 +99,7 @@ But `frontend/package.json` shows only basic Tailwind installation without Angul
 ### Configuration Management
 
 #### ❌ **Fragmented Configuration**
+
 - **Build**: Separate `vite.config.js`, `angular.json`
 - **Styling**: Separate Tailwind configs (root vs frontend)
 - **Environment**: Different environment file patterns
@@ -108,6 +110,7 @@ But `frontend/package.json` shows only basic Tailwind installation without Angul
 ### Phase 1: Immediate Consolidation
 
 #### Option A: Standardize on React (Recommended)
+
 ```bash
 # Remove Angular frontend
 rm -rf frontend/
@@ -117,6 +120,7 @@ rm -rf frontend/
 ```
 
 #### Option B: Standardize on Angular
+
 ```bash
 # Move React components to Angular
 # Remove root React setup
@@ -124,6 +128,7 @@ rm -rf frontend/
 ```
 
 #### Option C: Micro-frontend Architecture
+
 ```bash
 # Implement proper micro-frontend setup
 # Define clear boundaries between apps
@@ -133,19 +138,16 @@ rm -rf frontend/
 ### Phase 2: Architecture Improvements
 
 #### 1. Unified Configuration
+
 ```javascript
-// monorepo structure with shared configs
+// Simplified single-app structure
 /
-├── apps/
-│   ├── frontend/          # Single frontend app
-│   └── backend/
-├── packages/
-│   ├── shared/           # Common utilities
-│   ├── ui/              # Shared components
-│   └── config/          # Shared configuration
+├── src/                  # Frontend application
+├── docs/                 # Documentation
 ```
 
 #### 2. Consistent Component Patterns
+
 ```javascript
 // Standard component structure
 ComponentName/
@@ -156,12 +158,14 @@ ComponentName/
 ```
 
 #### 3. Unified State Management
+
 ```javascript
 // Single state management solution
 // Either Zustand or Redux Toolkit for consistency
 ```
 
 #### 4. Consistent Build Pipeline
+
 ```json
 {
   "scripts": {
@@ -175,11 +179,13 @@ ComponentName/
 ### Phase 3: Developer Experience
 
 #### 1. Monorepo Tooling
+
 - **Turborepo** or **Nx** for task orchestration
 - **Changesets** for version management
 - **Storybook** for component documentation
 
 #### 2. Consistent Tooling
+
 - **ESLint + Prettier** across all projects
 - **TypeScript** everywhere (migrate React to TS)
 - **Vitest** for all testing
@@ -187,31 +193,34 @@ ComponentName/
 
 ## 📊 Architecture Assessment
 
-| Category | Score | Status | Priority |
-|----------|-------|--------|----------|
-| **Project Structure** | 🔴 2/10 | Chaotic dual-frontend | Critical |
-| **Component Architecture** | 🟡 6/10 | Good React, incomplete Angular | High |
-| **State Management** | 🟡 5/10 | Different patterns | Medium |
-| **API Design** | 🟢 8/10 | Well-structured gRPC | Low |
-| **Testing** | 🟡 6/10 | Comprehensive React, minimal Angular | Medium |
-| **Configuration** | 🔴 3/10 | Fragmented and inconsistent | High |
-| **Build System** | 🔴 2/10 | Multiple conflicting builds | Critical |
+| Category                   | Score   | Status                               | Priority |
+| -------------------------- | ------- | ------------------------------------ | -------- |
+| **Project Structure**      | 🔴 2/10 | Chaotic dual-frontend                | Critical |
+| **Component Architecture** | 🟡 6/10 | Good React, incomplete Angular       | High     |
+| **State Management**       | 🟡 5/10 | Different patterns                   | Medium   |
+| **API Design**             | 🟢 8/10 | Well-structured gRPC                 | Low      |
+| **Testing**                | 🟡 6/10 | Comprehensive React, minimal Angular | Medium   |
+| **Configuration**          | 🔴 3/10 | Fragmented and inconsistent          | High     |
+| **Build System**           | 🔴 2/10 | Multiple conflicting builds          | Critical |
 
 ## 🎯 Immediate Action Plan (React Chosen)
 
 ### Phase 1: Immediate Consolidation (This Week)
+
 1. ✅ **Framework Decision**: React selected as primary framework
 2. **Remove Angular prototype**: Delete `/frontend/` directory
 3. **Update build scripts**: Remove Angular-specific commands
 4. **Update documentation**: Remove Angular references
 
 ### Phase 2: Architecture Cleanup (Next Week)
+
 1. **Consolidate configurations**: Single `package.json`, unified build process
 2. **Standardize component patterns**: All components follow React conventions
 3. **Update CI/CD**: Single deployment pipeline
 4. **Clean up imports**: Remove any Angular-specific code
 
 ### Phase 3: Optimization (Ongoing)
+
 1. **Add TypeScript**: Migrate React components to TypeScript
 2. **Improve testing**: Add missing test coverage
 3. **Performance optimization**: Bundle analysis and optimization
@@ -220,6 +229,7 @@ ComponentName/
 ## 💡 Best Practice Recommendations
 
 ### Code Organization
+
 ```
 src/
 ├── components/           # UI components
@@ -235,12 +245,14 @@ src/
 ```
 
 ### Naming Conventions
+
 - **Files**: PascalCase for components (`Dashboard.jsx`)
 - **Directories**: camelCase (`dashboardLayout/`)
 - **Constants**: SCREAMING_SNAKE_CASE (`API_ENDPOINTS`)
 - **Functions**: camelCase (`calculateDosage()`)
 
 ### Component Patterns
+
 ```javascript
 // Consistent component structure
 const ComponentName = ({ prop1, prop2 }) => {
@@ -258,17 +270,14 @@ const ComponentName = ({ prop1, prop2 }) => {
   }, [dependencies]);
 
   // Render
-  return (
-    <div className="component-name">
-      {/* JSX */}
-    </div>
-  );
+  return <div className="component-name">{/* JSX */}</div>;
 };
 ```
 
 ## 🔍 Ongoing Architecture Health
 
 ### Monitoring Checklist
+
 - [ ] Single source of truth for components
 - [ ] Consistent state management patterns
 - [ ] Unified build and deployment process

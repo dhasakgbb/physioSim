@@ -1,6 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useStack } from "../../context/StackContext";
-import HealthInsightBanner from "./HealthInsightBanner";
+import React, { useMemo } from "react";
 
 const DEFAULT_LABS = {
   hdl: 60,
@@ -53,7 +51,12 @@ const LAB_BLUEPRINT = [
     unit: "pg/mL",
     min: 20,
     max: 40,
-    thresholds: { warningHigh: 50, criticalHigh: 80, warningLow: 15, criticalLow: 10 },
+    thresholds: {
+      warningHigh: 50,
+      criticalHigh: 80,
+      warningLow: 15,
+      criticalLow: 10,
+    },
   },
   {
     id: "hematocrit",
@@ -82,18 +85,19 @@ const LAB_BLUEPRINT = [
   },
 ];
 
-export const RightInspector = ({ metrics, steadyStateMetrics, scrubbedPoint = null }) => {
-  const { toggleSupportProtocol } = useStack();
-  const totals = steadyStateMetrics?.totals || metrics?.totals || {
-    netScore: 0,
-    totalRisk: 0,
-  };
+export const RightInspector = ({
+  metrics,
+  steadyStateMetrics,
+  scrubbedPoint = null,
+}) => {
+  const totals = steadyStateMetrics?.totals ||
+    metrics?.totals || {
+      netScore: 0,
+      totalRisk: 0,
+    };
 
   const { netScore = 0, totalRisk = 0 } = totals;
   const labsWidget = metrics?.analytics?.labsWidget;
-  const projectedLabs = metrics?.analytics?.projectedLabs || {};
-  const systemLoadVectors = metrics?.analytics?.systemLoadVectors || {};
-  const [pendingProtocol, setPendingProtocol] = useState(null);
 
   const vitalsData = useMemo(() => {
     const fallback = {
@@ -103,9 +107,10 @@ export const RightInspector = ({ metrics, steadyStateMetrics, scrubbedPoint = nu
 
     return LAB_BLUEPRINT.map((item) => {
       const widgetEntry =
-        labsWidget?.[item.id] || (item.id === "estradiol" ? labsWidget?.e2 : undefined);
+        labsWidget?.[item.id] ||
+        (item.id === "estradiol" ? labsWidget?.e2 : undefined);
       const numericValue = Number(
-        widgetEntry?.value ?? fallback[item.id] ?? DEFAULT_LABS[item.id] ?? 0,
+        widgetEntry?.value ?? fallback[item.id] ?? DEFAULT_LABS[item.id] ?? 0
       );
       return {
         ...item,
@@ -115,55 +120,7 @@ export const RightInspector = ({ metrics, steadyStateMetrics, scrubbedPoint = nu
     });
   }, [metrics, labsWidget]);
 
-  const activeInsight = useMemo(() => {
-    const hepaticLoad = Number(systemLoadVectors?.hepatic || 0);
-    const renalLoad = Number(systemLoadVectors?.renal || 0);
-    const astValue = Number(
-      (labsWidget?.ast?.value ?? projectedLabs.ast ?? DEFAULT_LABS.ast) || 0,
-    );
-    if (hepaticLoad > 80 || astValue > 100) {
-      return {
-        id: "hepatic",
-        title: "Hepatotoxicity Critical.",
-        subtitle: "AST/ALT levels indicate severe stress.",
-        actionLabel: "Apply Liver Support",
-        actionKey: "liver",
-      };
-    }
 
-    const egfrValue = Number(
-      (labsWidget?.egfr?.value ?? projectedLabs.egfr ?? DEFAULT_LABS.egfr) || 0,
-    );
-    if (renalLoad > 80 || (Number.isFinite(egfrValue) && egfrValue < 60)) {
-      return {
-        id: "renal",
-        title: "Renal Stress Detected.",
-        subtitle: "Filtration rate is trending dangerously low.",
-        actionLabel: "Apply Renal Support",
-        actionKey: "renal",
-      };
-    }
-
-    return null;
-  }, [labsWidget, projectedLabs, systemLoadVectors]);
-
-  useEffect(() => {
-    if (!activeInsight && pendingProtocol) {
-      setPendingProtocol(null);
-    }
-  }, [activeInsight, pendingProtocol]);
-
-  const handleInsightAction = (insight) => {
-    if (!insight || !toggleSupportProtocol) return;
-    if (pendingProtocol === insight.actionKey) return;
-    toggleSupportProtocol(insight.actionKey);
-    setPendingProtocol(insight.actionKey);
-    setTimeout(() => {
-      setPendingProtocol((current) =>
-        current === insight.actionKey ? null : current,
-      );
-    }, 600);
-  };
 
   const scrubLabel = useMemo(() => {
     if (!scrubbedPoint) return null;
@@ -179,14 +136,6 @@ export const RightInspector = ({ metrics, steadyStateMetrics, scrubbedPoint = nu
   return (
     <div className="flex flex-col h-full bg-[#0F1115] border-l border-white/5 overflow-y-auto scrollbar-hide">
       <div className="p-5">
-        <HealthInsightBanner
-          insight={activeInsight}
-          onAction={handleInsightAction}
-          isLoading={
-            Boolean(pendingProtocol) &&
-            activeInsight?.actionKey === pendingProtocol
-          }
-        />
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
             Projected Labs (Steady State)
@@ -213,21 +162,29 @@ const BulletChart = ({ data }) => {
   const fillPercent = Math.min(100, (value / spanMax) * 100);
   const markerPosition = (max / spanMax) * 100;
 
-  const severity = mapStatusToSeverity(data.status) || getLabSeverity(value, data);
+  const severity =
+    mapStatusToSeverity(data.status) || getLabSeverity(value, data);
   const gradientClass = getGradientForSeverity(severity, fillPercent);
   const isDanger = severity === "critical" || severity === "warning";
 
-  const rangeLabel = Number.isFinite(min) && Number.isFinite(max)
-    ? `${min}-${max} ${data.unit}`
-    : data.unit;
+  const rangeLabel =
+    Number.isFinite(min) && Number.isFinite(max)
+      ? `${min}-${max} ${data.unit}`
+      : data.unit;
 
   return (
     <div className="grid h-8 grid-cols-[minmax(0,1fr)_72px_48px] items-center gap-3 min-w-0">
       <div className="min-w-0 leading-tight">
-        <p className="text-[11px] font-medium text-gray-300 truncate whitespace-nowrap" title={data.label}>
+        <p
+          className="text-[11px] font-medium text-gray-300 truncate whitespace-nowrap"
+          title={data.label}
+        >
           {data.label}
         </p>
-        <p className="text-[9px] text-gray-500 truncate whitespace-nowrap" title={rangeLabel || data.label}>
+        <p
+          className="text-[9px] text-gray-500 truncate whitespace-nowrap"
+          title={rangeLabel || data.label}
+        >
           {rangeLabel}
         </p>
       </div>
@@ -262,12 +219,7 @@ const BulletChart = ({ data }) => {
 
 const getLabSeverity = (value, data) => {
   const { thresholds = {}, inverse, min, max } = data;
-  const {
-    criticalLow,
-    warningLow,
-    warningHigh,
-    criticalHigh,
-  } = thresholds;
+  const { criticalLow, warningLow, warningHigh, criticalHigh } = thresholds;
 
   if (criticalLow !== undefined && value < criticalLow) return "critical";
   if (criticalHigh !== undefined && value > criticalHigh) return "critical";

@@ -17,7 +17,27 @@ const LabReportCard = ({ stack, metrics }) => {
     shbg: 30,
     totalTestosterone: 600,
     freeTestosterone: 12,
+    freeTestFraction: 0.02,
   };
+  const shbgDynamics = metrics?.analytics?.shbgDynamics;
+  const totalTValue = Number(labValues.totalTestosterone ?? 0);
+  const freeTValue = Number(labValues.freeTestosterone ?? 0);
+  const shbgValue = Number(labValues.shbg ?? 0);
+  const freeFractionBase =
+    labValues.freeTestFraction ??
+    (totalTValue > 0 ? freeTValue / totalTValue : 0);
+  const rawFreeFractionPercent = Math.max(0, (freeFractionBase || 0) * 100);
+  const freeFractionPercent = Number.isFinite(rawFreeFractionPercent)
+    ? rawFreeFractionPercent
+    : 0;
+  const shbgBindingCapacity = Number(shbgDynamics?.bindingCapacity ?? 0);
+  const shbgUtilizedCapacity = Number(shbgDynamics?.utilizedCapacity ?? 0);
+  const shbgSuppressionPct = Math.round(
+    Math.max(0, (shbgDynamics?.suppressionFactor ?? 0) * 100),
+  );
+  const shbgInductionPct = Math.round(
+    Math.max(0, (shbgDynamics?.inductionFactor ?? 0) * 100),
+  );
 
   const totals = metrics?.totals;
 
@@ -230,6 +250,58 @@ const LabReportCard = ({ stack, metrics }) => {
         <div className="my-3 border-t border-physio-border-subtle/50" />
 
         <LabRow
+          label="Total Test"
+          value={totalTValue.toFixed(0)}
+          unit="ng/dL"
+          status={getStatus(totalTValue, {
+            critical: 4000,
+            warning: 2500,
+            lowWarning: 300,
+            lowCritical: 100,
+          })}
+          reference="300-1200"
+        />
+
+        <LabRow
+          label="Free Test"
+          value={freeTValue.toFixed(1)}
+          unit="ng/dL"
+          status={getStatus(freeTValue, {
+            critical: 100,
+            warning: 60,
+            lowWarning: 8,
+            lowCritical: 3,
+          })}
+          reference="8-30"
+        />
+
+        <LabRow
+          label="SHBG"
+          value={shbgValue.toFixed(1)}
+          unit="nmol/L"
+          status={getStatus(shbgValue, {
+            critical: 70,
+            warning: 55,
+            lowWarning: 12,
+            lowCritical: 5,
+          })}
+          reference="15-40"
+        />
+
+        <LabRow
+          label="Free T %"
+          value={freeFractionPercent.toFixed(1)}
+          unit="%"
+          status={getStatus(freeFractionPercent, {
+            critical: 6,
+            warning: 4.5,
+            lowWarning: 1.0,
+            lowCritical: 0.5,
+          })}
+          reference="1-3%"
+        />
+
+        <LabRow
           label="Estradiol"
           value={labValues.estradiol.toFixed(0)}
           unit="pg/mL"
@@ -296,6 +368,50 @@ const LabReportCard = ({ stack, metrics }) => {
               label: "SUPPRESSIVE",
             }}
           />
+        )}
+
+        {shbgDynamics && (
+          <div className="mt-4 space-y-1.5 text-[11px] font-mono text-physio-text-secondary">
+            <div className="text-[10px] uppercase tracking-widest text-physio-text-tertiary">
+              Free Hormone Equilibrium
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <span>
+                SHBG Capacity: {shbgUtilizedCapacity.toFixed(1)} /
+                {" "}
+                {shbgBindingCapacity.toFixed(1)}
+              </span>
+              <span>
+                Suppression: {shbgSuppressionPct}%
+              </span>
+              <span>
+                Induction: {shbgInductionPct}%
+              </span>
+            </div>
+            {shbgDynamics.compounds?.length ? (
+              <div className="space-y-1">
+                {shbgDynamics.compounds.slice(0, 4).map((entry) => (
+                  <div
+                    key={entry.compound}
+                    className="flex items-center justify-between border border-physio-border-subtle/60 rounded px-2 py-1"
+                  >
+                    <span className="text-physio-text-primary">
+                      {entry.label}
+                    </span>
+                    <span className="text-physio-text-secondary">
+                      {((entry.boundFraction ?? 0) * 100).toFixed(1)}% bound ·
+                      {" "}
+                      {((entry.freeFraction ?? 0) * 100).toFixed(1)}% free
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-physio-text-tertiary">
+                No SHBG-binding compounds active.
+              </div>
+            )}
+          </div>
         )}
       </div>
 

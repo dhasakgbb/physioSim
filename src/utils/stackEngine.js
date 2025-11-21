@@ -22,6 +22,7 @@ import {
   calculateSystemLoad,
   calculateProjectedLabsWidget,
 } from "./simulationEngine.js";
+import { DEFAULT_HILL_PARAMS } from "../data/constants.js";
 
 // ============================================================================
 // CONSTANTS & CONFIGURATION
@@ -63,7 +64,124 @@ const DEFAULT_CONCENTRATIONS = {
 };
 
 const DEFAULT_INJECTABLE_CONCENTRATION = 200;
-const FREE_HORMONE_TARGETS = new Set(["testosterone", "eq"]);
+const DEFAULT_EFFICACY = 10;
+const MIN_POTENCY = 0.1;
+const MIN_EC50 = 1;
+const HILL_PARAM_CACHE = new WeakMap();
+
+const safeNumber = (value, fallback = 0) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+};
+
+const getCurveMax = (curve = []) => {
+  if (!Array.isArray(curve) || !curve.length) return 0;
+  return curve.reduce((max, point) => {
+    const val = safeNumber(point?.value, 0);
+    return val > max ? val : max;
+  }, 0);
+};
+
+const findHalfMaxDose = (curve = [], halfMax = 0) => {
+  if (!Array.isArray(curve) || curve.length < 2 || halfMax <= 0) {
+    return 0;
+  }
+
+  for (let i = 0; i < curve.length - 1; i++) {
+    const current = curve[i];
+    const next = curve[i + 1];
+    const currentValue = safeNumber(current?.value, 0);
+    const nextValue = safeNumber(next?.value, 0);
+    const crossesHalf =
+      (currentValue - halfMax) === 0 ||
+      (nextValue - halfMax) === 0 ||
+      (currentValue - halfMax) * (nextValue - halfMax) < 0;
+
+    if (!crossesHalf) continue;
+
+    const currentDose = safeNumber(current?.dose, 0);
+    const nextDose = safeNumber(next?.dose, 0);
+    const deltaValue = nextValue - currentValue;
+    if (Math.abs(deltaValue) < 1e-6) {
+      return Math.max(MIN_EC50, nextDose);
+    }
+
+    const ratio = (halfMax - currentValue) / deltaValue;
+    const interpolatedDose = currentDose + ratio * (nextDose - currentDose);
+    if (Number.isFinite(interpolatedDose) && interpolatedDose > 0) {
+      return Math.max(MIN_EC50, interpolatedDose);
+    }
+  }
+
+  return 0;
+};
+
+const deriveHillParams = (meta = {}) => {
+  if (!meta || typeof meta !== "object") {
+    return {
+      emax: DEFAULT_EFFICACY,
+      ec50: DEFAULT_HILL_PARAMS.D50,
+      hillCoefficient: DEFAULT_HILL_PARAMS.N,
+    };
+  }
+
+  if (HILL_PARAM_CACHE.has(meta)) {
+    return HILL_PARAM_CACHE.get(meta);
+  }
+
+  const customSignal = meta.signal || meta.signalModel || {};
+  const emaxCandidate = safeNumber(
+    customSignal.emax ?? meta.emax ?? meta.maxSignal,
+    0,
+  );
+  const curveMax = getCurveMax(meta.benefitCurve);
+  const emax = Math.max(0, emaxCandidate || curveMax || DEFAULT_EFFICACY);
+
+  const explicitEc50 = safeNumber(customSignal.ec50 ?? meta.ec50, 0);
+  let ec50 = explicitEc50;
+  if (!ec50 || ec50 <= 0) {
+    const potency = Math.max(
+      MIN_POTENCY,
+      safeNumber(customSignal.potency ?? meta.potency ?? meta.basePotency, 1),
+    );
+    const derivedFromCurve = findHalfMaxDose(meta.benefitCurve, emax / 2);
+    ec50 = derivedFromCurve || DEFAULT_HILL_PARAMS.D50 / potency;
+  }
+  ec50 = Math.max(MIN_EC50, ec50);
+
+  const hillCoefficient = Math.max(
+    0.5,
+    safeNumber(
+      customSignal.hillCoefficient ??
+        customSignal.n ??
+        meta.hillCoefficient ??
+        DEFAULT_HILL_PARAMS.N,
+      DEFAULT_HILL_PARAMS.N,
+    ),
+  );
+
+  const params = { emax, ec50, hillCoefficient };
+  HILL_PARAM_CACHE.set(meta, params);
+  return params;
+};
+
+const hillResponse = (dose, { emax, ec50, hillCoefficient }) => {
+  const concentration = Math.max(0, safeNumber(dose, 0));
+  if (concentration <= 0 || !Number.isFinite(emax) || emax <= 0) return 0;
+  const n = hillCoefficient || DEFAULT_HILL_PARAMS.N;
+  const poweredDose = Math.pow(concentration, n);
+  const poweredEc50 = Math.pow(Math.max(MIN_EC50, ec50), n);
+  if (!Number.isFinite(poweredDose) || !Number.isFinite(poweredEc50)) return 0;
+  const denominator = poweredEc50 + poweredDose;
+  if (denominator <= 0) return 0;
+  return (emax * poweredDose) / denominator;
+};
+
+export const evaluateHillSignal = (dose, meta) => {
+  const params = deriveHillParams(meta);
+  const value = hillResponse(dose, params);
+  return { value, params };
+};
 
 const buildPhysicsStack = (activeCompounds, stackInput = []) => {
   if (!Array.isArray(activeCompounds) || !activeCompounds.length) return [];
@@ -339,26 +457,58 @@ const getWeeklyDose = (dose, isOral) => {
   return isOral ? dose * 7 : dose;
 };
 
-const calculateFreeHormoneMultiplier = (compounds, doses) => {
-  let suppressionLoad = 0;
+const calculateShbgSynergy = (stackInput = [], compoundDictionary = compoundData) => {
+  if (!Array.isArray(stackInput) || !stackInput.length) {
+    return { multiplier: 1.0, score: 0, contributions: [] };
+  }
 
-  compounds.forEach((code) => {
-    const meta = compoundData[code];
-    if (!meta) return;
-    const shbgImpact = meta.biomarkers?.shbg || 0;
-    if (shbgImpact >= 0) return;
-    const dose = doses[code] ?? 0;
-    if (!dose) return;
-    const isOral = meta.type === "oral";
-    const weeklyDose = getWeeklyDose(dose, isOral);
-    const reference = isOral ? 350 : 700;
-    const normalizedLoad = Math.max(0, weeklyDose / reference);
-    suppressionLoad += Math.abs(shbgImpact) * normalizedLoad;
+  let totalReliefScore = 0;
+  const contributions = [];
+
+  stackInput.forEach((entry) => {
+    if (!entry) return;
+    const compoundKey = entry.compound || entry.id;
+    if (!compoundKey) return;
+    const cmp = compoundDictionary[compoundKey];
+    if (!cmp) return;
+    const reliefScore = Number(cmp.shbgRelief) || 0;
+    if (reliefScore <= 0) return;
+
+    const doseValue = Number(entry.dose ?? entry.weeklyDose ?? entry.rawDose ?? 0);
+    if (!Number.isFinite(doseValue) || doseValue <= 0) return;
+
+    const esterKey = entry.ester || cmp.defaultEster;
+    const isOral = isOralUsage(cmp, compoundKey, esterKey);
+    const weeklyDose = getWeeklyDose(doseValue, isOral);
+    const dailyDose = Math.max(0, weeklyDose / 7);
+    if (dailyDose <= 0) return;
+
+    const doseScalar = Math.log(dailyDose + 1) / 3.5;
+    if (doseScalar <= 0) return;
+
+    const contribution = reliefScore * doseScalar;
+    totalReliefScore += contribution;
+    contributions.push({
+      compound: compoundKey,
+      label: cmp.abbreviation || cmp.name || compoundKey,
+      reliefScore: Number(contribution.toFixed(2)),
+    });
   });
 
-  if (suppressionLoad <= 0) return 1.0;
-  const clamped = Math.min(3, suppressionLoad);
-  return 1 + (clamped / 3) * 0.3;
+  if (totalReliefScore <= 0) {
+    return { multiplier: 1.0, score: 0, contributions: [] };
+  }
+
+  contributions.sort((a, b) => b.reliefScore - a.reliefScore);
+
+  const rawMultiplier = 1 + totalReliefScore / 25;
+  const multiplier = Math.min(1.35, rawMultiplier);
+
+  return {
+    multiplier,
+    score: totalReliefScore,
+    contributions,
+  };
 };
 
 /**
@@ -632,7 +782,24 @@ export const evaluateStack = ({
   // so time-based multipliers collapse into the profile-specific recovery penalty only.
   const suppressionPenalty = recoveryPenalty;
 
-  const freeHormoneMultiplier = calculateFreeHormoneMultiplier(compounds, doses);
+  const shbgSynergy = calculateShbgSynergy(stackInput, compoundData);
+  const baseFreeHormoneMultiplier = 1.0;
+  const freeHormoneMultiplier = shbgSynergy?.multiplier || 1.0;
+  const shbgSynergyAnalytics = (() => {
+    if (!shbgSynergy || shbgSynergy.score <= 0) return null;
+    const synergyMultiplier = Number((shbgSynergy.multiplier || 1).toFixed(3));
+    const percentBoost = Math.max(0, Math.round((synergyMultiplier - 1) * 100));
+    return {
+      multiplier: synergyMultiplier,
+      synergyMultiplier,
+      percentBoost,
+      score: Number(shbgSynergy.score.toFixed(2)),
+      sources: shbgSynergy.contributions,
+      contributions: shbgSynergy.contributions,
+      baseFreeHormoneMultiplier: Number(baseFreeHormoneMultiplier.toFixed(3)),
+      combinedFreeHormoneMultiplier: Number(freeHormoneMultiplier.toFixed(3)),
+    };
+  })();
 
   // 2. Primary Compound Loop
   compounds.forEach((code) => {
@@ -686,8 +853,7 @@ export const evaluateStack = ({
     }
 
     // E. Benefit & Risk Evaluation (Curve Lookup)
-    const receivesFreeHormoneBoost =
-      FREE_HORMONE_TARGETS.has(code) && meta.type === "injectable";
+    const receivesFreeHormoneBoost = Boolean(meta.shbgBindable) && meta.type === "injectable";
     const benefitDose = receivesFreeHormoneBoost
       ? dose * freeHormoneMultiplier
       : dose;
@@ -700,7 +866,11 @@ export const evaluateStack = ({
     );
     const riskRes = evaluateCompoundResponse(code, "risk", dose, profile);
 
-    let benefitVal = benefitRes?.value ?? 0;
+    const hillSignal = evaluateHillSignal(benefitDose, meta);
+
+    let benefitVal = Number.isFinite(hillSignal?.value)
+      ? hillSignal.value
+      : benefitRes?.value ?? 0;
     let riskVal = riskRes?.value ?? 0;
 
     // Apply Experience Multipliers
@@ -820,7 +990,11 @@ export const evaluateStack = ({
     state.byCompound[code] = {
       benefit: benefitVal,
       risk: riskVal,
-      meta: { benefit: benefitRes?.meta, risk: riskRes?.meta },
+      meta: {
+        benefit: benefitRes?.meta,
+        risk: riskRes?.meta,
+        signalModel: hillSignal?.params,
+      },
     };
   });
 
@@ -924,6 +1098,9 @@ export const evaluateStack = ({
   const physicsMetrics = calculateCycleMetrics(physicsStack, compoundData);
   const projectedLabs = physicsMetrics.projectedLabs;
   const legacySystemLoad = physicsMetrics.systemLoad;
+  const cnsProfile = physicsMetrics.cnsProfile;
+  const receptorCompetition = physicsMetrics.receptorCompetition;
+  const shbgDynamics = physicsMetrics.shbgDynamics;
 
   const logistics = calculateInjectionLogistics(state.activeCompounds);
 
@@ -978,11 +1155,27 @@ export const evaluateStack = ({
     0,
   ) / 100;
   const fatigueScore = Math.pow(fatigueScalar, 1.1) * 2.5 + systemicStress * 2.0;
-  const workoutQuality = {
-    drive: Number(state.neuralDriveScore.toFixed(2)),
-    fatigue: Number(fatigueScore.toFixed(2)),
-    net: Number((state.neuralDriveScore - fatigueScore).toFixed(2)),
-  };
+  const fallbackDrive = Number(state.neuralDriveScore.toFixed(2));
+  const fallbackFatigue = Number(fatigueScore.toFixed(2));
+  const fallbackNet = Number((state.neuralDriveScore - fatigueScore).toFixed(2));
+  const workoutQuality = cnsProfile
+    ? {
+        drive: Number(cnsProfile.drive.toFixed(2)),
+        fatigue: Number(cnsProfile.fatigue.toFixed(2)),
+        net: Number(cnsProfile.net.toFixed(2)),
+        state: cnsProfile.state,
+        detail: cnsProfile.detail,
+      }
+    : {
+        drive: fallbackDrive,
+        fatigue: fallbackFatigue,
+        net: fallbackNet,
+        state: fallbackDrive > fallbackFatigue ? "BALANCED" : "OVERREACHED",
+        detail:
+          fallbackDrive > fallbackFatigue
+            ? "Drive and fatigue in equilibrium."
+            : "Fatigue is overtaking neural output.",
+      };
 
   // 8. Construct Result
   const interactionWarnings = getInteractionWarnings(compounds, profile);
@@ -1011,7 +1204,11 @@ export const evaluateStack = ({
       physicsMeta: physicsMetrics.meta,
       physicsGains: physicsMetrics.projectedGains,
       physicsSystemLoad: legacySystemLoad,
+      cnsProfile,
       workoutQuality,
+      shbgSynergy: shbgSynergyAnalytics,
+      receptorCompetition,
+      shbgDynamics,
     },
     totals: {
       baseBenefit: state.genomicBenefit + state.nonGenomicBenefit,
