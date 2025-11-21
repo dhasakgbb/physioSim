@@ -1,24 +1,10 @@
 import React, { useState } from "react";
-import NetEffectChart from "./NetEffectChart";
 import SerumStabilityChart from "./SerumStabilityChart";
 import CycleEvolutionChart from "./CycleEvolutionChart";
 import OptimizerPane from "./OptimizerPane";
 import SignalingNetwork from "./SignalingNetwork";
 import { useStack } from "../../context/StackContext";
-
-const EfficiencySplitView = ({ onTimeScrub }) => (
-  <div className="flex h-full bg-[#0B0C0E] relative overflow-hidden">
-    <div className="flex-1 relative p-6">
-      <div className="absolute top-4 left-6 z-10 pointer-events-none">
-        <h3 className="text-xs font-bold text-gray-200 uppercase tracking-widest">Dose Efficiency</h3>
-        <p className="text-[10px] text-gray-500 font-mono mt-1">Benefit vs Toxicity</p>
-      </div>
-      <div className="h-full w-full">
-        <NetEffectChart onTimeScrub={onTimeScrub} />
-      </div>
-    </div>
-  </div>
-);
+import { CenterPane } from "./CenterPane";
 
 const TabbedChartCanvas = ({ onTimeScrub }) => {
   const { stack, userProfile, setUserProfile, setStack, metrics } = useStack();
@@ -34,7 +20,7 @@ const TabbedChartCanvas = ({ onTimeScrub }) => {
 
   const renderActiveChart = () => {
     if (activeTab === 'efficiency') {
-      return <EfficiencySplitView onTimeScrub={onTimeScrub} />;
+      return <CenterPane onTimeScrub={onTimeScrub} />;
     }
 
     if (activeTab === 'serum') {

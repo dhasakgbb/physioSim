@@ -1,5 +1,4 @@
 import React, { useMemo } from "react";
-import { PerformanceEqualizer } from "./PerformanceEqualizer";
 
 const DEFAULT_LABS = {
   hdl: 45,
@@ -35,31 +34,6 @@ export const RightInspector = ({ metrics, steadyStateMetrics, scrubbedPoint = nu
   };
 
   const { netScore = 0, totalRisk = 0 } = totals;
-
-  const stats = useMemo(
-    () => [
-      {
-        id: "efficiency",
-        label: "Net Efficiency",
-        value: `${netScore >= 0 ? "+" : ""}${netScore.toFixed(2)}`,
-        unit: "pts",
-        color: netScore >= 0 ? "text-emerald-400" : "text-orange-400",
-      },
-      {
-        id: "systemic",
-        label: "Systemic Cost",
-        value: totalRisk.toFixed(1),
-        unit: "/15.0",
-        color:
-          totalRisk >= 10
-            ? "text-red-400"
-            : totalRisk >= 6
-              ? "text-orange-400"
-              : "text-emerald-400",
-      },
-    ],
-    [netScore, totalRisk],
-  );
 
   const saturationRows = useMemo(() => {
     const pathwayLoads = metrics?.analytics?.pathwayLoads || {};
@@ -113,24 +87,6 @@ export const RightInspector = ({ metrics, steadyStateMetrics, scrubbedPoint = nu
 
   return (
     <div className="flex flex-col h-full bg-[#0F1115] border-l border-white/5 overflow-y-auto scrollbar-hide">
-      <div className="grid grid-cols-2 gap-px bg-white/5 border-b border-white/5">
-        {stats.map((stat) => (
-          <StatBox
-            key={stat.id}
-            label={stat.label}
-            value={stat.value}
-            unit={stat.unit}
-            color={stat.color}
-          />
-        ))}
-      </div>
-
-      <div className="border-b border-white/5">
-        <div className="h-64">
-          <PerformanceEqualizer />
-        </div>
-      </div>
-
       <div className="p-4 border-b border-white/5">
         <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4">
           Receptor Saturation
@@ -160,16 +116,6 @@ export const RightInspector = ({ metrics, steadyStateMetrics, scrubbedPoint = nu
     </div>
   );
 };
-
-const StatBox = ({ label, value, unit, color }) => (
-  <div className="flex flex-col items-center justify-center py-4 bg-[#0F1115]">
-    <span className="text-[10px] font-medium text-gray-500 uppercase">{label}</span>
-    <div className="flex items-baseline mt-1">
-      <span className={`text-xl font-mono font-medium ${color}`}>{value}</span>
-      <span className="ml-1 text-[10px] text-gray-600">{unit}</span>
-    </div>
-  </div>
-);
 
 const SaturationRow = ({ label, percent, color }) => (
   <div className="mb-3 last:mb-0">

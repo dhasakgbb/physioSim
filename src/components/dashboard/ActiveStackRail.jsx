@@ -172,8 +172,13 @@ const CompoundSelector = ({ isOpen, onClose }) => {
   );
 };
 
-const StackCard = ({ item }) => {
-  const [isExpanded, setIsExpanded] = React.useState(false);
+const StackCard = ({ item, autoExpand }) => {
+  const [isExpanded, setIsExpanded] = useState(Boolean(autoExpand));
+  useEffect(() => {
+    if (autoExpand) {
+      setIsExpanded(true);
+    }
+  }, [autoExpand]);
   const { setInspectedCompound } = useStack();
   const {
     updateDose,
@@ -342,6 +347,25 @@ const ActiveStackRail = () => {
   const { compounds } = useSimulation();
   const stack = compounds;
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+  const prevKeysRef = React.useRef(new Set());
+  const hasHydratedRef = React.useRef(false);
+  const newlyAddedKeys = React.useMemo(() => {
+    const previous = prevKeysRef.current;
+    const currentKeys = new Set(stack.map((item) => item.compound));
+    const added = new Set();
+
+    if (hasHydratedRef.current) {
+      stack.forEach((item) => {
+        if (!previous.has(item.compound)) {
+          added.add(item.compound);
+        }
+      });
+    }
+
+    prevKeysRef.current = currentKeys;
+    hasHydratedRef.current = true;
+    return added;
+  }, [stack]);
 
   const openSelector = useCallback(() => setIsSelectorOpen(true), []);
   const closeSelector = useCallback(() => setIsSelectorOpen(false), []);
@@ -415,7 +439,13 @@ const ActiveStackRail = () => {
         {stack.length === 0 ? (
           <EmptyStackState />
         ) : (
-          stack.map((item) => <StackCard key={item.compound} item={item} />)
+          stack.map((item) => (
+            <StackCard
+              key={item.compound}
+              item={item}
+              autoExpand={newlyAddedKeys.has(item.compound)}
+            />
+          ))
         )}
       </div>
     </div>

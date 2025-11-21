@@ -1,74 +1,155 @@
-import React from "react";
+import React, { useMemo } from "react";
+import { defaultProfile } from "../../utils/personalization";
 
-// MOCK DATA: "Base" is natural limit. "Boost" is from the stack.
-const PERFORMANCE_METRICS = [
-  { id: "mass", label: "Hypertrophy", bio: "Nitrogen", base: 60, boost: 35 }, // Total 95%
-  { id: "str", label: "Strength", bio: "Neural Drive", base: 50, boost: 65 }, // Total 115% (Supra-physiological)
-  { id: "end", label: "Endurance", bio: "RBC / EPO", base: 70, boost: 10 },
-  { id: "joint", label: "Collagen", bio: "Synthesis", base: 40, boost: 5 },
-  { id: "fat", label: "Lipolysis", bio: "Metabolism", base: 50, boost: 40 },
+const clamp = (value, min = 0, max = 100) => Math.min(Math.max(value, min), max);
+
+const METRIC_CONFIG = [
+  {
+    id: "mass",
+    label: "Hypertrophy",
+    bio: "Nitrogen Flux",
+    accent: "#34D399",
+    limit: 320,
+    base: 42,
+    getLoad: ({ pathwayLoads, totals }) =>
+      (pathwayLoads.ar_genomic || 0) + (totals.genomicBenefit || 0) * 3,
+  },
+  {
+    id: "strength",
+    label: "Strength",
+    bio: "Neural Drive",
+    accent: "#818CF8",
+    limit: 260,
+    base: 40,
+    getLoad: ({ pathwayLoads }) =>
+      (pathwayLoads.non_genomic || 0) + (pathwayLoads.neuro || 0),
+  },
+  {
+    id: "endurance",
+    label: "Endurance",
+    bio: "RBC / Cardio",
+    accent: "#38BDF8",
+    limit: 220,
+    base: 48,
+    getLoad: ({ pathwayLoads }) => pathwayLoads.heart || 0,
+  },
+  {
+    id: "collagen",
+    label: "Collagen",
+    bio: "Tendon Shield",
+    accent: "#FBBF24",
+    limit: 160,
+    base: 35,
+    getLoad: ({ pathwayLoads }) => pathwayLoads.cortisol || 0,
+  },
+  {
+    id: "lipolysis",
+    label: "Lipolysis",
+    bio: "Metabolism",
+    accent: "#F472B6",
+    limit: 200,
+    base: 38,
+    getLoad: ({ pathwayLoads, totals }) =>
+      (pathwayLoads.shbg || 0) + (totals.nonGenomicBenefit || 0) * 2,
+  },
 ];
 
-export const PerformanceEqualizer = () => {
-  return (
-    <div className="flex flex-col h-full w-full bg-[#0B0C0E] border-l border-white/5 relative p-4">
-      {/* Header */}
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h3 className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Phenotype Projector</h3>
-          <p className="text-[9px] text-gray-500">PROJECTED CAPABILITIES</p>
-        </div>
+const deriveBase = (config, profile) => {
+  if (!profile) return config.base;
+  if (config.id === "strength" && profile.trainingStyle === "powerlifting") {
+    return config.base + 10;
+  }
+  if (config.id === "endurance" && profile.trainingStyle === "crossfit") {
+    return config.base + 8;
+  }
+  if (config.id === "lipolysis" && profile.dietState === "cutting") {
+    return config.base + 6;
+  }
+  return config.base;
+};
 
-        {/* The "Supra" Badge */}
-        <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
-          <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[10px] text-emerald-400 font-mono">ENHANCED</span>
+export const PerformanceEqualizer = ({ metrics, profile = defaultProfile }) => {
+  const pathwayLoads = metrics?.analytics?.pathwayLoads || {};
+  const totals = metrics?.totals || {};
+
+  const projectorData = useMemo(() => {
+    return METRIC_CONFIG.map((config) => {
+      const rawLoad = config.getLoad({ pathwayLoads, totals }) || 0;
+      const normalized = clamp(rawLoad / config.limit, 0, 1);
+      const baseHeight = clamp(deriveBase(config, profile), 18, 70);
+      const boostHeight = clamp(normalized * 70, 0, 80);
+      const totalHeight = baseHeight + boostHeight;
+      const isSupra = totalHeight > 100;
+      return {
+        ...config,
+        baseHeight,
+        boostHeight: Math.max(Math.min(totalHeight, 120) - baseHeight, 2),
+        isSupra,
+        signal: normalized,
+        totalHeight,
+      };
+    });
+  }, [pathwayLoads, totals, profile]);
+
+  return (
+    <div className="flex h-full w-full flex-col rounded-3xl border border-white/5 bg-gradient-to-b from-[#0d0f14] to-[#050608] p-5 shadow-inner shadow-black/40">
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.45em] text-emerald-400">Phenotype Projector</p>
+          <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500">Projected Capabilities</p>
+        </div>
+        <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-[10px] font-mono text-emerald-300">Enhanced</span>
         </div>
       </div>
 
-      {/* The Equalizer Stage */}
-      <div className="flex-1 flex items-end justify-between gap-2 relative">
-        {/* The "Natural Genetic Limit" Line */}
-        <div className="absolute top-[30%] w-full flex flex-col pointer-events-none z-10">
-          <div className="w-full h-px bg-white/10 border-t border-dashed border-gray-600" />
-          <span className="text-[8px] text-gray-600 uppercase font-mono mt-1 text-right">Genetic Limit</span>
+      <div className="relative flex flex-1 items-end gap-3">
+        <div className="pointer-events-none absolute top-[32%] left-0 right-0 z-10 flex flex-col items-end text-[8px] font-mono uppercase tracking-widest text-gray-500">
+          <div className="h-px w-full border-t border-dashed border-white/20" />
+          <span className="mt-1">Genetic Limit</span>
         </div>
 
-        {/* The Bars */}
-        {PERFORMANCE_METRICS.map((metric) => {
-          const total = metric.base + metric.boost;
-          const isSupra = total > 100; // Crossed genetic limit
-
+        {projectorData.map((metric) => {
+          const gradientId = `phenotype-${metric.id}`;
           return (
-            <div key={metric.id} className="flex flex-col items-center gap-2 h-full w-full group">
-              {/* The Bar Container */}
-              <div className="relative w-full h-full bg-white/5 rounded-sm overflow-hidden flex flex-col justify-end">
-                {/* 1. Base Potential (Natural) */}
+            <div key={metric.id} className="flex h-full w-full flex-col items-center gap-2">
+              <svg className="hidden">
+                <defs>
+                  <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#ffffff" stopOpacity="0.15" />
+                    <stop offset="100%" stopColor={metric.accent} stopOpacity="0.85" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div className="relative flex h-full w-full flex-col justify-end overflow-hidden rounded-md bg-white/5">
                 <div
-                  className="w-full bg-gray-700/30 border-t border-gray-600 transition-all duration-500"
-                  style={{ height: `${metric.base}%` }}
+                  className="w-full border-t border-white/10 bg-gradient-to-b from-white/10 to-white/0"
+                  style={{ height: `${metric.baseHeight}%` }}
                 />
-
-                {/* 2. The Stack Boost (The Drug Effect) */}
                 <div
-                  className={`w-full transition-all duration-500 relative border-t ${
-                    isSupra
-                      ? "bg-indigo-500 shadow-[0_0_15px_rgba(94,106,210,0.5)] border-indigo-400"
-                      : "bg-emerald-500 border-emerald-400"
-                  }`}
-                  style={{ height: `${metric.boost}%` }}
+                  className="relative w-full border-t border-white/10 shadow-[0_0_10px_rgba(255,255,255,0.12)]"
+                  style={{
+                    height: `${metric.boostHeight}%`,
+                    backgroundImage: `linear-gradient(180deg, ${metric.accent} 0%, rgba(5,6,8,0.2) 110%)`,
+                  }}
                 >
-                  {/* Scanline Effect */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent opacity-50" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.35),transparent_55%)] opacity-70" />
+                  {metric.isSupra && (
+                    <div className="absolute top-2 right-2 rounded-full border border-white/30 bg-white/10 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-white">
+                      Supra
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {/* Labels */}
               <div className="text-center">
-                <div className={`text-[10px] font-bold ${isSupra ? "text-indigo-400" : "text-gray-400"}`}>
+                <p className={`text-[11px] font-semibold tracking-wide ${metric.isSupra ? "text-indigo-300" : "text-gray-200"}`}>
                   {metric.label}
-                </div>
-                <div className="text-[8px] text-gray-600 font-mono uppercase tracking-tight">{metric.bio}</div>
+                </p>
+                <p className="text-[8px] font-mono uppercase tracking-tight text-gray-500">{metric.bio}</p>
+                <p className="text-[9px] font-mono text-gray-400">
+                  +{Math.round(metric.signal * 60)} pts
+                </p>
               </div>
             </div>
           );
