@@ -50,18 +50,6 @@ const ActiveSchematic = ({ activeDose, geneticCapacity, saturationMetrics, recep
     return { name: "BASELINE", color: COLORS.textDim, desc: "Standard Response" };
   }, [adaptationPhase, isHardCap]);
 
-  // Saturation Curve Data (for visualization)
-  const curvePoints = useMemo(() => {
-    const points = [];
-    for (let dose = 0; dose <= 300; dose += 10) {
-      const eff = geneticCapacity > 0 ? Math.min(100, (geneticCapacity / (geneticCapacity + (dose - geneticCapacity > 0 ? dose - geneticCapacity : 0))) * 100) : 0;
-      points.push({ dose, efficiency: eff });
-    }
-    return points;
-  }, [geneticCapacity]);
-
-  const currentDoseIndex = curvePoints.findIndex(p => p.dose >= totalBound + totalSpillover);
-
   // 12 Pathways data
   const pathways = useMemo(() => [
     { name: "GENOMIC", value: Math.min(150, genomicPct), status: genomicPct > 80 ? "Maximal" : genomicPct > 50 ? "Active" : "Low", color: COLORS.accent2 },
@@ -143,52 +131,6 @@ const ActiveSchematic = ({ activeDose, geneticCapacity, saturationMetrics, recep
             <PathwayCard key={i} {...pathway} delay={i * 0.03} />
           ))}
         </div>
-      </div>
-
-      {/* ROW 2: SATURATION CURVE */}
-      <div className="h-[100px] bg-[#161719] border border-[#2C2D30] rounded p-3">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-[9px] text-[#6B7280] uppercase tracking-widest">DOSE-EFFICIENCY RESPONSE CURVE</h3>
-          <div className="text-[8px] text-[#6B7280] font-mono">
-            Current: {Math.round(totalBound + totalSpillover)} mg/day @ {Math.round(efficiency)}%
-          </div>
-        </div>
-        <svg width="100%" height="60" viewBox="0 0 600 60" preserveAspectRatio="none">
-          {/* Grid Lines */}
-          <line x1="0" y1="0" x2="600" y2="0" stroke="#2C2D30" strokeWidth="0.5" />
-          <line x1="0" y1="30" x2="600" y2="30" stroke="#2C2D30" strokeWidth="0.5" strokeDasharray="2 2" opacity="0.5" />
-          <line x1="0" y1="60" x2="600" y2="60" stroke="#2C2D30" strokeWidth="0.5" />
-          
-          {/* Efficiency Curve */}
-          <path
-            d={curvePoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${(p.dose / 300) * 600} ${60 - (p.efficiency / 100) * 60}`).join(' ')}
-            stroke={COLORS.accent2}
-            strokeWidth="2"
-            fill="none"
-          />
-          
-          {/* Current Position Marker */}
-          <circle
-            cx={(Math.min(300, totalBound + totalSpillover) / 300) * 600}
-            cy={60 - (efficiency / 100) * 60}
-            r="4"
-            fill={phaseInfo.color}
-            stroke={COLORS.bg}
-            strokeWidth="2"
-          />
-          
-          {/* Capacity Line */}
-          <line
-            x1={(geneticCapacity / 300) * 600}
-            y1="0"
-            x2={(geneticCapacity / 300) * 600}
-            y2="60"
-            stroke={COLORS.accent4}
-            strokeWidth="1"
-            strokeDasharray="3 3"
-            opacity="0.6"
-          />
-        </svg>
       </div>
     </div>
   );

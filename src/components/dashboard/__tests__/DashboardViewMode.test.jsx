@@ -93,6 +93,15 @@ vi.mock("../ActiveStackRail", () => ({
   default: () => <div data-testid="stack-rail" />,
 }));
 
+vi.mock("../CenterPane", () => {
+  const MockCenterPane = () => <div data-testid="net-chart">Net chart</div>;
+  return {
+    __esModule: true,
+    CenterPane: MockCenterPane,
+    default: MockCenterPane,
+  };
+});
+
 vi.mock("../VitalSigns", () => ({
   default: () => <div data-testid="vitals" />,
 }));
@@ -113,8 +122,9 @@ vi.mock("../NetEffectChart", () => ({
   default: () => <div data-testid="net-chart">Net chart</div>,
 }));
 
-vi.mock("../SignalingNetwork", () => ({
-  default: () => <div data-testid="network-chart">Network chart</div>,
+vi.mock("../LinearPathwayFlow", () => ({
+  __esModule: true,
+  default: () => <div data-testid="pathway-flow">Pathway Flow</div>,
 }));
 
 vi.mock("../OptimizerPane", () => ({
@@ -147,8 +157,8 @@ describe("Dashboard tab switching", () => {
     expect(screen.getByTestId("optimizer-pane")).toBeInTheDocument();
 
     await act(async () => {
-      await user.click(screen.getByRole("button", { name: /pathways/i }));
+      await user.click(screen.getByRole("button", { name: /pathway flow/i }));
     });
-    expect(screen.getByTestId("network-chart")).toBeInTheDocument();
+    expect(screen.getByTestId("pathway-flow")).toBeInTheDocument();
   });
 });

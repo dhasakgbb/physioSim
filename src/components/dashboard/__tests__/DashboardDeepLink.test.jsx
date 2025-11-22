@@ -14,14 +14,14 @@ vi.mock("../CenterPane", () => {
   };
 });
 
-vi.mock("../SerumStabilityChart", () => ({
+vi.mock("../LinearPathwayFlow", () => ({
   __esModule: true,
-  default: () => <div data-testid="serum-chart" />,
+  default: () => <div data-testid="pathway-chart" />,
 }));
 
-vi.mock("../CycleEvolutionChart", () => ({
+vi.mock("../OptimizerPane", () => ({
   __esModule: true,
-  default: () => <div data-testid="evolution-chart" />,
+  default: () => <div data-testid="optimizer-pane">Optimizer</div>,
 }));
 
 vi.mock("../SignalingNetwork", () => ({
@@ -43,13 +43,13 @@ describe("Dashboard deep linking", () => {
     window.history.replaceState({}, "", "/");
   });
 
-  it("loads optimize mode when ?view=optimize is present", () => {
+  it("loads optimize mode when ?view=optimize is present", async () => {
     window.history.replaceState({}, "", "/?view=optimize");
     expect(window.location.search).toBe("?view=optimize");
     const params = new URLSearchParams(window.location.search);
     expect(params.get("view")).toBe("optimize");
     renderDashboard();
-    expect(screen.getByTestId("optimizer-pane")).toBeInTheDocument();
+    expect(await screen.findByTestId("optimizer-pane")).toBeInTheDocument();
   });
 
   it("falls back to explore when no view param is provided", () => {

@@ -109,26 +109,26 @@ export const COMPOUNDS: Record<string, ICompoundSchema> = {
       },
       pathwayModulation: {
         genomic: {
-          myogenesis: { Emax: 100, EC50: 10, Hill_n: 1.2 },
-          erythropoiesis: { Emax: 60, EC50: 15, Hill_n: 1.0 },
-          lipolysis: { Emax: 40, EC50: 20, Hill_n: 1.0 }
+          myogenesis: { Emax: 150, EC50: 450, Hill_n: 1.2 },  // High EC50 for "lazy" growth curve
+          erythropoiesis: { Emax: 60, EC50: 400, Hill_n: 1.0 },
+          lipolysis: { Emax: 40, EC50: 350, Hill_n: 1.0 }
         },
         nonGenomic: {
           cns_activation: { Emax: 50, EC50: 30, Hill_n: 1.5 },
-          glycogen_synthesis: { Emax: 60, EC50: 15, Hill_n: 1.0 }
+          glycogen_synthesis: { Emax: 60, EC50: 5, Hill_n: 1.0 }  // Low EC50 for "wall" curve
         },
         systemic: {
-          HPTA_suppression: { Emax: 100, EC50: 5, Hill_n: 2.0 },
+          HPTA_suppression: { Emax: 100, EC50: 5, Hill_n: 2.5 },  // Increased Hill_n for cooperativity
           SHBG_synthesis_modulation: { Emax: -50, EC50: 20, Hill_n: 1.0 }
         }
       }
     },
     toxicity: {
-      hepatic: { modelType: 'Coefficient', parameters: { coefficient: 0.01 } }, // Minimal hepatotoxicity
-      renal: { modelType: 'Coefficient', parameters: { coefficient: 0.04 } }, // Secondary to BP
-      cardiovascular: { modelType: 'Coefficient', parameters: { coefficient: 0.15 } }, // Unbounded risk at megadoses (hematocrit/BP)
-      lipid_metabolism: { modelType: 'Hill_TC50', parameters: { Emax: 150, TC50: 200, Hill_n: 1.5 } }, // HDL suppression
-      neurotoxicity: { modelType: 'Coefficient', parameters: { coefficient: 0.02 } }
+      hepatic: { modelType: 'Hill_TC50', parameters: { Emax: 50, TC50: 800, Hill_n: 2.5 } }, // Minimal but scaled for hockey stick
+      renal: { modelType: 'Hill_TC50', parameters: { Emax: 80, TC50: 600, Hill_n: 2.5 } }, // Secondary to BP, hockey stick
+      cardiovascular: { modelType: 'Hill_TC50', parameters: { Emax: 150, TC50: 400, Hill_n: 2.5 } }, // Hematocrit/BP risk, hockey stick
+      lipid_metabolism: { modelType: 'Hill_TC50', parameters: { Emax: 150, TC50: 200, Hill_n: 2.5 } }, // HDL suppression, increased Hill_n
+      neurotoxicity: { modelType: 'Coefficient', parameters: { coefficient: 0.0 } } // Androgenic, not directly neurotoxic
     },
     provenance: {
       'pk.Vd': {
@@ -253,13 +253,13 @@ export const COMPOUNDS: Record<string, ICompoundSchema> = {
       },
       pathwayModulation: {
         genomic: {
-          myogenesis: { Emax: 120, EC50: 8, Hill_n: 1.2 },
-          erythropoiesis: { Emax: 40, EC50: 20, Hill_n: 1.0 },
-          lipolysis: { Emax: 20, EC50: 30, Hill_n: 1.0 }
+          myogenesis: { Emax: 140, EC50: 480, Hill_n: 1.2 },  // High EC50 for lazy growth
+          erythropoiesis: { Emax: 40, EC50: 420, Hill_n: 1.0 },
+          lipolysis: { Emax: 20, EC50: 380, Hill_n: 1.0 }
         },
         nonGenomic: {
           cns_activation: { Emax: 20, EC50: 50, Hill_n: 1.0 }, // Low CNS effects
-          glycogen_synthesis: { Emax: 80, EC50: 10, Hill_n: 1.0 }
+          glycogen_synthesis: { Emax: 80, EC50: 8, Hill_n: 1.0 }  // Low EC50 for wall
         },
         systemic: {
           HPTA_suppression: { Emax: 100, EC50: 2, Hill_n: 3.0 }, // Highly suppressive via PR pathway
@@ -268,11 +268,11 @@ export const COMPOUNDS: Record<string, ICompoundSchema> = {
       }
     },
     toxicity: {
-      hepatic: { modelType: 'Coefficient', parameters: { coefficient: 0.08 } }, // Mild hepatotoxicity (non-C17aa)
-      renal: { modelType: 'Coefficient', parameters: { coefficient: 0.25 } },
-      cardiovascular: { modelType: 'Hill_TC50', parameters: { Emax: 70, TC50: 350, Hill_n: 1.5 } }, // Moderate CV risk
-      lipid_metabolism: { modelType: 'Hill_TC50', parameters: { Emax: 75, TC50: 300, Hill_n: 1.5 } }, // HDL decrease, LDL somewhat decreased
-      neurotoxicity: { modelType: 'Hill_TC50', parameters: { Emax: 80, TC50: 150, Hill_n: 2.0 } } // "Deca Dick"/mood issues via progestogenic pathway
+      hepatic: { modelType: 'Hill_TC50', parameters: { Emax: 60, TC50: 700, Hill_n: 2.5 } }, // Mild but hockey stick
+      renal: { modelType: 'Hill_TC50', parameters: { Emax: 100, TC50: 400, Hill_n: 2.5 } }, // Hockey stick
+      cardiovascular: { modelType: 'Hill_TC50', parameters: { Emax: 120, TC50: 350, Hill_n: 2.5 } }, // Moderate CV risk, hockey stick
+      lipid_metabolism: { modelType: 'Hill_TC50', parameters: { Emax: 100, TC50: 300, Hill_n: 2.5 } }, // HDL decrease, hockey stick
+      neurotoxicity: { modelType: 'Hill_TC50', parameters: { Emax: 80, TC50: 150, Hill_n: 2.5 } } // "Deca Dick", increased Hill_n
     },
     provenance: {
       'pk.CL': {
@@ -366,7 +366,7 @@ export const COMPOUNDS: Record<string, ICompoundSchema> = {
     },
     pk: {
       Vd: 0.7, // L/kg - Estimated; distributes to liver/kidney in veterinary studies
-      CL: calculateCL(3.0), // Based on trenbolone acetate t1/2 ~3 days (ester release)
+      CL: calculateCL(3.0 * 24), // Based on trenbolone acetate t1/2 ~3 days (ester release)
       proteinBinding: { SHBG_Kd: 3.0, Albumin_Kd: 10000 }, // Moderate SHBG binding
       absorption: {},
       esters: {
@@ -387,13 +387,13 @@ export const COMPOUNDS: Record<string, ICompoundSchema> = {
       },
       pathwayModulation: {
         genomic: {
-          myogenesis: { Emax: 150, EC50: 2, Hill_n: 1.5 },
-          erythropoiesis: { Emax: 70, EC50: 10, Hill_n: 1.0 },
-          lipolysis: { Emax: 100, EC50: 5, Hill_n: 1.5 }
+          myogenesis: { Emax: 180, EC50: 500, Hill_n: 1.5 },  // High Emax & High EC50
+          erythropoiesis: { Emax: 70, EC50: 450, Hill_n: 1.0 },
+          lipolysis: { Emax: 120, EC50: 420, Hill_n: 1.5 }
         },
         nonGenomic: {
           cns_activation: { Emax: 100, EC50: 5, Hill_n: 2.0 }, // Aggression/insomnia
-          glycogen_synthesis: { Emax: 90, EC50: 5, Hill_n: 1.0 }
+          glycogen_synthesis: { Emax: 90, EC50: 6, Hill_n: 1.0 }  // Low EC50 for wall
         },
         systemic: {
           HPTA_suppression: { Emax: 100, EC50: 1, Hill_n: 4.0 }, // Complete shutdown
@@ -402,7 +402,7 @@ export const COMPOUNDS: Record<string, ICompoundSchema> = {
       }
     },
     toxicity: {
-      hepatic: { modelType: 'Coefficient', parameters: { coefficient: 0.25 } }, // Moderate hepatotoxicity (non-C17aa)
+      hepatic: { modelType: 'Hill_TC50', parameters: { Emax: 100, TC50: 300, Hill_n: 2.5 } }, // Moderate, hockey stick
       renal: { modelType: 'Hill_TC50', parameters: { Emax: 120, TC50: 80, Hill_n: 2.5 } }, // Severe nephrotoxicity
       cardiovascular: { modelType: 'Hill_TC50', parameters: { Emax: 120, TC50: 60, Hill_n: 2.5 } }, // Severe CV toxicity
       lipid_metabolism: { modelType: 'Hill_TC50', parameters: { Emax: 110, TC50: 50, Hill_n: 2.5 } }, // Severe dyslipidemia
@@ -507,13 +507,13 @@ export const COMPOUNDS: Record<string, ICompoundSchema> = {
       },
       pathwayModulation: {
         genomic: {
-          myogenesis: { Emax: 50, EC50: 20, Hill_n: 1.0 },
-          erythropoiesis: { Emax: 20, EC50: 50, Hill_n: 1.0 },
-          lipolysis: { Emax: 60, EC50: 15, Hill_n: 1.0 }
+          myogenesis: { Emax: 70, EC50: 450, Hill_n: 1.0 },  // Mild but lazy growth
+          erythropoiesis: { Emax: 20, EC50: 400, Hill_n: 1.0 },
+          lipolysis: { Emax: 60, EC50: 350, Hill_n: 1.0 }
         },
         nonGenomic: {
           cns_activation: { Emax: 30, EC50: 40, Hill_n: 1.0 },
-          glycogen_synthesis: { Emax: 40, EC50: 30, Hill_n: 1.0 }
+          glycogen_synthesis: { Emax: 40, EC50: 10, Hill_n: 1.0 }  // Low EC50
         },
         systemic: {
           HPTA_suppression: { Emax: 60, EC50: 50, Hill_n: 1.0 },
@@ -522,11 +522,11 @@ export const COMPOUNDS: Record<string, ICompoundSchema> = {
       }
     },
     toxicity: {
-      hepatic: { modelType: 'Coefficient', parameters: { coefficient: 0.1 } },
-      renal: { modelType: 'Coefficient', parameters: { coefficient: 0.1 } },
-      cardiovascular: { modelType: 'Coefficient', parameters: { coefficient: 0.1 } },
-      lipid_metabolism: { modelType: 'Coefficient', parameters: { coefficient: 0.2 } },
-      neurotoxicity: { modelType: 'Coefficient', parameters: { coefficient: 0.1 } }
+      hepatic: { modelType: 'Hill_TC50', parameters: { Emax: 40, TC50: 900, Hill_n: 2.5 } }, // Very mild, hockey stick
+      renal: { modelType: 'Hill_TC50', parameters: { Emax: 50, TC50: 800, Hill_n: 2.5 } }, // Very mild, hockey stick
+      cardiovascular: { modelType: 'Hill_TC50', parameters: { Emax: 60, TC50: 700, Hill_n: 2.5 } }, // Mild, hockey stick
+      lipid_metabolism: { modelType: 'Hill_TC50', parameters: { Emax: 70, TC50: 600, Hill_n: 2.5 } }, // Mild, hockey stick
+      neurotoxicity: { modelType: 'Hill_TC50', parameters: { Emax: 30, TC50: 900, Hill_n: 2.5 } } // Very mild, hockey stick
     },
     provenance: {
       'pk.CL': {
@@ -583,26 +583,26 @@ export const COMPOUNDS: Record<string, ICompoundSchema> = {
       },
       pathwayModulation: {
         genomic: {
-          myogenesis: { Emax: 100, EC50: 10, Hill_n: 1.2 },
-          erythropoiesis: { Emax: 50, EC50: 20, Hill_n: 1.0 },
-          lipolysis: { Emax: 10, EC50: 100, Hill_n: 1.0 }
+          myogenesis: { Emax: 120, EC50: 420, Hill_n: 1.2 },  // CACHE-BUST-20251122-1825
+          erythropoiesis: { Emax: 50, EC50: 400, Hill_n: 1.0 },
+          lipolysis: { Emax: 10, EC50: 450, Hill_n: 1.0 }
         },
         nonGenomic: {
           cns_activation: { Emax: 80, EC50: 10, Hill_n: 1.5 },
-          glycogen_synthesis: { Emax: 100, EC50: 5, Hill_n: 1.5 }
+          glycogen_synthesis: { Emax: 120, EC50: 4, Hill_n: 1.5 }  // Very low EC50 for rapid wall effect
         },
         systemic: {
-          HPTA_suppression: { Emax: 100, EC50: 5, Hill_n: 2.0 },
+          HPTA_suppression: { Emax: 100, EC50: 5, Hill_n: 2.5 },  // Increased Hill_n
           SHBG_synthesis_modulation: { Emax: -70, EC50: 10, Hill_n: 1.0 }
         }
       }
     },
     toxicity: {
-      hepatic: { modelType: 'Hill_TC50', parameters: { Emax: 100, TC50: 50, Hill_n: 2.0 } },
-      renal: { modelType: 'Coefficient', parameters: { coefficient: 0.5 } },
-      cardiovascular: { modelType: 'Hill_TC50', parameters: { Emax: 80, TC50: 80, Hill_n: 1.5 } },
-      lipid_metabolism: { modelType: 'Hill_TC50', parameters: { Emax: 90, TC50: 60, Hill_n: 1.5 } },
-      neurotoxicity: { modelType: 'Coefficient', parameters: { coefficient: 0.3 } }
+      hepatic: { modelType: 'Hill_TC50', parameters: { Emax: 100, TC50: 50, Hill_n: 2.5 } }, // Increased Hill_n
+      renal: { modelType: 'Hill_TC50', parameters: { Emax: 90, TC50: 150, Hill_n: 2.5 } }, // Converted to Hill, increased Hill_n
+      cardiovascular: { modelType: 'Hill_TC50', parameters: { Emax: 80, TC50: 80, Hill_n: 2.5 } }, // Increased Hill_n
+      lipid_metabolism: { modelType: 'Hill_TC50', parameters: { Emax: 90, TC50: 60, Hill_n: 2.5 } }, // Increased Hill_n
+      neurotoxicity: { modelType: 'Hill_TC50', parameters: { Emax: 70, TC50: 200, Hill_n: 2.5 } } // Converted to Hill
     },
     provenance: {
       'pk.CL': {
@@ -643,7 +643,7 @@ export const COMPOUNDS: Record<string, ICompoundSchema> = {
     },
     pk: {
       Vd: 0.6, // L/kg
-      CL: calculateCL(2.5), // Propionate t1/2 ~2-3 days
+      CL: calculateCL(2.5 * 24), // Propionate t1/2 ~2-3 days
       proteinBinding: { SHBG_Kd: 1.0, Albumin_Kd: 10000 }, // Strong DHT binding
       absorption: {},
       esters: {
@@ -815,13 +815,13 @@ export const COMPOUNDS: Record<string, ICompoundSchema> = {
       },
       pathwayModulation: {
         genomic: {
-          myogenesis: { Emax: 130, EC50: 15, Hill_n: 1.5 }, // Strong mass builder
-          erythropoiesis: { Emax: 120, EC50: 5, Hill_n: 1.5 }, // RBC
-          lipolysis: { Emax: 20, EC50: 50, Hill_n: 1.0 }
+          myogenesis: { Emax: 130, EC50: 420, Hill_n: 1.5 }, // HIGH EC50 for lazy growth (FIXED!)
+          erythropoiesis: { Emax: 120, EC50: 400, Hill_n: 1.5 }, // RBC
+          lipolysis: { Emax: 20, EC50: 450, Hill_n: 1.0 }
         },
         nonGenomic: {
           cns_activation: { Emax: 60, EC50: 20, Hill_n: 1.0 },
-          glycogen_synthesis: { Emax: 120, EC50: 10, Hill_n: 1.5 } // Fullness
+          glycogen_synthesis: { Emax: 140, EC50: 4, Hill_n: 1.5 } // LOW EC50 for wall effect (FIXED!)
         },
         systemic: {
           HPTA_suppression: { Emax: 90, EC50: 10, Hill_n: 2.0 },
@@ -830,11 +830,11 @@ export const COMPOUNDS: Record<string, ICompoundSchema> = {
       }
     },
     toxicity: {
-      hepatic: { modelType: 'Hill_TC50', parameters: { Emax: 130, TC50: 40, Hill_n: 2.5 } }, // Severe hepatotoxicity
-      renal: { modelType: 'Coefficient', parameters: { coefficient: 0.4 } },
-      cardiovascular: { modelType: 'Hill_TC50', parameters: { Emax: 100, TC50: 60, Hill_n: 2.0 } },
-      lipid_metabolism: { modelType: 'Hill_TC50', parameters: { Emax: 100, TC50: 50, Hill_n: 2.0 } },
-      neurotoxicity: { modelType: 'Coefficient', parameters: { coefficient: 0.2 } }
+      hepatic: { modelType: 'Hill_TC50', parameters: { Emax: 100, TC50: 50, Hill_n: 2.5 } }, // Severe hepatotoxicity
+      renal: { modelType: 'Coefficient', parameters: { coefficient: 0.1 } }, // Reduced from 0.4
+      cardiovascular: { modelType: 'Hill_TC50', parameters: { Emax: 80, TC50: 60, Hill_n: 2.0 } },
+      lipid_metabolism: { modelType: 'Hill_TC50', parameters: { Emax: 80, TC50: 50, Hill_n: 2.0 } },
+      neurotoxicity: { modelType: 'Coefficient', parameters: { coefficient: 0.05 } } // Reduced from 0.2
     },
     provenance: {
       'clinical.summary': {

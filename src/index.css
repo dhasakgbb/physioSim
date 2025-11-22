@@ -382,3 +382,18 @@ input[type="range"]:focus::-webkit-slider-runnable-track {
     transform: translateY(65%);
   }
 }
+
+@keyframes flow-pulse {
+  0% {
+    background-position: 0% 50%;
+    opacity: 0.4;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 1;
+  }
+  100% {
+    background-position: 200% 50%;
+    opacity: 0.6;
+  }
+}

@@ -36,3 +36,36 @@ if (typeof global.ResizeObserver === "undefined") {
   }
   global.ResizeObserver = ResizeObserver;
 }
+
+if (typeof global.Worker === "undefined") {
+  class MockWorker {
+    constructor() {
+      this.onmessage = null;
+      this.onerror = null;
+    }
+
+    postMessage() {
+      // No-op; tests mock modules that rely on worker responses.
+    }
+
+    terminate() {}
+
+    addEventListener(type, handler) {
+      if (type === "message") {
+        this.onmessage = handler;
+      } else if (type === "error") {
+        this.onerror = handler;
+      }
+    }
+
+    removeEventListener(type) {
+      if (type === "message") {
+        this.onmessage = null;
+      } else if (type === "error") {
+        this.onerror = null;
+      }
+    }
+  }
+
+  global.Worker = MockWorker;
+}

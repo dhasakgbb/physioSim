@@ -47,8 +47,8 @@ physioSim has successfully transitioned from a heuristic-based compound simulato
 ### Visualization (`src/components/`)
 
 - **DoseEfficiencyChart**: Anabolic signal vs toxicity over time
-- **SerumStabilityChart**: Multi-compound PK curves
-- **CycleEvolutionChart**: Time-series biomarker projections
+- **CyclePhysicsChart**: Cycle-level genomic mass vs toxicity trajectories
+- **LinearPathwayFlow**: Fixed-lane mechanistic pathway visualization
 - **ReceptorSaturationChart**: AR/ER occupancy dynamics
 - **OrganStressHeatmap**: Organ-specific toxicity visualization
 - **AnalyticsPane**: Consolidated chart dashboard

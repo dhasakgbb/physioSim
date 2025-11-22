@@ -1,18 +1,10 @@
 // @ts-nocheck
 import React, { useMemo } from "react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, LabelList } from "recharts";
-import DoseEfficiencyChart from "./DoseEfficiencyChart";
 import { useSystemLoad } from "../../hooks/useSystemLoad";
 import { useProjectedGains } from "../../hooks/useProjectedGains";
 import type { ProjectedVectorMetric } from "../../hooks/useProjectedGains";
-
-type LoadRowProps = {
-  id: string;
-  label: string;
-  percent: number;
-  level: "stable" | "elevated" | "critical";
-  gradient: string;
-};
+import CyclePhysicsChart from "./CyclePhysicsChart";
 
 const LEVEL_META = {
   stable: {
@@ -28,6 +20,14 @@ const LEVEL_META = {
     text: "text-rose-300",
   },
 } as const;
+
+type LoadRowProps = {
+  id: string;
+  label: string;
+  percent: number;
+  level: "stable" | "elevated" | "critical";
+  gradient: string;
+};
 
 const LoadRow: React.FC<LoadRowProps> = ({ label, percent, level, gradient }) => {
   const meta = LEVEL_META[level];
@@ -172,7 +172,7 @@ type CenterPaneProps = {
   onTimeScrub?: (point: unknown) => void;
   scrubbedPoint?: any;
 };
-// ...existing code...
+
 export const CenterPane: React.FC<CenterPaneProps> = ({ onTimeScrub, scrubbedPoint }) => {
   const { categories, systemIndex, systemLevel, dominantCategory } = useSystemLoad(scrubbedPoint);
   const { vectors, netScore } = useProjectedGains(scrubbedPoint);
@@ -180,14 +180,11 @@ export const CenterPane: React.FC<CenterPaneProps> = ({ onTimeScrub, scrubbedPoi
   const systemLevelMeta = useMemo(() => LEVEL_META[systemLevel], [systemLevel]);
 
   return (
-    <div className="flex flex-col gap-3 w-full">
-      <section className="shrink-0 h-[350px] w-full min-h-0">
-        <div className="h-full min-h-0">
-          <DoseEfficiencyChart onTimeScrub={onTimeScrub} />
-        </div>
+    <div className="flex flex-col gap-4 w-full">
+      <section className="min-h-[360px]">
+        <CyclePhysicsChart />
       </section>
-
-      <section className="shrink-0 h-[260px] grid grid-cols-1 gap-4 md:grid-cols-3">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <ProjectedGainsCard vectors={vectors} netScore={netScore} />
         <SystemLoadCard
           systemIndex={systemIndex}

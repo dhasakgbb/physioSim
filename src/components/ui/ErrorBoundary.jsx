@@ -7,7 +7,7 @@ class ErrorBoundary extends React.Component {
   }
 
   static getDerivedStateFromError(error) {
-    return { hasError: true };
+    return { hasError: true, error };
   }
 
   componentDidCatch(error, errorInfo) {
@@ -28,6 +28,11 @@ class ErrorBoundary extends React.Component {
             We encountered an error rendering this chart. Try adjusting your
             inputs.
           </p>
+          {this.state.error && (
+            <div className="mt-4 p-2 bg-red-900/20 border border-red-500/20 rounded text-[10px] text-red-400 font-mono max-w-full overflow-auto">
+              {this.state.error.toString()}
+            </div>
+          )}
         </div>
       );
     }

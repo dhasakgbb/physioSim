@@ -1,1 +1,1 @@
-export { default } from "./PairPhaseAtlas.jsx";
+export { default } from "./PairPhaseAtlas";

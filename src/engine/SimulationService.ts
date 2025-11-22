@@ -54,12 +54,12 @@ export class SimulationService {
    * Helper to convert a high-level stack definition into a raw simulation request with scheduled doses.
    */
   public async runStackSimulation(
-    stack: { compoundId: string; dose: number; frequency: number }[],
+    stack: { compoundId: string; dose: number; frequency: number; ester?: string }[],
     compounds: any[], // ICompoundSchema[]
     durationDays: number,
     bodyWeightKg: number = 85
   ): Promise<ISimulationResponse> {
-    const doses: { compoundId: string; time: number; amount: number }[] = [];
+    const doses: { compoundId: string; time: number; amount: number; esterId?: string }[] = [];
     const timePoints = Array.from({ length: durationDays * 24 }, (_, i) => i); // Hourly points
 
     stack.forEach(item => {
@@ -83,7 +83,8 @@ export class SimulationService {
         doses.push({
           compoundId: item.compoundId,
           time: t,
-          amount: item.dose
+          amount: item.dose,
+          esterId: item.ester
         });
       }
     });

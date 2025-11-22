@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useRef, useCallback, useEffect, memo } from "react";
 import {
   CartesianGrid,
   ComposedChart,
@@ -13,9 +13,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { useStack } from "../../context/StackContext";
-import { COMPOUNDS as compoundData } from "../../data/compounds";
-import { getDDIForStack } from "../../data/drugDrugInteractions";
-import { computeCycleRailSeries } from "./computeCycleRailSeries";
+import { useCycleRailData } from "./hooks/useCycleRailData";
 
 const CHART_MARGIN = { top: 10, right: 20, bottom: 0, left: 20 };
 
@@ -108,102 +106,24 @@ const CustomTooltip = ({ active, payload }) => {
   );
 };
 
-const DoseEfficiencyChart = ({ onTimeScrub }) => {
+const DoseEfficiencyChartBase = ({ onTimeScrub }) => {
   const { stack, metrics } = useStack();
   const [durationWeeks, setDurationWeeks] = useState(8);
-  const [chartData, setChartData] = useState([]);
-  const [graphMeta, setGraphMeta] = useState(null);
-  // Determine active DDI rules for the current stack
-  const activeCompoundIds = useMemo(() => {
-    if (!stack) return [];
-    return Array.from(new Set(stack.map(s => s.compoundId || s.compound)));
-  }, [stack]);
-  const activeInteractions = useMemo(() => getDDIForStack(activeCompoundIds), [activeCompoundIds]);
-  // C17‑aa oral stacking badge (any combination of ≥2 C17 oral steroids)
-  const c17OralCount = useMemo(() => {
-    return activeCompoundIds.filter(id => {
-      const meta = compoundData[id]?.metadata;
-      return meta?.structuralFlags?.isC17aa && meta?.administrationRoutes?.includes('Oral');
-    }).length;
-  }, [activeCompoundIds]);
-  const showC17OralBadge = c17OralCount >= 2;
   
   const [playheadPosition, setPlayheadPosition] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const chartRef = useRef(null);
   const debouncedScrub = useDebouncedCallback(onTimeScrub, 75);
-  const stackSignature = useMemo(() => {
-    if (!stack?.length) return "empty";
-    return stack
-      .map((item) =>
-        [item.compoundId || item.compound, item.dose, item.frequency || 0].join(":"),
-      )
-      .join("|");
-  }, [stack]);
   const initialScrubKey = useRef(null);
 
-  const aggregate = metrics?._raw?.aggregate;
-
-  const macroSeries = useMemo(() => {
-    if (!aggregate?.totalAnabolicLoad?.length || !stack.length) {
-      return { points: [], meta: null };
-    }
-    if (!aggregate.totalToxicity) {
-      return { points: [], meta: null };
-    }
-
-    const pointsPerDay = 4; // 6-hour spacing
-    const maxSimDays = aggregate.totalAnabolicLoad.length / pointsPerDay;
-    const targetDays = Math.min(durationWeeks * 7, maxSimDays);
-
-    const hepaticSeries = aggregate.totalToxicity?.hepatic ?? [];
-    const renalSeries = aggregate.totalToxicity?.renal ?? [];
-    const cardiovascularSeries = aggregate.totalToxicity?.cardiovascular ?? [];
-    const lipidSeries = aggregate.totalToxicity?.lipid_metabolism ?? [];
-    const neuroSeries = aggregate.totalToxicity?.neurotoxicity ?? [];
-    const marginalSeries = aggregate.marginalAnabolicLoad ?? [];
-    const naturalAxisSeries = aggregate.naturalAxis ?? [];
-
-    const rawPoints = aggregate.totalAnabolicLoad
-      .map((load, index) => {
-        if (index % pointsPerDay !== 0) return null;
-        const day = index / pointsPerDay;
-        if (day > targetDays) return null;
-        const hepatic = hepaticSeries[index] || 0;
-        const renal = renalSeries[index] || 0;
-        const cv = cardiovascularSeries[index] || 0;
-        const lipid = lipidSeries[index] || 0;
-        const neuro = neuroSeries[index] || 0;
-        const organSum = hepatic + renal + cv + lipid + neuro;
-        const doseEfficiency = marginalSeries[index] ?? marginalSeries[index - 1] ?? 0;
-        const naturalAxis = naturalAxisSeries[index] ?? naturalAxisSeries[index - 1] ?? 100;
-        return {
-          day,
-          anabolic: load,
-          toxicityRaw: organSum,
-          doseEfficiency,
-          naturalAxis,
-        };
-      })
-      .filter(Boolean);
-
-    return computeCycleRailSeries(rawPoints);
-  }, [aggregate, durationWeeks, stack.length]);
-
-  useEffect(() => {
-    if (!stack.length) {
-      setChartData([]);
-      setGraphMeta(null);
-      return;
-    }
-    if (macroSeries.points?.length) {
-      setChartData(macroSeries.points);
-      setGraphMeta(macroSeries.meta ?? null);
-    } else {
-      setChartData([]);
-      setGraphMeta(macroSeries.meta ?? null);
-    }
-  }, [macroSeries, stack.length]);
+  const {
+    chartData,
+    graphMeta,
+    optimalExit,
+    activeInteractions,
+    showC17OralBadge,
+    stackSignature,
+  } = useCycleRailData({ stack, metrics, durationWeeks });
 
   // Calculate Max Y for domain
   const yMax = useMemo(() => {
@@ -216,19 +136,6 @@ const DoseEfficiencyChart = ({ onTimeScrub }) => {
       max = Math.max(max, a, t, nat);
     });
     return Math.max(80, max * 1.05);
-  }, [chartData]);
-
-  const optimalExit = useMemo(() => {
-    if (!chartData.length) return null;
-    const crossoverIndex = chartData.findIndex((point) => point.toxicity >= point.anabolic);
-    const point = crossoverIndex >= 0 ? chartData[crossoverIndex] : chartData[chartData.length - 1];
-    
-    if (!point || !Number.isFinite(point.day)) return null;
-    
-    return {
-      ...point,
-      week: Math.floor(point.day / 7),
-    };
   }, [chartData]);
 
   useEffect(() => {
@@ -318,10 +225,10 @@ const DoseEfficiencyChart = ({ onTimeScrub }) => {
           <div className="flex items-start justify-between gap-4">
             <div className="flex flex-col gap-1">
               <h3 className="text-base font-semibold text-white">
-                Cycle Evolution Rail
+                Optimized Evolution Rail
               </h3>
               <p className="text-xs text-gray-500">
-                Macro trend of anabolic momentum vs cumulative systemic load. Drag the exit vector to preview labs in time.
+                Phased progression: Genomic tissue (keepable) vs. Total mass (volumized). Exit before toxicity crossover.
               </p>
               {graphMeta && (
                 <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-600">
@@ -384,17 +291,17 @@ const DoseEfficiencyChart = ({ onTimeScrub }) => {
           <div className="flex items-center gap-4 mt-2 text-[10px] font-mono uppercase tracking-[0.25em] text-gray-400">
             <span className="flex items-center gap-1">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.6)]" />
-              Anabolic Momentum
+              Genomic Tissue (Keepable)
+            </span>
+            <span className="h-px w-6 bg-white/10" />
+            <span className="flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full" style={{ border: "1px dashed #5E6AD2", backgroundColor: "transparent" }} />
+              Total Mass (Volumized)
             </span>
             <span className="h-px w-6 bg-white/10" />
             <span className="flex items-center gap-1">
               <span className="h-1.5 w-1.5 rounded-full bg-rose-400/80" />
               Systemic Load
-            </span>
-            <span className="h-px w-6 bg-white/10" />
-            <span className="flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full border border-sky-300" />
-              Natural Axis
             </span>
           </div>
         </header>
@@ -420,11 +327,70 @@ const DoseEfficiencyChart = ({ onTimeScrub }) => {
                 <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.45} />
                 <stop offset="100%" stopColor="#f43f5e" stopOpacity={0.05} />
               </linearGradient>
+              <linearGradient id="volumizationFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#5E6AD2" stopOpacity={0.5} />
+                <stop offset="100%" stopColor="#5E6AD2" stopOpacity={0.05} />
+              </linearGradient>
               <linearGradient id="momentumStroke" x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0%" stopColor="#14b8a6" />
                 <stop offset="100%" stopColor="#34d399" />
               </linearGradient>
             </defs>
+            
+            {/* PHASE ZONE ANNOTATIONS */}
+            {/* Phase 1: Hyper-Volumization (Weeks 0-4) */}
+            <ReferenceArea
+              x1={0}
+              x2={28}
+              fill="#5E6AD2"
+              fillOpacity={0.02}
+              stroke={false}
+            />
+            {/* Phase 2: Tissue Accretion (Weeks 4-8) */}
+            <ReferenceArea
+              x1={28}
+              x2={56}
+              fill="#10b981"
+              fillOpacity={0.02}
+              stroke={false}
+            />
+            {/* Phase 3: Toxicity Crossover (Week 8+) */}
+            {optimalExit && (
+              <ReferenceArea
+                x1={optimalExit.day}
+                x2={durationWeeks * 7}
+                fill="#f43f5e"
+                fillOpacity={0.03}
+                stroke={false}
+              />
+            )}
+            
+            {/* Phase Labels */}
+            <text x="3%" y="15" fill="#6B7280" fontSize="9" fontFamily="monospace" textAnchor="start">
+              PHASE 1: HYPER-VOLUMIZATION
+            </text>
+            <text x="3%" y="27" fill="#6B7280" fontSize="8" fontFamily="monospace" textAnchor="start" opacity="0.7">
+              High ROI (Glycogen/Nitrogen)
+            </text>
+            
+            <text x="35%" y="15" fill="#6B7280" fontSize="9" fontFamily="monospace" textAnchor="start">
+              PHASE 2: TISSUE ACCRETION
+            </text>
+            <text x="35%" y="27" fill="#6B7280" fontSize="8" fontFamily="monospace" textAnchor="start" opacity="0.7">
+              Stable Genomic Growth
+            </text>
+            
+            {optimalExit && (
+              <>
+                <text x="70%" y="15" fill="#EF4444" fontSize="9" fontFamily="monospace" textAnchor="start">
+                  PHASE 3: TOXICITY CROSSOVER
+                </text>
+                <text x="70%" y="27" fill="#EF4444" fontSize="8" fontFamily="monospace" textAnchor="start" opacity="0.7">
+                  Negative Returns
+                </text>
+              </>
+            )}
+            
             <CartesianGrid stroke="#333" strokeDasharray="3 3" opacity={0.15} vertical={false} />
             <XAxis
               dataKey="day"
@@ -494,6 +460,18 @@ const DoseEfficiencyChart = ({ onTimeScrub }) => {
               isAnimationActive={false}
             />
 
+
+            {/* TOTAL MASS (Volumized) - shows kickstart spike */}
+            <Line
+              type="monotone"
+              dataKey="totalMass"
+              stroke="#5E6AD2"
+              strokeWidth={2.5}
+              strokeDasharray="6 4"
+              dot={false}
+              isAnimationActive={true}
+            />
+
             <Area
               type="monotone"
               dataKey="anabolic"
@@ -561,4 +539,4 @@ const DoseEfficiencyChart = ({ onTimeScrub }) => {
   );
 };
 
-export default DoseEfficiencyChart;
+export default memo(DoseEfficiencyChartBase);

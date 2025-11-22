@@ -1,16 +1,20 @@
-import React, { useEffect, useMemo, useState } from "react";
-import SerumStabilityChart from "./SerumStabilityChart";
-
-import OptimizerPane from "./OptimizerPane";
+import React, { useEffect, useMemo, useState, Suspense, lazy } from "react";
+import LinearPathwayFlow from "./LinearPathwayFlow";
 
 import { useStack } from "../../context/StackContext";
-import { useSystemLoad } from "../../hooks/useSystemLoad";
 import StatusIndicator from "./StatusIndicator";
 import { CenterPane } from "./CenterPane";
 
-import AnalyticsPane from "./AnalyticsPane";
+const AnalyticsPane = lazy(() => import("./AnalyticsPane"));
+const OptimizerPane = lazy(() => import("./OptimizerPane"));
 
-const NET_FAMILY_TABS = new Set(["efficiency", "serum", "analytics"]);
+const PaneFallback = ({ label }) => (
+  <div className="flex min-h-[280px] items-center justify-center rounded-2xl border border-white/5 bg-[#050608] text-[11px] uppercase tracking-[0.3em] text-gray-500">
+    Loading {label}…
+  </div>
+);
+
+const NET_FAMILY_TABS = new Set(["efficiency", "pathways", "analytics", "physics"]);
 const VIEW_MODE_TO_TAB = {
   net: "efficiency",
   optimize: "optimize",
@@ -19,7 +23,7 @@ const VIEW_MODE_TO_TAB = {
 };
 const TAB_TO_VIEW_MODE = {
   efficiency: "net",
-  serum: "net",
+  pathways: "net",
   evolution: "net",
   analytics: "analytics",
   optimize: "optimize",
@@ -59,10 +63,8 @@ const TabbedChartCanvas = ({ onTimeScrub, scrubbedPoint }) => {
   const tabs = [
     { id: 'efficiency', label: 'Efficiency' },
     { id: 'analytics', label: 'QSP Analytics' },
-    { id: 'serum', label: 'Serum Levels' },
-
+    { id: 'pathways', label: 'Pathway Flow' },
     { id: 'optimize', label: 'Optimize' },
-
   ];
 
   const renderActiveChart = () => {
@@ -71,27 +73,29 @@ const TabbedChartCanvas = ({ onTimeScrub, scrubbedPoint }) => {
     }
 
     if (activeTab === 'analytics') {
-      return <AnalyticsPane />;
-    }
-
-    if (activeTab === 'serum') {
-      return <SerumStabilityChart onTimeScrub={onTimeScrub} />;
-    }
-
-
-
-    if (activeTab === 'optimize') {
       return (
-        <OptimizerPane
-          stack={stack}
-          userProfile={userProfile}
-          onUpdateProfile={setUserProfile}
-          onApplyOptimization={(newStack) => setStack(newStack)}
-        />
+        <Suspense fallback={<PaneFallback label="Analytics" />}>
+          <AnalyticsPane />
+        </Suspense>
       );
     }
 
+    if (activeTab === 'pathways') {
+      return <LinearPathwayFlow onTimeScrub={onTimeScrub} />;
+    }
 
+    if (activeTab === 'optimize') {
+      return (
+        <Suspense fallback={<PaneFallback label="Optimizer" />}>
+          <OptimizerPane
+            stack={stack}
+            userProfile={userProfile}
+            onUpdateProfile={setUserProfile}
+            onApplyOptimization={(newStack) => setStack(newStack)}
+          />
+        </Suspense>
+      );
+    }
 
     return null;
   };

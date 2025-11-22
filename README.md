@@ -92,7 +92,7 @@ Click any compound name to view:
 - **ProfileContextBar** condenses personalization (age, weight, SHBG, aromatase, anxiety, experience) into a single strip with Edit/Save/Reset actions plus the new filter badge cluster.
 - **NavigationRail + CompoundChipRail** replace the legacy tab buttons, keeping tab switching, keyboard focus, and compound visibility controls in one matte belt directly under the profile strip.
 - **Hero surface** pairs the spotlight chart with a vertical legend + `CompoundInsightCard` stack so hover, dimming, and personalized guardrails live together; everything sits inside a rounded “Zone B” shell shared by injectables and orals.
-- **UtilityCardRow** introduces the Sweet Spot Finder, PDF Export, and Model Settings cards as the permanent CTA trio under every hero section.
+- **Dose Efficiency Rail** anchors Zone B with the Optimized Evolution Rail (genomic tissue vs volumized mass vs systemic load) stacked above the Projected Gains / System Load / Half-Life cards so every stack instantly shows exit vectors, risk crossover, and lab-aligned pacing without the legacy CTA row.
 - **Context drawer** (“Need context?”) still lazy-loads the evidence deck but now carries refreshed guardrail copy (e.g., oral hepatic risk) and scenario tiles tuned to the new layout.
 - **Compressed mode toggle** remains below the nav rail, tracks with the global filters badge, and tightens spacing across all cards when dense layout is preferred.
 - **Lazy loading guardrails** continue to keep EvidencePanel off the main bundle until a drawer opens, protecting first paint on lower-power devices.
