@@ -1,22 +1,12 @@
 import React, { useMemo, useCallback } from "react";
 import ActiveSchematic from "./ActiveSchematic";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  ReferenceLine,
-} from "recharts";
 import { COMPOUNDS as compoundData } from "../../data/compounds";
 import { simulationService } from "../../engine/SimulationService";
 import { useStack } from "../../context/StackContext";
 import { useSimulation } from "../../context/SimulationContext";
 import { getGeneticProfileConfig } from "../../utils/personalization";
 import { calculateSaturation } from "../../engine/SaturationPhysics";
+import { calculateReceptorState } from "../../engine/ReceptorPhysics";
 const useDebouncedCallback = (callback, delay = 60) => {
   const timeoutRef = React.useRef(null);
 
@@ -34,9 +24,9 @@ const useDebouncedCallback = (callback, delay = 60) => {
 };
 
 const SerumStabilityChart = ({ onTimeScrub }) => {
-  const { userProfile } = useStack();
+  const { stack, userProfile } = useStack();
   const { compounds } = useSimulation();
-  const stack = compounds;
+  // const stack = compounds; // REMOVED: Was overriding the actual stack with simulation definitions
   const { metabolismMultiplier } = getGeneticProfileConfig(userProfile);
   const [playheadPosition, setPlayheadPosition] = React.useState(null);
   const [isDragging, setIsDragging] = React.useState(false);
@@ -52,8 +42,8 @@ const SerumStabilityChart = ({ onTimeScrub }) => {
   const stackSignature = useMemo(() => {
     if (!stack.length) return "empty";
     return stack
-      .map(({ compoundId, dose, frequency, ester }) =>
-        [compoundId, dose, frequency ?? "", ester ?? ""].join(":"),
+      .map((item) =>
+        [item.compound || item.compoundId, item.dose, item.frequency ?? "", item.ester ?? ""].join(":"),
       )
       .join("|");
   }, [stack]);
@@ -73,8 +63,13 @@ const SerumStabilityChart = ({ onTimeScrub }) => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const activeCompounds = stack.map(s => compoundData[s.compoundId]).filter(Boolean);
-        const currentStack = stack.map(s => ({ compoundId: s.compoundId, dose: s.dose, frequency: s.frequency }));
+        const activeCompounds = stack.map(s => compoundData[s.compound || s.compoundId]).filter(Boolean);
+        const currentStack = stack.map(s => ({ 
+          compoundId: s.compound || s.compoundId, 
+          dose: s.dose, 
+          frequency: s.frequency,
+          ester: s.ester 
+        }));
         
         const result = await simulationService.runSimulation({
            stack: currentStack,
@@ -184,7 +179,7 @@ const SerumStabilityChart = ({ onTimeScrub }) => {
 
   // Check for Orals to adjust resolution
   const hasOrals = useMemo(() => {
-    return stack.some((item) => compoundData[item.compoundId]?.metadata?.administrationRoutes?.includes("Oral"));
+    return stack.some((item) => compoundData[item.compound || item.compoundId]?.metadata?.administrationRoutes?.includes("Oral"));
   }, [stack]);
 
   // Compute receptor metrics based on current stack and compound data
@@ -195,29 +190,91 @@ const SerumStabilityChart = ({ onTimeScrub }) => {
     let totalDose = 0;
     
     // Calculate active dose adjusted by binding affinity
+    // Normalized to Testosterone Equivalents (mg/day)
+    // Test Kd ~ 1.0 nM. If Compound Kd = 0.5, it binds 2x stronger.
+    const TEST_KD = 1.0; 
+    
     stack.forEach((item) => {
-      const meta = compoundData[item.compoundId];
+      // Handle both legacy and new stack item structures
+      const compoundId = item.compound || item.compoundId;
+      const meta = compoundData[compoundId];
       const arInteraction = meta?.pd?.receptorInteractions?.AR;
-      if (arInteraction && arInteraction.Kd) {
-        const affinity = 1 / arInteraction.Kd; // higher affinity => larger weight
-        load += item.dose * affinity;
+      
+      // Normalize dose to mg/day
+      // NEW: frequency is stored as numeric days in the store (1 = daily, 3.5 = E3.5D, 7 = weekly)
+      // Legacy: frequency might be a string ('Weekly', 'Daily', 'EOD')
+      let dailyDose = item.dose;
+      
+      if (typeof item.frequency === 'number') {
+        // New format: frequency in days, dose is total weekly dose
+        dailyDose = item.dose / 7;
+      } else if (typeof item.frequency === 'string') {
+        // Legacy format: string frequency
+        if (item.frequency === 'Weekly') dailyDose = item.dose / 7;
+        if (item.frequency === 'EOD') dailyDose = item.dose / 2;
+        // 'Daily' is already /1
       }
-      totalDose += item.dose;
+      
+      if (arInteraction && arInteraction.Kd) {
+        // Weight = Test_Kd / Compound_Kd
+        // e.g. Tren (Kd 0.3) => 1.0 / 0.3 = 3.33x weight
+        const affinityWeight = TEST_KD / arInteraction.Kd;
+        load += dailyDose * affinityWeight;
+      } else {
+        // Fallback for non-binding or unknown (e.g. GH)
+        // Don't add to AR load if it doesn't bind AR
+      }
+      totalDose += dailyDose;
     });
     
-    // Use the new saturation physics engine
-    const saturationMetrics = calculateSaturation(load, baseCapacity, weeksElapsed);
+    // Base Capacity in mg/day of Testosterone Equivalents
+    // Natural production ~7mg/day. 
+    // "Saturation" (diminishing returns) often cited around 300-500mg/week => ~50-70mg/day.
+    // Let's set a generous "Sports" baseline of 150mg/day.
+    const dailyCapacity = 150; 
     
+    // Use the new saturation physics engine
+    const saturationMetrics = calculateSaturation(load, dailyCapacity, weeksElapsed);
+    
+    // Use the new competitive displacement engine
+    // Pass the raw stack items which have { compoundId, dose, frequency }
+    const receptorState = calculateReceptorState(stack, dailyCapacity);
+
     return {
       ...saturationMetrics,
-      totalDose, // Keep for reference
+      receptorState,
+      totalDose, 
     };
   }, []);
 
   // Memoize metrics for performance
   // TODO: Calculate weeksElapsed from simulation data if available
   const saturationMetrics = useMemo(
-    () => computeReceptorMetrics(stack, 0), // Start with 0 weeks, can be enhanced later
+    () => {
+      try {
+        console.log("Computing receptor metrics for stack:", stack);
+        const metrics = computeReceptorMetrics(stack, 0);
+        console.log("Computed metrics:", metrics);
+        return metrics;
+      } catch (err) {
+        console.error("Error computing receptor metrics:", err);
+        return {
+          activeDose: 0,
+          receptorCapacity: 100,
+          saturation: 0,
+          spillover: 0,
+          efficiencyPct: 100,
+          adaptationRate: 0,
+          adaptationPhase: 1,
+          spilloverToCNS: 0,
+          spilloverToToxicity: 0,
+          spilloverToRetention: 0,
+          isSaturated: false,
+          isHardCap: false,
+          totalDose: 0
+        };
+      }
+    },
     [stack, computeReceptorMetrics]
   );
 
@@ -226,6 +283,7 @@ const SerumStabilityChart = ({ onTimeScrub }) => {
       activeDose={saturationMetrics.activeDose}
       geneticCapacity={saturationMetrics.receptorCapacity}
       saturationMetrics={saturationMetrics}
+      receptorState={saturationMetrics?.receptorState}
     />
   );
 };

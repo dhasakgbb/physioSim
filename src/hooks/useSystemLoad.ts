@@ -221,14 +221,15 @@ export const useSystemLoad = (scrubbedPoint?: any): SystemLoadResult => {
       };
 
       // Construct derived labs (Same heuristic as RightInspector)
+      // Use smaller multipliers to match the fixed RightInspector calculations
       const labs: ProjectedLabs = {
-        hdl: 60 - (lipid * 0.5),
-        ldl: 90 + (lipid * 0.5),
-        ast: 22 + (hepatic * 0.2),
-        alt: 24 + (hepatic * 0.2),
-        creatinine: 1.0 + (renal * 0.01),
+        hdl: Math.max(0, 60 - (lipid * 0.1)),
+        ldl: 90 + (lipid * 0.1),
+        ast: Math.max(0, 22 + (hepatic * 0.05)),
+        alt: Math.max(0, 24 + (hepatic * 0.05)),
+        creatinine: Math.max(0.5, 1.0 + (renal * 0.005)),
         neuroRisk: neuro * 0.1,
-        hematocrit: 45 + (cardio * 0.05),
+        hematocrit: Math.min(60, 45 + (cardio * 0.02)),
       };
 
       // Compute categories using configs

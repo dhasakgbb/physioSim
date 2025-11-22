@@ -221,8 +221,15 @@ export const StackProvider = ({ children }) => {
     // This is a temporary adapter to keep the UI from crashing
     const { aggregate, aggregateBenefit, aggregateToxicity } = simulationResults;
     
-    // Basic mapping to satisfy RightInspector
-    // In a real QSP model, labs would be calculated by the worker based on specific biomarkers
+    // Calculate steady-state organ-specific toxicity (use last values from smoothed arrays)
+    const lastIndex = aggregate?.totalToxicity?.hepatic?.length - 1 || 0;
+    const hepatic = aggregate?.totalToxicity?.hepatic?.[lastIndex] || 0;
+    const renal = aggregate?.totalToxicity?.renal?.[lastIndex] || 0;
+    const cardiovascular = aggregate?.totalToxicity?.cardiovascular?.[lastIndex] || 0;
+    const lipid = aggregate?.totalToxicity?.lipid_metabolism?.[lastIndex] || 0;
+    const neuro = aggregate?.totalToxicity?.neurotoxicity?.[lastIndex] || 0;
+    
+    // Use organ-specific toxicity with smaller multipliers for realistic lab values
     return {
       totals: {
         netScore: (aggregateBenefit || 0) - (aggregateToxicity || 0),
@@ -231,11 +238,15 @@ export const StackProvider = ({ children }) => {
       },
       analytics: {
         labsWidget: {
-           // Placeholder: Real lab projection would go here
-           hdl: { value: 60 - (aggregateToxicity * 0.5), status: 'normal' },
-           ldl: { value: 90 + (aggregateToxicity * 0.5), status: 'normal' },
-           ast: { value: 22 + (aggregateToxicity * 0.2), status: 'normal' },
-           alt: { value: 24 + (aggregateToxicity * 0.2), status: 'normal' }
+           // Use organ-specific toxicity for each lab value
+           hdl: { value: Math.max(0, 60 - (lipid * 0.1)), status: 'normal' },
+           ldl: { value: 90 + (lipid * 0.1), status: 'normal' },
+           ast: { value: Math.max(0, 22 + (hepatic * 0.05)), status: 'normal' },
+           alt: { value: Math.max(0, 24 + (hepatic * 0.05)), status: 'normal' },
+           estradiol: { value: 24 + ((cardiovascular + hepatic) * 0.01), status: 'normal' },
+           hematocrit: { value: Math.min(60, 45 + (cardiovascular * 0.02)), status: 'normal' },
+           creatinine: { value: Math.max(0.5, 1.0 + (renal * 0.005)), status: 'normal' },
+           egfr: { value: Math.max(15, 95 - (renal * 0.1)), status: 'normal' }
         }
       },
       // Legacy fields mapped to new aggregates (using last point or average)

@@ -8,12 +8,14 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  ReferenceArea,
+  ReferenceDot,
   ReferenceLine,
 } from "recharts";
 import { useStack } from "../../context/StackContext";
 import { COMPOUNDS as compoundData } from "../../data/compounds";
 import { getDDIForStack } from "../../data/drugDrugInteractions";
-import { simulationService } from "../../engine/SimulationService";
+import { computeCycleRailSeries } from "./computeCycleRailSeries";
 
 const CHART_MARGIN = { top: 10, right: 20, bottom: 0, left: 20 };
 
@@ -40,44 +42,63 @@ const formatNumber = (value) => {
   return value.toFixed(1);
 };
 
+const formatPercent = (value) => {
+  if (!Number.isFinite(value)) return "--";
+  return `${(value * 100).toFixed(0)}%`;
+};
+
+const formatEfficiency = (value) => {
+  if (!Number.isFinite(value)) return "--";
+  const pct = value * 100;
+  if (Math.abs(pct) >= 100) return `${pct.toFixed(0)}% / mg`;
+  return `${pct.toFixed(1)}% / mg`;
+};
+
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null;
   const point = payload[0]?.payload;
+  const week = Math.floor(point.day / 7);
 
   return (
-    <div className="min-w-[180px] rounded-2xl border border-white/10 bg-[#05060A]/95 p-4 text-xs text-gray-200 backdrop-blur shadow-2xl">
+    <div className="min-w-[200px] rounded-2xl border border-white/10 bg-[#05060A]/95 p-4 text-xs text-gray-200 backdrop-blur shadow-2xl">
       <div className="mb-2 border-b border-white/5 pb-2">
         <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-gray-500">
-          Week {Math.floor(point.day / 7)} <span className="text-gray-700">Day {Math.round(point.day)}</span>
+          Week {week} <span className="text-gray-600">Day {Math.round(point.day)}</span>
         </p>
       </div>
-      <div className="space-y-1">
+      <div className="space-y-2">
         <div className="flex items-center justify-between gap-4">
-          <span className="flex items-center gap-1 text-cyan-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-cyan-300" /> Anabolic
+          <span className="flex items-center gap-1 text-emerald-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> Anabolic Momentum
           </span>
           <span className="font-mono text-white">{formatNumber(point.anabolic)}</span>
         </div>
         <div className="flex items-center justify-between gap-4">
           <span className="flex items-center gap-1 text-rose-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-rose-300" /> Toxicity
+            <span className="h-1.5 w-1.5 rounded-full bg-rose-400" /> Systemic Load
           </span>
           <span className="font-mono text-white">{formatNumber(point.toxicity)}</span>
         </div>
         <div className="flex items-center justify-between gap-4">
-          <span className="flex items-center gap-1 text-gray-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-white/50" /> Viability Floor
+          <span className="flex items-center gap-1 text-amber-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-300" /> Load Ratio
           </span>
-          <span className="font-mono text-white">{formatNumber(point.viabilityLower)}</span>
+          <span className="font-mono text-white">{formatPercent(point.riskRatio)}</span>
         </div>
         <div className="flex items-center justify-between gap-4">
-          <span className="flex items-center gap-1 text-amber-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-300" /> Risk Index
+          <span className="flex items-center gap-1 text-sky-200">
+            <span className="h-1.5 w-1.5 rounded-full border border-sky-300" /> Natural Axis
           </span>
-          <span className="font-mono text-white">{formatNumber((point.riskRatio || 0) * 100)}%</span>
+          <span className="font-mono text-white">{formatNumber(point.naturalPercent)}%</span>
         </div>
-        <div className="mt-2 flex items-center justify-between gap-4 border-t border-white/5 pt-2">
-          <span className="text-[10px] uppercase tracking-[0.35em] text-gray-500">Net Gap</span>
+        <div className="flex items-center justify-between gap-4">
+          <span className="flex items-center gap-1 text-emerald-100">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300/50" /> Dose Efficiency
+          </span>
+          <span className="font-mono text-white">{formatEfficiency(point.doseEfficiency)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-4 border-t border-white/5 pt-2">
+          <span className="text-[10px] uppercase tracking-[0.35em] text-gray-500">Net Spread</span>
           <span className={`font-mono ${point.netGap >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
             {formatNumber(point.netGap)}
           </span>
@@ -88,10 +109,10 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 const DoseEfficiencyChart = ({ onTimeScrub }) => {
-  const { stack, userProfile } = useStack();
-  const [durationWeeks, setDurationWeeks] = useState(12);
+  const { stack, metrics } = useStack();
+  const [durationWeeks, setDurationWeeks] = useState(8);
   const [chartData, setChartData] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [graphMeta, setGraphMeta] = useState(null);
   // Determine active DDI rules for the current stack
   const activeCompoundIds = useMemo(() => {
     if (!stack) return [];
@@ -111,120 +132,121 @@ const DoseEfficiencyChart = ({ onTimeScrub }) => {
   const [isDragging, setIsDragging] = useState(false);
   const chartRef = useRef(null);
   const debouncedScrub = useDebouncedCallback(onTimeScrub, 75);
+  const stackSignature = useMemo(() => {
+    if (!stack?.length) return "empty";
+    return stack
+      .map((item) =>
+        [item.compoundId || item.compound, item.dose, item.frequency || 0].join(":"),
+      )
+      .join("|");
+  }, [stack]);
+  const initialScrubKey = useRef(null);
 
-  React.useEffect(() => {
-    let isMounted = true;
-    if (!stack || stack.length === 0) {
-      setChartData([]);
-      return;
+  const aggregate = metrics?._raw?.aggregate;
+
+  const macroSeries = useMemo(() => {
+    if (!aggregate?.totalAnabolicLoad?.length || !stack.length) {
+      return { points: [], meta: null };
+    }
+    if (!aggregate.totalToxicity) {
+      return { points: [], meta: null };
     }
 
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const activeCompounds = stack.map(s => compoundData[s.compoundId || s.compound]).filter(Boolean);
-        const currentStack = stack.map(s => ({ 
-            compoundId: s.compoundId || s.compound, 
-            dose: Number(s.dose || 0), 
-            frequency: Number(s.frequency || 3.5) 
-        }));
+    const pointsPerDay = 4; // 6-hour spacing
+    const maxSimDays = aggregate.totalAnabolicLoad.length / pointsPerDay;
+    const targetDays = Math.min(durationWeeks * 7, maxSimDays);
 
-        const result = await simulationService.runStackSimulation(
-            currentStack,
-            activeCompounds,
-            durationWeeks * 7,
-            userProfile?.bodyweight || 85
-        );
+    const hepaticSeries = aggregate.totalToxicity?.hepatic ?? [];
+    const renalSeries = aggregate.totalToxicity?.renal ?? [];
+    const cardiovascularSeries = aggregate.totalToxicity?.cardiovascular ?? [];
+    const lipidSeries = aggregate.totalToxicity?.lipid_metabolism ?? [];
+    const neuroSeries = aggregate.totalToxicity?.neurotoxicity ?? [];
+    const marginalSeries = aggregate.marginalAnabolicLoad ?? [];
+    const naturalAxisSeries = aggregate.naturalAxis ?? [];
 
-        if (isMounted && result.aggregate && result.aggregate.totalAnabolicLoad) {
-            // Process data
-            // The engine returns hourly points. We want daily points for the chart.
-            const { totalAnabolicLoad, totalToxicity } = result.aggregate;
-            
-            const rawPoints = totalAnabolicLoad
-              .map((load, index) => {
-                    // Data is in 6-hour intervals (from store resolution)
-                    // We want daily points. 24 hours / 6 hours = 4 points per day.
-                    if (index % 4 !== 0) return null;
-                    
-                    const day = index / 4; // Convert index to days
-                    // Calculate total toxicity at this point
-                    const hepatic = totalToxicity.hepatic[index] || 0;
-                    const renal = totalToxicity.renal[index] || 0;
-                    const cv = totalToxicity.cardiovascular[index] || 0;
-                    const lipid = totalToxicity.lipid_metabolism[index] || 0;
-                    const neuro = totalToxicity.neurotoxicity[index] || 0;
+    const rawPoints = aggregate.totalAnabolicLoad
+      .map((load, index) => {
+        if (index % pointsPerDay !== 0) return null;
+        const day = index / pointsPerDay;
+        if (day > targetDays) return null;
+        const hepatic = hepaticSeries[index] || 0;
+        const renal = renalSeries[index] || 0;
+        const cv = cardiovascularSeries[index] || 0;
+        const lipid = lipidSeries[index] || 0;
+        const neuro = neuroSeries[index] || 0;
+        const organSum = hepatic + renal + cv + lipid + neuro;
+        const doseEfficiency = marginalSeries[index] ?? marginalSeries[index - 1] ?? 0;
+        const naturalAxis = naturalAxisSeries[index] ?? naturalAxisSeries[index - 1] ?? 100;
+        return {
+          day,
+          anabolic: load,
+          toxicityRaw: organSum,
+          doseEfficiency,
+          naturalAxis,
+        };
+      })
+      .filter(Boolean);
 
-                    const organSum = hepatic + renal + cv + lipid + neuro;
-                    
-                    return {
-                      day,
-                      anabolic: load,
-                      toxicityRaw: organSum,
-                    };
-                })
-                .filter(Boolean); // Remove nulls
+    return computeCycleRailSeries(rawPoints);
+  }, [aggregate, durationWeeks, stack.length]);
 
-                const maxAnabolic = rawPoints.reduce((max, point) => Math.max(max, point.anabolic || 0), 0);
-                const maxToxicityRaw = rawPoints.reduce((max, point) => Math.max(max, point.toxicityRaw || 0), 0);
-                const targetRange = Math.max(10, maxAnabolic || 10);
-                const toxicityScale = maxToxicityRaw > 0 ? targetRange / maxToxicityRaw : 1;
-                const scaledPoints = rawPoints.map(point => ({
-                  ...point,
-                  toxicity: point.toxicityRaw * toxicityScale
-                }));
-
-                // Apply a trailing average so users see organ stress accumulation instead of the raw saw-tooth signal
-                const TOXICITY_WINDOW_DAYS = 7;
-                const TOXICITY_BAND_GAIN = 1.35;
-                const MIN_BAND_THICKNESS = 0.75;
-                const smoothed = scaledPoints.map((point, idx, arr) => {
-                  const start = Math.max(0, idx - TOXICITY_WINDOW_DAYS + 1);
-                  const window = arr.slice(start, idx + 1);
-                  const avgTox = window.reduce((sum, entry) => sum + entry.toxicity, 0) / window.length;
-                  const scaledToxicity = avgTox * TOXICITY_BAND_GAIN;
-                  const effectiveAnabolic = Math.max(0, point.anabolic || 0);
-                  const bandHeight = Math.min(effectiveAnabolic, Math.max(MIN_BAND_THICKNESS, scaledToxicity));
-                  const viabilityLower = Math.max(0, effectiveAnabolic - bandHeight);
-                  const viabilityUpper = viabilityLower + bandHeight;
-                  return {
-                    ...point,
-                    toxicityRaw: point.toxicityRaw,
-                    toxicity: avgTox,
-                    netGap: point.anabolic - avgTox,
-                    viabilityLower,
-                    bandHeight,
-                    viabilityUpper,
-                    riskRatio: (bandHeight && point.anabolic) ? Math.min(1.25, bandHeight / (point.anabolic || 1)) : 0
-                  };
-                });
-
-                setChartData(smoothed);
-        } else {
-             // Handle case where simulation returns no data
-             console.warn("Simulation returned no aggregate data");
-             setChartData([]);
-        }
-      } catch (err) {
-        console.error("Simulation failed", err);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    fetchData();
-    return () => { isMounted = false; };
-  }, [stack, durationWeeks, userProfile]);
+  useEffect(() => {
+    if (!stack.length) {
+      setChartData([]);
+      setGraphMeta(null);
+      return;
+    }
+    if (macroSeries.points?.length) {
+      setChartData(macroSeries.points);
+      setGraphMeta(macroSeries.meta ?? null);
+    } else {
+      setChartData([]);
+      setGraphMeta(macroSeries.meta ?? null);
+    }
+  }, [macroSeries, stack.length]);
 
   // Calculate Max Y for domain
   const yMax = useMemo(() => {
     if (!chartData.length) return 100;
     let max = 0;
     chartData.forEach((p) => {
-      max = Math.max(max, p.anabolic, p.toxicity);
+      const a = Number.isFinite(p.anabolic) ? p.anabolic : 0;
+      const t = Number.isFinite(p.toxicity) ? p.toxicity : 0;
+      const nat = Number.isFinite(p.naturalScaled) ? p.naturalScaled : 0;
+      max = Math.max(max, a, t, nat);
     });
-    return Math.max(10, max * 1.1);
+    return Math.max(80, max * 1.05);
   }, [chartData]);
+
+  const optimalExit = useMemo(() => {
+    if (!chartData.length) return null;
+    const crossoverIndex = chartData.findIndex((point) => point.toxicity >= point.anabolic);
+    const point = crossoverIndex >= 0 ? chartData[crossoverIndex] : chartData[chartData.length - 1];
+    
+    if (!point || !Number.isFinite(point.day)) return null;
+    
+    return {
+      ...point,
+      week: Math.floor(point.day / 7),
+    };
+  }, [chartData]);
+
+  useEffect(() => {
+    if (!chartData.length) {
+      setPlayheadPosition(null);
+      initialScrubKey.current = null;
+      return;
+    }
+    if (!optimalExit) return;
+
+    const signature = `${stackSignature}-${durationWeeks}-${optimalExit.day.toFixed(2)}`;
+    if (initialScrubKey.current === signature) return;
+    initialScrubKey.current = signature;
+    setPlayheadPosition(optimalExit.day);
+    if (onTimeScrub) {
+      onTimeScrub(optimalExit);
+    }
+  }, [chartData, optimalExit, onTimeScrub, stackSignature, durationWeeks]);
 
   // Scrubbing Logic
   const updatePlayheadPosition = (event) => {
@@ -293,17 +315,21 @@ const DoseEfficiencyChart = ({ onTimeScrub }) => {
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-white/5 bg-[#050608]">
         <header className="flex flex-col border-b border-white/5 px-6 py-4 space-y-2">
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-4">
             <div className="flex flex-col gap-1">
               <h3 className="text-base font-semibold text-white">
-                Dose Efficiency
+                Cycle Evolution Rail
               </h3>
               <p className="text-xs text-gray-500">
-                Projected anabolic signal vs systemic toxicity over time.
+                Macro trend of anabolic momentum vs cumulative systemic load. Drag the exit vector to preview labs in time.
               </p>
+              {graphMeta && (
+                <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-600">
+                  Scale Anchor: {graphMeta.scaleLabel} · ≤ {graphMeta.scaleMax?.toLocaleString?.() || graphMeta.scaleMax} mgEq
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-4">
-              {/* Duration Selector */}
               <div className="flex items-center rounded-lg bg-white/5 p-1">
                 {DURATION_OPTIONS.map((weeks) => (
                   <button
@@ -321,40 +347,55 @@ const DoseEfficiencyChart = ({ onTimeScrub }) => {
               </div>
             </div>
           </div>
-          {/* DDI Interaction Badges */}
-          {activeInteractions.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-1">
-              {activeInteractions.map((ddi) => (
-                <span
-                  key={ddi.id}
-                  className="px-2 py-0.5 text-xs rounded bg-indigo-600/30 text-indigo-200 border border-indigo-500"
-                  title={ddi.metadata?.mechanism || ''}
-                >
-                  {ddi.compounds.join(' + ')}
+          {(optimalExit || activeInteractions.length > 0 || showC17OralBadge) && (
+            <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-300">
+              {optimalExit && (
+                <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white">
+                  <span className="text-emerald-300">Optimal Exit</span>
+                  <span>W{optimalExit.week}</span>
+                  <span className="text-gray-500">·</span>
+                  <span className={optimalExit.netGap >= 0 ? "text-emerald-300" : "text-rose-300"}>
+                    {formatNumber(optimalExit.netGap)} spread
+                  </span>
+                  <span className="text-gray-500">·</span>
+                  <span className="text-amber-200">{formatPercent(optimalExit.riskRatio)}</span>
+                </div>
+              )}
+              {activeInteractions.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {activeInteractions.map((ddi) => (
+                    <span
+                      key={ddi.id}
+                      className="px-2 py-0.5 text-[10px] rounded bg-indigo-600/30 text-indigo-200 border border-indigo-500"
+                      title={ddi.metadata?.mechanism || ''}
+                    >
+                      {ddi.compounds.join(' + ')}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {showC17OralBadge && (
+                <span className="px-2 py-0.5 text-[10px] rounded bg-red-600/30 text-red-200 border border-red-500" title="Multiple C17‑aa oral steroids increase hepatotoxic risk">
+                  C17‑Oral Stack
                 </span>
-              ))}
+              )}
             </div>
           )}
-          {/* C17 oral stacking badge */}
-          {showC17OralBadge && (
-            <div className="flex flex-wrap gap-2 mt-1">
-              <span className="px-2 py-0.5 text-xs rounded bg-red-600/30 text-red-200 border border-red-500" title="Multiple C17‑aa oral steroids increase hepatotoxic risk">
-                C17‑Oral Stack
-              </span>
-            </div>
-          )}
-          <div className="flex items-center gap-4 mt-2">
-            <div className="flex items-center gap-3 text-[10px] font-mono uppercase tracking-[0.3em] text-gray-400">
-              <span className="flex items-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 shadow-[0_0_6px_rgba(6,182,212,0.6)]" />
-                Anabolic Signal
-              </span>
-              <span className="h-px w-6 bg-white/10" />
-              <span className="flex items-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-rose-400/70" />
-                Viability Band
-              </span>
-            </div>
+          <div className="flex items-center gap-4 mt-2 text-[10px] font-mono uppercase tracking-[0.25em] text-gray-400">
+            <span className="flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.6)]" />
+              Anabolic Momentum
+            </span>
+            <span className="h-px w-6 bg-white/10" />
+            <span className="flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-rose-400/80" />
+              Systemic Load
+            </span>
+            <span className="h-px w-6 bg-white/10" />
+            <span className="flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full border border-sky-300" />
+              Natural Axis
+            </span>
           </div>
         </header>
 
@@ -371,13 +412,17 @@ const DoseEfficiencyChart = ({ onTimeScrub }) => {
             margin={CHART_MARGIN}
           >
             <defs>
-              <linearGradient id="viabilityBand" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.35} />
+              <linearGradient id="momentumFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
+                <stop offset="100%" stopColor="#10b981" stopOpacity={0.05} />
+              </linearGradient>
+              <linearGradient id="loadFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.45} />
                 <stop offset="100%" stopColor="#f43f5e" stopOpacity={0.05} />
               </linearGradient>
-              <linearGradient id="anabolicStroke" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#06b6d4" />
-                <stop offset="100%" stopColor="#22d3ee" />
+              <linearGradient id="momentumStroke" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#14b8a6" />
+                <stop offset="100%" stopColor="#34d399" />
               </linearGradient>
             </defs>
             <CartesianGrid stroke="#333" strokeDasharray="3 3" opacity={0.15} vertical={false} />
@@ -401,35 +446,100 @@ const DoseEfficiencyChart = ({ onTimeScrub }) => {
               cursor={{ stroke: "#ffffff", strokeDasharray: "3 3", opacity: 0.3 }}
               content={<CustomTooltip />}
             />
-
             <Area
               type="monotone"
-              dataKey="viabilityLower"
-              stackId="band"
+              dataKey="efficiencyLowFill"
+              stackId="roi"
               stroke="none"
-              fill="transparent"
+              fill="#71717a"
+              fillOpacity={0.05}
               isAnimationActive={false}
             />
             <Area
               type="monotone"
-              dataKey="bandHeight"
-              stackId="band"
+              dataKey="efficiencyMediumFill"
+              stackId="roi"
               stroke="none"
-              fill="url(#viabilityBand)"
-              fillOpacity={0.9}
+              fill="#fbbf24"
+              fillOpacity={0.06}
+              isAnimationActive={false}
+            />
+            <Area
+              type="monotone"
+              dataKey="efficiencyHighFill"
+              stackId="roi"
+              stroke="none"
+              fill="#34d399"
+              fillOpacity={0.08}
+              isAnimationActive={false}
+            />
+            {optimalExit && (
+              <ReferenceArea
+                x1={optimalExit.day}
+                x2={durationWeeks * 7}
+                fill="#f43f5e"
+                fillOpacity={0.06}
+                stroke={false}
+              />
+            )}
+
+            <Area
+              type="monotone"
+              dataKey="toxicity"
+              stroke="#fb7185"
+              strokeWidth={2.2}
+              fill="url(#loadFill)"
+              fillOpacity={0.85}
+              dot={false}
+              isAnimationActive={false}
+            />
+
+            <Area
+              type="monotone"
+              dataKey="anabolic"
+              stroke="url(#momentumStroke)"
+              strokeWidth={2.8}
+              fill="url(#momentumFill)"
+              fillOpacity={0.6}
+              dot={false}
               isAnimationActive={true}
             />
 
             <Line
               type="monotone"
-              dataKey="anabolic"
-              stroke="url(#anabolicStroke)"
-              strokeWidth={2.5}
+              dataKey="naturalScaled"
+              stroke="#38bdf8"
+              strokeWidth={1.6}
+              strokeDasharray="5 4"
               dot={false}
-              strokeOpacity={1}
-              activeDot={{ r: 4, fill: "#22d3ee", strokeWidth: 0 }}
-              animationDuration={1000}
+              isAnimationActive={false}
             />
+
+            {optimalExit && (
+              <ReferenceLine
+                x={optimalExit.day}
+                stroke="#f97316"
+                strokeDasharray="4 3"
+                strokeWidth={1.25}
+                label={{
+                  value: `Optimal Exit · W${optimalExit.week}`,
+                  position: "insideTopLeft",
+                  fill: "#fbbf24",
+                  fontSize: 10,
+                }}
+              />
+            )}
+
+            {optimalExit && (
+              <ReferenceDot
+                x={optimalExit.day}
+                y={optimalExit.anabolic}
+                r={4}
+                fill="#ffffff"
+                stroke="#14b8a6"
+                strokeWidth={2}
+              />
+            )}
 
             {playheadPosition !== null && (
               <ReferenceLine
@@ -437,7 +547,7 @@ const DoseEfficiencyChart = ({ onTimeScrub }) => {
                 stroke="#3B82F6"
                 strokeWidth={1.5}
                 label={{
-                  value: `Day ${Math.round(playheadPosition)}`,
+                  value: `EXIT VECTOR · W${Math.floor(playheadPosition / 7)}`,
                   position: "insideTopRight",
                   fill: "#60A5FA",
                   fontSize: 10,

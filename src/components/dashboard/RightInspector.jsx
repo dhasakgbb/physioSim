@@ -113,25 +113,30 @@ export const RightInspector = ({
 
       const tox = metrics._raw.aggregate.totalToxicity;
       
-      // Calculate instantaneous toxicity sum at this time point
-      const instantToxicity = 
-        (tox.hepatic[index] || 0) +
-        (tox.renal[index] || 0) +
-        (tox.cardiovascular[index] || 0) +
-        (tox.lipid_metabolism[index] || 0) +
-        (tox.neurotoxicity[index] || 0);
+      // Extract organ-specific toxicity values
+      const hepatic = tox.hepatic?.[index] || 0;
+      const renal = tox.renal?.[index] || 0;
+      const cardiovascular = tox.cardiovascular?.[index] || 0;
+      const lipid = tox.lipid_metabolism?.[index] || 0;
+      const neuro = tox.neurotoxicity?.[index] || 0;
 
-      // Replicate the logic from StackContext but with instantaneous values
-      // TODO: Make this more specific (e.g. AST uses hepatic only)
+      // Use organ-specific toxicity for each lab value
+      // Scale factors are much smaller since toxicity values can be large
       return {
-        hdl: { value: 60 - (instantToxicity * 0.5), status: 'normal' },
-        ldl: { value: 90 + (instantToxicity * 0.5), status: 'normal' },
-        ast: { value: 22 + (instantToxicity * 0.2), status: 'normal' },
-        alt: { value: 24 + (instantToxicity * 0.2), status: 'normal' },
-        estradiol: { value: 24 + (instantToxicity * 0.1), status: 'normal' }, // Placeholder
-        hematocrit: { value: 45 + (instantToxicity * 0.05), status: 'normal' },
-        creatinine: { value: 1.0 + (instantToxicity * 0.01), status: 'normal' },
-        egfr: { value: 95 - (instantToxicity * 0.5), status: 'normal' }
+        // HDL/LDL are primarily affected by lipid metabolism
+        hdl: { value: Math.max(0, 60 - (lipid * 0.1)), status: 'normal' },
+        ldl: { value: 90 + (lipid * 0.1), status: 'normal' },
+        // AST/ALT are primarily affected by hepatic toxicity
+        ast: { value: Math.max(0, 22 + (hepatic * 0.05)), status: 'normal' },
+        alt: { value: Math.max(0, 24 + (hepatic * 0.05)), status: 'normal' },
+        // Estradiol - placeholder, could be affected by multiple factors
+        estradiol: { value: 24 + ((cardiovascular + hepatic) * 0.01), status: 'normal' },
+        // Hematocrit is affected by cardiovascular load
+        hematocrit: { value: Math.min(60, 45 + (cardiovascular * 0.02)), status: 'normal' },
+        // Creatinine is affected by renal toxicity
+        creatinine: { value: Math.max(0.5, 1.0 + (renal * 0.005)), status: 'normal' },
+        // eGFR inversely related to renal toxicity
+        egfr: { value: Math.max(15, 95 - (renal * 0.1)), status: 'normal' }
       };
     }
 

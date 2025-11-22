@@ -33,6 +33,8 @@ export interface ISimulationResponse {
       lipid_metabolism: number[];
       neurotoxicity: number[];
     };
+    marginalAnabolicLoad: number[];
+    naturalAxis: number[];
   };
   aggregateBenefit: number;
   aggregateToxicity: number;
@@ -95,6 +97,9 @@ function runSimulation(request: ISimulationRequest): ISimulationResponse {
   
   const totalAnabolicLoad = new Array(timePoints.length).fill(0);
   const totalTestosteroneEquivalent = new Array(timePoints.length).fill(0);
+  const marginalAnabolicLoad = new Array(timePoints.length).fill(0);
+  const naturalAxis = new Array(timePoints.length).fill(100);
+  const hptaSuppressionLoad = new Array(timePoints.length).fill(0);
   const totalToxicity = {
     hepatic: new Array(timePoints.length).fill(0),
     renal: new Array(timePoints.length).fill(0),
@@ -142,7 +147,14 @@ function runSimulation(request: ISimulationRequest): ISimulationResponse {
       
       // Apply PD DDI: Modify pathway activation
       const adjPathways = DDIEngine.applyPDInteractions(basePD.pathwayActivation, ddiRules);
-      const pd = { ...basePD, pathwayActivation: adjPathways };
+      const pathwayActivation = {
+        myogenesis: adjPathways.myogenesis ?? basePD.pathwayActivation.myogenesis ?? 0,
+        erythropoiesis: adjPathways.erythropoiesis ?? basePD.pathwayActivation.erythropoiesis ?? 0,
+        lipolysis: adjPathways.lipolysis ?? basePD.pathwayActivation.lipolysis ?? 0,
+        cns_activation: adjPathways.cns_activation ?? basePD.pathwayActivation.cns_activation ?? 0,
+        hpta_suppression: adjPathways.hpta_suppression ?? basePD.pathwayActivation.hpta_suppression ?? 0,
+      };
+      const pd = { ...basePD, pathwayActivation };
       pdPoints.push({ time: point.time, ...pd });
 
       // Calculate base toxicity
@@ -158,7 +170,6 @@ function runSimulation(request: ISimulationRequest): ISimulationResponse {
       }, ddiRules);
       
       toxicityPoints.push({
-        time: point.time,
         hepatic: adjTox.hepatic,
         renal: adjTox.renal,
         cardiovascular: adjTox.cardiovascular,
@@ -168,32 +179,58 @@ function runSimulation(request: ISimulationRequest): ISimulationResponse {
 
       // Aggregation using PhD-Defensible Scalars
       const releasedMgPerDay = point.concentrationMgL * CL_L_h * 24;
-      
-      const potency = compound.metadata?.basePotency ?? 1.0;
-      const toxicityScalar = compound.metadata?.baseToxicity ?? 1.0;
+      totalTestosteroneEquivalent[index] += releasedMgPerDay;
 
-      // Anabolic Load with DDI-adjusted pathway activation
-      const ddiAnabolicMultiplier = adjPathways.myogenesis / (basePD.pathwayActivation.myogenesis || 1);
-      totalAnabolicLoad[index] += releasedMgPerDay * potency * ddiAnabolicMultiplier;
-      
-      totalTestosteroneEquivalent[index] += releasedMgPerDay; 
+      const anabolicEffect = Math.max(0, adjPathways.myogenesis || 0);
+      totalAnabolicLoad[index] += anabolicEffect;
+      hptaSuppressionLoad[index] += Math.max(0, adjPathways.hpta_suppression || 0);
 
-      // Toxicity Load with DDI multipliers already applied
-      // Blend organ-specific severity with total systemic load so mega-doses accumulate risk proportionally.
-      const TOX_NORMALIZATION = 50; // 50 mg/day ≈ 1x reference exposure
-      const exposureFactor = (releasedMgPerDay * toxicityScalar) / TOX_NORMALIZATION;
-      const organLoad = (value: number) => Math.max(0, value) * exposureFactor;
-
-      totalToxicity.hepatic[index] += organLoad(adjTox.hepatic);
-      totalToxicity.renal[index] += organLoad(adjTox.renal);
-      totalToxicity.cardiovascular[index] += organLoad(adjTox.cardiovascular);
-      totalToxicity.lipid_metabolism[index] += organLoad(adjTox.lipid_metabolism);
-      totalToxicity.neurotoxicity[index] += organLoad(adjTox.neurotoxicity);
+      totalToxicity.hepatic[index] += Math.max(0, adjTox.hepatic || 0);
+      totalToxicity.renal[index] += Math.max(0, adjTox.renal || 0);
+      totalToxicity.cardiovascular[index] += Math.max(0, adjTox.cardiovascular || 0);
+      totalToxicity.lipid_metabolism[index] += Math.max(0, adjTox.lipid_metabolism || 0);
+      totalToxicity.neurotoxicity[index] += Math.max(0, adjTox.neurotoxicity || 0);
     });
 
     results[compound.id].pd = pdPoints;
     results[compound.id].toxicity = toxicityPoints;
   });
+
+  // Marginal efficiency: Δeffect / Δdose
+  const EPSILON = 1e-6;
+  for (let i = 1; i < timePoints.length; i++) {
+    const deltaEffect = totalAnabolicLoad[i] - totalAnabolicLoad[i - 1];
+    const deltaDose = totalTestosteroneEquivalent[i] - totalTestosteroneEquivalent[i - 1];
+    if (Math.abs(deltaDose) > EPSILON) {
+      marginalAnabolicLoad[i] = deltaEffect / deltaDose;
+    } else {
+      marginalAnabolicLoad[i] = marginalAnabolicLoad[i - 1] || 0;
+    }
+  }
+  marginalAnabolicLoad[0] = marginalAnabolicLoad[1] || marginalAnabolicLoad[0];
+
+  // Natural axis (HPTA recovery) modeled as first-order response to suppression load
+  const stepHours = timePoints.length > 1 ? Math.max(1, timePoints[1] - timePoints[0]) : 6;
+  const stepDays = stepHours / 24;
+  let natural = 100;
+  let peakSuppression = 0;
+  for (let i = 0; i < timePoints.length; i++) {
+    const suppression = Math.min(100, Math.max(0, hptaSuppressionLoad[i] || 0));
+    peakSuppression = Math.max(peakSuppression, suppression);
+    const suppressionRatio = suppression / 100;
+    const onCycle = totalTestosteroneEquivalent[i] >= 5; // ~5 mg/day ≈ 35 mg/week threshold
+    if (onCycle && suppressionRatio > 0) {
+      const decay = suppressionRatio * stepDays;
+      natural = Math.max(0, natural * (1 - decay));
+    } else {
+      const severityPenalty = Math.min(0.9, peakSuppression / 150); // Tren (≈100) recovers ~40% slower
+      const baseRecoveryPerDay = 0.18; // physiologic recovery constant (approx 6 weeks full recovery)
+      const recoveryRate = baseRecoveryPerDay * (1 - severityPenalty) * stepDays;
+      natural += (100 - natural) * recoveryRate;
+      natural = Math.min(100, natural);
+    }
+    naturalAxis[i] = natural;
+  }
 
   // Post-processing: Smooth toxicity curves to simulate organ stress accumulation/recovery
   // This prevents the "sawtooth" pattern from instantaneous serum fluctuations
@@ -243,7 +280,9 @@ function runSimulation(request: ISimulationRequest): ISimulationResponse {
     aggregate: {
       totalTestosteroneEquivalent,
       totalAnabolicLoad,
-      totalToxicity
+      totalToxicity,
+      marginalAnabolicLoad,
+      naturalAxis
     },
     aggregateBenefit: avgBenefit,
     aggregateToxicity: avgTox
