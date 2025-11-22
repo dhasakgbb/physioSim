@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { compoundData } from "../../data/compoundData";
+import { COMPOUNDS as compoundData } from "../../data/compounds";
 import Slider from "../ui/Slider";
 import { useStack } from "../../context/StackContext";
 import { useSimulation } from "../../context/SimulationContext";
@@ -52,12 +52,13 @@ const CompoundSelector = ({ isOpen, onClose }) => {
     const catalog = Object.entries(compoundData)
       .map(([key, data]) => ({
         key,
-        name: data.name,
-        abbreviation: data.abbreviation,
-        type: data.type,
-        color: data.color,
-        category: data.category,
-        pathway: data.pathway,
+        name: data.metadata.name,
+        abbreviation: data.metadata.abbreviation,
+        type: data.metadata.classification,
+        color: data.metadata.color,
+        category: data.metadata.family,
+        // Map pathway from PD data
+        pathway: data.pd.receptorInteractions.AR.activityType === 'FullAgonist' ? 'ar_genomic' : 'non_genomic',
       }))
       .filter((entry) => {
         if (!normalizedQuery) return true;
@@ -194,7 +195,7 @@ const StackCard = ({ item }) => {
   } = useSimulation();
 
   const meta = compoundData[item.compound];
-  const isOral = meta.type === "oral";
+  const isOral = meta.metadata.administrationRoutes.includes("Oral");
   const unit = isOral ? "mg/day" : "mg/wk";
   const max = isOral ? 150 : 2500;
   const [doseInput, setDoseInput] = useState(String(item.dose));
@@ -217,23 +218,23 @@ const StackCard = ({ item }) => {
   };
 
   const esterOptions = React.useMemo(() => {
-    if (!meta.esters) return [];
-    if (Array.isArray(meta.esters)) return meta.esters;
-    return Object.entries(meta.esters).map(([id, details]) => ({
+    if (!meta.pk.esters) return [];
+    // esters is now an object in new schema, not array
+    return Object.entries(meta.pk.esters).map(([id, details]) => ({
       id,
-      name: details?.name || details?.label || id,
+      name: id.charAt(0).toUpperCase() + id.slice(1), // Simple capitalization
     }));
-  }, [meta.esters]);
+  }, [meta.pk.esters]);
 
   const selectedEster = React.useMemo(() => {
-    const base = item.ester || meta.defaultEster || esterOptions[0]?.id || "";
+    const base = item.ester || esterOptions[0]?.id || "";
     if (!esterOptions.length) return base;
     return esterOptions.some((opt) => opt.id === base) ? base : esterOptions[0].id;
-  }, [item.ester, meta.defaultEster, esterOptions]);
+  }, [item.ester, esterOptions]);
   const frequency = item.frequency || 3.5; // Default fallback
   const unitLabel = unit.toUpperCase();
   const displayDose = Math.round(item.dose || 0);
-  const displayName = getDisplayName(meta.name || item.compound);
+  const displayName = getDisplayName(meta.metadata.name || item.compound);
 
   const toggleExpanded = () => {
     setCompoundOpen(item.compound, !isExpanded);
@@ -267,16 +268,16 @@ const StackCard = ({ item }) => {
         {/* Color Indicator */}
         <div
           className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-          style={{ backgroundColor: meta.color }}
+          style={{ backgroundColor: meta.metadata.color }}
         />
 
         {/* Compound Name */}
         <div className="flex-1 min-w-0 flex items-center pr-2">
           <span
             className="text-sm font-medium text-gray-200 truncate"
-            title={meta.name || item.compound}
+            title={meta.metadata.name || item.compound}
           >
-            {meta.name || item.compound}
+            {meta.metadata.name || item.compound}
           </span>
         </div>
 
@@ -326,7 +327,7 @@ const StackCard = ({ item }) => {
               <div className="flex items-center gap-2 min-w-0">
                 <div
                   className="h-2 w-2 rounded-full shadow-[0_0_6px_rgba(0,0,0,0.6)]"
-                  style={{ backgroundColor: meta.color }}
+                  style={{ backgroundColor: meta.metadata.color }}
                 />
                 <span className="text-sm font-medium text-white/90 truncate">
                   {displayName}
@@ -446,7 +447,7 @@ const StackCard = ({ item }) => {
                 unit={unit}
                 onChange={(val) => updateDose(item.compound, val)}
                 warningThreshold={isOral ? 50 : 800}
-                accentColor={meta.color}
+                accentColor={meta.metadata.color}
                 showValue={false}
                 className="pt-1"
               />
@@ -459,12 +460,12 @@ const StackCard = ({ item }) => {
 };
 
 const EmptyStackState = () => (
-  <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-physio-bg-highlight border border-physio-border-subtle rounded-xl">
-    <div className="w-12 h-12 rounded-full bg-physio-bg-surface flex items-center justify-center mb-3 text-lg text-physio-text-secondary">
-      <span className="text-2xl">🧪</span>
+  <div className="h-full w-full flex flex-col items-center justify-center text-center p-8">
+    <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mb-4">
+      <span className="text-3xl">🧪</span>
     </div>
-    <p className="text-sm text-physio-text-primary tracking-wide uppercase">No compounds deployed</p>
-    <p className="text-xs text-physio-text-secondary mt-2">
+    <p className="text-base font-semibold text-white tracking-wide uppercase mb-2">No Compounds Deployed</p>
+    <p className="text-sm text-gray-400 max-w-[200px]">
       Initialize your stack with the console above.
     </p>
   </div>
@@ -526,7 +527,7 @@ const ActiveStackRail = () => {
   }, [stack.length]);
 
   return (
-    <div className="relative flex flex-col w-full h-full bg-[#0F1115]">
+    <div className="relative flex flex-col h-full bg-[#0F1115] border-r border-white/5 flex-shrink-0">
       <div className="sticky top-0 z-20 border-b border-white/5 bg-[#0F1115]">
         <div className="flex items-center justify-between h-12 px-4 border-b border-white/5">
           <div className="scale-90 origin-left">

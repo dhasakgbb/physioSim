@@ -1,17 +1,17 @@
 import React from "react";
-import { compoundData } from "../../data/compoundData";
+import { COMPOUNDS as compoundData } from "../../data/compounds";
 import Button from "../ui/Button";
 import Badge from "../ui/Badge";
 
 const BiomarkerRow = ({ label, value }) => {
-  // -3 to +3 scale
-  const percentage = (value / 3) * 100; // Can be negative
+  // -3 to +3 scale (Mapped from Emax/EC50 in new model approx)
+  const percentage = (value / 100) * 100; // Assuming value is Emax for now
   const isPositive = value > 0;
   const isNegative = value < 0;
   const isNeutral = value === 0;
 
   let color = "bg-physio-text-tertiary";
-  if (isPositive) color = "bg-physio-accent-success"; // e.g. IGF-1 boost
+  if (isPositive) color = "bg-physio-accent-success";
 
   // Special handling for "Bad" positives
   if (
@@ -22,10 +22,11 @@ const BiomarkerRow = ({ label, value }) => {
       "pip",
       "neurotoxicity",
       "estrogenic_activity",
+      "hpta_suppression"
     ].includes(label.toLowerCase())
   ) {
-    if (isPositive) color = "bg-physio-accent-critical"; // Bad stuff going up is RED
-    if (isNegative) color = "bg-physio-accent-success"; // Bad stuff going down is GREEN
+    if (isPositive) color = "bg-physio-accent-critical";
+    if (isNegative) color = "bg-physio-accent-success";
   }
 
   if (
@@ -37,15 +38,11 @@ const BiomarkerRow = ({ label, value }) => {
       "pip",
       "neurotoxicity",
       "estrogenic_activity",
+      "hpta_suppression"
     ].includes(label.toLowerCase())
   ) {
-    color = "bg-physio-accent-primary"; // e.g. SHBG suppression (good)
+    color = "bg-physio-accent-primary";
   }
-
-  // Contextual coloring based on specific biomarkers could be more nuanced,
-  // but for now we stick to a consistent visual language.
-  // Actually, let's make "Bad" things red if they are typically bad.
-  // But "Impact" is neutral. Let's stick to the vector direction.
 
   return (
     <div className="flex items-center gap-3 text-xs">
@@ -63,7 +60,7 @@ const BiomarkerRow = ({ label, value }) => {
             style={{
               left: isPositive ? "50%" : "auto",
               right: isNegative ? "50%" : "auto",
-              width: `${Math.abs(percentage) / 2}%`, // Divide by 2 because it's from center
+              width: `${Math.min(50, Math.abs(percentage) / 2)}%`, 
             }}
           />
         )}
@@ -84,6 +81,16 @@ const CompoundInspector = ({ compoundKey, onClose }) => {
 
   if (!data) return null;
 
+  // Map new schema to flattened biomarkers for display
+  const biomarkers = {
+    "Anabolic Rating": data.pd.receptorInteractions.AR.Emax,
+    "Androgenic Rating": data.pd.receptorInteractions.AR.Kd < 1 ? 100 : 50, // Proxy
+    "Estrogenic Activity": data.pd.receptorInteractions.ER_alpha ? data.pd.receptorInteractions.ER_alpha.Emax : 0,
+    "HPTA Suppression": data.pd.pathwayModulation.systemic.HPTA_suppression.Emax,
+    "Liver Toxicity": data.toxicity.hepatic.parameters.coefficient * 1000, // Scale up
+    "Neurotoxicity": data.toxicity.neurotoxicity.parameters.coefficient * 1000,
+  };
+
   return (
     // Changed to FIXED position, h-screen, and high Z-index to float above everything
     <div className="fixed inset-y-0 right-0 w-[450px] bg-physio-bg-core/95 backdrop-blur-xl border-l border-physio-border-strong shadow-2xl z-[100] flex flex-col animate-slide-left">
@@ -92,20 +99,20 @@ const CompoundInspector = ({ compoundKey, onClose }) => {
         <div className="flex items-center gap-4">
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold text-white shadow-lg"
-            style={{ backgroundColor: data.color }}
+            style={{ backgroundColor: data.metadata.color || '#3B82F6' }}
           >
-            {data.abbreviation}
+            {data.metadata.abbreviation}
           </div>
           <div>
             <h2 className="text-xl font-bold text-physio-text-primary">
-              {data.name}
+              {data.metadata.name}
             </h2>
             <div className="flex items-center gap-2 mt-1">
               <Badge variant="neutral" size="sm">
-                {data.type}
+                {data.metadata.classification}
               </Badge>
               <Badge variant="info" size="sm">
-                {data.category}
+                {data.metadata.family}
               </Badge>
             </div>
           </div>
@@ -126,10 +133,10 @@ const CompoundInspector = ({ compoundKey, onClose }) => {
             <div className="grid grid-cols-2 gap-4">
               <div className="p-3 bg-physio-bg-core rounded-lg border border-physio-border-subtle">
                 <span className="block text-[10px] text-physio-text-tertiary uppercase">
-                  Half-Life
+                  Molecular Wt
                 </span>
                 <span className="text-lg font-mono text-physio-text-primary">
-                  {data.halfLife || "N/A"}
+                  {data.metadata.chemicalProperties.molecularWeight || "N/A"}
                 </span>
               </div>
               <div className="p-3 bg-physio-bg-core rounded-lg border border-physio-border-subtle">
@@ -137,7 +144,7 @@ const CompoundInspector = ({ compoundKey, onClose }) => {
                   Binding Affinity
                 </span>
                 <span className="text-lg font-mono text-physio-text-primary capitalize">
-                  {data.bindingAffinity || "N/A"}
+                  {data.pd.receptorInteractions.AR.Kd} nM
                 </span>
               </div>
             </div>
@@ -146,9 +153,7 @@ const CompoundInspector = ({ compoundKey, onClose }) => {
                 Pathway
               </span>
               <span className="text-sm font-medium text-physio-text-primary">
-                {data.pathway === "ar_genomic"
-                  ? "Genomic AR Agonist"
-                  : "Non-Genomic / CNS Signaling"}
+                {data.pd.receptorInteractions.AR.activityType}
               </span>
             </div>
           </div>
@@ -159,19 +164,13 @@ const CompoundInspector = ({ compoundKey, onClose }) => {
               Endocrine Impact
             </h3>
             <div className="space-y-2">
-              {data.biomarkers ? (
-                Object.entries(data.biomarkers).map(([key, val]) => (
-                  <BiomarkerRow
-                    key={key}
-                    label={key.replace("_", " ")}
-                    value={val}
-                  />
-                ))
-              ) : (
-                <p className="text-xs text-physio-text-tertiary italic">
-                  No biomarker data available.
-                </p>
-              )}
+              {Object.entries(biomarkers).map(([key, val]) => (
+                <BiomarkerRow
+                  key={key}
+                  label={key}
+                  value={val}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -184,15 +183,15 @@ const CompoundInspector = ({ compoundKey, onClose }) => {
           <div className="p-4 bg-physio-bg-highlight/10 rounded-xl border border-physio-border-subtle text-sm text-physio-text-secondary leading-relaxed">
             <p className="mb-2">
               <strong className="text-physio-text-primary">Summary:</strong>{" "}
-              {data.methodology?.summary}
+              {data.clinical?.summary || data.metadata.description || "No summary available."}
             </p>
             <p className="mb-2">
               <strong className="text-physio-text-primary">Benefit:</strong>{" "}
-              {data.methodology?.benefitRationale}
+              {data.clinical?.benefitRationale || "N/A"}
             </p>
             <p>
               <strong className="text-physio-text-primary">Risk:</strong>{" "}
-              {data.methodology?.riskRationale}
+              {data.clinical?.riskRationale || "N/A"}
             </p>
           </div>
         </div>

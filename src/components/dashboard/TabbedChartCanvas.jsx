@@ -8,16 +8,20 @@ import { useSystemLoad } from "../../hooks/useSystemLoad";
 import StatusIndicator from "./StatusIndicator";
 import { CenterPane } from "./CenterPane";
 
-const NET_FAMILY_TABS = new Set(["efficiency", "serum", "evolution"]);
+import AnalyticsPane from "./AnalyticsPane";
+
+const NET_FAMILY_TABS = new Set(["efficiency", "serum", "evolution", "analytics"]);
 const VIEW_MODE_TO_TAB = {
   net: "efficiency",
   optimize: "optimize",
   network: "pathways",
+  analytics: "analytics",
 };
 const TAB_TO_VIEW_MODE = {
   efficiency: "net",
   serum: "net",
   evolution: "net",
+  analytics: "analytics",
   optimize: "optimize",
   pathways: "network",
 };
@@ -54,6 +58,7 @@ const TabbedChartCanvas = ({ onTimeScrub }) => {
 
   const tabs = [
     { id: 'efficiency', label: 'Efficiency' },
+    { id: 'analytics', label: 'QSP Analytics' },
     { id: 'serum', label: 'Serum Levels' },
     { id: 'evolution', label: 'Evolution' },
     { id: 'optimize', label: 'Optimize' },
@@ -63,6 +68,10 @@ const TabbedChartCanvas = ({ onTimeScrub }) => {
   const renderActiveChart = () => {
     if (activeTab === 'efficiency') {
       return <CenterPane onTimeScrub={onTimeScrub} />;
+    }
+
+    if (activeTab === 'analytics') {
+      return <AnalyticsPane />;
     }
 
     if (activeTab === 'serum') {

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
-import { compoundData } from "../../data/compoundData";
+import { COMPOUNDS as compoundData } from "../../data/compounds";
 import { PATHWAY_NODES, COMPOUND_VECTORS } from "../../data/pathwayMap";
 
 // --- Configuration ---
@@ -176,11 +176,12 @@ const SignalingNetwork = ({ stack, metrics }) => {
 
     // --- A. INPUT NODES ---
     stack.forEach((item, idx) => {
+      const meta = compoundData[item.compoundId || item.compound]; // Handle both ID formats
       inputNodes.push({
-        id: `input-${item.compound}`,
+        id: `input-${item.compoundId || item.compound}`,
         type: "input",
-        label: compoundData[item.compound].name,
-        color: compoundData[item.compound].color || "#9ca3af",
+        label: meta?.metadata?.name || item.compound,
+        color: meta?.metadata?.color || "#9ca3af",
         y: idx * ROW_HEIGHT + inputStartY,
         x: 0, // Left
         data: item,
@@ -205,11 +206,13 @@ const SignalingNetwork = ({ stack, metrics }) => {
 
     // --- C. CALCULATE LOADS & LINKS (Input -> Pathway) ---
     stack.forEach((item) => {
-      const vector = COMPOUND_VECTORS[item.compound] || {};
-      const meta = compoundData[item.compound];
+      const compoundId = item.compoundId || item.compound;
+      const vector = COMPOUND_VECTORS[compoundId] || {};
+      const meta = compoundData[compoundId];
       
       // Standardize Dose Factor with Engine (Weekly Dose / 300)
-      const weeklyDose = meta.type === "oral" ? item.dose * 7 : item.dose;
+      const isOral = meta?.metadata?.administrationRoutes?.includes("Oral");
+      const weeklyDose = isOral ? item.dose * 7 : item.dose;
       const doseFactor = weeklyDose / 300;
 
       Object.entries(vector).forEach(([rawKey, rawStrength]) => {
@@ -222,10 +225,10 @@ const SignalingNetwork = ({ stack, metrics }) => {
 
           // Create Link
           activeLinks.push({
-            source: `input-${item.compound}`,
+            source: `input-${compoundId}`,
             target: `path-${key}`,
             value: strength,
-            color: meta.color,
+            color: meta?.metadata?.color || "#3B82F6",
             type: "input-path",
           });
         }

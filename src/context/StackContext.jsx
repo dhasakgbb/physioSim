@@ -6,8 +6,6 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
-import { compoundData } from "../data/compoundData";
-import { evaluateStack } from "../utils/stackEngine";
 import { defaultProfile, PROFILE_STORAGE_KEY } from "../utils/personalization";
 import {
   readJSONStorage,
@@ -15,17 +13,10 @@ import {
   getSafeStorage,
 } from "../utils/storage";
 import { VIEW_MODE_STORAGE_KEY } from "../utils/storageKeys";
+import { useSimulationStore } from "../store/simulationStore";
 
 const BASE_PATH = (import.meta.env?.BASE_URL || "/").replace(/\/*$/, "/");
 const BASE_PATH_NO_TRAIL = BASE_PATH.replace(/\/$/, "");
-
-const SUPPORT_PROTOCOLS = Object.freeze({
-  liver: [
-    { compound: "tudca", dose: 1000, frequency: 1 },
-    { compound: "nac", dose: 1200, frequency: 1 },
-  ],
-  renal: [{ compound: "nac", dose: 1200, frequency: 1 }],
-});
 
 const stripBasePath = (pathname) => {
   if (BASE_PATH === "/") return pathname;
@@ -152,7 +143,37 @@ syncViewModeToUrl.hasHydrated = false;
 
 export const StackProvider = ({ children }) => {
   // 1. Unified State
-  const [stack, setStack] = useState([]);
+  // Bridge to Zustand Store
+  const { 
+    stack: storeStack, 
+    compounds, 
+    addToStack, 
+    removeFromStack, 
+    updateStackItem, 
+    simulationResults 
+  } = useSimulationStore();
+
+  // Local UI state for card expand/collapse
+  const [openCards, setOpenCards] = useState(new Map());
+
+  // Map store stack to legacy stack format for UI compatibility
+  const stack = useMemo(() => {
+    return storeStack.map(item => {
+      const compoundDef = compounds[item.compoundId];
+      return {
+        id: item.id,
+        compound: item.compoundId,
+        dose: item.dose,
+        frequency: item.frequency,
+        ester: item.esterId,
+        isOpen: openCards.get(item.compoundId) ?? true, // Default to open, use Map state
+        // Add legacy fields if needed by UI
+        name: compoundDef?.metadata.name,
+        color: '#0066CC', // Placeholder
+      };
+    });
+  }, [storeStack, compounds, openCards]);
+
   const [userProfile, setUserProfile] = useState(() =>
     hydrateProfile(loadStoredProfile()),
   );
@@ -192,124 +213,98 @@ export const StackProvider = ({ children }) => {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [viewMode]);
 
-  // 2. The Brain
+  // 2. The Brain (Bridge)
   const metrics = useMemo(() => {
-    return evaluateStack({
-      stackInput: stack,
-      profile: userProfile,
-    });
-  }, [stack, userProfile]);
+    if (!simulationResults) return null;
+    
+    // Create a bridge object that mimics the old metrics structure but uses new data
+    // This is a temporary adapter to keep the UI from crashing
+    const { aggregate, aggregateBenefit, aggregateToxicity } = simulationResults;
+    
+    // Basic mapping to satisfy RightInspector
+    // In a real QSP model, labs would be calculated by the worker based on specific biomarkers
+    return {
+      totals: {
+        netScore: (aggregateBenefit || 0) - (aggregateToxicity || 0),
+        totalRisk: aggregateToxicity || 0,
+        totalBenefit: aggregateBenefit || 0
+      },
+      analytics: {
+        labsWidget: {
+           // Placeholder: Real lab projection would go here
+           hdl: { value: 60 - (aggregateToxicity * 0.5), status: 'normal' },
+           ldl: { value: 90 + (aggregateToxicity * 0.5), status: 'normal' },
+           ast: { value: 22 + (aggregateToxicity * 0.2), status: 'normal' },
+           alt: { value: 24 + (aggregateToxicity * 0.2), status: 'normal' }
+        }
+      },
+      // Legacy fields mapped to new aggregates (using last point or average)
+      totalTestosterone: aggregate.totalTestosteroneEquivalent[aggregate.totalTestosteroneEquivalent.length - 1] || 0,
+      anabolicRating: aggregate.totalAnabolicLoad[aggregate.totalAnabolicLoad.length - 1] || 0,
+      // Add raw results for new components
+      _raw: simulationResults
+    };
+  }, [simulationResults]);
 
-  // 3. Actions
+  // 3. Actions (Proxied to Store)
   const handleAddCompound = useCallback(
     (compoundKey) => {
-      if (stack.some((i) => i.compound === compoundKey)) return;
-      const meta = compoundData[compoundKey];
-      const startDose = meta.type === "oral" ? 20 : 200;
-
-      // --- THE GOOGLE "SMART DEFAULT" LOGIC ---
-      let defaultFreq = 3.5; // Default 2x/week
-      if (meta.type === "oral")
-        defaultFreq = 1; // Daily
-      else if (meta.halfLife < 48) defaultFreq = 2; // EOD for short esters
-      // ----------------------------------------
-
-      setStack((prev) => [
-        ...prev.map((item) => ({ ...item, isOpen: false })),
-        {
-          compound: compoundKey,
-          dose: startDose,
-          frequency: defaultFreq, // Store it here
-          isOpen: true,
-        },
-      ]);
+      addToStack(compoundKey);
     },
-    [stack],
+    [addToStack],
   );
 
   const handleDoseChange = useCallback((compoundKey, newDose) => {
-    setStack((prev) =>
-      prev.map((item) =>
-        item.compound === compoundKey ? { ...item, dose: newDose } : item,
-      ),
-    );
-  }, []);
+    // Find item in stack (legacy stack uses compoundKey as ID sometimes, but new store uses UUID)
+    // We need to find the item ID. 
+    // For now, let's assume compoundKey is the compoundId and we update the first occurrence
+    const item = storeStack.find(i => i.compoundId === compoundKey);
+    if (item) {
+      updateStackItem(item.id, { dose: newDose });
+    }
+  }, [storeStack, updateStackItem]);
 
   const handleRemove = useCallback((compoundKey) => {
-    setStack((prev) => prev.filter((i) => i.compound !== compoundKey));
-  }, []);
+    // Same issue, need item ID.
+    // The UI passes the ID if we mapped it correctly in the stack useMemo above.
+    // If compoundKey is actually the UUID (which it should be if we updated the UI), use it.
+    // If it's the compound slug, find it.
+    const item = storeStack.find(i => i.id === compoundKey || i.compoundId === compoundKey);
+    if (item) {
+      removeFromStack(item.id);
+    }
+  }, [storeStack, removeFromStack]);
 
   const handleEsterChange = useCallback((compoundKey, newEster) => {
-    setStack((prev) =>
-      prev.map((item) =>
-        item.compound === compoundKey ? { ...item, ester: newEster } : item,
-      ),
-    );
-  }, []);
+    const item = storeStack.find(i => i.compoundId === compoundKey);
+    if (item) {
+      updateStackItem(item.id, { esterId: newEster });
+    }
+  }, [storeStack, updateStackItem]);
 
   const handleFrequencyChange = useCallback((compoundKey, newFreq) => {
-    setStack((prev) =>
-      prev.map((item) =>
-        item.compound === compoundKey ? { ...item, frequency: newFreq } : item,
-      ),
-    );
-  }, []);
+    const item = storeStack.find(i => i.compoundId === compoundKey);
+    if (item) {
+      updateStackItem(item.id, { frequency: newFreq });
+    }
+  }, [storeStack, updateStackItem]);
 
   const handleSetCompoundOpen = useCallback((compoundKey, nextOpen) => {
-    setStack((prev) =>
-      prev.map((item) => {
-        if (item.compound === compoundKey) {
-          return { ...item, isOpen: nextOpen };
-        }
-        if (nextOpen) {
-          return { ...item, isOpen: false };
-        }
-        return item;
-      }),
-    );
+    setOpenCards(prev => {
+      const next = new Map(prev);
+      next.set(compoundKey, nextOpen);
+      return next;
+    });
   }, []);
 
   const toggleSupportProtocol = useCallback((protocolKey) => {
-    const prescription = SUPPORT_PROTOCOLS[protocolKey];
-    if (!prescription?.length) return;
-
-    setStack((prev) => {
-      const protocolActive = prev.some(
-        (item) => item.supportProtocol === protocolKey,
-      );
-      if (protocolActive) {
-        return prev.filter((item) => item.supportProtocol !== protocolKey);
-      }
-
-      let working = prev.filter((item) => item.supportProtocol !== protocolKey);
-      let added = false;
-
-      prescription.forEach(({ compound, dose, frequency }) => {
-        if (working.some((item) => item.compound === compound)) return;
-        const meta = compoundData[compound];
-        if (!meta) return;
-        const startDose = dose ?? (meta.type === "oral" ? 500 : 200);
-        const startFrequency = frequency ?? (meta.type === "oral" ? 1 : 3.5);
-        working = [
-          ...working,
-          {
-            compound,
-            dose: startDose,
-            frequency: startFrequency,
-            isOpen: false,
-            supportProtocol: protocolKey,
-          },
-        ];
-        added = true;
-      });
-
-      return added ? working : prev;
-    });
+    // TODO: Implement support protocols in store
+    console.warn("Support protocols not yet implemented in new engine");
   }, []);
 
   const value = {
     stack,
-    setStack,
+    setStack: () => console.warn("setStack is deprecated, use store actions"),
     userProfile,
     setUserProfile,
     inspectedCompound,
@@ -330,3 +325,4 @@ export const StackProvider = ({ children }) => {
     <StackContext.Provider value={value}>{children}</StackContext.Provider>
   );
 };
+

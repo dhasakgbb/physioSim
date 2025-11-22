@@ -1,124 +1,174 @@
-# 🗺️ Project Roadmap & Handoff Guide
+This is a comprehensive roadmap for designing the next-generation compound data structure for physioSim. This structure is crucial for transitioning the simulation from a heuristic-based model towards a rigorous Quantitative Systems Pharmacology (QSP) platform. It accommodates complex pharmacokinetics (PK), multi-pathway pharmacodynamics (PD), toxicity modeling, and drug-drug interactions (DDI).Design Philosophy: From Heuristics to MechanismsThe core evolution is to replace empirical, subjective ratings (e.g., anabolicRating, potency) with standardized, measurable pharmacological parameters (e.g., $K_d$, $EC_{50}$, $K_m$, $V_d$). This enables the mechanistic modeling of time-series concentration, receptor competition, free hormone dynamics, and enzymatic conversions.1. Data Provenance and TransparencyScientific rigor demands traceability. We will use a centralized map to track the source of parameters, which is cleaner than embedding provenance with every value.TypeScript// Helper interface for data provenance
+interface IProvenanceEntry {
+source: 'HumanClinical' | 'InVitro' | 'AnimalModel' | 'QSAR' | 'ExpertHeuristic';
+citation?: string; // DOI or PubMed ID
+confidence: 'Low' | 'Medium' | 'High';
+notes?: string;
+}
 
-**Version:** 2.0 (Post-Backend Removal)
-**Last Updated:** November 21, 2025
-**Status:** Active Development / Handoff Ready
+// A map to store provenance, keyed by the parameter path (e.g., "pk.Vd")
+interface IProvenanceMap {
+[parameterPath: string]: IProvenanceEntry;
+} 2. The Evolved Compound Schema (TypeScript Interfaces)TypeScriptinterface ICompoundSchema {
+id: string;
+metadata: ICompoundMetadata;
+pk: IPharmacokinetics;
+pd: IPharmacodynamics;
+toxicity: IToxicityProfile;
+provenance: IProvenanceMap;
+}
+2.1. Metadata and IdentificationTypeScriptinterface ICompoundMetadata {
+name: string;
+abbreviation: string;
+classification: 'AAS' | 'SARM' | 'SERM' | 'AI' | 'Peptide' | 'Other';
+family: 'Testosterone-derived' | 'DHT-derived' | '19-nor' | 'Other';
+administrationRoutes: Array<'IM' | 'SubQ' | 'Oral' | 'Transdermal'>;
 
----
+chemicalProperties: {
+// Essential for converting mass (mg) to molar concentration (nM)
+molecularWeight: number; // g/mol (Parent compound)
+CAS_RN?: string;
+PubChem_CID?: number;
+};
 
-## 🎯 Project Vision
+// Structural flags relevant for metabolism/toxicity heuristics
+structuralFlags: {
+isC17aa: boolean; // C17-alpha alkylation (Hepatic toxicity implication)
+is19Nor: boolean;
+};
+}
+2.2. Pharmacokinetics (PK) - ADMEThis defines how the drug concentration changes over time, supporting dynamic time-series modeling. We prioritize Volume of Distribution (Vd) and Clearance (CL) as the standard parameters.TypeScriptinterface IPharmacokinetics {
+// Distribution
+Vd: number; // Volume of Distribution (L/kg)
 
-physioSim is an evidence-based harm reduction tool designed to visualize the dose-response relationships of anabolic-androgenic steroids (AAS). Unlike simple "cycle planners," it uses a sophisticated simulation engine to model pharmacokinetics, receptor saturation, and systemic toxicity.
+// Elimination (Parent Compound)
+CL: number; // Clearance (mL/min/kg). Defines the intrinsic elimination rate.
 
-**Current State:**
+// Protein Binding (Crucial for Free Hormone Calculation)
+proteinBinding: {
+SHBG_Kd: number; // Dissociation constant (nM)
+Albumin_Kd: number; // (nM)
+};
 
-- **Architecture:** Single-page React application (Vite + Tailwind).
-- **Data Source:** Static JSON (`src/data/compoundData.js`) with rigorous citation requirements.
-- **Simulation:** Client-side JavaScript engine (`src/utils/stackEngine.js`).
-- **Backend:** None (Serverless/Static).
+// Absorption (Route-specific)
+absorption: {
+oral?: {
+F: number; // Bioavailability (0-1)
+Ka: number; // Absorption rate constant (h⁻¹)
+};
+// Add Transdermal, SubQ as needed
+};
 
----
+// Esters (for injectables/prodrugs)
+esters?: Record<string, IEsterDefinition>;
+}
 
-## 🚦 Phase 1: Stability & Technical Debt (Immediate)
+interface IEsterDefinition {
+id: string;
+// Ratio of parent MW to esterified MW
+molecularWeightRatio: number;
 
-_Goal: Harden the codebase for scale and prevent regression bugs._
+// Depot Release Kinetics (Defines absorption from IM injection site - Flip-Flop Kinetics)
+absorptionModel: 'FirstOrder' | 'DualPhase';
+parameters: {
+// FirstOrder
+Ka?: number; // Absorption rate constant (h⁻¹)
+// DualPhase (e.g., for Testosterone Undecanoate or mixed esters like Sustanon)
+Ka_fast?: number;
+Ka_slow?: number;
+fractionFast?: number; // Fraction of dose absorbed via the fast pathway
+};
+}
+2.3. Pharmacodynamics (PD) - Mechanism of ActionThis defines how the compound affects the body based on its concentration.TypeScriptinterface IPharmacodynamics {
+receptorInteractions: IReceptorInteractions;
+enzymaticInteractions: IEnzymaticInteractions;
+pathwayModulation: IPathwayModulation;
+}
+2.3.1. Receptor Interactions (Primarily Genomic)TypeScriptinterface IReceptorInteractions {
+AR: IReceptorActivity; // Androgen Receptor
+ER_alpha?: IReceptorActivity;
+ER_beta?: IReceptorActivity;
+PR?: IReceptorActivity; // Progesterone Receptor
+GR?: IReceptorActivity; // Glucocorticoid Receptor (anti-catabolic effects)
+}
 
-### 1.1 TypeScript Migration (High Priority)
+interface IReceptorActivity {
+// Drives competitive binding simulation
+Kd: number; // Dissociation constant (nM).
+activityType: 'FullAgonist' | 'PartialAgonist' | 'Antagonist' | 'Modulator';
 
-The simulation engine relies on complex math with loose typing.
+// Hill Equation Parameters (Replaces 'potency' and 'saturationCeiling')
+// Defines the primary genomic response (e.g., overall anabolic signal)
+Emax: number; // Efficacy (relative to reference, e.g., T=1.0)
+EC50: number; // Potency (nM concentration for 50% effect)
+Hill_n: number; // Hill coefficient (steepness)
+}
+2.3.2. Enzymatic Interactions (Metabolism and Inhibition)Enables modeling using Michaelis-Menten kinetics.TypeScriptinterface IEnzymaticInteractions {
+Aromatase_CYP19A1: IEnzymeKinetics;
+FiveAlphaReductase_SRD5A: IEnzymeKinetics;
+// Extendable to others (e.g., CYP3A4 for DDI, 11β-HSD for cortisol modulation)
+}
 
-- [ ] **Action:** Rename `src/utils/stackEngine.js` to `.ts`.
-- [ ] **Action:** Define strict interfaces for `Compound`, `StackItem`, and `SimulationResult`.
-- [ ] **Benefit:** Eliminates silent `NaN` errors and runtime crashes.
+interface IEnzymeKinetics {
+isSubstrate: boolean;
+// Michaelis-Menten parameters (if substrate)
+Km?: number; // Michaelis constant (nM)
+Vmax_relative?: number; // Relative to reference substrate (e.g., Testosterone)
 
-### 1.2 Routing Infrastructure
+isInhibitor: boolean;
+// Inhibition parameters (if inhibitor, e.g., Anastrozole or Finasteride)
+Ki?: number; // Inhibition constant (nM)
+inhibitionType?: 'Competitive' | 'NonCompetitive' | 'Irreversible';
+}
+2.3.3. Pathway Modulation (Genomic, Non-Genomic, Systemic)This replaces abstract pathwayWeights with specific physiological outcomes modeled using Hill curves.TypeScriptinterface IPathwayModulation {
+// Specific Genomic Outcomes (driven by AR or other receptors)
+genomic: {
+myogenesis: IHillParameters; // Muscle hypertrophy
+erythropoiesis: IHillParameters; // RBC production (Hematocrit)
+lipolysis: IHillParameters;
+};
+// Non-Genomic (Rapid signaling)
+nonGenomic: {
+// Replaces 'androgenicRating' and 'cosmeticFactor'
+cns_activation: IHillParameters; // Strength, aggression, CNS drive
+glycogen_synthesis: IHillParameters; // Fullness, pump, fluid retention
+};
+// Systemic Regulation
+systemic: {
+// Concentration causing 50% suppression (IC50)
+HPTA_suppression: IHillParameters;
+// Impact on liver production of SHBG
+SHBG_synthesis_modulation: IHillParameters;
+};
+}
 
-Current routing is manual string parsing of `window.location`.
+// Standardized Hill Curve parameters helper
+interface IHillParameters {
+Emax: number;
+EC50: number;
+Hill_n: number;
+}
+2.4. Toxicity Profile (The "Drag")A hybrid approach that prioritizes mechanistic, concentration-dependent models (Hill/TC50) but allows fallback to empirical coefficients when data is scarce.TypeScriptinterface IToxicityProfile {
+hepatic: IToxicityModel;
+renal: IToxicityModel;
+cardiovascular: IToxicityModel;
+lipid_metabolism: IToxicityModel; // e.g., Hepatic Lipase activation
+neurotoxicity: IToxicityModel;
+}
 
-- [ ] **Action:** Install `react-router-dom` or `TanStack Router`.
-- [ ] **Action:** Implement proper routes for `/explore`, `/optimize`, `/signaling`.
-- [ ] **Benefit:** Enables deep linking, browser history support, and cleaner code.
-
-### 1.3 Strict Data Validation
-
-- [ ] **Action:** Add Zod schemas for `compoundData.js` validation.
-- [ ] **Action:** Ensure new Ki values (`compoundKiValues.js`) are strictly typed.
-
----
-
-## ⚡ Phase 2: Performance Optimization
-
-_Goal: Ensure 60fps interactions even with complex stacks._
-
-### 2.1 "Workerize" the Engine
-
-The `evaluateStack` function runs synchronously on the main thread, causing UI jank during slider drags.
-
-- [ ] **Action:** Move `stackEngine.js` to a Web Worker.
-- [ ] **Action:** Use `comlink` for seamless async communication.
-- [ ] **Benefit:** Decouples simulation math from UI rendering frame rate.
-
-### 2.2 State Management Refactor
-
-`StackContext` is currently a "God Object" handling UI state, business logic, and data.
-
-- [ ] **Action:** Migrate to **Zustand**.
-- [ ] **Action:** Split stores: `useStackStore` (data) vs `useUIStore` (modals, tabs).
-- [ ] **Benefit:** Reduces unnecessary re-renders and simplifies component logic.
-
----
-
-## 🧬 Phase 3: Feature Expansion
-
-_Goal: Leverage the new Ki values and deepen the simulation._
-
-### 3.1 Ki-Based Binding Simulation
-
-We recently added `src/data/compoundKiValues.js` but haven't fully integrated it.
-
-- [ ] **Action:** Update `stackEngine` to use Ki values for competitive binding logic.
-- [ ] **Action:** Model receptor saturation based on affinity (lower Ki = stronger binding).
-- [ ] **Benefit:** More accurate simulation of "stacking" behavior (e.g., DHT displacing T).
-
-### 3.2 User Accounts (Optional)
-
-- [ ] **Action:** Integrate Supabase or Firebase Auth.
-- [ ] **Action:** Allow saving/sharing stacks to the cloud.
-- [ ] **Benefit:** Community sharing and persistent history across devices.
-
----
-
-## 🤝 Handoff Notes for New Developers
-
-### 1. The "Golden Rule" of Data
-
-**DO NOT modify `src/data/compoundData.js` without a citation.**
-This project is built on trust. Every data point (Tier 1-4) must be defensible. See `docs/ki_values_integration.md` for the standard.
-
-### 2. Key Files
-
-- **`src/utils/stackEngine.js`**: The brain. Calculates benefits, risks, and synergy.
-- **`src/context/StackContext.jsx`**: The heart. Manages app state (needs refactoring).
-- **`src/components/dashboard/`**: The face. Contains all visualization widgets.
-
-### 3. Known Quirks
-
-- **Oxandrolone Anomaly**: Its Ki value is 62nM (very weak), but it's clinically potent. This is flagged in `compoundKiValues.js` and requires special handling in the engine (likely non-genomic or metabolic activation).
-- **Trenbolone Plateau**: The benefit curve is explicitly capped at 300mg/week based on anecdotal consensus. Do not "fix" this without new evidence.
-
-### 4. Testing
-
-- Run `npm test` before every commit.
-- `src/test/dataValidation.test.js` ensures no one accidentally breaks the physics (e.g., negative risk values).
-
----
-
-## 📅 Timeline Estimate
-
-| Phase                   | Duration  | Resource     |
-| ----------------------- | --------- | ------------ |
-| **Phase 1 (Stability)** | 2 Weeks   | 1 Senior FE  |
-| **Phase 2 (Perf)**      | 2 Weeks   | 1 Senior FE  |
-| **Phase 3 (Features)**  | 3-4 Weeks | 1 Full Stack |
-
-**Total to v3.0:** ~8 Weeks
+interface IToxicityModel {
+modelType: 'Hill_TC50' | 'Coefficient';
+parameters: Record<string, number>;
+// If Hill_TC50: parameters include Emax, TC50 (Toxic Concentration 50%), Hill_n.
+// This ensures bounded toxicity effects.
+// If Coefficient: parameters include the exponential drag coefficient.
+} 3. Drug-Drug Interaction (DDI) RegistryMany interactions (like receptor competition or enzyme inhibition) will emerge mechanistically from the parameters above. A separate registry handles specific, known synergistic or antagonistic effects not captured by the core mechanisms.TypeScriptinterface IDrugDrugInteraction {
+id: string;
+compoundA: string; // Can be ID or class
+compoundB: string; // Can be ID or class
+mechanismDescription: string;
+targetPathway: string; // e.g., "Toxicity.Hepatic" or "PD.NonGenomic.cns_activation"
+model: 'Additive' | 'Multiplicative' | 'Potentiation';
+magnitudeScalar: number;
+provenance: IProvenanceEntry;
+}

@@ -1,13 +1,18 @@
 import React, { useState } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import {
-  compoundData,
-  disclaimerText,
-  tierDescriptions,
-} from "../data/compoundData";
+import { COMPOUNDS as compoundData } from "../data/compounds";
 import { getInteraction, getInteractionScore } from "../data/interactionMatrix";
 import { getAncillaryProtocol } from "../data/sideFxAndAncillaries";
+
+const disclaimerText = "The information provided by this tool is for educational and harm reduction purposes only. It is not medical advice, diagnosis, or treatment. Anabolic-androgenic steroids (AAS) are controlled substances in many jurisdictions and carry significant health risks. The models used here are theoretical approximations based on pharmacokinetic data and do not account for individual biological variability. Always consult with a qualified healthcare provider before making decisions about your health.";
+
+const tierDescriptions = {
+  "Tier 1": "High-quality clinical evidence (RCTs, meta-analyses).",
+  "Tier 2": "Observational studies, case reports, or strong mechanistic evidence.",
+  "Tier 3": "Theoretical extrapolation or anecdotal consensus.",
+  "Tier 4": "Speculative or low-confidence data."
+};
 
 const badgePalette = {
   success: {
@@ -203,7 +208,7 @@ const PDFExport = ({
           const compound = compoundData[comp.id];
           if (compound) {
             pdf.text(
-              `• ${compound.name}: ${comp.dose}mg/week`,
+              `• ${compound.metadata.name}: ${comp.dose}mg/week`,
               margin + 3,
               yPosition,
             );
@@ -298,7 +303,7 @@ const PDFExport = ({
                 if (interaction) {
                   pdf.setFont("helvetica", "bold");
                   pdf.text(
-                    `${comp1.abbreviation} + ${comp2.abbreviation}: ${score.label}`,
+                    `${comp1.metadata.abbreviation} + ${comp2.metadata.abbreviation}: ${score.label}`,
                     margin + 3,
                     yPosition,
                   );
@@ -415,6 +420,9 @@ const PDFExport = ({
 
       // Pages 4+: Per-Compound Methodology
       Object.entries(compoundData).forEach(([key, compound]) => {
+        // Skip if no clinical data
+        if (!compound.clinical) return;
+
         pdf.addPage();
         yPosition = margin;
 
@@ -422,7 +430,7 @@ const PDFExport = ({
         pdf.setFontSize(16);
         pdf.setFont("helvetica", "bold");
         pdf.text(
-          `${compound.name} (${compound.abbreviation})`,
+          `${compound.metadata.name} (${compound.metadata.abbreviation})`,
           margin,
           yPosition,
         );
@@ -437,7 +445,7 @@ const PDFExport = ({
         pdf.setFontSize(9);
         pdf.setFont("helvetica", "normal");
         const summaryLines = pdf.splitTextToSize(
-          compound.methodology.summary,
+          compound.clinical.summary || "No summary available.",
           pageWidth - 2 * margin,
         );
         pdf.text(summaryLines, margin, yPosition);
@@ -452,7 +460,7 @@ const PDFExport = ({
         pdf.setFontSize(9);
         pdf.setFont("helvetica", "normal");
         const benefitLines = pdf.splitTextToSize(
-          compound.methodology.benefitRationale,
+          compound.clinical.benefitRationale || "N/A",
           pageWidth - 2 * margin,
         );
         pdf.text(benefitLines, margin, yPosition);
@@ -472,7 +480,7 @@ const PDFExport = ({
         pdf.setFontSize(9);
         pdf.setFont("helvetica", "normal");
         const riskLines = pdf.splitTextToSize(
-          compound.methodology.riskRationale,
+          compound.clinical.riskRationale || "N/A",
           pageWidth - 2 * margin,
         );
         pdf.text(riskLines, margin, yPosition);
@@ -482,46 +490,6 @@ const PDFExport = ({
           pdf.addPage();
           yPosition = margin;
         }
-
-        // Sources
-        pdf.setFontSize(11);
-        pdf.setFont("helvetica", "bold");
-        pdf.text("Key Sources:", margin, yPosition);
-        yPosition += 6;
-
-        pdf.setFontSize(9);
-        pdf.setFont("helvetica", "normal");
-        compound.methodology.sources.forEach((source) => {
-          const sourceLines = pdf.splitTextToSize(
-            `• ${source}`,
-            pageWidth - 2 * margin - 3,
-          );
-          pdf.text(sourceLines, margin + 3, yPosition);
-          yPosition += sourceLines.length * 4 + 2;
-        });
-        yPosition += 5;
-
-        if (yPosition > pageHeight - 80) {
-          pdf.addPage();
-          yPosition = margin;
-        }
-
-        // Limitations
-        pdf.setFontSize(11);
-        pdf.setFont("helvetica", "bold");
-        pdf.text("Key Limitations:", margin, yPosition);
-        yPosition += 6;
-
-        pdf.setFontSize(9);
-        pdf.setFont("helvetica", "normal");
-        compound.methodology.limitations.forEach((limitation) => {
-          const limitLines = pdf.splitTextToSize(
-            `• ${limitation}`,
-            pageWidth - 2 * margin - 3,
-          );
-          pdf.text(limitLines, margin + 3, yPosition);
-          yPosition += limitLines.length * 4 + 2;
-        });
       });
 
       // Save PDF

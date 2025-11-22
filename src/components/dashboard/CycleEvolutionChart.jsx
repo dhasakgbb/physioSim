@@ -11,9 +11,8 @@ import {
 } from "recharts";
 import { useStack } from "../../context/StackContext";
 import { getGeneticProfileConfig } from "../../utils/personalization";
-import { simulateSerum, getSteadyStateDurationDays } from "../../utils/pharmacokinetics";
-import { evaluateStack } from "../../utils/stackEngine";
-import { compoundData } from "../../data/compoundData";
+import { COMPOUNDS as compoundData } from "../../data/compounds";
+import { simulationService } from "../../engine/SimulationService";
 
 const useDebouncedCallback = (callback, delay = 75) => {
   const timeoutRef = React.useRef(null);
@@ -48,19 +47,19 @@ const CycleEvolutionChart = ({ onTimeScrub }) => {
 
   const debouncedScrub = useDebouncedCallback(onTimeScrub);
 
+  const [evolutionData, setEvolutionData] = React.useState([]);
+  const [releaseData, setReleaseData] = React.useState([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const CHART_DURATION_DAYS = 168; // 24 weeks
+
   const stackSignature = React.useMemo(() => {
     if (!stack.length) return "empty";
     return stack
-      .map(({ compound, dose, frequency, ester }) =>
-        [compound, dose, frequency ?? "", ester ?? ""].join(":"),
+      .map(({ compoundId, dose, frequency, ester }) =>
+        [compoundId, dose, frequency ?? "", ester ?? ""].join(":"),
       )
       .join("|");
   }, [stack]);
-
-  const steadyStateDays = React.useMemo(
-    () => getSteadyStateDurationDays(stack),
-    [stack],
-  );
 
   const toxicityVelocity = React.useMemo(() => {
     let velocity = 0.01; // Base biological drift (1% per week)
@@ -71,86 +70,94 @@ const CycleEvolutionChart = ({ onTimeScrub }) => {
 
       // 1. Baseline Compound Stress (Tier based)
       // Default Injectables to Tier 1, Orals to Tier 2 if undefined
-      const defaultTier = comp.type === "oral" ? 2 : 1;
-      const tier = comp.toxicityTier ?? defaultTier;
+      const defaultTier = comp.metadata?.administrationRoutes?.includes("Oral") ? 2 : 1;
+      // const tier = comp.toxicityTier ?? defaultTier; // Need to map this from new schema if available, or infer
+      const tier = defaultTier; // Simplified for now
       velocity += tier * 0.01;
 
       // 2. Specific Organ Stressors
-      if (comp.flags?.isRenalToxic) velocity += 0.03; // Tren/DHB penalty
-      if (comp.flags?.isLiverToxic || tier >= 3) velocity += 0.03; // Hepatotoxicity penalty
+      if (comp.toxicity?.renal) velocity += 0.03; 
+      if (comp.toxicity?.hepatic) velocity += 0.03;
 
       // 3. Neurotoxicity (CNS stress accumulation)
-      const neuro = comp.biomarkers?.neurotoxicity || 0;
-      velocity += neuro * 0.01;
+      if (comp.toxicity?.neurotoxicity) velocity += 0.01;
     });
 
     return velocity;
   }, [stack]);
-
-  const CHART_DURATION_DAYS = 168; // 24 weeks
 
   const releaseKey = React.useMemo(
     () => `${stackSignature}|${CHART_DURATION_DAYS}|${metabolismMultiplier}`,
     [stackSignature, CHART_DURATION_DAYS, metabolismMultiplier],
   );
 
-  const releaseData = React.useMemo(() => {
-    if (!stack.length) return [];
-    const cache = releaseCacheRef.current;
-    if (cache.has(releaseKey)) return cache.get(releaseKey);
-    const simulated = simulateSerum(stack, { metabolismMultiplier, durationDays: CHART_DURATION_DAYS }) || [];
-    const sorted = simulated
-      .map((point) => ({
-        ...point,
-        day: sanitizeNumber(point.day, 0),
-        total: sanitizeNumber(point.total, 0),
-      }))
-      .sort((a, b) => a.day - b.day);
-    cache.set(releaseKey, sorted);
-    return sorted;
-  }, [stack, metabolismMultiplier, releaseKey, CHART_DURATION_DAYS]);
-
-  const evolutionData = React.useMemo(() => {
-    if (!stack.length || !releaseData.length) return [];
-    const baseResult = evaluateStack({
-      stackInput: stack,
-      profile: userProfile,
-    });
-
-    const steadyStateBenefit = sanitizeNumber(baseResult.totals.totalBenefit, 0);
-    const finalRisk = sanitizeNumber(baseResult.totals.totalRisk, 0);
-    const maxSystemicLoad = releaseData.reduce(
-      (max, point) => Math.max(max, point.total),
-      0,
-    );
-
-    const downsampleStep = 6; // every 24h if simulateSerum resolves 4h steps
-    const dailyPoints = [];
-
-    for (let i = 0; i < releaseData.length; i += downsampleStep) {
-      const point = releaseData[i];
-      const loadRatio = maxSystemicLoad > 0 ? point.total / maxSystemicLoad : 0;
-      const week = point.day / 7;
-
-      // Model Cumulative Organ Stress: Risk increases over time based on compound selection
-      // Dynamic velocity calculated from stack profile
-      const toxicityDrift = 1 + (week * toxicityVelocity);
-
-      // Model Receptor Downregulation / Myostatin: Benefit decays slightly over time
-      // -1.5% benefit per week (diminishing returns)
-      const fatigueFactor = Math.max(0.5, 1 - (week * 0.015));
-
-      dailyPoints.push({
-        day: point.day,
-        week,
-        benefit: steadyStateBenefit * loadRatio * fatigueFactor,
-        risk: finalRisk * loadRatio * toxicityDrift,
-        loadRatio,
-      });
+  React.useEffect(() => {
+    let isMounted = true;
+    if (!stack.length) {
+        setEvolutionData([]);
+        setReleaseData([]);
+        return;
     }
 
-    return dailyPoints;
-  }, [stack, releaseData, userProfile]);
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const activeCompounds = stack.map(s => compoundData[s.compoundId]).filter(Boolean);
+            const currentStack = stack.map(s => ({ compoundId: s.compoundId, dose: s.dose, frequency: s.frequency }));
+
+            const result = await simulationService.runSimulation({
+                stack: currentStack,
+                compounds: activeCompounds,
+                userProfile,
+                durationDays: CHART_DURATION_DAYS
+            });
+
+            if (isMounted && result.serumLevels) {
+                const simulated = result.serumLevels.map(point => ({
+                    ...point,
+                    day: point.t,
+                    total: point.totalConcentration
+                }));
+                setReleaseData(simulated);
+
+                // Calculate evolution data
+                const steadyStateBenefit = result.aggregateBenefit || 0;
+                const finalRisk = result.aggregateToxicity || 0;
+                const maxSystemicLoad = simulated.reduce(
+                    (max, point) => Math.max(max, point.total),
+                    0,
+                );
+
+                const downsampleStep = 6; 
+                const dailyPoints = [];
+
+                for (let i = 0; i < simulated.length; i += downsampleStep) {
+                    const point = simulated[i];
+                    const loadRatio = maxSystemicLoad > 0 ? point.total / maxSystemicLoad : 0;
+                    const week = point.day / 7;
+
+                    const toxicityDrift = 1 + (week * toxicityVelocity);
+                    const fatigueFactor = Math.max(0.5, 1 - (week * 0.015));
+
+                    dailyPoints.push({
+                        day: point.day,
+                        week,
+                        benefit: steadyStateBenefit * loadRatio * fatigueFactor,
+                        risk: finalRisk * loadRatio * toxicityDrift,
+                        loadRatio,
+                    });
+                }
+                setEvolutionData(dailyPoints);
+            }
+        } catch (err) {
+            console.error("Simulation failed", err);
+        } finally {
+            if (isMounted) setIsLoading(false);
+        }
+    };
+    fetchData();
+    return () => { isMounted = false; };
+  }, [releaseKey, stack, userProfile, metabolismMultiplier, toxicityVelocity]);
 
   const updatePlayheadPosition = (event) => {
     if (!chartRef.current) return;
@@ -206,8 +213,8 @@ const CycleEvolutionChart = ({ onTimeScrub }) => {
   const maxBenefit = evolutionData.reduce((max, point) => Math.max(max, point.benefit), 0);
   const maxRisk = evolutionData.reduce((max, point) => Math.max(max, point.risk), 0);
   const yMax = Math.max(10, Math.max(maxBenefit, maxRisk) * 1.2);
-  const domainMaxDay = releaseData.length ? releaseData[releaseData.length - 1].day : steadyStateDays;
-  const adaptationMarker = Math.min(domainMaxDay, steadyStateDays);
+  const domainMaxDay = releaseData.length ? releaseData[releaseData.length - 1].day : CHART_DURATION_DAYS;
+  const adaptationMarker = 120; // Fixed for now or calculate from steady state logic if needed
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden rounded-3xl border border-white/5 bg-[#050507] p-4">

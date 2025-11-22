@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import {
   CartesianGrid,
   ComposedChart,
@@ -9,57 +9,24 @@ import {
   YAxis,
 } from "recharts";
 import { useStack } from "../../context/StackContext";
-import { evaluateStack } from "../../utils/stackEngine";
 import { defaultProfile } from "../../utils/personalization";
-import { compoundData } from "../../data/compoundData";
+import { simulationService } from "../../engine/SimulationService";
+import { COMPOUNDS as compoundMap } from "../../data/compounds";
 
-const SCALAR_STEPS = 120;
-const NEGATIVE_WINDOW = 0.65; // Explore down to ~35% of the current stack
-const POSITIVE_WINDOW = 0.85; // Explore up to ~185% of the current stack
+const SCALAR_STEPS = 100; // Reduced slightly for perf, worker is fast though
+const NEGATIVE_WINDOW = 0.65;
+const POSITIVE_WINDOW = 0.85;
 const CHART_MARGIN = { top: 10, right: 20, bottom: 0, left: 20 };
-const SMOOTHING_WEIGHT = 0.18;
-const LABEL_GUARD = 72; // px padding to keep badges on screen
-const BINDING_WEIGHTS = {
-  very_high: 2.8,
-  high: 1.6,
-  moderate: 1.2,
-};
-
-const clamp = (value, min = 0, max = 1) => Math.min(Math.max(value, min), max);
-
-const smoothSeries = (points, weight = SMOOTHING_WEIGHT) => {
-  if (points.length < 3) return points;
-  return points.map((point, index, arr) => {
-    const prev = arr[index - 1] ?? point;
-    const next = arr[index + 1] ?? point;
-
-    const smoothValue = (key) => {
-      const base = point[key];
-      const blended =
-        base + weight * (prev[key] - base) + weight * (next[key] - base);
-      return Math.max(0, blended);
-    };
-
-    const benefit = smoothValue("benefit");
-    const risk = smoothValue("risk");
-
-    return {
-      ...point,
-      benefit,
-      risk,
-      netGap: benefit - risk,
-    };
-  });
-};
+const LABEL_GUARD = 72;
 
 const useDebouncedCallback = (callback, delay = 60) => {
-  const timerRef = React.useRef(null);
+  const timerRef = useRef(null);
 
-  React.useEffect(() => () => {
+  useEffect(() => () => {
     if (timerRef.current) clearTimeout(timerRef.current);
   }, []);
 
-  return React.useCallback(
+  return useCallback(
     (value) => {
       if (!callback) return;
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -130,120 +97,103 @@ const EfficiencyTooltip = ({ active, payload }) => {
   );
 };
 
-const getBindingWeight = (meta) => BINDING_WEIGHTS[meta?.bindingAffinity] || 1;
-
-const buildSweep = (stack, profile) => {
-  if (!stack.length) {
-    return {
-      data: [],
-      baselineMgEq: 0,
-      chartMax: 50,
-      sweetSpot: null,
-      yDomain: [0, 50],
-      domain: [-NEGATIVE_WINDOW * 100, POSITIVE_WINDOW * 100],
-    };
-  }
-
-  const prepared = stack.map((entry) => {
-    const meta = compoundData[entry.compound] || {};
-    const weight = getBindingWeight(meta);
-    return { original: entry, weight };
-  });
-
-  const baselineMgEq = prepared.reduce(
-    (total, item) => total + (item.original.dose || 0) * item.weight,
-    0,
-  );
-
-  const span = NEGATIVE_WINDOW + POSITIVE_WINDOW;
-  const stepSize = span / SCALAR_STEPS;
-
-  const rawPoints = [];
-
-  for (let i = 0; i <= SCALAR_STEPS; i += 1) {
-    const offset = -NEGATIVE_WINDOW + i * stepSize;
-    const scalar = clamp(1 + offset, 0, 2.25);
-    const mgEq = baselineMgEq * scalar;
-
-    const sweepStack = prepared.map(({ original }) => ({
-      ...original,
-      dose: (original.dose || 0) * scalar,
-    }));
-
-    const result = evaluateStack({ stackInput: sweepStack, profile });
-    const benefit = Number(result.totals.totalBenefit || 0);
-    const risk = Number(result.totals.totalRisk || 0);
-    const net = Number(result.totals.netScore || 0);
-
-    if (!Number.isFinite(benefit) || !Number.isFinite(risk)) continue;
-
-    const point = {
-      deltaPercent: offset * 100,
-      mgEq,
-      benefit,
-      risk,
-      net,
-      netGap: benefit - risk,
-      saturationPenalty: result.totals.saturationPenalty,
-      toxicityMultiplier: result.totals.toxicityMultiplier,
-    };
-
-    rawPoints.push(point);
-  }
-
-  const dataPoints = smoothSeries(rawPoints);
-
-  let sweetSpot = null;
-  let minValue = Infinity;
-  let maxValue = 0;
-
-  dataPoints.forEach((point) => {
-    minValue = Math.min(minValue, point.benefit, point.risk);
-    maxValue = Math.max(maxValue, point.benefit, point.risk);
-    if (!sweetSpot || point.netGap > sweetSpot.netGap) {
-      sweetSpot = point;
-    }
-  });
-
-  const chartMax = dataPoints.reduce(
-    (acc, item) => Math.max(acc, item.benefit, item.risk),
-    40,
-  ) * 1.12;
-
-  if (!Number.isFinite(minValue)) minValue = 0;
-  if (!Number.isFinite(maxValue)) maxValue = 10;
-  const padding = Math.max(1, (maxValue - minValue) * 0.08);
-  const domainMin = Math.max(0, minValue - padding);
-  const domainMax = maxValue + padding;
-
-  return {
-    data: dataPoints,
-    baselineMgEq,
-    chartMax,
-    sweetSpot,
-    yDomain: [domainMin, domainMax],
-    domain: [-NEGATIVE_WINDOW * 100, POSITIVE_WINDOW * 100],
-  };
-};
-
 const NetEffectChart = ({ onTimeScrub }) => {
   const { stack, userProfile } = useStack();
   const profile = userProfile || defaultProfile;
   const debouncedScrub = useDebouncedCallback(onTimeScrub);
-  const [hoverMeta, setHoverMeta] = React.useState(null);
-  const chartRef = React.useRef(null);
-  const [chartSize, setChartSize] = React.useState({ width: 0, height: 0 });
+  const [hoverMeta, setHoverMeta] = useState(null);
+  const chartRef = useRef(null);
+  const [chartSize, setChartSize] = useState({ width: 0, height: 0 });
 
-  const sweep = React.useMemo(() => buildSweep(stack, profile), [stack, profile]);
-  const currentPoint = React.useMemo(() => {
-    if (!sweep?.data?.length) return null;
-    return (
-      sweep.data.find((point) => Math.abs(point.deltaPercent) < 0.1) ||
-      sweep.data[Math.floor(sweep.data.length / 2)]
-    );
-  }, [sweep]);
+  // Async State
+  const [sweepData, setSweepData] = useState({ points: [], sweetSpot: null });
+  const [isLoading, setIsLoading] = useState(false);
 
-  React.useLayoutEffect(() => {
+  // Fetch Sweep Data
+  useEffect(() => {
+    let isMounted = true;
+
+    const runAsyncSweep = async () => {
+      if (!stack.length) {
+        setSweepData({ points: [], sweetSpot: null });
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        // Prepare payload
+        const activeCompounds = stack.map(s => compoundMap[s.compoundId]).filter(Boolean);
+        const baseStack = stack.map(s => ({ compoundId: s.compoundId, dose: s.dose }));
+        
+        // Generate scalars
+        const span = NEGATIVE_WINDOW + POSITIVE_WINDOW;
+        const stepSize = span / SCALAR_STEPS;
+        const scalars = [];
+        for (let i = 0; i <= SCALAR_STEPS; i++) {
+            const offset = -NEGATIVE_WINDOW + i * stepSize;
+            scalars.push(Math.max(0, 1 + offset));
+        }
+
+        const result = await simulationService.runSweep({
+          baseStack,
+          compounds: activeCompounds,
+          scalars,
+          userProfile: profile
+        });
+
+        if (isMounted) {
+          // Post-process points to add deltaPercent for the chart
+          const processedPoints = result.points.map((p, idx) => {
+             const offset = -NEGATIVE_WINDOW + idx * stepSize;
+             return {
+                 ...p,
+                 deltaPercent: offset * 100
+             };
+          });
+
+          // Find sweet spot with deltaPercent
+          let sweetSpot = null;
+          if (result.sweetSpot) {
+              sweetSpot = processedPoints.find(p => Math.abs(p.scalar - result.sweetSpot.scalar) < 0.001);
+          }
+
+          setSweepData({
+            points: processedPoints,
+            sweetSpot
+          });
+        }
+      } catch (err) {
+        console.error("Sweep failed", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    const timer = setTimeout(runAsyncSweep, 50); // Debounce slightly to avoid rapid updates
+    return () => {
+        isMounted = false;
+        clearTimeout(timer);
+    };
+  }, [stack, profile]);
+
+  const currentPoint = useMemo(() => {
+    if (!sweepData.points.length) return null;
+    // Find point closest to scalar 1.0 (delta 0)
+    return sweepData.points.find((p) => Math.abs(p.deltaPercent) < 1) || sweepData.points[Math.floor(sweepData.points.length / 2)];
+  }, [sweepData]);
+
+  // Chart Domain Helpers
+  const domain = useMemo(() => [-NEGATIVE_WINDOW * 100, POSITIVE_WINDOW * 100], []);
+  const yDomain = useMemo(() => {
+      if (!sweepData.points.length) return [0, 100];
+      let max = 0;
+      sweepData.points.forEach(p => {
+          max = Math.max(max, p.benefit, p.risk);
+      });
+      return [0, max * 1.1];
+  }, [sweepData]);
+
+  useMemo(() => {
     if (!chartRef.current) return undefined;
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
@@ -257,20 +207,20 @@ const NetEffectChart = ({ onTimeScrub }) => {
     return () => observer.disconnect();
   }, []);
 
-  const projectX = React.useCallback(
+  const projectX = useCallback(
     (deltaPercent) => {
-      if (!chartSize.width || !sweep?.domain) return 0;
-      const [domainMin, domainMax] = sweep.domain;
+      if (!chartSize.width || !domain) return 0;
+      const [domainMin, domainMax] = domain;
       if (domainMax === domainMin) return CHART_MARGIN.left;
       const usableWidth = Math.max(chartSize.width - (CHART_MARGIN.left + CHART_MARGIN.right), 0);
       const ratio = (deltaPercent - domainMin) / (domainMax - domainMin);
       const clamped = Math.min(Math.max(ratio, 0), 1);
       return CHART_MARGIN.left + clamped * usableWidth;
     },
-    [chartSize.width, sweep?.domain],
+    [chartSize.width, domain],
   );
 
-  const computeLabelShift = React.useCallback(
+  const computeLabelShift = useCallback(
     (x, padding = LABEL_GUARD) => {
       if (!chartSize.width) return 0;
       const safePadding = Math.min(padding, chartSize.width / 2);
@@ -283,7 +233,7 @@ const NetEffectChart = ({ onTimeScrub }) => {
     [chartSize.width],
   );
 
-  const clampOverlayX = React.useCallback(
+  const clampOverlayX = useCallback(
     (value) => {
       if (!Number.isFinite(value)) return 0;
       if (!chartSize.width) return Math.max(value, 0);
@@ -293,7 +243,7 @@ const NetEffectChart = ({ onTimeScrub }) => {
     [chartSize.width],
   );
 
-  const handleCursor = React.useCallback((state) => {
+  const handleCursor = useCallback((state) => {
     if (!state?.isTooltipActive) {
       setHoverMeta(null);
       return;
@@ -319,7 +269,7 @@ const NetEffectChart = ({ onTimeScrub }) => {
   }
 
   const currentLineX = currentPoint ? projectX(currentPoint.deltaPercent) : null;
-  const peakLineX = sweep.sweetSpot ? projectX(sweep.sweetSpot.deltaPercent) : null;
+  const peakLineX = sweepData.sweetSpot ? projectX(sweepData.sweetSpot.deltaPercent) : null;
   const safeCurrentLineX = currentLineX != null ? clampOverlayX(currentLineX) : null;
   const safePeakLineX = peakLineX != null ? clampOverlayX(peakLineX) : null;
 
@@ -327,7 +277,10 @@ const NetEffectChart = ({ onTimeScrub }) => {
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-white/5 bg-[#050608]">
       <header className="flex items-start justify-between border-b border-white/5 px-6 py-4">
         <div className="flex flex-col gap-1">
-          <h3 className="text-base font-semibold text-white">Dose Efficiency</h3>
+          <h3 className="text-base font-semibold text-white">
+            Dose Efficiency
+            {isLoading && <span className="ml-2 text-xs text-gray-500 animate-pulse">(Calculating...)</span>}
+          </h3>
           <p className="text-xs text-gray-500">Explore the distance between anabolic signal and systemic cost.</p>
         </div>
         <div className="flex flex-col items-end gap-3">
@@ -342,9 +295,9 @@ const NetEffectChart = ({ onTimeScrub }) => {
               <span>Toxicity</span>
             </span>
           </div>
-          {sweep.sweetSpot && (
+          {sweepData.sweetSpot && (
             <div className="rounded-full border border-sky-400/40 bg-sky-400/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-sky-200">
-              Sweet Spot · {Math.round(sweep.sweetSpot.mgEq)} mgEq
+              Sweet Spot · {Math.round(sweepData.sweetSpot.mgEq)} mgEq
             </div>
           )}
         </div>
@@ -372,7 +325,7 @@ const NetEffectChart = ({ onTimeScrub }) => {
       <div ref={chartRef} className="relative flex-1 bg-gradient-to-b from-[#07090F] to-[#030305]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
-            data={sweep.data}
+            data={sweepData.points}
             onMouseMove={handleCursor}
             onMouseLeave={() => setHoverMeta(null)}
             margin={CHART_MARGIN}
@@ -381,7 +334,7 @@ const NetEffectChart = ({ onTimeScrub }) => {
             <XAxis
               type="number"
               dataKey="deltaPercent"
-              domain={sweep.domain}
+              domain={domain}
               axisLine={false}
               tickLine={false}
               padding={{ left: 20, right: 20 }}
@@ -395,7 +348,7 @@ const NetEffectChart = ({ onTimeScrub }) => {
               tickFormatter={(value) => (value === 0 ? "Current" : formatDelta(value, true))}
               tick={{ fill: "#6b7280", fontSize: 10 }}
             />
-            <YAxis hide domain={sweep.yDomain} allowDataOverflow />
+            <YAxis hide domain={yDomain} allowDataOverflow />
 
             <Tooltip
               cursor={{ stroke: "#ffffff", strokeDasharray: "3 3" }}
@@ -449,7 +402,7 @@ const NetEffectChart = ({ onTimeScrub }) => {
             </div>
           )}
 
-          {sweep.sweetSpot && safePeakLineX != null && (
+          {sweepData.sweetSpot && safePeakLineX != null && (
             <div
               className="absolute inset-y-10 w-[2px] bg-gradient-to-b from-transparent via-indigo-400/70 to-transparent"
               style={{
@@ -463,7 +416,7 @@ const NetEffectChart = ({ onTimeScrub }) => {
                   transform: `translate(calc(-50% + ${computeLabelShift(safePeakLineX)}px), 0)`,
                 }}
               >
-                Peak Gap {formatNumber(sweep.sweetSpot.netGap)}
+                Peak Gap {formatNumber(sweepData.sweetSpot.netGap)}
               </span>
             </div>
           )}

@@ -21,32 +21,32 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: #0B0C0E;
+    background: #0b0c0e;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #27272A;
+    background: #27272a;
     border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #3F3F46;
+    background: #3f3f46;
   }
 }
 
 :root {
   /* A. The "OLED Gunmetal" Palette */
-  --bg-main: #0B0C0E;              /* The void. Not pure black, but 98% black. */
-  --bg-surface: #13151A;           /* The card surface. Slightly cooler grey. */
-  --bg-surface-hover: #1A1D23;     /* Interaction state. */
-  --border-subtle: rgba(255, 255, 255, 0.06);  /* The default separator. */
+  --bg-main: #0b0c0e; /* The void. Not pure black, but 98% black. */
+  --bg-surface: #13151a; /* The card surface. Slightly cooler grey. */
+  --bg-surface-hover: #1a1d23; /* Interaction state. */
+  --border-subtle: rgba(255, 255, 255, 0.06); /* The default separator. */
   --border-highlight: rgba(255, 255, 255, 0.12); /* Hover borders. */
 
   /* B. The "Bio-Luminescent" Accents */
-  --primary-indigo: #5E6AD2;        /* Use for "Optimize" buttons and sliders. */
-  --signal-green: #27D796;         /* Use for "Normal" range and positive deltas. */
-  --signal-orange: #F3A041;        /* Use for Warnings. */
-  --signal-red: #E05555;           /* Use for Critical/Redline. */
+  --primary-indigo: #5e6ad2; /* Use for "Optimize" buttons and sliders. */
+  --signal-green: #27d796; /* Use for "Normal" range and positive deltas. */
+  --signal-orange: #f3a041; /* Use for Warnings. */
+  --signal-red: #e05555; /* Use for Critical/Redline. */
 
   /* Legacy mappings for backward compatibility */
   --color-bg-core: var(--bg-main);
@@ -79,14 +79,9 @@ body {
   min-height: 100vh;
   background: var(--color-bg-core);
   color: var(--color-text-primary);
-  font-family:
-    "Outfit",
-    system-ui,
-    -apple-system,
-    sans-serif;
+  font-family: "Outfit", system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
 }
-
 
 /* C. Effects (The "Secret Sauce") */
 .glow-orange {
@@ -133,7 +128,7 @@ body {
 .main-stage {
   grid-row: 2;
   display: grid;
-  grid-template-columns: 260px 1fr 300px; /* Fixed Left, Flex Center, Fixed Right */
+  grid-template-columns: 300px 1fr 300px; /* Fixed Left, Flex Center, Fixed Right */
 }
 
 /* The Columns - Note the borders */
@@ -170,39 +165,47 @@ body {
 /* Phase 2: The "Ghost" Wireframe */
 .ghost-wireframe {
   background-image:
-    /* Faint grid lines */
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    /* Faint grid lines */ linear-gradient(
+      rgba(255, 255, 255, 0.02) 1px,
+      transparent 1px
+    ),
     linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
     /* Chemical hexagon pattern */
-    radial-gradient(circle at 25% 25%, rgba(94, 106, 210, 0.01) 2px, transparent 2px),
-    radial-gradient(circle at 75% 75%, rgba(39, 215, 150, 0.01) 2px, transparent 2px);
-  background-size:
-    40px 40px,    /* Grid */
-    60px 60px,    /* Hex pattern 1 */
-    80px 80px;    /* Hex pattern 2 */
-  background-position:
-    0 0,           /* Grid */
-    20px 20px,     /* Hex pattern 1 */
-    40px 40px;     /* Hex pattern 2 */
-  opacity: 0.4;    /* Very subtle */
+      radial-gradient(
+        circle at 25% 25%,
+        rgba(94, 106, 210, 0.01) 2px,
+        transparent 2px
+      ),
+    radial-gradient(
+      circle at 75% 75%,
+      rgba(39, 215, 150, 0.01) 2px,
+      transparent 2px
+    );
+  background-size: 40px 40px, /* Grid */ 60px 60px,
+    /* Hex pattern 1 */ 80px 80px; /* Hex pattern 2 */
+  background-position: 0 0, /* Grid */ 20px 20px, /* Hex pattern 1 */ 40px 40px; /* Hex pattern 2 */
+  opacity: 0.4; /* Very subtle */
 }
 
 /* Carbon Fiber Headers */
 .carbon-header {
-  background:
-    repeating-linear-gradient(
+  background: repeating-linear-gradient(
       45deg,
       transparent,
       transparent 1px,
-      rgba(255,255,255,0.04) 1px,
-      rgba(255,255,255,0.04) 3px
+      rgba(255, 255, 255, 0.04) 1px,
+      rgba(255, 255, 255, 0.04) 3px
     ),
-    linear-gradient(135deg, var(--color-bg-panel) 0%, var(--color-bg-surface) 100%);
+    linear-gradient(
+      135deg,
+      var(--color-bg-panel) 0%,
+      var(--color-bg-surface) 100%
+    );
   position: relative;
 }
 
 .carbon-header::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -210,10 +213,10 @@ body {
   bottom: 0;
   background: linear-gradient(
     135deg,
-    rgba(255,255,255,0.02) 0%,
+    rgba(255, 255, 255, 0.02) 0%,
     transparent 25%,
     transparent 75%,
-    rgba(255,255,255,0.01) 100%
+    rgba(255, 255, 255, 0.01) 100%
   );
   pointer-events: none;
 }
@@ -238,7 +241,6 @@ body {
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
 }
 
-
 .hud-bracket {
   position: relative;
   border: none;
@@ -254,31 +256,31 @@ body {
 }
 
 .hud-bracket::before {
-  background-image:
-    linear-gradient(90deg, rgba(59, 130, 246, 0.45) 28px, transparent 0),
+  background-image: linear-gradient(
+      90deg,
+      rgba(59, 130, 246, 0.45) 28px,
+      transparent 0
+    ),
     linear-gradient(180deg, rgba(59, 130, 246, 0.45) 28px, transparent 0),
     linear-gradient(270deg, rgba(59, 130, 246, 0.45) 28px, transparent 0),
     linear-gradient(180deg, rgba(59, 130, 246, 0.45) 28px, transparent 0);
   background-size: 32px 1.5px, 1.5px 32px, 32px 1.5px, 1.5px 32px;
-  background-position:
-    left 12px top 12px,
-    left 12px top 12px,
-    right 12px top 12px,
-    right 12px top 12px;
+  background-position: left 12px top 12px, left 12px top 12px,
+    right 12px top 12px, right 12px top 12px;
 }
 
 .hud-bracket::after {
-  background-image:
-    linear-gradient(90deg, rgba(59, 130, 246, 0.45) 28px, transparent 0),
+  background-image: linear-gradient(
+      90deg,
+      rgba(59, 130, 246, 0.45) 28px,
+      transparent 0
+    ),
     linear-gradient(0deg, rgba(59, 130, 246, 0.45) 28px, transparent 0),
     linear-gradient(270deg, rgba(59, 130, 246, 0.45) 28px, transparent 0),
     linear-gradient(0deg, rgba(59, 130, 246, 0.45) 28px, transparent 0);
   background-size: 32px 1.5px, 1.5px 32px, 32px 1.5px, 1.5px 32px;
-  background-position:
-    left 12px bottom 12px,
-    left 12px bottom 12px,
-    right 12px bottom 12px,
-    right 12px bottom 12px;
+  background-position: left 12px bottom 12px, left 12px bottom 12px,
+    right 12px bottom 12px, right 12px bottom 12px;
 }
 
 .cta-scan {

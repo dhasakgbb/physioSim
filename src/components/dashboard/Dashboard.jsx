@@ -6,7 +6,6 @@ import CompoundInspector from "./CompoundInspector";
 import ErrorBoundary from "../ui/ErrorBoundary";
 import RightInspector from "./RightInspector";
 import { useStack } from "../../context/StackContext";
-import { evaluateStack } from "../../utils/stackEngine";
 
 const Dashboard = () => {
   const {
@@ -23,14 +22,8 @@ const Dashboard = () => {
     setTimeScrubData(dataPoint);
   };
 
-  // Calculate Steady State Metrics (Fixed 12 Weeks) for the "Net Efficiency" Card
-  // This ensures the score doesn't jump around when the user plays with the time slider
-  const steadyStateMetrics = React.useMemo(() => {
-    return evaluateStack({
-      stackInput: stack,
-      profile: userProfile,
-    });
-  }, [stack, userProfile]);
+  // Use metrics from context which are now powered by the simulation engine
+  const steadyStateMetrics = metrics;
 
   return (
     <>

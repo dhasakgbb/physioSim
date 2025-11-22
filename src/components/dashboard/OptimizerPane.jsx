@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
-import {
-  findPeakEfficiency,
-  findOptimalConfiguration,
-  findGeneticAlgorithmSolution,
-  findMultiObjectiveSolutions,
-  findAdvancedOptimization
-} from '../../utils/stackOptimizer';
-import { compoundData } from '../../data/compoundData';
+import { simulationService } from '../../engine/SimulationService';
+import { COMPOUNDS as compoundData } from '../../data/compounds';
 import Input from '../ui/Input';
 import { GENETIC_ARCHETYPES } from '../../utils/personalization';
 
@@ -382,11 +376,11 @@ const ResultPreview = ({ originalStack, optimizedStack, originalScore, newScore,
   if (isAIResult) {
     // For AI results, show all compounds in the optimized stack
     items = optimizedStack.map((item) => {
-      const meta = compoundData[item.compound];
-      const originalItem = originalStack.find(o => o.compound === item.compound);
+      const meta = compoundData[item.compoundId];
+      const originalItem = originalStack.find(o => o.compoundId === item.compoundId);
 
       return {
-        name: meta?.name || item.compound,
+        name: meta?.metadata?.name || item.compoundId,
         oldDose: originalItem?.dose || 0,
         newDose: item.dose,
         isChanged: !originalItem || item.dose !== originalItem.dose,
@@ -397,10 +391,10 @@ const ResultPreview = ({ originalStack, optimizedStack, originalScore, newScore,
 
     // Mark removed compounds
     originalStack.forEach((item) => {
-      if (!optimizedStack.find(o => o.compound === item.compound)) {
-        const meta = compoundData[item.compound];
+      if (!optimizedStack.find(o => o.compoundId === item.compoundId)) {
+        const meta = compoundData[item.compoundId];
         items.push({
-          name: meta?.name || item.compound,
+          name: meta?.metadata?.name || item.compoundId,
           oldDose: item.dose,
           newDose: 0,
           isChanged: true,
@@ -413,11 +407,11 @@ const ResultPreview = ({ originalStack, optimizedStack, originalScore, newScore,
     // Traditional optimization - assume same compounds, different doses
     items = optimizedStack.map((item, index) => {
       const oldItem = originalStack[index];
-      const meta = compoundData[item.compound];
+      const meta = compoundData[item.compoundId];
       const isChanged = item.dose !== oldItem.dose;
 
       return {
-        name: meta?.name || item.compound,
+        name: meta?.metadata?.name || item.compoundId,
         oldDose: oldItem.dose,
         newDose: item.dose,
         isChanged,
@@ -554,8 +548,23 @@ const OptimizerPane = ({ stack, userProfile, onApplyOptimization, onUpdateProfil
     setOptimizing(true);
     setResult({ type: 'efficiency', loading: true });
     try {
-      const res = await findPeakEfficiency(stack, userProfile);
-      setResult({ ...res, type: 'efficiency' });
+      const activeCompounds = stack.map(s => compoundData[s.compoundId]).filter(Boolean);
+      const currentStack = stack.map(s => ({ compoundId: s.compoundId, dose: s.dose }));
+      
+      const res = await simulationService.runOptimization({
+        type: 'efficiency',
+        currentStack,
+        compounds: activeCompounds,
+        userProfile
+      });
+      
+      setResult({ 
+        ...res, 
+        type: 'efficiency',
+        originalBenefit: res.originalScore, // Map for UI compatibility
+        newBenefit: res.newScore,
+        isDifferent: res.newScore > res.originalScore
+      });
     } catch (error) {
       console.error("Optimization failed:", error);
     } finally {
@@ -567,8 +576,23 @@ const OptimizerPane = ({ stack, userProfile, onApplyOptimization, onUpdateProfil
     setOptimizing(true);
     setResult({ mode: 'max_safe', loading: true });
     try {
-      const res = await findOptimalConfiguration(stack, userProfile, 'safe');
-      setResult(res);
+      const activeCompounds = stack.map(s => compoundData[s.compoundId]).filter(Boolean);
+      const currentStack = stack.map(s => ({ compoundId: s.compoundId, dose: s.dose }));
+
+      const res = await simulationService.runOptimization({
+        type: 'max_safe',
+        currentStack,
+        compounds: activeCompounds,
+        userProfile
+      });
+
+      setResult({ 
+        ...res, 
+        mode: 'max_safe',
+        originalBenefit: res.originalScore,
+        newBenefit: res.newScore,
+        isDifferent: res.newScore > res.originalScore
+      });
     } catch (error) {
       console.error("Optimization failed:", error);
     } finally {
@@ -580,8 +604,23 @@ const OptimizerPane = ({ stack, userProfile, onApplyOptimization, onUpdateProfil
     setOptimizing(true);
     setResult({ mode: 'absolute_max', loading: true });
     try {
-      const res = await findOptimalConfiguration(stack, userProfile, 'extreme');
-      setResult(res);
+      const activeCompounds = stack.map(s => compoundData[s.compoundId]).filter(Boolean);
+      const currentStack = stack.map(s => ({ compoundId: s.compoundId, dose: s.dose }));
+
+      const res = await simulationService.runOptimization({
+        type: 'redline',
+        currentStack,
+        compounds: activeCompounds,
+        userProfile
+      });
+
+      setResult({ 
+        ...res, 
+        mode: 'absolute_max',
+        originalBenefit: res.originalScore,
+        newBenefit: res.newScore,
+        isDifferent: res.newScore > res.originalScore
+      });
     } catch (error) {
       console.error("Optimization failed:", error);
     } finally {
@@ -593,18 +632,25 @@ const OptimizerPane = ({ stack, userProfile, onApplyOptimization, onUpdateProfil
     setOptimizing(true);
     setResult({ type: 'genetic_algorithm', loading: true });
     try {
-      const availableCompounds = Object.keys(compoundData);
-      const res = await findGeneticAlgorithmSolution(availableCompounds, userProfile, {
-        populationSize: 50,
-        generations: 100
-      });
-      setResult({
-        ...res,
+      const activeCompounds = stack.map(s => compoundData[s.compoundId]).filter(Boolean);
+      const currentStack = stack.map(s => ({ compoundId: s.compoundId, dose: s.dose }));
+
+      const res = await simulationService.runOptimization({
         type: 'genetic_algorithm',
-        isDifferent: true
+        currentStack,
+        compounds: activeCompounds,
+        userProfile
+      });
+
+      setResult({ 
+        ...res, 
+        type: 'genetic_algorithm',
+        originalBenefit: res.originalScore,
+        newBenefit: res.newScore,
+        isDifferent: res.newScore > res.originalScore
       });
     } catch (error) {
-      console.error("Genetic algorithm optimization failed:", error);
+      console.error("Optimization failed:", error);
     } finally {
       setOptimizing(false);
     }
@@ -614,24 +660,25 @@ const OptimizerPane = ({ stack, userProfile, onApplyOptimization, onUpdateProfil
     setOptimizing(true);
     setResult({ type: 'multi_objective', loading: true });
     try {
-      const availableCompounds = Object.keys(compoundData);
-      const res = await findMultiObjectiveSolutions(availableCompounds, userProfile, {
-        populationSize: 100,
-        generations: 150
+      const activeCompounds = stack.map(s => compoundData[s.compoundId]).filter(Boolean);
+      const currentStack = stack.map(s => ({ compoundId: s.compoundId, dose: s.dose }));
+
+      const res = await simulationService.runOptimization({
+        type: 'multi_objective',
+        currentStack,
+        compounds: activeCompounds,
+        userProfile
       });
 
-      // For multi-objective, show the first (best balanced) solution initially
-      const bestSolution = res.paretoFront[0];
-      setResult({
-        ...res,
-        optimizedStack: bestSolution.stack,
+      setResult({ 
+        ...res, 
         type: 'multi_objective',
-        isDifferent: true,
-        paretoFront: res.paretoFront,
-        objectives: bestSolution.objectives
+        originalBenefit: res.originalScore,
+        newBenefit: res.newScore,
+        isDifferent: res.newScore > res.originalScore
       });
     } catch (error) {
-      console.error("Multi-objective optimization failed:", error);
+      console.error("Optimization failed:", error);
     } finally {
       setOptimizing(false);
     }

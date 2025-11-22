@@ -10,8 +10,8 @@ import {
   Legend,
   ReferenceLine,
 } from "recharts";
-import { compoundData } from "../../data/compoundData";
-import { simulateSerum, getSteadyStateDurationDays } from "../../utils/pharmacokinetics";
+import { COMPOUNDS as compoundData } from "../../data/compounds";
+import { simulationService } from "../../engine/SimulationService";
 import { useStack } from "../../context/StackContext";
 import { useSimulation } from "../../context/SimulationContext";
 import { getGeneticProfileConfig } from "../../utils/personalization";
@@ -40,63 +40,71 @@ const SerumStabilityChart = ({ onTimeScrub }) => {
   const [playheadPosition, setPlayheadPosition] = React.useState(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const chartRef = React.useRef(null);
-  const serumCacheRef = React.useRef(new Map());
+  // const serumCacheRef = React.useRef(new Map());
 
   const debouncedScrub = useDebouncedCallback(onTimeScrub, 75);
+
+  const [data, setData] = React.useState([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const steadyStateDays = 120; // Default or calculated
 
   const stackSignature = useMemo(() => {
     if (!stack.length) return "empty";
     return stack
-      .map(({ compound, dose, frequency, ester }) =>
-        [compound, dose, frequency ?? "", ester ?? ""].join(":"),
+      .map(({ compoundId, dose, frequency, ester }) =>
+        [compoundId, dose, frequency ?? "", ester ?? ""].join(":"),
       )
       .join("|");
   }, [stack]);
-
-  const steadyStateDays = useMemo(
-    () => getSteadyStateDurationDays(stack),
-    [stack],
-  );
 
   const serumKey = useMemo(
     () => `${stackSignature}|${metabolismMultiplier}|${steadyStateDays}`,
     [stackSignature, metabolismMultiplier, steadyStateDays],
   );
 
-  const data = useMemo(() => {
-    if (!stack.length) return [];
-    const cache = serumCacheRef.current;
-    if (cache.has(serumKey)) return cache.get(serumKey);
+  React.useEffect(() => {
+    let isMounted = true;
+    if (!stack.length) {
+      setData([]);
+      return;
+    }
 
-    const simulated = simulateSerum(stack, { metabolismMultiplier, durationDays: steadyStateDays }) || [];
-    const sanitized = simulated
-      .map((point) => ({
-        ...point,
-        day: Number.isFinite(point.day) ? point.day : 0,
-        total: Number.isFinite(point.total) ? point.total : 0,
-      }))
-      .sort((a, b) => a.day - b.day);
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const activeCompounds = stack.map(s => compoundData[s.compoundId]).filter(Boolean);
+        const currentStack = stack.map(s => ({ compoundId: s.compoundId, dose: s.dose, frequency: s.frequency }));
+        
+        const result = await simulationService.runSimulation({
+           stack: currentStack,
+           compounds: activeCompounds,
+           userProfile,
+           durationDays: steadyStateDays
+        });
 
-    const converted = sanitized.map((point) => {
-      const next = { ...point };
-      let serumTotal = 0;
+        if (isMounted && result.serumLevels) {
+           // Process data for chart
+           const processed = result.serumLevels.map(point => {
+             const next = { ...point, day: point.t, total: point.totalConcentration };
+             // Map compound concentrations
+             Object.keys(point.concentrations).forEach(cid => {
+               next[cid] = point.concentrations[cid];
+             });
+             return next;
+           });
+           setData(processed);
+        }
+      } catch (err) {
+        console.error("Simulation failed", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
 
-      stack.forEach(({ compound }) => {
-        const meta = compoundData[compound];
-        const factor = meta?.conversionFactor ?? 0;
-        const mgValue = Number(point[compound]) || 0;
-        const serumValue = mgValue * factor;
-        next[compound] = serumValue;
-        serumTotal += serumValue;
-      });
+    fetchData();
 
-      next.total = serumTotal;
-      return next;
-    });
-
-    cache.set(serumKey, converted);
-    return converted;
-  }, [stack, metabolismMultiplier, serumKey, steadyStateDays]);
+    return () => { isMounted = false; };
+  }, [serumKey, stack, userProfile, metabolismMultiplier]);
 
   // Handle playhead interactions
   const handleMouseDown = (event) => {
@@ -175,13 +183,18 @@ const SerumStabilityChart = ({ onTimeScrub }) => {
 
   // Check for Orals to adjust resolution
   const hasOrals = useMemo(() => {
-    return stack.some((item) => compoundData[item.compound]?.type === "oral");
+    return stack.some((item) => compoundData[item.compoundId]?.metadata?.administrationRoutes?.includes("Oral"));
   }, [stack]);
 
   return (
     <div className="flex flex-col h-full relative">
       {/* Chart Canvas - Edge to Edge */}
       <div className="flex-1 w-full min-h-0 relative">
+        {isLoading && (
+           <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/50 backdrop-blur-sm">
+             <div className="text-physio-accent-primary animate-pulse">Simulating PK...</div>
+           </div>
+        )}
         <div className="absolute top-4 left-6 right-6 z-10 flex items-center justify-between text-[10px] uppercase tracking-[0.4em] text-[#9ca3af]">
           <span>Serum Stability</span>
           <span>Stability Score {stabilityScore}%</span>
@@ -235,14 +248,14 @@ const SerumStabilityChart = ({ onTimeScrub }) => {
 
             {/* Render a Line for every compound in the stack */}
             {stack.map((item) => {
-              const meta = compoundData[item.compound];
+              const meta = compoundData[item.compoundId];
               return (
                 <Line
-                  key={item.compound}
+                  key={item.compoundId}
                   type="monotone"
-                  dataKey={item.compound}
-                  name={meta.name}
-                  stroke={meta.color}
+                  dataKey={item.compoundId}
+                  name={meta?.metadata?.name || item.compoundId}
+                  stroke={meta?.metadata?.color || "#3B82F6"} // Fallback color
                   strokeWidth={2}
                   dot={false}
                   activeDot={{ r: 3 }}
