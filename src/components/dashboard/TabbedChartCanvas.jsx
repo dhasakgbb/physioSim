@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import SerumStabilityChart from "./SerumStabilityChart";
-import CycleEvolutionChart from "./CycleEvolutionChart";
+
 import OptimizerPane from "./OptimizerPane";
-import SignalingNetwork from "./SignalingNetwork";
+
 import { useStack } from "../../context/StackContext";
 import { useSystemLoad } from "../../hooks/useSystemLoad";
 import StatusIndicator from "./StatusIndicator";
@@ -10,11 +10,11 @@ import { CenterPane } from "./CenterPane";
 
 import AnalyticsPane from "./AnalyticsPane";
 
-const NET_FAMILY_TABS = new Set(["efficiency", "serum", "evolution", "analytics"]);
+const NET_FAMILY_TABS = new Set(["efficiency", "serum", "analytics"]);
 const VIEW_MODE_TO_TAB = {
   net: "efficiency",
   optimize: "optimize",
-  network: "pathways",
+
   analytics: "analytics",
 };
 const TAB_TO_VIEW_MODE = {
@@ -23,10 +23,10 @@ const TAB_TO_VIEW_MODE = {
   evolution: "net",
   analytics: "analytics",
   optimize: "optimize",
-  pathways: "network",
+
 };
 
-const TabbedChartCanvas = ({ onTimeScrub }) => {
+const TabbedChartCanvas = ({ onTimeScrub, scrubbedPoint }) => {
   const {
     stack,
     userProfile,
@@ -60,14 +60,14 @@ const TabbedChartCanvas = ({ onTimeScrub }) => {
     { id: 'efficiency', label: 'Efficiency' },
     { id: 'analytics', label: 'QSP Analytics' },
     { id: 'serum', label: 'Serum Levels' },
-    { id: 'evolution', label: 'Evolution' },
+
     { id: 'optimize', label: 'Optimize' },
-    { id: 'pathways', label: 'Pathways' },
+
   ];
 
   const renderActiveChart = () => {
     if (activeTab === 'efficiency') {
-      return <CenterPane onTimeScrub={onTimeScrub} />;
+      return <CenterPane onTimeScrub={onTimeScrub} scrubbedPoint={scrubbedPoint} />;
     }
 
     if (activeTab === 'analytics') {
@@ -78,9 +78,7 @@ const TabbedChartCanvas = ({ onTimeScrub }) => {
       return <SerumStabilityChart onTimeScrub={onTimeScrub} />;
     }
 
-    if (activeTab === 'evolution') {
-      return <CycleEvolutionChart onTimeScrub={onTimeScrub} />;
-    }
+
 
     if (activeTab === 'optimize') {
       return (
@@ -93,9 +91,7 @@ const TabbedChartCanvas = ({ onTimeScrub }) => {
       );
     }
 
-    if (activeTab === 'pathways') {
-      return <SignalingNetwork stack={stack} metrics={metrics} />;
-    }
+
 
     return null;
   };
@@ -116,8 +112,8 @@ const TabbedChartCanvas = ({ onTimeScrub }) => {
 
   return (
     <main className="flex flex-col h-screen w-full bg-[#0A0A0A] overflow-hidden relative">
-      <header className="h-14 shrink-0 flex items-center justify-between border-b border-white/5 px-6 bg-[#0B0C0E]">
-        <div className="flex bg-[#1a1d23] p-0.5 rounded-lg border border-white/5">
+      <header className="flex items-start justify-between border-b border-white/5 px-6 py-4 overflow-x-auto scrollbar-hide">
+        <div className="flex bg-[#1a1d23] p-0.5 rounded-lg border border-white/5 overflow-x-auto scrollbar-hide whitespace-nowrap">
           {tabs.map((tab, idx) => {
             const isActive = activeTab === tab.id;
             const isFirst = idx === 0;
@@ -158,7 +154,7 @@ const TabbedChartCanvas = ({ onTimeScrub }) => {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto scrollbar-hide">
+      <div className="flex-1 overflow-y-auto scrollbar-hide relative">
         <div className="flex flex-col min-h-full gap-4 p-4 pb-10">
           {renderActiveChart()}
         </div>

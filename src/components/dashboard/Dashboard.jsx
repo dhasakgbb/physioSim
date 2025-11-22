@@ -33,7 +33,10 @@ const Dashboard = () => {
         // ZONE B: The Visualization
         centerStage={
           <ErrorBoundary>
-            <TabbedChartCanvas onTimeScrub={handleTimeScrub} />
+            <TabbedChartCanvas
+              onTimeScrub={handleTimeScrub}
+              scrubbedPoint={timeScrubData}
+            />
           </ErrorBoundary>
         }
         // ZONE C: Inspector Pane

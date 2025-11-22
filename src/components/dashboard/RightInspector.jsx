@@ -97,7 +97,47 @@ export const RightInspector = ({
     };
 
   const { netScore = 0, totalRisk = 0 } = totals;
-  const labsWidget = metrics?.analytics?.labsWidget;
+  
+  // Determine which data source to use (Scrubbed vs Steady State)
+  const activeLabsWidget = useMemo(() => {
+    // 1. If scrubbing, calculate instantaneous values from raw simulation data
+    if (scrubbedPoint && metrics?._raw?.aggregate?.totalToxicity) {
+      const day = scrubbedPoint.day ?? 0;
+      // timePoints are in 6-hour intervals: [0, 6, 12, 18, 24, 30, ...]
+      // So day 0 = index 0, day 1 = index 4 (24/6), day 2 = index 8, etc.
+      // Convert days to 6-hour intervals: 1 day = 4 intervals (24/6)
+      const index = Math.min(
+        Math.round(day * 4), 
+        (metrics._raw.aggregate.totalToxicity.hepatic?.length || 1) - 1
+      );
+
+      const tox = metrics._raw.aggregate.totalToxicity;
+      
+      // Calculate instantaneous toxicity sum at this time point
+      const instantToxicity = 
+        (tox.hepatic[index] || 0) +
+        (tox.renal[index] || 0) +
+        (tox.cardiovascular[index] || 0) +
+        (tox.lipid_metabolism[index] || 0) +
+        (tox.neurotoxicity[index] || 0);
+
+      // Replicate the logic from StackContext but with instantaneous values
+      // TODO: Make this more specific (e.g. AST uses hepatic only)
+      return {
+        hdl: { value: 60 - (instantToxicity * 0.5), status: 'normal' },
+        ldl: { value: 90 + (instantToxicity * 0.5), status: 'normal' },
+        ast: { value: 22 + (instantToxicity * 0.2), status: 'normal' },
+        alt: { value: 24 + (instantToxicity * 0.2), status: 'normal' },
+        estradiol: { value: 24 + (instantToxicity * 0.1), status: 'normal' }, // Placeholder
+        hematocrit: { value: 45 + (instantToxicity * 0.05), status: 'normal' },
+        creatinine: { value: 1.0 + (instantToxicity * 0.01), status: 'normal' },
+        egfr: { value: 95 - (instantToxicity * 0.5), status: 'normal' }
+      };
+    }
+
+    // 2. Fallback to steady state metrics passed from parent
+    return metrics?.analytics?.labsWidget;
+  }, [scrubbedPoint, metrics]);
 
   const vitalsData = useMemo(() => {
     const fallback = {
@@ -107,8 +147,8 @@ export const RightInspector = ({
 
     return LAB_BLUEPRINT.map((item) => {
       const widgetEntry =
-        labsWidget?.[item.id] ||
-        (item.id === "estradiol" ? labsWidget?.e2 : undefined);
+        activeLabsWidget?.[item.id] ||
+        (item.id === "estradiol" ? activeLabsWidget?.e2 : undefined);
       const numericValue = Number(
         widgetEntry?.value ?? fallback[item.id] ?? DEFAULT_LABS[item.id] ?? 0
       );
@@ -118,7 +158,7 @@ export const RightInspector = ({
         status: widgetEntry?.status || null,
       };
     });
-  }, [metrics, labsWidget]);
+  }, [metrics, activeLabsWidget]);
 
 
 

@@ -6,10 +6,6 @@ import { useSystemLoad } from "../../hooks/useSystemLoad";
 import { useProjectedGains } from "../../hooks/useProjectedGains";
 import type { ProjectedVectorMetric } from "../../hooks/useProjectedGains";
 
-type CenterPaneProps = {
-  onTimeScrub?: (point: unknown) => void;
-};
-
 type LoadRowProps = {
   id: string;
   label: string;
@@ -172,9 +168,14 @@ const ActiveHalfLifeCard: React.FC = () => (
   </div>
 );
 
-export const CenterPane: React.FC<CenterPaneProps> = ({ onTimeScrub }) => {
-  const { categories, systemIndex, systemLevel, dominantCategory } = useSystemLoad();
-  const { vectors, netScore } = useProjectedGains();
+type CenterPaneProps = {
+  onTimeScrub?: (point: unknown) => void;
+  scrubbedPoint?: any;
+};
+// ...existing code...
+export const CenterPane: React.FC<CenterPaneProps> = ({ onTimeScrub, scrubbedPoint }) => {
+  const { categories, systemIndex, systemLevel, dominantCategory } = useSystemLoad(scrubbedPoint);
+  const { vectors, netScore } = useProjectedGains(scrubbedPoint);
 
   const systemLevelMeta = useMemo(() => LEVEL_META[systemLevel], [systemLevel]);
 

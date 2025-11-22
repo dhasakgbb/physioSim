@@ -104,8 +104,38 @@ const computeWeeklyDose = (entry: { compound?: string; dose?: number }): number 
   return entry.dose * 7;
 };
 
-export const useProjectedGains = (): ProjectedGainsResult => {
-  const { stack } = useStack();
+export const useProjectedGains = (scrubbedPoint?: any): ProjectedGainsResult => {
+  const { stack, metrics } = useStack();
+
+  // Calculate time-based scaling factor
+  const timeScale = useMemo(() => {
+    if (!scrubbedPoint || !metrics?._raw?.aggregate?.totalAnabolicLoad) return 1;
+    
+    const agg = metrics._raw.aggregate;
+    const len = agg.totalAnabolicLoad.length;
+    if (len === 0) return 1;
+
+    // Determine current load
+    // timePoints are in 6-hour intervals: [0, 6, 12, 18, 24, ...]
+    // So day 0 = index 0, day 1 = index 4 (24/6), day 2 = index 8, etc.
+    let index = len - 1;
+    if (typeof scrubbedPoint.day === 'number') {
+      // Convert days to 6-hour intervals: 1 day = 4 intervals (24/6)
+      index = Math.min(Math.round(scrubbedPoint.day * 4), len - 1);
+    }
+    index = Math.max(0, index);
+    const currentLoad = agg.totalAnabolicLoad[index] || 0;
+
+    // Determine steady state load (max or end)
+    // Using max to represent "potential"
+    // Let's assume steady state is at the end.
+    const steadyStateLoad = agg.totalAnabolicLoad[len - 1] || 1;
+    
+    // Avoid division by zero
+    if (steadyStateLoad <= 0.01) return 0;
+
+    return Math.max(0, currentLoad / steadyStateLoad);
+  }, [scrubbedPoint, metrics]);
 
   const rawTotals = useMemo(() => {
     const aggregate = createEmptyTotals();
@@ -143,10 +173,10 @@ export const useProjectedGains = (): ProjectedGainsResult => {
   const dampenedTotals = useMemo(() => {
     const next = createEmptyTotals();
     VECTOR_KEYS.forEach((key) => {
-      next[key] = rawTotals[key] * diminishingMultiplier;
+      next[key] = rawTotals[key] * diminishingMultiplier * timeScale;
     });
     return next;
-  }, [rawTotals, diminishingMultiplier]);
+  }, [rawTotals, diminishingMultiplier, timeScale]);
 
   const vectors = useMemo<ProjectedVectorMetric[]>(() => {
     return VECTOR_KEYS.map((key) => {

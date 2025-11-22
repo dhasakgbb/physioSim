@@ -147,22 +147,24 @@ const CompoundSelector = ({ isOpen, onClose }) => {
                       onClick={() => handleSelect(option.key)}
                       className="w-full flex items-center justify-between text-left px-3 py-3 border border-transparent rounded-xl text-sm text-white hover:border-white/10 hover:bg-white/5 transition-all"
                     >
-                      <div className="flex flex-col min-w-0 pr-3">
-                        <p className="text-sm font-medium text-white truncate">
-                          {option.name}
-                        </p>
-                        <p className="text-[10px] text-gray-500 mt-1">
-                          {getPathwayLabel(option.pathway)}
-                        </p>
+                      <div className="flex items-center min-w-0 pr-3">
+                        <div
+                          className="w-2 h-2 rounded-full mr-3 flex-shrink-0"
+                          style={{ backgroundColor: option.color }}
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <p className="text-sm font-medium text-white truncate">
+                            {option.name}
+                          </p>
+                          <p className="text-[10px] text-gray-500 mt-1">
+                            {getPathwayLabel(option.pathway)}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-mono text-gray-400">
                           {option.abbreviation}
                         </span>
-                        <span
-                          className="w-2 h-8 rounded-full"
-                          style={{ backgroundColor: option.color }}
-                        />
                       </div>
                     </button>
                   ))}
@@ -397,11 +399,10 @@ const StackCard = ({ item }) => {
                   onChange={(e) => updateFrequency(item.compound, parseFloat(e.target.value))}
                   className="w-full appearance-none rounded-lg border border-white/5 bg-white/[0.03] py-1.5 pl-2 pr-6 text-[11px] font-medium text-white/80 outline-none transition-colors hover:bg-white/[0.06] hover:border-white/10 focus:border-white/20"
                 >
-                  <option value={1}>QD (Daily)</option>
-                  <option value={1.5}>1.5x / week</option>
-                  <option value={2}>EOD</option>
-                  <option value={3.5}>3.5x / week</option>
-                  <option value={7}>Every day</option>
+                  <option value={7}>Daily</option>
+                  <option value={3}>3x / week</option>
+                  <option value={2}>2x / week</option>
+                  <option value={1}>1x / week</option>
                 </select>
                 <svg
                   className="pointer-events-none absolute right-2 top-[34px] h-3 w-3 text-white/30"

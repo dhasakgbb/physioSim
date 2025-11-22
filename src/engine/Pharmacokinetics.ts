@@ -124,4 +124,85 @@ export class PharmacokineticsEngine {
       };
     });
   }
+
+  /**
+   * Simulates pharmacokinetics using a step-wise iterative approach to model accumulation.
+   * This assumes that for long esters, the release rate from the depot approximates the active serum load.
+   * 
+   * @param compound The compound definition
+   * @param doses Array of { time: number, amount: number } (time in hours, amount in mg)
+   * @param timePoints Array of time points to simulate (hours)
+   * @param bodyWeightKg Patient body weight
+   */
+  static simulateIterative(
+    compound: ICompoundSchema,
+    doses: { time: number; amount: number; esterId?: string }[],
+    timePoints: number[],
+    bodyWeightKg: number = 80
+  ): ISimulationPoint[] {
+    // Determine elimination rate constant (k)
+    let k = 0.1; // Default fallback
+    
+    // Try to find the specific ester used in the doses
+    // We assume all doses for a compound use the same ester for now
+    const esterId = doses[0]?.esterId;
+    let selectedEster = null;
+
+    if (esterId && compound.pk.esters && compound.pk.esters[esterId]) {
+      selectedEster = compound.pk.esters[esterId];
+    } else if (compound.pk.esters) {
+      // Fallback to first ester if not specified or not found
+      selectedEster = Object.values(compound.pk.esters)[0];
+    }
+    
+    if (selectedEster && selectedEster.parameters && selectedEster.parameters.Ka) {
+      k = selectedEster.parameters.Ka;
+    } else if (compound.pk.absorption.oral) {
+       const Vd_L = compound.pk.Vd * bodyWeightKg;
+       const CL_L_h = (compound.pk.CL * bodyWeightKg * 60) / 1000;
+       k = CL_L_h / Vd_L;
+    }
+
+    // Initialize state
+    let currentDepot = 0;
+    
+    const result: ISimulationPoint[] = [];
+    
+    // Sort doses by time
+    const sortedDoses = [...doses].sort((a, b) => a.time - b.time);
+    let doseIndex = 0;
+    
+    const maxTime = Math.max(...timePoints);
+    const step = 1; // 1 hour
+    
+    for (let t = 0; t <= maxTime; t += step) {
+      // 1. INJECTION (Add to Depot)
+      while (doseIndex < sortedDoses.length && sortedDoses[doseIndex].time <= t) {
+        currentDepot += sortedDoses[doseIndex].amount;
+        doseIndex++;
+      }
+      
+      // 2. RELEASE (Depot -> Serum)
+      // k is in 1/hour (assumed from Ka)
+      const released = currentDepot * (1 - Math.exp(-k * step));
+      currentDepot -= released;
+      
+      // 3. ACCUMULATION
+      // Calculate steady state concentration: Rate / CL
+      const CL_L_h = (compound.pk.CL * bodyWeightKg * 60) / 1000;
+      const concentrationMgL = (released / step) / CL_L_h;
+      
+      const concentrationNM = convertMgLToNM(concentrationMgL, compound.metadata.chemicalProperties.molecularWeight);
+      
+      if (timePoints.includes(t)) {
+        result.push({
+          time: t,
+          concentrationMgL,
+          concentrationNM
+        });
+      }
+    }
+    
+    return result;
+  }
 }

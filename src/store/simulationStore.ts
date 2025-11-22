@@ -85,16 +85,24 @@ export const useSimulationStore = create<ISimulationState>((set, get) => ({
         const freq = item.frequency || 3.5; // days
         const duration = 12 * 7; // 84 days
         for (let t = 0; t < duration; t += freq) {
+          // Calculate dose per administration
+          // If frequency is 1 (daily), amount = dose / 7
+          // If frequency is 3.5 (E3.5D), amount = dose / 2
+          // If frequency is 7 (weekly), amount = dose / 1
+          // Formula: dose * (frequency / 7)
+          const amountPerPin = item.dose * (freq / 7);
+          
           doseList.push({
             compoundId: item.compoundId,
             time: t * 24, // hours
-            amount: item.dose
+            amount: amountPerPin,
+            esterId: item.esterId
           });
         }
         return doseList;
       });
 
-      const timePoints = Array.from({ length: 84 }, (_, i) => i * 24); // Daily points
+      const timePoints = Array.from({ length: 84 * 4 }, (_, i) => i * 6); // 6-hour points
 
       const results = await simulationService.runSimulation({
         compounds: activeCompounds,

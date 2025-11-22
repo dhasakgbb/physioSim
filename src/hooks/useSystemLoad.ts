@@ -184,10 +184,101 @@ const clampWidgetPercent = (value: unknown): number => {
   return Math.max(0, Math.min(100, Math.round(value)));
 };
 
-export const useSystemLoad = (): SystemLoadResult => {
+export const useSystemLoad = (scrubbedPoint?: any): SystemLoadResult => {
   const { metrics } = useStack() as { metrics?: Record<string, any> };
 
   return useMemo<SystemLoadResult>(() => {
+    // 1. Try to use raw simulation data (New Engine)
+    if (metrics?._raw?.aggregate) {
+      const agg = metrics._raw.aggregate;
+      const len = agg.totalAnabolicLoad?.length || 0;
+      
+      // Determine time index
+      // timePoints are in 6-hour intervals: [0, 6, 12, 18, 24, ...]
+      // So day 0 = index 0, day 1 = index 4, day 2 = index 8, etc.
+      let index = len - 1;
+      if (scrubbedPoint && typeof scrubbedPoint.day === 'number') {
+        // Convert days to 6-hour intervals: 1 day = 4 intervals (24/6)
+        index = Math.min(Math.round(scrubbedPoint.day * 4), len - 1);
+      }
+      index = Math.max(0, index);
+
+      // Extract values at index
+      const hepatic = agg.totalToxicity?.hepatic?.[index] || 0;
+      const cardio = agg.totalToxicity?.cardiovascular?.[index] || 0;
+      const neuro = agg.totalToxicity?.neurotoxicity?.[index] || 0;
+      const renal = agg.totalToxicity?.renal?.[index] || 0;
+      const lipid = agg.totalToxicity?.lipid_metabolism?.[index] || 0;
+      const anabolic = agg.totalAnabolicLoad?.[index] || 0;
+
+      // Construct derived loads
+      const pathwayLoads: PathwayLoads = {
+        liver: hepatic,
+        heart: cardio,
+        neuro: neuro,
+        ar_genomic: anabolic * 10, // Scale up for display? Anabolic load is usually small number
+        non_genomic: neuro * 0.5, // Heuristic
+      };
+
+      // Construct derived labs (Same heuristic as RightInspector)
+      const labs: ProjectedLabs = {
+        hdl: 60 - (lipid * 0.5),
+        ldl: 90 + (lipid * 0.5),
+        ast: 22 + (hepatic * 0.2),
+        alt: 24 + (hepatic * 0.2),
+        creatinine: 1.0 + (renal * 0.01),
+        neuroRisk: neuro * 0.1,
+        hematocrit: 45 + (cardio * 0.05),
+      };
+
+      // Compute categories using configs
+      const categories = CATEGORY_CONFIGS.map((config) => {
+        const rawValue = Math.max(0, config.computeValue(pathwayLoads, labs));
+        const percent = clampPercent(rawValue, config.limit);
+        const level = getLevel(percent);
+        const readout = config.formatReadout
+          ? config.formatReadout(rawValue, labs, config.limit)
+          : formatCapacityReadout(rawValue, config.limit);
+
+        return {
+          id: config.id,
+          label: config.label,
+          description: config.description,
+          percent,
+          level,
+          gradient: config.gradient,
+          readout,
+        };
+      });
+
+      // Calculate system index
+      const fallbackIndex = categories.length
+        ? Math.round(
+            categories.reduce((sum, cat) => sum + cat.percent, 0) /
+              categories.length,
+          )
+        : 0;
+      
+      const systemIndex = fallbackIndex; // Simplified
+      const systemLevel = getLevel(systemIndex);
+      
+      const fallbackDominant = categories.reduce<SystemLoadCategory | null>(
+        (acc, cat) => {
+          if (!acc || cat.percent > acc.percent) return cat;
+          return acc;
+        },
+        null,
+      );
+
+      return {
+        categories,
+        systemIndex,
+        systemLevel,
+        dominantCategory: fallbackDominant,
+      };
+    }
+
+    // 2. Fallback to Legacy Metrics (if _raw is missing)
     const widgetVectors = metrics?.analytics?.systemLoadVectors;
     if (widgetVectors) {
       const categories = WIDGET_CATEGORY_CONFIGS.map((config) => {
@@ -291,5 +382,5 @@ export const useSystemLoad = (): SystemLoadResult => {
       systemLevel,
       dominantCategory,
     };
-  }, [metrics]);
+  }, [metrics, scrubbedPoint]);
 };

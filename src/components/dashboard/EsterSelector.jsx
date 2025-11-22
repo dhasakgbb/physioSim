@@ -7,7 +7,13 @@ const EsterSelector = ({ compoundKey, selectedEster, onChange, color }) => {
 
   const meta = compoundData[compoundKey];
   // If no esters defined or only 1 option, don't show selector
-  const esterOptions = meta?.esters ? Object.entries(meta.esters) : [];
+  const esterOptions = meta?.esters 
+    ? Object.entries(meta.esters).sort((a, b) => {
+        const labelA = a[1].label || a[1].shortLabel || a[1].slug || a[0];
+        const labelB = b[1].label || b[1].shortLabel || b[1].slug || b[0];
+        return labelA.localeCompare(labelB);
+      })
+    : [];
 
   if (esterOptions.length <= 1) return null;
 

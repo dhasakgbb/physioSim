@@ -10,6 +10,47 @@ export interface IProvenanceMap {
   [parameterPath: string]: IProvenanceEntry;
 }
 
+// Drug-Drug Interactions (DDI)
+export interface IPKInteractionEffect {
+  type: 'EnzymeInhibition' | 'EnzymeInduction' | 'ProteinBindingDisplacement';
+  target?: 'CYP3A4' | 'CYP2D6' | 'CYP19A1' | 'SRD5A' | 'UGT';
+  inhibitionPercent?: number; // 0-100 (e.g., 96 for AI)
+  shbgDisplacementFactor?: number; // Multiplier for free fraction
+  affectedCompound: string; // compoundId
+}
+
+export interface IPDInteractionEffect {
+  type: 'ReceptorCompetition' | 'PathwaySynergy' | 'PathwayAntagonism';
+  pathway: 'myogenesis' | 'erythropoiesis' | 'lipolysis' | 'cns_activation' | 'hpta_suppression';
+  multiplier: number; // 0.5 = 50% reduction, 1.5 = 50% enhancement
+  affectedCompound?: string; // If specific, otherwise affects both
+}
+
+export interface IToxicityInteractionEffect {
+  type: 'Additive' | 'Synergistic' | 'Protective';
+  organ: 'hepatic' | 'renal' | 'cardiovascular' | 'lipid_metabolism' | 'neurotoxicity';
+  multiplier: number; // e.g., 1.8 for synergistic, 0.7 for protective
+  doseThreshold?: { compound: string; minDose: number }; // Only applies above threshold
+}
+
+export interface IDrugDrugInteraction {
+  id: string; // Unique identifier (e.g., "tren_anadrol_hepatotox")
+  compounds: [string, string]; // [compoundId1, compoundId2]
+  effects: {
+    pk?: IPKInteractionEffect;
+    pd?: IPDInteractionEffect;
+    toxicity?: IToxicityInteractionEffect;
+  };
+  metadata: {
+    severity: 'Info' | 'Warning' | 'Critical';
+    mechanism: string; // 1-2 sentence explanation
+    recommendations: string[]; // Actionable advice
+    provenance: IProvenanceEntry;
+  };
+}
+
+export type DDIRegistry = IDrugDrugInteraction[];
+
 // Compound Schema
 export interface ICompoundSchema {
   id: string;
@@ -46,6 +87,8 @@ export interface ICompoundMetadata {
   // UI Metadata
   color?: string;
   description?: string;
+  basePotency?: number;
+  baseToxicity?: number;
 }
 
 // Clinical Guide
@@ -77,14 +120,16 @@ export interface IPharmacokinetics {
 
 export interface IEsterDefinition {
   id: string;
-  molecularWeightRatio: number;
-  absorptionModel: 'FirstOrder' | 'DualPhase';
-  parameters: {
+  molecularWeightRatio?: number;
+  absorptionModel?: 'FirstOrder' | 'DualPhase';
+  parameters?: {
     Ka?: number;
     Ka_fast?: number;
     Ka_slow?: number;
     fractionFast?: number;
   };
+  releaseHalfLife_Hours?: number;
+  peakTime_Hours?: number;
 }
 
 // Pharmacodynamics (PD)
