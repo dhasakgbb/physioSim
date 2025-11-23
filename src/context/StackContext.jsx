@@ -14,6 +14,8 @@ import {
 } from "../utils/storage";
 import { VIEW_MODE_STORAGE_KEY } from "../utils/storageKeys";
 import { useSimulationStore } from "../store/simulationStore";
+import { computeSerumLevels } from "../utils/receptorModel";
+import { SimulationProvider } from "./SimulationContext";
 
 const BASE_PATH = (import.meta.env?.BASE_URL || "/").replace(/\/*$/, "/");
 const BASE_PATH_NO_TRAIL = BASE_PATH.replace(/\/$/, "");
@@ -29,7 +31,7 @@ const stripBasePath = (pathname) => {
   return pathname;
 };
 
-const StackContext = createContext();
+export const StackContext = createContext();
 
 export const useStack = () => {
   const context = useContext(StackContext);
@@ -228,6 +230,12 @@ export const StackProvider = ({ children }) => {
     const cardiovascular = aggregate?.totalToxicity?.cardiovascular?.[lastIndex] || 0;
     const lipid = aggregate?.totalToxicity?.lipid_metabolism?.[lastIndex] || 0;
     const neuro = aggregate?.totalToxicity?.neurotoxicity?.[lastIndex] || 0;
+
+    const serumLevels = computeSerumLevels({
+      simulation: simulationResults,
+      compounds,
+      organStress: { hepatic, renal, cardiovascular, lipid, neuro },
+    });
     
     // Use organ-specific toxicity with smaller multipliers for realistic lab values
     return {
@@ -249,13 +257,19 @@ export const StackProvider = ({ children }) => {
            egfr: { value: Math.max(15, 95 - (renal * 0.1)), status: 'normal' }
         }
       },
+      serumLevels,
+      receptorSaturation: serumLevels?.receptor?.boundPct || 0,
+      spillover: serumLevels?.receptor?.spilloverPct || 0,
+      adaptationPhase: serumLevels?.receptor?.adaptationPhase || 1,
+      adaptationRate: serumLevels?.receptor?.adaptationRate || 0,
+      isHardCap: serumLevels?.receptor?.isHardCap || false,
       // Legacy fields mapped to new aggregates (using last point or average)
       totalTestosterone: aggregate.totalTestosteroneEquivalent[aggregate.totalTestosteroneEquivalent.length - 1] || 0,
       anabolicRating: aggregate.totalAnabolicLoad[aggregate.totalAnabolicLoad.length - 1] || 0,
       // Add raw results for new components
       _raw: simulationResults
     };
-  }, [simulationResults]);
+  }, [simulationResults, compounds]);
 
   // 3. Actions (Proxied to Store)
   const handleAddCompound = useCallback(
@@ -313,9 +327,13 @@ export const StackProvider = ({ children }) => {
     console.warn("Support protocols not yet implemented in new engine");
   }, []);
 
+  const deprecatedSetStack = useCallback(() => {
+    console.warn("setStack is deprecated, use store actions");
+  }, []);
+
   const value = {
     stack,
-    setStack: () => console.warn("setStack is deprecated, use store actions"),
+    setStack: deprecatedSetStack,
     userProfile,
     setUserProfile,
     inspectedCompound,
@@ -332,8 +350,39 @@ export const StackProvider = ({ children }) => {
     toggleSupportProtocol,
   };
 
+  const simulationBridgeValue = useMemo(
+    () => ({
+      compounds: stack,
+      setCompounds: deprecatedSetStack,
+      metrics,
+      updateDose: handleDoseChange,
+      updateFrequency: handleFrequencyChange,
+      updateEster: handleEsterChange,
+      removeCompound: handleRemove,
+      addCompound: handleAddCompound,
+      setCompoundOpen: handleSetCompoundOpen,
+      toggleSupportProtocol,
+    }),
+    [
+      stack,
+      deprecatedSetStack,
+      metrics,
+      handleDoseChange,
+      handleFrequencyChange,
+      handleEsterChange,
+      handleRemove,
+      handleAddCompound,
+      handleSetCompoundOpen,
+      toggleSupportProtocol,
+    ],
+  );
+
   return (
-    <StackContext.Provider value={value}>{children}</StackContext.Provider>
+    <StackContext.Provider value={value}>
+      <SimulationProvider value={simulationBridgeValue}>
+        {children}
+      </SimulationProvider>
+    </StackContext.Provider>
   );
 };
 

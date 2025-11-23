@@ -366,6 +366,31 @@ The app will be available at `http://localhost:5173`
 5. **Masteron (Drostanolone)** - Tier 4 data (entirely anecdotal)
 6. **Primobolan (Methenolone)** - Tier 2/4 data
 
+### Hostile-Audience-Proof Compound Ontology
+
+Only fully curated compounds feed the production dataset right now (Test + Tren live inside `src/data/compoundOntology.ts`). An automation helper lives nearby in `src/data/compoundOntology.auto.ts`, but its output stays offline until each record is backed by primary literature and reviewer sign-off.
+
+**Key properties of the new ontology**
+
+- Every numeric value is wrapped in a `QuantifiedValue` (unit + evidence + uncertainty).
+- Exposure definitions include route, ester/formulation, dosing schedule, measurement window, and normalization (mg/week, Cmax, AUC) so critiques about “what exactly was measured?” are answerable.
+- Benefit/risk outcomes live in `OutcomeEffectSurface` objects that declare the model type (Hill/Spline/Piecewise), anchor points, and plateau guardrails (Tren Rule enforcement happens here with `enforceNonDeclineAfterMgPerWeek`).
+- Phenotype vectors, potency scaling, biomarker effects, and temporal dynamics now carry explicit evidence tiers/tags so UI chips, guardrails, and tooltips can show confidence without extra guesswork.
+- Assumption tags document every extrapolation (steady-state, vet→human scaling, monotherapy context, etc.) and can be surfaced directly to the user.
+
+**Bridging to the legacy stack**
+
+- `deriveLegacyVectors` converts the phenotype axes back into the legacy five-vector shape so the existing UI keeps working while we migrate.
+- `CompoundDatabase.ts` ingests the ontology registry and then falls back to `src/data/compoundVectors.ts` for any compound that does **not** yet have a curated entry, so aliases still stay in sync without advertising speculative data.
+- Nothing in the current rendering pipeline consumes the new fields yet, but they flow through StackContext safely today and are ready for the upcoming Zustand store once the curated coverage grows.
+
+**How to contribute data**
+
+1. Author or update a `CompoundOntologyEntry` inside `src/data/compoundOntology.ts` once you have verifiable sources. The automation helper (`compoundOntology.auto.ts`) is for sandboxing only—do not export its output without reviewer approval.
+2. Every field needs a citation or evidence note—anonymous forum logs go under `Tier5_Anecdote` with `ExpertConsensus` or `ObservationalStudy` as appropriate.
+3. Benefit curves **must plateau** when the data quality is low (Trenbolone Rule is encoded via the plateau constraint and enforced by tests).
+4. Run `npm test` (the data validation suite will ensure Tren curves do not decline after 300 mg/week) and include any new references in `docs/DESIGN.md` if they are not already cited.
+
 ### Critical Data Points
 
 #### Testosterone

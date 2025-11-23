@@ -3,7 +3,6 @@ import React from "react";
 import { describe, it, beforeEach, expect, vi } from "vitest";
 import Dashboard from "../Dashboard";
 import { StackProvider } from "../../../context/StackContext";
-import { SimulationProvider } from "../../../context/SimulationContext";
 
 vi.mock("../CenterPane", () => {
   const MockCenterPane = () => <div data-testid="net-chart">Net chart</div>;
@@ -14,10 +13,6 @@ vi.mock("../CenterPane", () => {
   };
 });
 
-vi.mock("../LinearPathwayFlow", () => ({
-  __esModule: true,
-  default: () => <div data-testid="pathway-chart" />,
-}));
 
 vi.mock("../OptimizerPane", () => ({
   __esModule: true,
@@ -32,9 +27,7 @@ vi.mock("../SignalingNetwork", () => ({
 const renderDashboard = () =>
   render(
     <StackProvider>
-      <SimulationProvider>
-        <Dashboard />
-      </SimulationProvider>
+      <Dashboard />
     </StackProvider>,
   );
 

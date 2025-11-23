@@ -5,9 +5,9 @@ import {
   calculateStackSynergy,
   getCompoundInteractions,
   heatmapScores,
-} from "../data/interactionMatrix";
+} from "../data/interactionMatrix.ts";
 import { getAncillaryProtocol } from "../data/sideFxAndAncillaries";
-import { compoundData } from "../data/compoundData";
+import { compoundData } from "../data/compoundData.ts";
 
 /**
  * Test Suite for Interaction Matrix and Ancillary Protocol Generation

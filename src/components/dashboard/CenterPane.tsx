@@ -4,7 +4,6 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, LabelList } from "recharts";
 import { useSystemLoad } from "../../hooks/useSystemLoad";
 import { useProjectedGains } from "../../hooks/useProjectedGains";
 import type { ProjectedVectorMetric } from "../../hooks/useProjectedGains";
-import CyclePhysicsChart from "./CyclePhysicsChart";
 
 const LEVEL_META = {
   stable: {
@@ -181,9 +180,6 @@ export const CenterPane: React.FC<CenterPaneProps> = ({ onTimeScrub, scrubbedPoi
 
   return (
     <div className="flex flex-col gap-4 w-full">
-      <section className="min-h-[360px]">
-        <CyclePhysicsChart />
-      </section>
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <ProjectedGainsCard vectors={vectors} netScore={netScore} />
         <SystemLoadCard

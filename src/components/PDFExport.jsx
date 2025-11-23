@@ -2,10 +2,9 @@ import React, { useState } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { COMPOUNDS as compoundData } from "../data/compounds";
-import { getInteraction, getInteractionScore } from "../data/interactionMatrix";
+import { disclaimerText } from "../data/compoundData.ts";
+import { getInteraction, getInteractionScore } from "../data/interactionMatrix.ts";
 import { getAncillaryProtocol } from "../data/sideFxAndAncillaries";
-
-const disclaimerText = "The information provided by this tool is for educational and harm reduction purposes only. It is not medical advice, diagnosis, or treatment. Anabolic-androgenic steroids (AAS) are controlled substances in many jurisdictions and carry significant health risks. The models used here are theoretical approximations based on pharmacokinetic data and do not account for individual biological variability. Always consult with a qualified healthcare provider before making decisions about your health.";
 
 const tierDescriptions = {
   "Tier 1": "High-quality clinical evidence (RCTs, meta-analyses).",

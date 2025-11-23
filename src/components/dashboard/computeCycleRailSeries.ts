@@ -29,6 +29,9 @@ export interface CycleRailOutputPoint {
   toxicity: number;
   netGap: number;
   riskRatio: number;
+  tissueEffect: number;
+  riskEffect: number;
+  effectGap: number;
   rawAnabolic: number;
   rawToxicity: number;
   cumulativeMomentum: number;
@@ -46,6 +49,14 @@ export interface CycleRailSeriesResult {
   points: CycleRailOutputPoint[];
   meta: CycleRailMeta;
 }
+
+type IntermediatePoint = Omit<
+  CycleRailOutputPoint,
+  "netGap" | "riskRatio" | "tissueEffect" | "riskEffect" | "effectGap"
+> & {
+  tissueGainRaw: number;
+  riskGainRaw: number;
+};
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
@@ -75,8 +86,11 @@ export const computeCycleRailSeries = (
 
   let currentAnabolicMomentum = 0;
   let currentSystemicLoad = 0;
+  let maxTissueGain = 0;
+  let maxRiskGain = 0;
+  let cumulativeRisk = 0;
 
-  const points: CycleRailOutputPoint[] = safeData.map((day) => {
+  const tempPoints: IntermediatePoint[] = safeData.map((day) => {
     const rawAnabolic = Math.max(0, Number(day?.anabolic) || 0);
     const saturatedInput = Math.log10(rawAnabolic + 1) * 100;
     currentAnabolicMomentum =
@@ -86,6 +100,10 @@ export const computeCycleRailSeries = (
       ((currentAnabolicMomentum / scaleCeiling) * 100 * 2.5) || 0,
     );
     const anabolic = (normalizedAnabolicPct / 100) * DISPLAY_CEILING;
+    const tissueGainRaw = Math.max(0, saturatedInput);
+    if (tissueGainRaw > maxTissueGain) {
+      maxTissueGain = tissueGainRaw;
+    }
 
     const rawToxicity = Math.max(0, Number(day?.toxicityRaw) || 0);
     const compoundedRisk = Math.pow(rawToxicity, TOXICITY_EXPONENT);
@@ -93,6 +111,12 @@ export const computeCycleRailSeries = (
       currentSystemicLoad * TOXICITY_DECAY + compoundedRisk * TOXICITY_ALPHA;
     const normalizedRiskPct = (currentSystemicLoad / scaleCeiling) * 100;
     const toxicity = (normalizedRiskPct / 100) * DISPLAY_CEILING;
+    const riskInstant = Math.max(0, compoundedRisk);
+    cumulativeRisk += riskInstant;
+    const riskGainRaw = cumulativeRisk;
+    if (riskGainRaw > maxRiskGain) {
+      maxRiskGain = riskGainRaw;
+    }
 
     const naturalPercent = clamp(Number(day?.naturalAxis) || 100, 0, 100);
     const naturalScaled = (naturalPercent / 100) * DISPLAY_CEILING;
@@ -106,15 +130,12 @@ export const computeCycleRailSeries = (
     const efficiencyMediumFill = efficiencyZone === "medium" ? DISPLAY_CEILING : 0;
     const efficiencyLowFill = efficiencyZone === "low" ? DISPLAY_CEILING : 0;
 
-    const riskRatio = anabolic > 0 ? toxicity / anabolic : 0;
-    const netGap = anabolic - toxicity;
-
     return {
       day: Number(day?.day) || 0,
       anabolic,
       toxicity,
-      netGap,
-      riskRatio,
+      tissueGainRaw,
+      riskGainRaw,
       rawAnabolic,
       rawToxicity,
       cumulativeMomentum: currentAnabolicMomentum,
@@ -126,6 +147,25 @@ export const computeCycleRailSeries = (
       efficiencyHighFill,
       efficiencyMediumFill,
       efficiencyLowFill,
+    };
+  });
+
+  const points: CycleRailOutputPoint[] = tempPoints.map(({ tissueGainRaw, riskGainRaw, ...rest }) => {
+    const tissueEffect =
+      maxTissueGain > 0 ? (tissueGainRaw / maxTissueGain) * 100 : 0;
+    const riskEffect =
+      maxRiskGain > 0 ? (riskGainRaw / maxRiskGain) * 100 : 0;
+    const effectGap = tissueEffect - riskEffect;
+    const riskRatio = tissueEffect > 0 ? riskEffect / tissueEffect : riskEffect > 0 ? 1 : 0;
+    const netGap = effectGap;
+
+    return {
+      ...rest,
+      tissueEffect,
+      riskEffect,
+      effectGap,
+      riskRatio,
+      netGap,
     };
   });
 

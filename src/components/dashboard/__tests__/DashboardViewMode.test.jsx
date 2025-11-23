@@ -102,33 +102,18 @@ vi.mock("../CenterPane", () => {
   };
 });
 
-vi.mock("../VitalSigns", () => ({
-  default: () => <div data-testid="vitals" />,
-}));
-
-vi.mock("../MechanismMonitor", () => ({
-  default: () => <div data-testid="mechanism" />,
-}));
-
-vi.mock("../BiomarkerMatrix", () => ({
-  default: () => <div data-testid="biomarker" />,
-}));
-
-vi.mock("../LabReportCard", () => ({
-  default: () => <div data-testid="lab" />,
-}));
-
 vi.mock("../NetEffectChart", () => ({
   default: () => <div data-testid="net-chart">Net chart</div>,
 }));
 
-vi.mock("../LinearPathwayFlow", () => ({
-  __esModule: true,
-  default: () => <div data-testid="pathway-flow">Pathway Flow</div>,
-}));
 
 vi.mock("../OptimizerPane", () => ({
   default: () => <div data-testid="optimizer-pane">Optimizer Pane</div>,
+}));
+
+vi.mock("../AnalyticsPane", () => ({
+  __esModule: true,
+  default: () => <div data-testid="analytics-pane">Analytics Pane</div>,
 }));
 
 vi.mock("../CompoundInspector", () => ({
@@ -136,7 +121,7 @@ vi.mock("../CompoundInspector", () => ({
 }));
 
 describe("Dashboard tab switching", () => {
-  it("switches between Efficiency, Optimize, and Pathways", async () => {
+  it("switches between Efficiency, Optimize, and Analytics", async () => {
     const user = userEvent.setup();
     await act(async () => {
       render(
@@ -157,8 +142,8 @@ describe("Dashboard tab switching", () => {
     expect(screen.getByTestId("optimizer-pane")).toBeInTheDocument();
 
     await act(async () => {
-      await user.click(screen.getByRole("button", { name: /pathway flow/i }));
+      await user.click(screen.getByRole("button", { name: /analytics/i }));
     });
-    expect(screen.getByTestId("pathway-flow")).toBeInTheDocument();
+    expect(screen.getByTestId("analytics-pane")).toBeInTheDocument();
   });
 });

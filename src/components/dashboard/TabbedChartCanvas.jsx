@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, Suspense, lazy } from "react";
-import LinearPathwayFlow from "./LinearPathwayFlow";
+import ActiveSchematic from "./ActiveSchematic";
 
 import { useStack } from "../../context/StackContext";
 import StatusIndicator from "./StatusIndicator";
@@ -7,6 +7,7 @@ import { CenterPane } from "./CenterPane";
 
 const AnalyticsPane = lazy(() => import("./AnalyticsPane"));
 const OptimizerPane = lazy(() => import("./OptimizerPane"));
+const PhysicsEnginePane = lazy(() => import("./PhysicsEnginePane"));
 
 const PaneFallback = ({ label }) => (
   <div className="flex min-h-[280px] items-center justify-center rounded-2xl border border-white/5 bg-[#050608] text-[11px] uppercase tracking-[0.3em] text-gray-500">
@@ -14,20 +15,18 @@ const PaneFallback = ({ label }) => (
   </div>
 );
 
-const NET_FAMILY_TABS = new Set(["efficiency", "pathways", "analytics", "physics"]);
+const NET_FAMILY_TABS = new Set(["efficiency", "analytics", "physics", "serum"]);
 const VIEW_MODE_TO_TAB = {
   net: "efficiency",
   optimize: "optimize",
-
   analytics: "analytics",
+  serum: "serum",
 };
 const TAB_TO_VIEW_MODE = {
   efficiency: "net",
-  pathways: "net",
-  evolution: "net",
   analytics: "analytics",
   optimize: "optimize",
-
+  serum: "serum",
 };
 
 const TabbedChartCanvas = ({ onTimeScrub, scrubbedPoint }) => {
@@ -48,6 +47,14 @@ const TabbedChartCanvas = ({ onTimeScrub, scrubbedPoint }) => {
     const targetTab = VIEW_MODE_TO_TAB[viewMode];
     if (!targetTab) return;
 
+    // Allow serum tab to work independently
+    if (viewMode === "serum") {
+      if (activeTab !== "serum") {
+        setActiveTab("serum");
+      }
+      return;
+    }
+
     if (viewMode === "net") {
       if (!NET_FAMILY_TABS.has(activeTab)) {
         setActiveTab(targetTab);
@@ -62,14 +69,43 @@ const TabbedChartCanvas = ({ onTimeScrub, scrubbedPoint }) => {
 
   const tabs = [
     { id: 'efficiency', label: 'Efficiency' },
+    { id: 'physics', label: 'Physics Engine' },
     { id: 'analytics', label: 'QSP Analytics' },
-    { id: 'pathways', label: 'Pathway Flow' },
+    { id: 'serum', label: 'Serum Levels' },
     { id: 'optimize', label: 'Optimize' },
   ];
+
+  const receptorState = metrics?.serumLevels?.receptor || null;
+
+  const saturationMetrics = receptorState
+    ? {
+        saturation: receptorState.boundPct,
+        spillover: receptorState.spilloverPct,
+        adaptationPhase: receptorState.adaptationPhase,
+        adaptationRate: receptorState.adaptationRate,
+        isHardCap: receptorState.isHardCap,
+      }
+    : null;
 
   const renderActiveChart = () => {
     if (activeTab === 'efficiency') {
       return <CenterPane onTimeScrub={onTimeScrub} scrubbedPoint={scrubbedPoint} />;
+    }
+
+    if (activeTab === 'serum') {
+      // Ensure we have valid data for ActiveSchematic
+      const geneticCapacity = receptorState?.capacity || metrics?.geneticCapacity || metrics?.receptorCapacity || 100;
+      
+      return (
+        <div className="w-full h-full">
+          <ActiveSchematic
+            geneticCapacity={geneticCapacity}
+            saturationMetrics={saturationMetrics}
+            receptorState={receptorState}
+            serumLevels={metrics?.serumLevels}
+          />
+        </div>
+      );
     }
 
     if (activeTab === 'analytics') {
@@ -80,8 +116,12 @@ const TabbedChartCanvas = ({ onTimeScrub, scrubbedPoint }) => {
       );
     }
 
-    if (activeTab === 'pathways') {
-      return <LinearPathwayFlow onTimeScrub={onTimeScrub} />;
+    if (activeTab === 'physics') {
+      return (
+        <Suspense fallback={<PaneFallback label="Physics Engine" />}>
+          <PhysicsEnginePane />
+        </Suspense>
+      );
     }
 
     if (activeTab === 'optimize') {

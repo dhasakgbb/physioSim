@@ -1,49 +1,11 @@
-import React, { createContext, useContext, useMemo } from "react";
-import { useStack } from "./StackContext";
+import React, { createContext, useContext } from "react";
 
 const SimulationContext = createContext(null);
 
-export const SimulationProvider = ({ children }) => {
-  const {
-    stack,
-    setStack,
-    metrics,
-    handleDoseChange,
-    handleFrequencyChange,
-    handleEsterChange,
-    handleRemove,
-    handleAddCompound,
-    handleSetCompoundOpen,
-    toggleSupportProtocol,
-  } = useStack();
-
-  const value = useMemo(
-    () => ({
-      compounds: stack,
-      setCompounds: setStack,
-      metrics,
-      updateDose: handleDoseChange,
-      updateFrequency: handleFrequencyChange,
-      updateEster: handleEsterChange,
-      removeCompound: handleRemove,
-      addCompound: handleAddCompound,
-      setCompoundOpen: handleSetCompoundOpen,
-      toggleSupportProtocol,
-    }),
-    [
-      stack,
-      setStack,
-      metrics,
-      handleDoseChange,
-      handleFrequencyChange,
-      handleEsterChange,
-      handleRemove,
-      handleAddCompound,
-      handleSetCompoundOpen,
-      toggleSupportProtocol,
-    ],
-  );
-
+export const SimulationProvider = ({ children, value }) => {
+  if (!value) {
+    throw new Error("SimulationProvider requires an explicit value prop.");
+  }
   return (
     <SimulationContext.Provider value={value}>
       {children}

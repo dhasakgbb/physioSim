@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { compoundData } from "../data/compoundData";
+import { compoundData } from "../data/compoundData.ts";
 
 describe("Data Validation Tests", () => {
   describe("All Compounds Present", () => {
